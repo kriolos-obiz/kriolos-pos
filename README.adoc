@@ -10,15 +10,15 @@
 :stem:
 
 ifdef::env-github[]
-:imagesdir: https://raw.githubusercontent.com/poolborges/unicenta-pos/main/docs/src/main/images/
+:imagesdir: https://raw.githubusercontent.com/kriolos-obiz/kriolos-pos/main/docs/src/main/images/
 :tip-caption: :bulb:
 :note-caption: :information_source:
 :important-caption: :heavy_exclamation_mark:
 :caution-caption: :fire:
 :warning-caption: :warning:
 :badges:
-:doc-dir: https://github.com/poolborges/unicenta-pos/tree/main/docs
-:repo-base-url: https://github.com/poolborges/unicenta-pos/
+:doc-dir: https://github.com/kriolos-obiz/kriolos-pos/tree/main/docs
+:repo-base-url: https://github.com/kriolos-obiz/kriolos-pos/
 endif::[]
 
 [[doc]]
@@ -34,17 +34,17 @@ WARNING: IN DEVELOPMENT (NOT RELEASE YET)
 ifdef::badges[]
 == Build status
 
-image:https://github.com/poolborges/unicenta-pos/actions/workflows/ci.yml/badge.svg["Build Status", link="https://github.com/poolborges/unicenta-pos/actions/workflows/ci.yml"]
-image:https://codecov.io/github/poolborges/unicenta-pos/coverage.svg["Code Coverage", link="https://codecov.io/gh/poolborges/unicenta-pos"]
+image:https://github.com/kriolos-obiz/kriolos-pos/actions/workflows/ci.yml/badge.svg["Build Status", link="https://github.com/kriolos-obiz/kriolos-pos/actions/workflows/ci.yml"]
+image:https://codecov.io/github/kriolos-obiz/kriolos-pos/coverage.svg["Code Coverage", link="https://codecov.io/gh/kriolos-obiz/kriolos-pos"]
 image:https://img.shields.io/badge/License-GPLv3-blue.svg["License: GPL v3", link="https://www.gnu.org/licenses/gpl-3.0.en.html"]
 image:https://badges.crowdin.net/krpos/localized.svg["Crowdin/Translation Status", link="https://crowdin.com/project/krpos"]
 
 === Stats
 
-image:https://img.shields.io/github/issues-pr-raw/poolborges/unicenta-pos["GitHub Pull Requests", link="https://github.com/poolborges/unicenta-pos/pulls"]
-image:https://img.shields.io/badge/team-committers-green["GitHub Committers", link="https://github.com/orgs/kriolos/teams/obiz-core-team/members"]
-image:https://img.shields.io/github/contributors/poolborges/unicenta-pos["GitHub Contributors", link="https://github.com/poolborges/unicenta-pos/contributors"]
-image:https://img.shields.io/github/commit-activity/m/poolborges/unicenta-pos["GitHub Commit Activity", link="https://github.com/poolborges/unicenta-pos/commits"]
+image:https://img.shields.io/github/issues-pr-raw/kriolos-obiz/kriolos-pos["GitHub Pull Requests", link="https://github.com/kriolos-obiz/kriolos-pos/pulls"]
+image:https://img.shields.io/badge/team-committers-green["GitHub Committers", link="https://github.com/orgs/kriolos-obiz/teams/obiz-core-team/members"]
+image:https://img.shields.io/github/contributors/kriolos-obiz/kriolos-pos["GitHub Contributors", link="https://github.com/kriolos-obiz/kriolos-pos/contributors"]
+image:https://img.shields.io/github/commit-activity/m/kriolos-obiz/kriolos-pos["GitHub Commit Activity", link="https://github.com/kriolos-obiz/kriolos-pos/commits"]
 
 === Release and Download
 
