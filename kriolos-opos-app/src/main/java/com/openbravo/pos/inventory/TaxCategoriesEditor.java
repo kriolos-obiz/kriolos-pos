@@ -180,7 +180,7 @@ public final class TaxCategoriesEditor extends JPanel implements EditorRecord {
             Clipboard clpbrd = Toolkit.getDefaultToolkit().getSystemClipboard();
             clpbrd.setContents(stringSelection, null);
         
-            JOptionPane.showMessageDialog(null, 
+            JOptionPane.showMessageDialog(this, 
                 AppLocal.getIntString("message.uuidcopy"));
         }
     }//GEN-LAST:event_jLabel2MouseClicked

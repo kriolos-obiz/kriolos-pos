@@ -645,7 +645,7 @@ public final class CategoriesEditor extends JPanel implements EditorRecord {
                 String ProdCount = String.valueOf(stockModel.getRowCount());
                 jLblProdCount.setText(ProdCount);
             } else {
-                JOptionPane.showMessageDialog(null,
+                JOptionPane.showMessageDialog(this,
                         "No Products for this Category", "Products", JOptionPane.INFORMATION_MESSAGE);
             }
             resetTranxTable();

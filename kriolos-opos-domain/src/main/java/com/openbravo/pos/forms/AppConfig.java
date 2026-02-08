@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Paths;
+import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Enumeration;
@@ -69,8 +71,33 @@ public class AppConfig implements AppProperties {
     }
 
     private static File getDefaultConfigFile() {
-        return APP_CONFIG_FILE_DEFAULT;
+        String os = System.getProperty("os.name").toLowerCase();
+        String userHome = System.getProperty("user.home");
+        File configDir;
+
+        if (os.contains("win")) {
+            // Windows: %APPDATA%/KriolOS/
+            String appData = System.getenv("APPDATA");
+            configDir = new File(appData != null ? appData : userHome, "KriolOS");
+        } else if (os.contains("mac")) {
+            // macOS: ~/Library/Application Support/KriolOS/
+            configDir = new File(userHome, "Library/Application Support/KriolOS");
+        } else {
+            // Linux/Unix (XDG): ~/.config/kriolos/
+            String xdgConfig = System.getenv("XDG_CONFIG_HOME");
+            configDir = (xdgConfig != null && !xdgConfig.isEmpty())
+                    ? new File(xdgConfig, "kriolos")
+                    : new File(userHome, ".config/kriolos");
+        }
+
+        // Cria a pasta se não existir para evitar FileNotFoundException ao salvar
+        if (!configDir.exists()) {
+            configDir.mkdirs();
+        }
+
+        return new File(configDir, APP_CONFIG_FILE_NAME);
     }
+
 
     public String getAppDataDirectory() {
         return APP_CONFIG_DIRECTORY;
@@ -225,20 +252,32 @@ public class AppConfig implements AppProperties {
      * Get instance settings
      */
     public void load() {
+        File file = getConfigFile();
         LOGGER.log(Level.INFO, "Try Loading configuration file: {0}", configfile.getAbsolutePath());
-
-        try ( InputStream in = new FileInputStream(configfile)) {
-            m_propsconfig.load(in);
-        } catch (IOException e) {
-            LOGGER.log(Level.WARNING, "IOException on load configuration file: " + configfile.getAbsolutePath(), e);
-            try {
-                LOGGER.log(Level.INFO, "Providing default configuration: ", e);
-                m_propsconfig = defaultConfig();
-            } catch (Exception ex) {
-                LOGGER.log(Level.WARNING, "Fail getting default/factory configuration", ex);
+    try {
+        if (file.exists() && file.isFile()) {
+            try (InputStream in = new FileInputStream(file)) {
+                m_propsconfig.load(in);
             }
-        }
 
+            //File not empty
+            if (getProperty("db.URL") == null) {
+                m_propsconfig = defaultConfig();
+                save();
+            }
+        } else {
+            m_propsconfig = defaultConfig();
+            save();
+        }
+    }catch (IOException e) {
+        LOGGER.log(Level.WARNING, MessageFormat.format("IOException on load configuration file: {0}", file.getAbsolutePath()), e);
+        try {
+            LOGGER.log(Level.INFO, "Providing default configuration: ", e);
+            m_propsconfig = defaultConfig();
+        } catch (Exception ex) {
+            LOGGER.log(Level.WARNING, "Fail getting default/factory configuration", ex);
+        }
+    }
     }
 
     /**
@@ -279,8 +318,30 @@ public class AppConfig implements AppProperties {
 
         Properties propConfig = new SortedStoreProperties();
 
-        String dirname = System.getProperty("dirname.path");
-        dirname = dirname == null ? "./" : dirname;
+        // Cross-Platform data directory
+        String os = System.getProperty("os.name").toLowerCase();
+        String userHome = System.getProperty("user.home");
+        String baseDirectory;
+
+        if (os.contains("win")) {
+            // Windows: %APPDATA%/KriolOS/data
+            baseDirectory = Paths.get(System.getenv("APPDATA"), "KriolOS", "data").toString();
+        } else if (os.contains("mac")) {
+            // macOS: ~/Library/Application Support/KriolOS/data
+            baseDirectory = Paths.get(userHome, "Library", "Application Support", "KriolOS", "data").toString();
+        } else {
+            // Linux: ~/.local/share/kriolos
+            String xdgData = System.getenv("XDG_DATA_HOME");
+            baseDirectory = (xdgData != null && !xdgData.isEmpty())
+                    ? Paths.get(xdgData, "kriolos").toString()
+                    : Paths.get(userHome, ".local", "share", "kriolos").toString();
+        }
+
+        // Directory must exist
+        File dbDir = new File(baseDirectory);
+        if (!dbDir.exists()) {
+            dbDir.mkdirs();
+        }
 
         propConfig.setProperty("db.multi", "false");
         propConfig.setProperty("override.check", "false");
@@ -292,7 +353,7 @@ public class AppConfig implements AppProperties {
 
 // primary DB
         propConfig.setProperty("db.name", "Main DB");
-        propConfig.setProperty("db.URL", "jdbc:hsqldb:file:~\\kriolopos\\");
+        propConfig.setProperty("db.URL", "jdbc:hsqldb:file:"+Paths.get(baseDirectory, "kriolopos").toString());
         propConfig.setProperty("db.schema", "kriolopos");
         propConfig.setProperty("db.options", ";shutdown=true");
         propConfig.setProperty("db.user", "kriolopos");
@@ -313,7 +374,7 @@ public class AppConfig implements AppProperties {
         propConfig.setProperty("user.country", l.getCountry());
         propConfig.setProperty("user.variant", l.getVariant());
 
-        propConfig.setProperty("swing.defaultlaf", System.getProperty("swing.defaultlaf", "javax.swing.plaf.metal.MetalLookAndFeel"));
+        propConfig.setProperty("swing.defaultlaf", "com.formdev.flatlaf.FlatDarkLaf");
 
         propConfig.setProperty("machine.printer", "screen");
         propConfig.setProperty("machine.printer.2", "Not defined");

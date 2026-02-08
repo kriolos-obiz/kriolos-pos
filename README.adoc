@@ -95,10 +95,19 @@ image::krpos-screenshot.gif[]
 .\mvnw.cmd exec:java -pl kriolos-opos-app "-Dexec.mainClass=com.openbravo.pos.forms.StartPOS"
 ----
 
+.Are you using a HiDPI (4K) monitor
+----
+#(Use 2 for 200% scaling, or 1.5 for fractional)
+export _JAVA_OPTIONS="-Dawt.useSystemAAFontSettings=on -Dswing.aatext=true -Dsun.java2d.uiScale=2"
+----
+
 .Example Compile and Execute (Linux/Unix Bash)
 [source,bash]
 ----
-./mvnw compile install
+# SOLVE Blurry fonts or Ugly/Non Anti-Aliased fonts
+export JAVA_TOOL_OPTIONS="-Dawt.useSystemAAFontSettings=on -Dswing.aatext=true"
+export _JAVA_OPTIONS="-Dawt.useSystemAAFontSettings=on -Dswing.aatext=true"
+./mvnw clean compile install
 ./mvnw exec:java -pl kriolos-opos-app "-Dexec.mainClass=com.openbravo.pos.forms.StartPOS"
 ----
 
@@ -112,6 +121,26 @@ docker run --name unicenta -p 3306:3306 -d -e MYSQL_ROOT_PASSWORD=root -e MYSQL_
 .Run MariaDB database for Developer Env
 ----
 docker run --name unicentaMDB -p 3306:3306 -d -e MARIADB_ROOT_PASSWORD=root -eMARIADB_DATABASE=unicenta -eMARIADB_USER=unicenta -eMARIADB_PASSWORD=unicenta  mariadb/server:10.5
+----
+
+== Linux Issue
+
+
+* JAVA_FONTS=/usr/share/fonts/truetype
+* _JAVA_OPTIONS='-Dawt.useSystemAAFontSettings=on'
+* _JAVA_OPTIONS='-Dawt.useSystemAAFontSettings=on -Dswing.aatext=true'
+
+
+.HOW TO RUN APP
+----
+java -Dawt.toolkit.name=WLToolkit -Dsun.java2d.vulkan=True -jar SwingSet2.jar
+----
+
+.OPTIONS
+----
+-Dawt.toolkit.name=WLToolkit
+-Dsun.java2d.vulkan=true
+-Dsun.java2d.vulkan.accelsd=true
 ----
 
 == Reference

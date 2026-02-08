@@ -14,19 +14,18 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package com.openbravo.pos.imports;
 
 import com.openbravo.pos.forms.JPanelView;
 import com.csvreader.CsvReader;
 import com.openbravo.basic.BasicException;
-import com.openbravo.data.loader.Datas;
-import com.openbravo.data.loader.PreparedSentence;
-import com.openbravo.data.loader.SerializerWriteBasicExt;
 import com.openbravo.data.loader.Session;
 import com.openbravo.pos.forms.*;
 import com.openbravo.pos.inventory.ProductStock;
 import com.openbravo.pos.ticket.ProductInfoExt;
+
+import com.openbravo.pos.inventory.InventoryService;
+import com.openbravo.pos.inventory.InventoryServiceImpl;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -35,13 +34,11 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.sql.Connection;
 import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 
 /**
  * User Interface and code for CSV type data import to update Products
@@ -49,7 +46,7 @@ import java.util.logging.Logger;
  */
 public class StockQtyImport extends JPanel implements JPanelView {
 
-    private static final Logger LOGGER = Logger.getLogger(StockQtyImport.class.getName());
+  private static final Logger LOGGER = Logger.getLogger(StockQtyImport.class.getName());
   // the workspace
   private AppProperties m_props;
   private CsvReader products;
@@ -59,6 +56,7 @@ public class StockQtyImport extends JPanel implements JPanelView {
   private Session dbSession;
   private DataLogicSales m_dlSales;
   private DataLogicSystem m_dlSystem;
+  private InventoryService invService;
   private ProductInfoExt prodInfo;
   private ProductStock prodStock;
 
@@ -78,7 +76,7 @@ public class StockQtyImport extends JPanel implements JPanelView {
   private File config_file;
   private String csvFileName;
 
-  //Status area messages
+  // Status area messages
   private Integer progress = 0;
   private int currentRecord;
   private int rowCount = 0;
@@ -90,28 +88,30 @@ public class StockQtyImport extends JPanel implements JPanelView {
    * @param appView AppView
    */
   public StockQtyImport(AppView appView) {
-   
+
     initComponents();
 
     dbSession = appView.getSession();
 
-    // Set db tables        
+    // Set db tables
     m_dlSales = new DataLogicSales();
     m_dlSales.init(dbSession);
     m_dlSystem = new DataLogicSystem();
     m_dlSystem.init(dbSession);
 
-// Get terminal'dbSession current resource property settings
+    invService = new InventoryServiceImpl(m_dlSales, dbSession);
+
+    // Get terminal'dbSession current resource property settings
     Properties m_propsdb = m_dlSystem.getResourceAsProperties(m_props.getHost() + "/properties");
 
-// Get terminal'dbSession set Location property <entry key="location">0</entry>
+    // Get terminal'dbSession set Location property <entry key="location">0</entry>
     m_sInventoryLocation = m_propsdb.getProperty("location");
     try {
       Location = m_dlSystem.findLocationName(m_sInventoryLocation);
     } catch (BasicException ex) {
       LOGGER.log(Level.WARNING, null, ex);
     }
-    
+
     AppProperties props = appView.getProperties();
 
     last_folder = props.getProperty("CSV.last_folder");
@@ -200,7 +200,7 @@ public class StockQtyImport extends JPanel implements JPanelView {
     jFileName.setText(null);
     csvFileName = "";
 
-// Status area
+    // Status area
     progress = 0;
     webPBar.setValue(progress);
     jTextUpdate.setText("");
@@ -242,18 +242,18 @@ public class StockQtyImport extends JPanel implements JPanelView {
       jTextRecords.setText(Long.toString(rowCount));
       products.close();
 
-      JOptionPane.showMessageDialog(null, "File Check "
-                      + CSVFileName,
-              "File read OK",
-              JOptionPane.WARNING_MESSAGE);
+      JOptionPane.showMessageDialog(this, "File Check "
+          + CSVFileName,
+          "File read OK",
+          JOptionPane.WARNING_MESSAGE);
 
       enableForm();
 
     } else {
-      JOptionPane.showMessageDialog(null, "Unable to locate "
-                      + CSVFileName,
-              "File not found",
-              JOptionPane.WARNING_MESSAGE);
+      JOptionPane.showMessageDialog(this, "Unable to locate "
+          + CSVFileName,
+          "File not found",
+          JOptionPane.WARNING_MESSAGE);
     }
   }
 
@@ -271,19 +271,19 @@ public class StockQtyImport extends JPanel implements JPanelView {
       webPBar.setVisible(true);
       jImport.setEnabled(true);
 
-// Read file
+      // Read file
       products = new CsvReader(CSVFileName, ',', Charset.forName("UTF-8"));
       products.setDelimiter(((String) jComboSeparator.getSelectedItem()).charAt(0));
       currentRecord = 0;
 
-// Prime: read the csv record and update to zero matching stockcurrent values
+      // Prime: read the csv record and update to zero matching stockcurrent values
       while (products.readRecord()) {
         recordType = "delete";
         deleteRecord(recordType);
       }
       products.close();
 
-// Work: read the file again and update stockcurrent values          
+      // Work: read the file again and update stockcurrent values
       products = new CsvReader(CSVFileName, ',', Charset.forName("UTF-8"));
       products.setDelimiter(((String) jComboSeparator.getSelectedItem()).charAt(0));
       currentRecord = 0;
@@ -297,19 +297,19 @@ public class StockQtyImport extends JPanel implements JPanelView {
       products.close();
 
     } else {
-      JOptionPane.showMessageDialog(null,
-              "Unable to locate "
-                      + CSVFileName,
-              "File not found",
-              JOptionPane.WARNING_MESSAGE);
+      JOptionPane.showMessageDialog(this,
+          "Unable to locate "
+              + CSVFileName,
+          "File not found",
+          JOptionPane.WARNING_MESSAGE);
     }
 
     jTextUpdate.setText(Integer.toString(qtyUpdates));
 
-    JOptionPane.showMessageDialog(null,
-            "Import Complete",
-            "Imported",
-            JOptionPane.WARNING_MESSAGE);
+    JOptionPane.showMessageDialog(this,
+        "Import Complete",
+        "Imported",
+        JOptionPane.WARNING_MESSAGE);
 
     progress = 100;
     webPBar.setValue(progress);
@@ -379,24 +379,7 @@ public class StockQtyImport extends JPanel implements JPanelView {
    * @throws com.openbravo.basic.BasicException
    */
   public void addStockCurrent(String LocationID, String ProductID, Double Units) throws BasicException {
-
-    Object[] values = new Object[3];
-    values[0] = LocationID;
-    values[1] = ProductID;
-    values[2] = (double) Units;
-
-    PreparedSentence sentence = new PreparedSentence(dbSession,
-            "INSERT INTO stockcurrent ( "
-                    + "LOCATION, PRODUCT, UNITS) VALUES (?, ?, ?)"
-            , new SerializerWriteBasicExt((new Datas[]{
-            Datas.STRING,
-            Datas.STRING,
-            Datas.DOUBLE
-    }),
-            new int[]{0, 1, 2
-            }));
-
-    sentence.exec(values);
+    invService.createStock(LocationID, ProductID, Units);
   }
 
   /**
@@ -408,27 +391,7 @@ public class StockQtyImport extends JPanel implements JPanelView {
    * @throws com.openbravo.basic.BasicException
    */
   public void updateStockCurrent(String LocationID, String ProductID, Double Units) throws BasicException {
-
-    Object[] newValues = new Object[3];
-    newValues[0] = (double) Units;
-    newValues[1] = LocationID;
-    newValues[2] = ProductID;
-
-    PreparedSentence sentence = new PreparedSentence(dbSession,
-            "UPDATE stockcurrent SET "
-                    + "UNITS = ? "
-                    + "WHERE LOCATION = ? "
-                    + "AND PRODUCT = ?"
-            , new SerializerWriteBasicExt((new Datas[]{
-            Datas.DOUBLE,
-            Datas.STRING,
-            Datas.STRING
-    }),
-            new int[]{
-                    0, 1, 2}
-    ));
-
-    sentence.exec(newValues);
+    invService.updateStock(LocationID, ProductID, Units);
   }
 
   /**
@@ -440,27 +403,9 @@ public class StockQtyImport extends JPanel implements JPanelView {
    * @throws com.openbravo.basic.BasicException
    */
   public void deleteStockCurrent(String LocationID, String ProductID, Double Units) throws BasicException {
-
-    Object[] oldValues = new Object[3];
-    oldValues[0] = (double) Units;
-    oldValues[1] = LocationID;
-    oldValues[2] = ProductID;
-
-    PreparedSentence sentence = new PreparedSentence(dbSession,
-            "UPDATE stockcurrent SET "
-                    + "UNITS = ? "
-                    + "WHERE LOCATION = ? "
-                    + "AND PRODUCT = ?"
-            , new SerializerWriteBasicExt((new Datas[]{
-            Datas.DOUBLE,
-            Datas.STRING,
-            Datas.STRING
-    }),
-            new int[]{
-                    0, 1, 2}
-    ));
-
-    sentence.exec(oldValues);
+    // Deleting stock really means updating it to 0 or new value (which is passed as
+    // Units, usually 0)
+    invService.updateStock(LocationID, ProductID, Units);
   }
 
   /**
@@ -472,12 +417,12 @@ public class StockQtyImport extends JPanel implements JPanelView {
   public void CSVStockUpdate(String LocationID, String Code, Double Units) {
 
     Object[] myprod = new Object[6];
-    myprod[0] = UUID.randomUUID().toString();                               // ID string
-    myprod[1] = Integer.toString(currentRecord);                            // Record number
-    myprod[2] = "Qty update";                                               // Error description
-    myprod[3] = Location;                                                   // Location ID
-    myprod[4] = productBarcode;                                             // Product Barcode
-    myprod[5] = newQty;                                                     // Product Quantity
+    myprod[0] = UUID.randomUUID().toString(); // ID string
+    myprod[1] = Integer.toString(currentRecord); // Record number
+    myprod[2] = "Qty update"; // Error description
+    myprod[3] = Location; // Location ID
+    myprod[4] = productBarcode; // Product Barcode
+    myprod[5] = newQty; // Product Quantity
 
     try {
       m_dlSystem.execCSVStockUpdate(myprod);
@@ -542,256 +487,295 @@ public class StockQtyImport extends JPanel implements JPanelView {
    * WARNING: Do NOT modify this code. The content of this method is always
    * regenerated by the Form Editor.
    */
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
-    private void initComponents() {
+  // <editor-fold defaultstate="collapsed" desc="Generated
+  // Code">//GEN-BEGIN:initComponents
+  private void initComponents() {
 
-        jFileChooserPanel = new javax.swing.JPanel();
-        jLabel1 = new javax.swing.JLabel();
-        jFileName = new javax.swing.JTextField();
-        jLabel18 = new javax.swing.JLabel();
-        jbtnFileChoose = new javax.swing.JButton();
-        jComboSeparator = new javax.swing.JComboBox();
-        webPBar = new javax.swing.JProgressBar();
-        jPanel2 = new javax.swing.JPanel();
-        jLabel9 = new javax.swing.JLabel();
-        jTextUpdates = new javax.swing.JLabel();
-        jTextRecords = new javax.swing.JTextField();
-        jTextUpdate = new javax.swing.JTextField();
-        jFileRead = new javax.swing.JButton();
-        m_jLocation = new javax.swing.JLabel();
-        jImport = new javax.swing.JButton();
-        jbtnReset = new javax.swing.JButton();
-        jLabel2 = new javax.swing.JLabel();
+    jFileChooserPanel = new javax.swing.JPanel();
+    jLabel1 = new javax.swing.JLabel();
+    jFileName = new javax.swing.JTextField();
+    jLabel18 = new javax.swing.JLabel();
+    jbtnFileChoose = new javax.swing.JButton();
+    jComboSeparator = new javax.swing.JComboBox();
+    webPBar = new javax.swing.JProgressBar();
+    jPanel2 = new javax.swing.JPanel();
+    jLabel9 = new javax.swing.JLabel();
+    jTextUpdates = new javax.swing.JLabel();
+    jTextRecords = new javax.swing.JTextField();
+    jTextUpdate = new javax.swing.JTextField();
+    jFileRead = new javax.swing.JButton();
+    m_jLocation = new javax.swing.JLabel();
+    jImport = new javax.swing.JButton();
+    jbtnReset = new javax.swing.JButton();
+    jLabel2 = new javax.swing.JLabel();
 
-        setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
-        setMaximumSize(new java.awt.Dimension(700, 500));
-        setMinimumSize(new java.awt.Dimension(700, 450));
-        setOpaque(false);
-        setPreferredSize(new java.awt.Dimension(700, 500));
+    setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
+    setMaximumSize(new java.awt.Dimension(700, 500));
+    setMinimumSize(new java.awt.Dimension(700, 450));
+    setOpaque(false);
+    setPreferredSize(new java.awt.Dimension(700, 500));
 
-        jLabel1.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
-        java.util.ResourceBundle bundle = java.util.ResourceBundle.getBundle("pos_messages"); // NOI18N
-        jLabel1.setText(bundle.getString("label.csvfile")); // NOI18N
-        jLabel1.setMaximumSize(new java.awt.Dimension(23, 45));
-        jLabel1.setPreferredSize(new java.awt.Dimension(100, 45));
+    jLabel1.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
+    java.util.ResourceBundle bundle = java.util.ResourceBundle.getBundle("pos_messages"); // NOI18N
+    jLabel1.setText(bundle.getString("label.csvfile")); // NOI18N
+    jLabel1.setMaximumSize(new java.awt.Dimension(23, 45));
+    jLabel1.setPreferredSize(new java.awt.Dimension(100, 45));
 
-        jFileName.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
-        jFileName.setPreferredSize(new java.awt.Dimension(300, 45));
-        jFileName.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jFileNameActionPerformed(evt);
-            }
-        });
+    jFileName.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
+    jFileName.setPreferredSize(new java.awt.Dimension(300, 45));
+    jFileName.addActionListener(new java.awt.event.ActionListener() {
+      public void actionPerformed(java.awt.event.ActionEvent evt) {
+        jFileNameActionPerformed(evt);
+      }
+    });
 
-        jLabel18.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
-        jLabel18.setText(bundle.getString("label.csvdelimit")); // NOI18N
-        jLabel18.setPreferredSize(new java.awt.Dimension(100, 30));
+    jLabel18.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
+    jLabel18.setText(bundle.getString("label.csvdelimit")); // NOI18N
+    jLabel18.setPreferredSize(new java.awt.Dimension(100, 30));
 
-        jbtnFileChoose.setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/openbravo/images/fileopen.png"))); // NOI18N
-        jbtnFileChoose.setMaximumSize(new java.awt.Dimension(64, 32));
-        jbtnFileChoose.setMinimumSize(new java.awt.Dimension(64, 32));
-        jbtnFileChoose.setPreferredSize(new java.awt.Dimension(80, 45));
-        jbtnFileChoose.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jbtnFileChooseActionPerformed(evt);
-            }
-        });
+    jbtnFileChoose.setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/openbravo/images/fileopen.png"))); // NOI18N
+    jbtnFileChoose.setMaximumSize(new java.awt.Dimension(64, 32));
+    jbtnFileChoose.setMinimumSize(new java.awt.Dimension(64, 32));
+    jbtnFileChoose.setPreferredSize(new java.awt.Dimension(80, 45));
+    jbtnFileChoose.addActionListener(new java.awt.event.ActionListener() {
+      public void actionPerformed(java.awt.event.ActionEvent evt) {
+        jbtnFileChooseActionPerformed(evt);
+      }
+    });
 
-        jComboSeparator.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
-        jComboSeparator.setMaximumSize(new java.awt.Dimension(50, 45));
-        jComboSeparator.setPreferredSize(new java.awt.Dimension(50, 45));
+    jComboSeparator.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
+    jComboSeparator.setMaximumSize(new java.awt.Dimension(50, 45));
+    jComboSeparator.setPreferredSize(new java.awt.Dimension(50, 45));
 
-        webPBar.setFont(new java.awt.Font("Arial", 0, 13)); // NOI18N
-        webPBar.setMaximumSize(new java.awt.Dimension(240, 45));
-        webPBar.setMinimumSize(new java.awt.Dimension(10, 45));
-        webPBar.setPreferredSize(new java.awt.Dimension(240, 45));
+    webPBar.setFont(new java.awt.Font("Arial", 0, 13)); // NOI18N
+    webPBar.setMaximumSize(new java.awt.Dimension(240, 45));
+    webPBar.setMinimumSize(new java.awt.Dimension(10, 45));
+    webPBar.setPreferredSize(new java.awt.Dimension(240, 45));
 
-        jPanel2.setBorder(javax.swing.BorderFactory.createTitledBorder(new javax.swing.border.LineBorder(new java.awt.Color(153, 153, 153), 1, true), bundle.getString("title.CSVImport"), javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Arial", 1, 14), new java.awt.Color(102, 102, 102))); // NOI18N
+    jPanel2.setBorder(javax.swing.BorderFactory.createTitledBorder(
+        new javax.swing.border.LineBorder(new java.awt.Color(153, 153, 153), 1, true),
+        bundle.getString("title.CSVImport"), javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION,
+        javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Arial", 1, 14),
+        new java.awt.Color(102, 102, 102))); // NOI18N
 
-        jLabel9.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
-        jLabel9.setText(bundle.getString("label.csvrecordsfound")); // NOI18N
-        jLabel9.setPreferredSize(new java.awt.Dimension(150, 30));
+    jLabel9.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
+    jLabel9.setText(bundle.getString("label.csvrecordsfound")); // NOI18N
+    jLabel9.setPreferredSize(new java.awt.Dimension(150, 30));
 
-        jTextUpdates.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
-        jTextUpdates.setText(bundle.getString("label.csvchanged")); // NOI18N
-        jTextUpdates.setPreferredSize(new java.awt.Dimension(150, 30));
+    jTextUpdates.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
+    jTextUpdates.setText(bundle.getString("label.csvchanged")); // NOI18N
+    jTextUpdates.setPreferredSize(new java.awt.Dimension(150, 30));
 
-        jTextRecords.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
-        jTextRecords.setForeground(new java.awt.Color(102, 102, 102));
-        jTextRecords.setHorizontalAlignment(javax.swing.JTextField.RIGHT);
-        jTextRecords.setBorder(null);
-        jTextRecords.setDisabledTextColor(new java.awt.Color(0, 0, 0));
-        jTextRecords.setEnabled(false);
-        jTextRecords.setPreferredSize(new java.awt.Dimension(100, 30));
+    jTextRecords.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
+    jTextRecords.setForeground(new java.awt.Color(102, 102, 102));
+    jTextRecords.setHorizontalAlignment(javax.swing.JTextField.RIGHT);
+    jTextRecords.setBorder(null);
+    jTextRecords.setDisabledTextColor(new java.awt.Color(0, 0, 0));
+    jTextRecords.setEnabled(false);
+    jTextRecords.setPreferredSize(new java.awt.Dimension(100, 30));
 
-        jTextUpdate.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
-        jTextUpdate.setForeground(new java.awt.Color(102, 102, 102));
-        jTextUpdate.setHorizontalAlignment(javax.swing.JTextField.RIGHT);
-        jTextUpdate.setBorder(null);
-        jTextUpdate.setDisabledTextColor(new java.awt.Color(0, 0, 0));
-        jTextUpdate.setEnabled(false);
-        jTextUpdate.setPreferredSize(new java.awt.Dimension(100, 30));
+    jTextUpdate.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
+    jTextUpdate.setForeground(new java.awt.Color(102, 102, 102));
+    jTextUpdate.setHorizontalAlignment(javax.swing.JTextField.RIGHT);
+    jTextUpdate.setBorder(null);
+    jTextUpdate.setDisabledTextColor(new java.awt.Color(0, 0, 0));
+    jTextUpdate.setEnabled(false);
+    jTextUpdate.setPreferredSize(new java.awt.Dimension(100, 30));
 
-        javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
-        jPanel2.setLayout(jPanel2Layout);
-        jPanel2Layout.setHorizontalGroup(
-            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+    javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
+    jPanel2.setLayout(jPanel2Layout);
+    jPanel2Layout.setHorizontalGroup(
+        jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel2Layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel2Layout.createSequentialGroup()
-                        .addComponent(jLabel9, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(jLabel9, javax.swing.GroupLayout.PREFERRED_SIZE,
+                            javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jTextRecords, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addComponent(jTextRecords, javax.swing.GroupLayout.PREFERRED_SIZE,
+                            javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addGroup(jPanel2Layout.createSequentialGroup()
-                        .addComponent(jTextUpdates, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(jTextUpdates, javax.swing.GroupLayout.DEFAULT_SIZE,
+                            javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jTextUpdate, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
-        jPanel2Layout.setVerticalGroup(
-            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addComponent(jTextUpdate, javax.swing.GroupLayout.PREFERRED_SIZE,
+                            javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)));
+    jPanel2Layout.setVerticalGroup(
+        jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel2Layout.createSequentialGroup()
                 .addGap(0, 0, 0)
                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel9, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jTextRecords, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jLabel9, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE,
+                        javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jTextRecords, javax.swing.GroupLayout.PREFERRED_SIZE,
+                        javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jTextUpdates, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jTextUpdate, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap())
-        );
+                    .addComponent(jTextUpdates, javax.swing.GroupLayout.PREFERRED_SIZE,
+                        javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jTextUpdate, javax.swing.GroupLayout.PREFERRED_SIZE,
+                        javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap()));
 
-        javax.swing.GroupLayout jFileChooserPanelLayout = new javax.swing.GroupLayout(jFileChooserPanel);
-        jFileChooserPanel.setLayout(jFileChooserPanelLayout);
-        jFileChooserPanelLayout.setHorizontalGroup(
-            jFileChooserPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+    javax.swing.GroupLayout jFileChooserPanelLayout = new javax.swing.GroupLayout(jFileChooserPanel);
+    jFileChooserPanel.setLayout(jFileChooserPanelLayout);
+    jFileChooserPanelLayout.setHorizontalGroup(
+        jFileChooserPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jFileChooserPanelLayout.createSequentialGroup()
                 .addGroup(jFileChooserPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jFileChooserPanelLayout.createSequentialGroup()
-                        .addComponent(jLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(jLabel1, javax.swing.GroupLayout.DEFAULT_SIZE,
+                            javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jFileName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(jFileName, javax.swing.GroupLayout.PREFERRED_SIZE,
+                            javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jbtnFileChoose, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jFileChooserPanelLayout.createSequentialGroup()
-                        .addComponent(jLabel18, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jComboSeparator, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addGroup(jFileChooserPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addComponent(jPanel2, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(webPBar, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
-                .addContainerGap())
-        );
-        jFileChooserPanelLayout.setVerticalGroup(
-            jFileChooserPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addComponent(jbtnFileChoose, javax.swing.GroupLayout.PREFERRED_SIZE,
+                            javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING,
+                        jFileChooserPanelLayout.createSequentialGroup()
+                            .addComponent(jLabel18, javax.swing.GroupLayout.PREFERRED_SIZE,
+                                javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                            .addComponent(jComboSeparator, javax.swing.GroupLayout.PREFERRED_SIZE,
+                                javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED,
+                                javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addGroup(jFileChooserPanelLayout
+                                .createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                .addComponent(jPanel2, javax.swing.GroupLayout.Alignment.TRAILING,
+                                    javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE,
+                                    Short.MAX_VALUE)
+                                .addComponent(webPBar, javax.swing.GroupLayout.Alignment.TRAILING,
+                                    javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE,
+                                    Short.MAX_VALUE))))
+                .addContainerGap()));
+    jFileChooserPanelLayout.setVerticalGroup(
+        jFileChooserPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jFileChooserPanelLayout.createSequentialGroup()
                 .addGroup(jFileChooserPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jbtnFileChoose, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jbtnFileChoose, javax.swing.GroupLayout.Alignment.TRAILING,
+                        javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE,
+                        javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addGroup(jFileChooserPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                        .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addComponent(jFileName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE,
+                            javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(jFileName, javax.swing.GroupLayout.PREFERRED_SIZE,
+                            javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jFileChooserPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jComboSeparator, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jComboSeparator, javax.swing.GroupLayout.DEFAULT_SIZE,
+                        javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addGroup(jFileChooserPanelLayout.createSequentialGroup()
                         .addGap(0, 0, Short.MAX_VALUE)
-                        .addComponent(jLabel18, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(jLabel18, javax.swing.GroupLayout.PREFERRED_SIZE,
+                            javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(2, 2, 2))
                     .addGroup(jFileChooserPanelLayout.createSequentialGroup()
-                        .addComponent(webPBar, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(webPBar, javax.swing.GroupLayout.PREFERRED_SIZE,
+                            javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(0, 0, Short.MAX_VALUE)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap())
-        );
+                .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE,
+                    javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap()));
 
-        jFileRead.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
-        jFileRead.setText(bundle.getString("label.csvread")); // NOI18N
-        jFileRead.setEnabled(false);
-        jFileRead.setPreferredSize(new java.awt.Dimension(85, 45));
-        jFileRead.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jFileReadActionPerformed(evt);
-            }
-        });
+    jFileRead.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
+    jFileRead.setText(bundle.getString("label.csvread")); // NOI18N
+    jFileRead.setEnabled(false);
+    jFileRead.setPreferredSize(new java.awt.Dimension(85, 45));
+    jFileRead.addActionListener(new java.awt.event.ActionListener() {
+      public void actionPerformed(java.awt.event.ActionEvent evt) {
+        jFileReadActionPerformed(evt);
+      }
+    });
 
-        m_jLocation.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
-        m_jLocation.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        m_jLocation.setText(bundle.getString("label.location")); // NOI18N
-        m_jLocation.setPreferredSize(new java.awt.Dimension(100, 45));
+    m_jLocation.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
+    m_jLocation.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+    m_jLocation.setText(bundle.getString("label.location")); // NOI18N
+    m_jLocation.setPreferredSize(new java.awt.Dimension(100, 45));
 
-        jImport.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
-        jImport.setText(bundle.getString("label.csvimpostbtn")); // NOI18N
-        jImport.setEnabled(false);
-        jImport.setPreferredSize(new java.awt.Dimension(85, 45));
-        jImport.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jImportActionPerformed(evt);
-            }
-        });
+    jImport.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
+    jImport.setText(bundle.getString("label.csvimpostbtn")); // NOI18N
+    jImport.setEnabled(false);
+    jImport.setPreferredSize(new java.awt.Dimension(85, 45));
+    jImport.addActionListener(new java.awt.event.ActionListener() {
+      public void actionPerformed(java.awt.event.ActionEvent evt) {
+        jImportActionPerformed(evt);
+      }
+    });
 
-        jbtnReset.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
-        jbtnReset.setText(bundle.getString("button.reset")); // NOI18N
-        jbtnReset.setPreferredSize(new java.awt.Dimension(85, 45));
-        jbtnReset.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jbtnResetActionPerformed(evt);
-            }
-        });
+    jbtnReset.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
+    jbtnReset.setText(bundle.getString("button.reset")); // NOI18N
+    jbtnReset.setPreferredSize(new java.awt.Dimension(85, 45));
+    jbtnReset.addActionListener(new java.awt.event.ActionListener() {
+      public void actionPerformed(java.awt.event.ActionEvent evt) {
+        jbtnResetActionPerformed(evt);
+      }
+    });
 
-        jLabel2.setBackground(new java.awt.Color(255, 255, 255));
-        jLabel2.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
-        jLabel2.setText(bundle.getString("label.csvnotice")); // NOI18N
-        jLabel2.setVerticalAlignment(javax.swing.SwingConstants.TOP);
-        jLabel2.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
-        jLabel2.setMaximumSize(new java.awt.Dimension(680, 120));
-        jLabel2.setOpaque(true);
-        jLabel2.setPreferredSize(new java.awt.Dimension(680, 120));
+    jLabel2.setBackground(new java.awt.Color(255, 255, 255));
+    jLabel2.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
+    jLabel2.setText(bundle.getString("label.csvnotice")); // NOI18N
+    jLabel2.setVerticalAlignment(javax.swing.SwingConstants.TOP);
+    jLabel2.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
+    jLabel2.setMaximumSize(new java.awt.Dimension(680, 120));
+    jLabel2.setOpaque(true);
+    jLabel2.setPreferredSize(new java.awt.Dimension(680, 120));
 
-        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
-        this.setLayout(layout);
-        layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+    javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
+    this.setLayout(layout);
+    layout.setHorizontalGroup(
+        layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
                         .addContainerGap()
-                        .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE,
+                            javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addGroup(layout.createSequentialGroup()
                         .addGap(10, 10, 10)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addComponent(m_jLocation, javax.swing.GroupLayout.PREFERRED_SIZE, 295, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jFileChooserPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(m_jLocation, javax.swing.GroupLayout.PREFERRED_SIZE, 295,
+                                javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jFileChooserPanel, javax.swing.GroupLayout.PREFERRED_SIZE,
+                                javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addGroup(layout.createSequentialGroup()
-                                .addComponent(jFileRead, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addComponent(jFileRead, javax.swing.GroupLayout.PREFERRED_SIZE,
+                                    javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(jImport, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addComponent(jImport, javax.swing.GroupLayout.PREFERRED_SIZE,
+                                    javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(jbtnReset, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))))
-                .addGap(378, 378, 378))
-        );
-        layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                .addComponent(jbtnReset, javax.swing.GroupLayout.PREFERRED_SIZE,
+                                    javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))))
+                .addGap(378, 378, 378)));
+    layout.setVerticalGroup(
+        layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addGap(19, 19, 19)
-                .addComponent(jFileChooserPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(jFileChooserPanel, javax.swing.GroupLayout.PREFERRED_SIZE,
+                    javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(m_jLocation, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(m_jLocation, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE,
+                    javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
-                    .addComponent(jFileRead, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jImport, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jbtnReset, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jFileRead, javax.swing.GroupLayout.PREFERRED_SIZE,
+                        javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jImport, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE,
+                        javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jbtnReset, javax.swing.GroupLayout.PREFERRED_SIZE,
+                        javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
-                .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 133, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(14, Short.MAX_VALUE))
-        );
-    }// </editor-fold>//GEN-END:initComponents
+                .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 133,
+                    javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(14, Short.MAX_VALUE)));
+  }// </editor-fold>//GEN-END:initComponents
 
-  private void jFileReadActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jFileReadActionPerformed
+  private void jFileReadActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_jFileReadActionPerformed
     try {
       checkFile(jFileName.getText());
       webPBar.setString("Source file OK");
@@ -801,14 +785,14 @@ public class StockQtyImport extends JPanel implements JPanelView {
       webPBar.setString("Source file error!");
       m_jLocation.setEnabled(false);
     }
-  }//GEN-LAST:event_jFileReadActionPerformed
+  }// GEN-LAST:event_jFileReadActionPerformed
 
-  private void jFileNameActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jFileNameActionPerformed
+  private void jFileNameActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_jFileNameActionPerformed
     jImport.setEnabled(false);
     jFileRead.setEnabled(true);
-  }//GEN-LAST:event_jFileNameActionPerformed
+  }// GEN-LAST:event_jFileNameActionPerformed
 
-  private void jbtnFileChooseActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jbtnFileChooseActionPerformed
+  private void jbtnFileChooseActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_jbtnFileChooseActionPerformed
     resetForm();
     setWorker();
 
@@ -842,15 +826,15 @@ public class StockQtyImport extends JPanel implements JPanelView {
       jFileName.setText(csvFileName);
       jFileRead.setEnabled(true);
     }
-  }//GEN-LAST:event_jbtnFileChooseActionPerformed
+  }// GEN-LAST:event_jbtnFileChooseActionPerformed
 
-  private void jbtnResetActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jbtnResetActionPerformed
+  private void jbtnResetActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_jbtnResetActionPerformed
     resetForm();
     progress = 0;
     webPBar.setString("Waiting...");
-  }//GEN-LAST:event_jbtnResetActionPerformed
+  }// GEN-LAST:event_jbtnResetActionPerformed
 
-  private void jImportActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jImportActionPerformed
+  private void jImportActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_jImportActionPerformed
 
     jFileRead.setEnabled(false);
     jImport.setEnabled(false);
@@ -858,25 +842,25 @@ public class StockQtyImport extends JPanel implements JPanelView {
     workProcess work = new workProcess();
     Thread thread2 = new Thread(work);
     thread2.start();
-  }//GEN-LAST:event_jImportActionPerformed
+  }// GEN-LAST:event_jImportActionPerformed
 
-    // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JComboBox jComboSeparator;
-    private javax.swing.JPanel jFileChooserPanel;
-    private javax.swing.JTextField jFileName;
-    private javax.swing.JButton jFileRead;
-    private javax.swing.JButton jImport;
-    private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel18;
-    private javax.swing.JLabel jLabel2;
-    private javax.swing.JLabel jLabel9;
-    private javax.swing.JPanel jPanel2;
-    private javax.swing.JTextField jTextRecords;
-    private javax.swing.JTextField jTextUpdate;
-    private javax.swing.JLabel jTextUpdates;
-    private javax.swing.JButton jbtnFileChoose;
-    private javax.swing.JButton jbtnReset;
-    private javax.swing.JLabel m_jLocation;
-    private javax.swing.JProgressBar webPBar;
-    // End of variables declaration//GEN-END:variables
+  // Variables declaration - do not modify//GEN-BEGIN:variables
+  private javax.swing.JComboBox jComboSeparator;
+  private javax.swing.JPanel jFileChooserPanel;
+  private javax.swing.JTextField jFileName;
+  private javax.swing.JButton jFileRead;
+  private javax.swing.JButton jImport;
+  private javax.swing.JLabel jLabel1;
+  private javax.swing.JLabel jLabel18;
+  private javax.swing.JLabel jLabel2;
+  private javax.swing.JLabel jLabel9;
+  private javax.swing.JPanel jPanel2;
+  private javax.swing.JTextField jTextRecords;
+  private javax.swing.JTextField jTextUpdate;
+  private javax.swing.JLabel jTextUpdates;
+  private javax.swing.JButton jbtnFileChoose;
+  private javax.swing.JButton jbtnReset;
+  private javax.swing.JLabel m_jLocation;
+  private javax.swing.JProgressBar webPBar;
+  // End of variables declaration//GEN-END:variables
 }

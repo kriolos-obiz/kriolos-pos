@@ -29,6 +29,8 @@ import com.openbravo.data.gui.MessageInf;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppProperties;
 import com.openbravo.pos.forms.AppView;
+import com.openbravo.pos.forms.BeanFactoryApp;
+import com.openbravo.pos.forms.BeanFactoryException;
 import com.openbravo.pos.forms.DataLogicSales;
 import com.openbravo.pos.forms.DataLogicSystem;
 import com.openbravo.pos.printer.DeviceTicket;
@@ -41,6 +43,8 @@ import com.openbravo.pos.ticket.TicketInfo;
 import com.openbravo.pos.ticket.TicketLineInfo;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import com.openbravo.pos.sales.SalesService;
+import com.openbravo.pos.sales.SalesServiceImpl;
 
 /**
  *
@@ -53,7 +57,8 @@ public class JTicketsBagTicket extends JTicketsBag {
     protected DataLogicCustomers dlCustomers = null;
     private final DataLogicSales m_dlSales;
 
-    private TaxesLogic taxeslogic;
+    private SalesService salesService;
+    // private TaxesLogic taxeslogic;
     private ListKeyed taxcollection;
 
     private final DeviceTicket previewDeviceTicket;
@@ -99,9 +104,9 @@ public class JTicketsBagTicket extends JTicketsBag {
         m_jPanelTicket.add(previewDeviceTicket.getDevicePrinter("1").getPrinterComponent(), BorderLayout.CENTER);
 
         try {
-            taxeslogic = new TaxesLogic(m_dlSales.getTaxList().list());
-        }
-        catch (BasicException ex) {
+            // taxeslogic = new TaxesLogic(m_dlSales.getTaxList().list());
+            salesService = new SalesServiceImpl(new TaxesLogic(m_dlSales.getTaxList().list()));
+        } catch (BasicException ex) {
             LOGGER.log(Level.WARNING, null, ex);
         }
     }
@@ -153,10 +158,10 @@ public class JTicketsBagTicket extends JTicketsBag {
             // Para editar borramos el ticket anterior
             try {
                 m_dlSales.deleteTicket(m_ticketCopy, m_App.getInventoryLocation());
-            }
-            catch (BasicException eData) {
+            } catch (BasicException eData) {
                 LOGGER.log(Level.WARNING, null, eData);
-                MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE, AppLocal.getIntString("message.nosaveticket"), eData);
+                MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE, AppLocal.getIntString("message.nosaveticket"),
+                        eData);
                 msg.show(this);
             }
         }
@@ -227,7 +232,7 @@ public class JTicketsBagTicket extends JTicketsBag {
                 m_ticket = ticket;
                 m_ticketCopy = null;
                 if (m_ticket.getTicketStatus() > 0) {
-//                    if(m_ticket.getTicketType()== 1 || m_ticket.getTicketStatus()> 0) {
+                    // if(m_ticket.getTicketType()== 1 || m_ticket.getTicketStatus()> 0) {
                     JFrame frame = new JFrame();
                     JOptionPane.showMessageDialog(frame,
                             AppLocal.getIntString("message.ticketrefunded"),
@@ -246,21 +251,20 @@ public class JTicketsBagTicket extends JTicketsBag {
                     }
                 }
                 try {
-                    taxeslogic.calculateTaxes(m_ticket);
-                    //TicketTaxInfo[] taxlist = m_ticket.getTaxLines();
-                }
-                catch (TaxesException ex) {
+                    salesService.calculateTaxes(m_ticket);
+                    // TicketTaxInfo[] taxlist = m_ticket.getTaxLines();
+                } catch (TaxesException ex) {
                     LOGGER.log(Level.WARNING, "Exception calculate taxes", ex);
                 }
 
                 printTicket();
             }
 
-        }
-        catch (BasicException e) {
+        } catch (BasicException e) {
 
             LOGGER.log(Level.WARNING, null, e);
-            MessageInf msg = new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.cannotloadticket"), e);
+            MessageInf msg = new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.cannotloadticket"),
+                    e);
             msg.show(this);
         }
 
@@ -273,11 +277,10 @@ public class JTicketsBagTicket extends JTicketsBag {
         try {
             m_jEdit.setEnabled(
                     m_ticket != null
-                    && (m_ticket.getTicketType() == TicketInfo.RECEIPT_NORMAL
-                    && m_ticket.getTicketStatus() == 0)
-                    && m_dlSystem.isCashActive(m_ticket.getActiveCash()));
-        }
-        catch (BasicException e) {
+                            && (m_ticket.getTicketType() == TicketInfo.RECEIPT_NORMAL
+                                    && m_ticket.getTicketStatus() == 0)
+                            && m_dlSystem.isCashActive(m_ticket.getActiveCash()));
+        } catch (BasicException e) {
 
             LOGGER.log(Level.WARNING, null, e);
             m_jEdit.setEnabled(false);
@@ -286,7 +289,7 @@ public class JTicketsBagTicket extends JTicketsBag {
 
         if (m_ticket != null
                 && (m_ticket.getTicketType() == TicketInfo.RECEIPT_NORMAL
-                && m_ticket.getTicketStatus() == 0)) {
+                        && m_ticket.getTicketStatus() == 0)) {
             m_jRefund.setEnabled(true);
         }
 
@@ -311,11 +314,12 @@ public class JTicketsBagTicket extends JTicketsBag {
                     ScriptEngine script = ScriptFactory.getScriptEngine(ScriptFactory.VELOCITY);
                     script.put("ticket", m_ticket);
                     script.put("taxes", m_ticket.getTaxLines());
-                    previewTicketParser.printTicket(script.eval(m_dlSystem.getResourceAsXML("Printer.TicketPreview")).toString());
-                }
-                catch (ScriptException | TicketPrinterException e) {
+                    previewTicketParser
+                            .printTicket(script.eval(m_dlSystem.getResourceAsXML("Printer.TicketPreview")).toString());
+                } catch (ScriptException | TicketPrinterException e) {
                     LOGGER.log(Level.WARNING, null, e);
-                    MessageInf msg = new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.cannotprintticket"), e);
+                    MessageInf msg = new MessageInf(MessageInf.SGN_WARNING,
+                            AppLocal.getIntString("message.cannotprintticket"), e);
                     msg.show(this);
                 }
             } else {
@@ -323,11 +327,12 @@ public class JTicketsBagTicket extends JTicketsBag {
                     ScriptEngine script = ScriptFactory.getScriptEngine(ScriptFactory.VELOCITY);
                     script.put("ticket", m_ticket);
                     script.put("taxes", m_ticket.getTaxLines());
-                    systemTicketParser.printTicket(script.eval(m_dlSystem.getResourceAsXML("Printer.TicketPreview")).toString());
-                }
-                catch (ScriptException | TicketPrinterException e) {
+                    systemTicketParser
+                            .printTicket(script.eval(m_dlSystem.getResourceAsXML("Printer.TicketPreview")).toString());
+                } catch (ScriptException | TicketPrinterException e) {
                     LOGGER.log(Level.WARNING, null, e);
-                    JMessageDialog.showMessage(this, new MessageInf(MessageInf.SGN_NOTICE, AppLocal.getIntString("message.cannotprintticket"), e));
+                    JMessageDialog.showMessage(this, new MessageInf(MessageInf.SGN_NOTICE,
+                            AppLocal.getIntString("message.cannotprintticket"), e));
                 }
             }
         }
@@ -338,7 +343,8 @@ public class JTicketsBagTicket extends JTicketsBag {
      * WARNING: Do NOT modify this code. The content of this method is always
      * regenerated by the Form Editor.
      */
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
+    // <editor-fold defaultstate="collapsed" desc="Generated
+    // Code">//GEN-BEGIN:initComponents
     private void initComponents() {
         java.awt.GridBagConstraints gridBagConstraints;
 
@@ -366,7 +372,10 @@ public class JTicketsBagTicket extends JTicketsBag {
 
         m_jTicketId.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
         m_jTicketId.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        m_jTicketId.setBorder(javax.swing.BorderFactory.createCompoundBorder(javax.swing.BorderFactory.createLineBorder(javax.swing.UIManager.getDefaults().getColor("Button.darkShadow")), javax.swing.BorderFactory.createEmptyBorder(1, 4, 1, 4)));
+        m_jTicketId.setBorder(javax.swing.BorderFactory.createCompoundBorder(
+                javax.swing.BorderFactory
+                        .createLineBorder(javax.swing.UIManager.getDefaults().getColor("Button.darkShadow")),
+                javax.swing.BorderFactory.createEmptyBorder(1, 4, 1, 4)));
         m_jTicketId.setOpaque(true);
         m_jTicketId.setPreferredSize(new java.awt.Dimension(200, 30));
         m_jTicketId.setRequestFocusEnabled(false);
@@ -438,32 +447,48 @@ public class JTicketsBagTicket extends JTicketsBag {
         javax.swing.GroupLayout m_jButtonsLayout = new javax.swing.GroupLayout(m_jButtons);
         m_jButtons.setLayout(m_jButtonsLayout);
         m_jButtonsLayout.setHorizontalGroup(
-            m_jButtonsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(m_jButtonsLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(m_jTicketId, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 12, Short.MAX_VALUE)
-                .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(5, 5, 5)
-                .addComponent(m_jEdit, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(5, 5, 5)
-                .addComponent(m_jRefund, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(5, 5, 5)
-                .addComponent(m_jPrint, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-        );
+                m_jButtonsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(m_jButtonsLayout.createSequentialGroup()
+                                .addContainerGap()
+                                .addComponent(m_jTicketId, javax.swing.GroupLayout.PREFERRED_SIZE,
+                                        javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 12,
+                                        Short.MAX_VALUE)
+                                .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE,
+                                        javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(5, 5, 5)
+                                .addComponent(m_jEdit, javax.swing.GroupLayout.PREFERRED_SIZE,
+                                        javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(5, 5, 5)
+                                .addComponent(m_jRefund, javax.swing.GroupLayout.PREFERRED_SIZE,
+                                        javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(5, 5, 5)
+                                .addComponent(m_jPrint, javax.swing.GroupLayout.PREFERRED_SIZE,
+                                        javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)));
         m_jButtonsLayout.setVerticalGroup(
-            m_jButtonsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-            .addGroup(m_jButtonsLayout.createSequentialGroup()
-                .addGap(5, 5, 5)
-                .addGroup(m_jButtonsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(m_jEdit, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(m_jRefund, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(m_jPrint, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, m_jButtonsLayout.createSequentialGroup()
-                        .addComponent(m_jTicketId, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addContainerGap())))
-        );
+                m_jButtonsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                        .addGroup(m_jButtonsLayout.createSequentialGroup()
+                                .addGap(5, 5, 5)
+                                .addGroup(m_jButtonsLayout
+                                        .createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                        .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE,
+                                                javax.swing.GroupLayout.DEFAULT_SIZE,
+                                                javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(m_jEdit, javax.swing.GroupLayout.PREFERRED_SIZE,
+                                                javax.swing.GroupLayout.DEFAULT_SIZE,
+                                                javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(m_jRefund, javax.swing.GroupLayout.PREFERRED_SIZE,
+                                                javax.swing.GroupLayout.DEFAULT_SIZE,
+                                                javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(m_jPrint, javax.swing.GroupLayout.PREFERRED_SIZE,
+                                                javax.swing.GroupLayout.DEFAULT_SIZE,
+                                                javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, m_jButtonsLayout
+                                                .createSequentialGroup()
+                                                .addComponent(m_jTicketId, javax.swing.GroupLayout.PREFERRED_SIZE,
+                                                        javax.swing.GroupLayout.DEFAULT_SIZE,
+                                                        javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                .addContainerGap()))));
 
         m_jOptions.add(m_jButtons);
 
@@ -548,24 +573,24 @@ public class JTicketsBagTicket extends JTicketsBag {
         add(jPanel3, java.awt.BorderLayout.EAST);
     }// </editor-fold>//GEN-END:initComponents
 
-    private void m_jEditActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_m_jEditActionPerformed
+    private void m_jEditActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_m_jEditActionPerformed
 
         m_ticketCopy = m_ticket;
         m_TicketsBagTicketBag.showEdit();
         m_panelticketedit.showCatalog();
-// Indicate that this a ticket in edit mode      
+        // Indicate that this a ticket in edit mode
         m_ticketCopy.setOldTicket(true);
         m_panelticketedit.setActiveTicket(m_ticket.copyTicket(), null);
 
-    }//GEN-LAST:event_m_jEditActionPerformed
+    }// GEN-LAST:event_m_jEditActionPerformed
 
-    private void m_jPrintActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_m_jPrintActionPerformed
+    private void m_jPrintActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_m_jPrintActionPerformed
 
         printTicket(true);
 
-    }//GEN-LAST:event_m_jPrintActionPerformed
+    }// GEN-LAST:event_m_jPrintActionPerformed
 
-    private void m_jRefundActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_m_jRefundActionPerformed
+    private void m_jRefundActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_m_jRefundActionPerformed
 
         java.util.List aRefundLines = new ArrayList();
 
@@ -585,31 +610,31 @@ public class JTicketsBagTicket extends JTicketsBag {
         refundticket.setPayments(m_ticket.getPayments());
         refundticket.setOldTicket(true);
         m_panelticketedit.setActiveTicket(refundticket, null);
-    }//GEN-LAST:event_m_jRefundActionPerformed
+    }// GEN-LAST:event_m_jRefundActionPerformed
 
-    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-
-        readTicket(m_jTicketEditor.getValue(), jrbSales.isSelected() ? 0 : 1);
-
-    }//GEN-LAST:event_jButton1ActionPerformed
-
-    private void m_jKeysActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_m_jKeysActionPerformed
+    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_jButton1ActionPerformed
 
         readTicket(m_jTicketEditor.getValue(), jrbSales.isSelected() ? 0 : 1);
 
-    }//GEN-LAST:event_m_jKeysActionPerformed
+    }// GEN-LAST:event_jButton1ActionPerformed
 
-private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
-    JTicketsFinder finder = JTicketsFinder.getReceiptFinder(this, m_dlSales, dlCustomers);
-    finder.setVisible(true);
-    FindTicketsInfo selectedTicket = finder.getSelectedCustomer();
-    if (selectedTicket == null) {
-        m_jTicketEditor.reset();
-        m_jTicketEditor.activate();
-    } else {
-        readTicket(selectedTicket.getTicketId(), selectedTicket.getTicketType());
-    }
-}//GEN-LAST:event_jButton2ActionPerformed
+    private void m_jKeysActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_m_jKeysActionPerformed
+
+        readTicket(m_jTicketEditor.getValue(), jrbSales.isSelected() ? 0 : 1);
+
+    }// GEN-LAST:event_m_jKeysActionPerformed
+
+    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_jButton2ActionPerformed
+        JTicketsFinder finder = JTicketsFinder.getReceiptFinder(this, m_dlSales, dlCustomers);
+        finder.setVisible(true);
+        FindTicketsInfo selectedTicket = finder.getSelectedCustomer();
+        if (selectedTicket == null) {
+            m_jTicketEditor.reset();
+            m_jTicketEditor.activate();
+        } else {
+            readTicket(selectedTicket.getTicketId(), selectedTicket.getTicketType());
+        }
+    }// GEN-LAST:event_jButton2ActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.ButtonGroup buttonGroup1;

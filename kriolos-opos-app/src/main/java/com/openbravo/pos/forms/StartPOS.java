@@ -52,7 +52,7 @@ public class StartPOS {
                         LOGGER.log(Level.WARNING, msg, e);
                         //Open A Window a Present a message to User
                         //Wait maximun 30 second and close
-                        JOptionPane.showMessageDialog(null,
+                        JOptionPane.showMessageDialog(rootframe,
                                 msg,
                                 AppLocal.APP_NAME, JOptionPane.WARNING_MESSAGE);
                         System.exit(-1000);
@@ -68,7 +68,7 @@ public class StartPOS {
                         LOGGER.log(Level.WARNING, msg, e);
                         //Open A Window a Present a message to User
                         //Wait maximun 30 second and close
-                        JOptionPane.showMessageDialog(null,
+                        JOptionPane.showMessageDialog(rootframe,
                                 msg,
                                 AppLocal.APP_NAME, JOptionPane.WARNING_MESSAGE);
                         System.exit(-1001);

@@ -25,6 +25,7 @@ import com.openbravo.data.user.ListProviderCreator;
 import com.openbravo.data.user.DefaultSaveProvider;
 import com.openbravo.format.Formats;
 import com.openbravo.pos.forms.AppLocal;
+import com.openbravo.pos.forms.DataLogicSales;
 import com.openbravo.pos.panels.JPanelTable2;
 import com.openbravo.pos.reports.JParamsLocation;
 import java.awt.Component;
@@ -38,9 +39,9 @@ import java.util.UUID;
  */
 public class ProductsWarehousePanel extends JPanelTable2 {
 
-    private JParamsLocation m_paramslocation;    
+    private JParamsLocation m_paramslocation;
     private ProductsWarehouseEditor jeditor;
-    
+
     /** Creates a new instance of ProductsWarehousePanel */
     public ProductsWarehousePanel() {
     }
@@ -49,12 +50,12 @@ public class ProductsWarehousePanel extends JPanelTable2 {
      *
      */
     @Override
-    protected void init() {   
-               
-        m_paramslocation =  new JParamsLocation();
+    protected void init() {
+
+        m_paramslocation = new JParamsLocation();
         m_paramslocation.init(app);
         m_paramslocation.addActionListener(new ReloadActionListener());
-        
+
         row = new Row(
                 new Field("ID", Datas.STRING, Formats.STRING),
                 new Field("PRODUCT_ID", Datas.STRING, Formats.STRING),
@@ -63,45 +64,34 @@ public class ProductsWarehousePanel extends JPanelTable2 {
                 new Field("LOCATION", Datas.STRING, Formats.STRING),
                 new Field("STOCKSECURITY", Datas.DOUBLE, Formats.DOUBLE),
                 new Field("STOCKMAXIMUM", Datas.DOUBLE, Formats.DOUBLE),
-                new Field("UNITS", Datas.DOUBLE, Formats.DOUBLE)
-        );
+                new Field("UNITS", Datas.DOUBLE, Formats.DOUBLE));
 
         lpr = new ListProviderCreator(new PreparedSentence(app.getSession(),
-            "SELECT L.ID, P.ID, P.REFERENCE, P.NAME," +
-                "L.STOCKSECURITY, L.STOCKMAXIMUM, COALESCE(S.SUMUNITS, 0) " +
-                "FROM products P " +
-                "LEFT OUTER JOIN (SELECT ID, PRODUCT, LOCATION, STOCKSECURITY, STOCKMAXIMUM "
-            + "FROM stocklevel WHERE LOCATION = ?) L ON P.ID = L.PRODUCT " +
-                "LEFT OUTER JOIN (SELECT PRODUCT, SUM(UNITS) AS SUMUNITS "
-            + "FROM stockcurrent WHERE LOCATION = ? GROUP BY PRODUCT) S ON P.ID = S.PRODUCT " +
-                "ORDER BY P.NAME",
-                new SerializerWriteBasicExt(new Datas[] {Datas.OBJECT, Datas.STRING}, new int[]{1, 1}),
-                new WarehouseSerializerRead()
-                ),
+                DataLogicSales.SQL_WAREHOUSE_STOCK_LIST,
+                new SerializerWriteBasicExt(new Datas[] { Datas.OBJECT, Datas.STRING }, new int[] { 1, 1 }),
+                new WarehouseSerializerRead()),
                 m_paramslocation);
-        
-        SentenceExec updatesent =  new SentenceExecTransaction(app.getSession()) {
+
+        SentenceExec updatesent = new SentenceExecTransaction(app.getSession()) {
             @Override
             public int execInTransaction(Object[] params) throws BasicException {
                 Object[] values = params;
-                if (values[0] == null)  {
+                if (values[0] == null) {
                     // INSERT
                     values[0] = UUID.randomUUID().toString();
-                    return new PreparedSentence(app.getSession()
-                        , "INSERT INTO stocklevel (ID, LOCATION, PRODUCT, STOCKSECURITY, STOCKMAXIMUM) VALUES (?, ?, ?, ?, ?)"
-                        , new SerializerWriteBasicExt(row.getDatas(), new int[] {0, 4, 1, 5, 6})).exec(params);
+                    return new PreparedSentence(app.getSession(), DataLogicSales.SQL_STOCKLEVEL_INSERT,
+                            new SerializerWriteBasicExt(row.getDatas(), new int[] { 0, 4, 1, 5, 6 })).exec(params);
                 } else {
                     // UPDATE
-                    return new PreparedSentence(app.getSession()
-                        , "UPDATE stocklevel SET STOCKSECURITY = ?, STOCKMAXIMUM = ? WHERE ID = ?"
-                        , new SerializerWriteBasicExt(row.getDatas(), new int[] {5, 6, 0})).exec(params);
+                    return new PreparedSentence(app.getSession(), DataLogicSales.SQL_STOCKLEVEL_UPDATE,
+                            new SerializerWriteBasicExt(row.getDatas(), new int[] { 5, 6, 0 })).exec(params);
                 }
             }
-        };     
-        
+        };
+
         spr = new DefaultSaveProvider(updatesent, null, null);
-         
-        jeditor = new ProductsWarehouseEditor(dirty);   
+
+        jeditor = new ProductsWarehouseEditor(dirty);
     }
 
     /**
@@ -128,8 +118,8 @@ public class ProductsWarehousePanel extends JPanelTable2 {
      */
     @Override
     public void activate() throws BasicException {
-        
-        m_paramslocation.activate(); 
+
+        m_paramslocation.activate();
         super.activate();
     }
 
@@ -140,8 +130,8 @@ public class ProductsWarehousePanel extends JPanelTable2 {
     @Override
     public String getTitle() {
         return AppLocal.getIntString("Menu.ProductsWarehouse");
-    }      
-    
+    }
+
     private class ReloadActionListener implements ActionListener {
         @Override
         public void actionPerformed(ActionEvent e) {
@@ -156,14 +146,14 @@ public class ProductsWarehousePanel extends JPanelTable2 {
         @Override
         public Object readValues(DataRead dr) throws BasicException {
             return new Object[] {
-                dr.getString(1),
-                dr.getString(2),
-                dr.getString(3),
-                dr.getString(4),
-                ((Object[]) m_paramslocation.createValue())[1],
-                dr.getDouble(5),
-                dr.getDouble(6),
-                dr.getDouble(7)
+                    dr.getString(1),
+                    dr.getString(2),
+                    dr.getString(3),
+                    dr.getString(4),
+                    ((Object[]) m_paramslocation.createValue())[1],
+                    dr.getDouble(5),
+                    dr.getDouble(6),
+                    dr.getDouble(7)
             };
         }
     }

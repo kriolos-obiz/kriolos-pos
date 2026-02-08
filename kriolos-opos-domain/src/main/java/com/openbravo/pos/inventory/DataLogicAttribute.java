@@ -26,6 +26,7 @@ import com.openbravo.data.loader.SerializerReadString;
 import com.openbravo.data.loader.SerializerWriteBasic;
 import com.openbravo.data.loader.SerializerWriteString;
 import com.openbravo.data.loader.Session;
+import com.openbravo.data.loader.StaticSentence;
 import com.openbravo.pos.forms.BeanFactoryDataSingle;
 import com.openbravo.pos.inventory.AttributeInstInfo;
 import com.openbravo.pos.inventory.AttributeSetInfo;
@@ -36,59 +37,95 @@ import com.openbravo.pos.inventory.AttributeSetInfo;
  */
 public class DataLogicAttribute extends BeanFactoryDataSingle {
 
-    public SentenceFind attsetSent;
-    public SentenceList attvaluesSent;
-    public SentenceList attinstSent;
-    public SentenceList attinstSent2;
-    public SentenceFind attsetinstExistsSent;
-    public SentenceExec attsetSave;
-    public SentenceExec attinstSave;
+        // SQL constants for panel queries
+        public static final String SQL_ATTRIBUTE_USE_LIST = "SELECT ATTUSE.ID, ATTUSE.attributeset_ID, ATTUSE.ATTRIBUTE_ID, ATTUSE.LINENO, ATT.NAME "
+                        + "FROM attributeuse ATTUSE, attribute ATT "
+                        + "WHERE ATTUSE.ATTRIBUTE_ID = ATT.ID AND ATTUSE.attributeset_ID = ? ORDER BY LINENO";
 
-    private Session s;
+        public static final String SQL_ATTRIBUTE_VALUE_LIST = "SELECT ID, ATTRIBUTE_ID, VALUE FROM attributevalue WHERE ATTRIBUTE_ID = ? ORDER BY VALUE ";
 
-    public DataLogicAttribute() {
-    }
+        public SentenceFind attsetSent;
+        public SentenceList attvaluesSent;
+        public SentenceList attinstSent;
+        public SentenceList attinstSent2;
+        public SentenceFind attsetinstExistsSent;
+        public SentenceExec attsetSave;
+        public SentenceExec attinstSave;
 
-    @Override
-    public void init(Session session) {
-        this.s = session;
+        /** List all attributes (ID, NAME) ordered by NAME. */
+        public SentenceList attributeListSent;
+        /** List all attribute sets (ID, NAME) ordered by NAME. */
+        public SentenceList attributeSetListSent;
 
-        attsetSave = new PreparedSentence(s,
-                "INSERT INTO attributesetinstance (ID, ATTRIBUTESET_ID, DESCRIPTION) VALUES (?, ?, ?)",
-                new SerializerWriteBasic(Datas.STRING, Datas.STRING, Datas.STRING));
+        private Session s;
 
-        attinstSave = new PreparedSentence(s,
-                "INSERT INTO attributeinstance(ID, ATTRIBUTESETINSTANCE_ID, ATTRIBUTE_ID, VALUE) VALUES (?, ?, ?, ?)",
-                new SerializerWriteBasic(Datas.STRING, Datas.STRING, Datas.STRING, Datas.STRING));
+        public DataLogicAttribute() {
+        }
 
-        attsetSent = new PreparedSentence(s,
-                "SELECT ID, NAME FROM attributeset WHERE ID = ?",
-                SerializerWriteString.INSTANCE,
-                (DataRead dr) -> new AttributeSetInfo(dr.getString(1), dr.getString(2)));
+        /**
+         * Returns the underlying Session for framework helpers that need it.
+         * 
+         * @return the session
+         */
+        public Session getSession() {
+                return s;
+        }
 
-        attsetinstExistsSent = new PreparedSentence(s,
-                "SELECT ID FROM attributesetinstance WHERE ATTRIBUTESET_ID = ? AND DESCRIPTION = ?",
-                new SerializerWriteBasic(Datas.STRING, Datas.STRING),
-                SerializerReadString.INSTANCE);
+        @Override
+        public void init(Session session) {
+                this.s = session;
 
-        attinstSent = new PreparedSentence(s, "SELECT A.ID, A.NAME, " + s.DB.CHAR_NULL() + ", " + s.DB.CHAR_NULL() + " "
-                + "FROM attributeuse AU JOIN attribute A ON AU.ATTRIBUTE_ID = A.ID "
-                + "WHERE AU.ATTRIBUTESET_ID = ? "
-                + "ORDER BY AU.LINENO",
-                SerializerWriteString.INSTANCE,
-                (DataRead dr) -> new AttributeInstInfo(dr.getString(1), dr.getString(2), dr.getString(3), dr.getString(4)));
+                attsetSave = new PreparedSentence(s,
+                                "INSERT INTO attributesetinstance (ID, ATTRIBUTESET_ID, DESCRIPTION) VALUES (?, ?, ?)",
+                                new SerializerWriteBasic(Datas.STRING, Datas.STRING, Datas.STRING));
 
-        attinstSent2 = new PreparedSentence(s, "SELECT A.ID, A.NAME, AI.ID, AI.VALUE "
-                + "FROM attributeuse AU JOIN attribute A ON AU.ATTRIBUTE_ID = A.ID "
-                + "LEFT OUTER JOIN attributeinstance AI ON AI.ATTRIBUTE_ID = A.ID "
-                + "WHERE AU.ATTRIBUTESET_ID = ? AND AI.ATTRIBUTESETINSTANCE_ID = ?"
-                + "ORDER BY AU.LINENO",
-                new SerializerWriteBasic(Datas.STRING, Datas.STRING),
-                (DataRead dr) -> new AttributeInstInfo(dr.getString(1), dr.getString(2), dr.getString(3), dr.getString(4)));
+                attinstSave = new PreparedSentence(s,
+                                "INSERT INTO attributeinstance(ID, ATTRIBUTESETINSTANCE_ID, ATTRIBUTE_ID, VALUE) VALUES (?, ?, ?, ?)",
+                                new SerializerWriteBasic(Datas.STRING, Datas.STRING, Datas.STRING, Datas.STRING));
 
-        attvaluesSent = new PreparedSentence(s, "SELECT VALUE FROM attributevalue WHERE ATTRIBUTE_ID = ? ORDER BY VALUE",
-                SerializerWriteString.INSTANCE,
-                SerializerReadString.INSTANCE);
-    }
+                attsetSent = new PreparedSentence(s,
+                                "SELECT ID, NAME FROM attributeset WHERE ID = ?",
+                                SerializerWriteString.INSTANCE,
+                                (DataRead dr) -> new AttributeSetInfo(dr.getString(1), dr.getString(2)));
+
+                attsetinstExistsSent = new PreparedSentence(s,
+                                "SELECT ID FROM attributesetinstance WHERE ATTRIBUTESET_ID = ? AND DESCRIPTION = ?",
+                                new SerializerWriteBasic(Datas.STRING, Datas.STRING),
+                                SerializerReadString.INSTANCE);
+
+                attinstSent = new PreparedSentence(s,
+                                "SELECT A.ID, A.NAME, " + s.DB.CHAR_NULL() + ", " + s.DB.CHAR_NULL() + " "
+                                                + "FROM attributeuse AU JOIN attribute A ON AU.ATTRIBUTE_ID = A.ID "
+                                                + "WHERE AU.ATTRIBUTESET_ID = ? "
+                                                + "ORDER BY AU.LINENO",
+                                SerializerWriteString.INSTANCE,
+                                (DataRead dr) -> new AttributeInstInfo(dr.getString(1), dr.getString(2),
+                                                dr.getString(3), dr.getString(4)));
+
+                attinstSent2 = new PreparedSentence(s, "SELECT A.ID, A.NAME, AI.ID, AI.VALUE "
+                                + "FROM attributeuse AU JOIN attribute A ON AU.ATTRIBUTE_ID = A.ID "
+                                + "LEFT OUTER JOIN attributeinstance AI ON AI.ATTRIBUTE_ID = A.ID "
+                                + "WHERE AU.ATTRIBUTESET_ID = ? AND AI.ATTRIBUTESETINSTANCE_ID = ?"
+                                + "ORDER BY AU.LINENO",
+                                new SerializerWriteBasic(Datas.STRING, Datas.STRING),
+                                (DataRead dr) -> new AttributeInstInfo(dr.getString(1), dr.getString(2),
+                                                dr.getString(3), dr.getString(4)));
+
+                attvaluesSent = new PreparedSentence(s,
+                                "SELECT VALUE FROM attributevalue WHERE ATTRIBUTE_ID = ? ORDER BY VALUE",
+                                SerializerWriteString.INSTANCE,
+                                SerializerReadString.INSTANCE);
+
+                // Lookup lists used by filters and editors
+                attributeListSent = new StaticSentence(s,
+                                "SELECT ID, NAME FROM attribute ORDER BY NAME",
+                                null,
+                                (DataRead dr) -> new AttributeInfo(dr.getString(1), dr.getString(2)));
+
+                attributeSetListSent = new StaticSentence(s,
+                                "SELECT ID, NAME FROM attributeset ORDER BY NAME",
+                                null,
+                                (DataRead dr) -> new AttributeSetInfo(dr.getString(1), dr.getString(2)));
+        }
 
 }

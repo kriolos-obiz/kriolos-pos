@@ -16,7 +16,6 @@
 package com.openbravo.pos.panels;
 
 import com.openbravo.basic.BasicException;
-import com.openbravo.data.loader.*;
 import com.openbravo.format.Formats;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
@@ -29,6 +28,20 @@ import java.util.Date;
 import java.util.List;
 import java.util.logging.Logger;
 
+import com.openbravo.pos.forms.BeanFactoryException;
+import com.openbravo.pos.forms.DataLogicSystem;
+import com.openbravo.pos.payment.CashManagementService;
+import com.openbravo.pos.payment.CashManagementServiceImpl;
+import com.openbravo.pos.payment.CloseCash;
+import com.openbravo.pos.reports.CategorySalesLine;
+import com.openbravo.pos.reports.DrawerOpenedLines;
+import com.openbravo.pos.reports.FinancialReport;
+import com.openbravo.pos.reports.FinancialReportService;
+import com.openbravo.pos.reports.FinancialReportServiceImpl;
+import com.openbravo.pos.reports.PaymentsListLine;
+import com.openbravo.pos.reports.ProductSalesLine;
+import com.openbravo.pos.reports.RemovedProductLines;
+import com.openbravo.pos.reports.SalesLine;
 
 public class PaymentsReprintModel {
 
@@ -42,7 +55,7 @@ public class PaymentsReprintModel {
 
     private Integer payments;
     private Double paymentsTotal;
-    private List<PaymentsLine> paymentsLines;
+    private List<PaymentsListLine> paymentsLines;
 
     private Integer categorySalesRows;
     private Double categorySalesTotalUnits;
@@ -58,7 +71,7 @@ public class PaymentsReprintModel {
 
     private List<DrawerOpenedLines> drawerOpenedLines;
 
-    private final static String[] PAYMENTHEADERS = {"label.Payment", "label.money"};
+    private final static String[] PAYMENTHEADERS = { "label.Payment", "label.money" };
 
     private Integer salesNum;
     private Double salesBase;
@@ -66,9 +79,10 @@ public class PaymentsReprintModel {
     private Double salesTaxNet;
     private List<SalesLine> salesLines;
 
-    private final static String[] SALEHEADERS = {"label.taxcategory", "label.totaltax", "label.totalnet"};
+    private final static String[] SALEHEADERS = { "label.taxcategory", "label.totaltax", "label.totalnet" };
 
-    private PaymentsReprintModel() {}
+    private PaymentsReprintModel() {
+    }
 
     public static PaymentsReprintModel emptyInstance() {
 
@@ -113,243 +127,78 @@ public class PaymentsReprintModel {
         p.host = app.getProperties().getHost();
 
         JFrame frame = new JFrame("Sequence");
-        String sequence = JOptionPane.showInputDialog(frame,
+        String sequenceStr = JOptionPane.showInputDialog(frame,
                 AppLocal.getIntString("message.ccentersequence"),
                 JOptionPane.INFORMATION_MESSAGE);
-        if (sequence != null) {
-            int isequence = Integer.parseInt(sequence);
-            p.hostSequence = isequence;
+
+        int sequence = -1;
+        if (sequenceStr != null) {
+            try {
+                sequence = Integer.parseInt(sequenceStr);
+                p.hostSequence = sequence;
+            } catch (NumberFormatException e) {
+                // Ignore or handle
+            }
         } else {
-            app.getAppUserView().showTask("com.openbravo.pos.panels.JPanelCloseMoneyReprint");
+            // Cancelled
+            return null;
         }
 
-        StaticSentence<String, CloseCash> closeCashSentence = new StaticSentence<>(app.getSession(),
-                "SELECT money, host, hostsequence, datestart, dateend "
-                + "FROM closedcash "
-                + "where hostsequence = ? and dateend is not null "
-                + "AND host = " + "'" + app.getProperties().getHost() + "'",
-                 SerializerWriteString.INSTANCE,
-                 new SerializerReadClass(CloseCash.class));
-
-        CloseCash ccash = closeCashSentence.find(sequence);
-
-        if (ccash == null) {
-            JOptionPane.showMessageDialog(null,
-                    AppLocal.getIntString("message.ccsequencenotfound"),
-                    "",
-                    JOptionPane.WARNING_MESSAGE);
-        } else {
-            String money = ccash.getMoney();
-            p.startDate = ccash.getDatestart();
-            p.endDate = ccash.getDatestart();
-
-            // Product category Sales
-            Object[] valcategorysales = (Object[]) new StaticSentence(app.getSession(),
-                     "SELECT COUNT(*), "
-                    + "SUM(ticketlines.UNITS), "
-                    + "SUM((ticketlines.PRICE + ticketlines.PRICE * taxes.RATE ) * ticketlines.UNITS) "
-                    + "FROM ticketlines, tickets, receipts, taxes "
-                    + "WHERE ticketlines.TICKET = tickets.ID "
-                    + "AND tickets.ID = receipts.ID "
-                    + "AND ticketlines.TAXID = taxes.ID "
-                    + "AND ticketlines.PRODUCT IS NOT NULL "
-                    + "AND receipts.MONEY = ? "
-                    + "GROUP BY receipts.MONEY",
-                     SerializerWriteString.INSTANCE,
-                     new SerializerReadBasic(new Datas[]{Datas.INT, Datas.DOUBLE, Datas.DOUBLE}))
-                    .find(money);
-
-            if (valcategorysales == null) {
-                p.categorySalesRows = 0;
-                p.categorySalesTotalUnits = 0.0;
-                p.categorySalesTotal = 0.0;
-            } else {
-                p.categorySalesRows = (Integer) valcategorysales[0];
-                p.categorySalesTotalUnits = (Double) valcategorysales[1];
-                p.categorySalesTotal = (Double) valcategorysales[2];
+        if (sequence != -1) {
+            DataLogicSystem dlSystem = null;
+            try {
+                dlSystem = (DataLogicSystem) app.getBean("com.openbravo.pos.forms.DataLogicSystem");
+            } catch (BeanFactoryException e) {
+                // Return null or throw BasicException. Since we are just reprinting, logging
+                // might be enough,
+                // but CashManagementService might need it.
+                // For now, we proceed, as getCloseCashBySequence doesn't strictly need it, but
+                // it is better to have it.
+                LOGGER.warning("Could not load DataLogicSystem bean.");
             }
 
-            List<CategorySalesLine> categorys = new StaticSentence(app.getSession(),
-                     "SELECT a.NAME, sum(c.UNITS), sum(c.UNITS * (c.PRICE + (c.PRICE * d.RATE))) "
-                    + "FROM categories as a "
-                    + "LEFT JOIN products as b on a.id = b.CATEGORY "
-                    + "LEFT JOIN ticketlines as c on b.id = c.PRODUCT "
-                    + "LEFT JOIN taxes as d on c.TAXID = d.ID "
-                    + "LEFT JOIN receipts as e on c.TICKET = e.ID "
-                    + "WHERE e.MONEY = ? "
-                    + "GROUP BY a.NAME",
-                     SerializerWriteString.INSTANCE,
-                     new SerializerReadClass(PaymentsReprintModel.CategorySalesLine.class))
-                    .list(money);
+            CashManagementService cashService = new CashManagementServiceImpl(app.getSession(), dlSystem);
+            CloseCash ccash = cashService.getCloseCashBySequence(p.host, sequence);
 
-            if (categorys == null) {
-                p.CategorySalesLines = new ArrayList<>();
+            if (ccash == null) {
+                JOptionPane.showMessageDialog(frame,
+                        AppLocal.getIntString("message.ccsequencenotfound"),
+                        "",
+                        JOptionPane.WARNING_MESSAGE);
+                return null;
             } else {
-                p.CategorySalesLines = categorys;
+                p.startDate = ccash.getDatestart();
+                p.endDate = ccash.getDateend();
+
+                FinancialReportService reportService = new FinancialReportServiceImpl(app.getSession());
+                FinancialReport report = reportService.getFinancialReport(ccash.getMoney(), p.startDate, p.endDate);
+
+                // Map FinancialReport to PaymentsReprintModel
+                p.payments = report.getPaymentCount();
+                p.paymentsTotal = report.getPaymentTotal();
+                p.paymentsLines = report.getPaymentLines();
+
+                p.categorySalesRows = report.getCategorySalesRows();
+                p.categorySalesTotalUnits = report.getCategorySalesTotalUnits();
+                p.categorySalesTotal = report.getCategorySalesTotal();
+                p.CategorySalesLines = report.getCategorySalesLines();
+
+                p.salesNum = report.getSalesCount();
+                p.salesBase = report.getSalesBase();
+                p.salesTaxes = report.getSalesTaxes();
+
+                p.salesLines = report.getSalesLines();
+                p.removedSalesLines = report.getRemovedProductLines();
+                p.drawerOpenedLines = report.getDrawerOpenedLines();
+
+                p.productSalesRows = report.getProductSalesRows();
+                p.productSalesTotalUnits = report.getProductSalesTotalUnits();
+                p.productSalesTotal = report.getProductSalesTotal();
+                p.productSalesLines = report.getProductSalesLines();
+
+                return p;
             }
-
-            // Payments
-            Object[] valtickets = (Object[]) new StaticSentence(app.getSession(),
-                     "SELECT COUNT(*), SUM(payments.TOTAL) "
-                    + "FROM payments, receipts "
-                    + "WHERE payments.RECEIPT = receipts.ID AND receipts.MONEY = ?",
-                     SerializerWriteString.INSTANCE,
-                     new SerializerReadBasic(new Datas[]{Datas.INT, Datas.DOUBLE}))
-                    .find(money);
-
-            if (valtickets == null) {
-                p.payments = 0;
-                p.paymentsTotal = 0.0;
-            } else {
-                p.payments = (Integer) valtickets[0];
-                p.paymentsTotal = (Double) valtickets[1];
-            }
-
-            List<PaymentsLine> paymentList = new StaticSentence(app.getSession(),
-                    "SELECT payments.PAYMENT, SUM(payments.TOTAL), payments.NOTES "
-                    + "FROM payments, receipts "
-                    + "WHERE payments.RECEIPT = receipts.ID AND receipts.MONEY = ? "
-                    + "GROUP BY payments.PAYMENT, payments.NOTES",
-                     SerializerWriteString.INSTANCE,
-                     new SerializerReadClass(PaymentsReprintModel.PaymentsLine.class))
-                    .list(money);
-
-            if (paymentList == null) {
-                p.paymentsLines = new ArrayList<>();
-            } else {
-                p.paymentsLines = paymentList;
-            }
-
-            // Sales
-            Object[] recsales = (Object[]) new StaticSentence(app.getSession(),
-                    "SELECT COUNT(DISTINCT receipts.ID), SUM(ticketlines.UNITS * ticketlines.PRICE) "
-                    + "FROM receipts, ticketlines "
-                    + "WHERE receipts.ID = ticketlines.TICKET AND receipts.MONEY = ?",
-                     SerializerWriteString.INSTANCE,
-                    new SerializerReadBasic(new Datas[]{Datas.INT, Datas.DOUBLE}))
-                    .find(money);
-
-            if (recsales == null) {
-                p.salesNum = null;
-                p.salesBase = null;
-            } else {
-                p.salesNum = (Integer) recsales[0];
-                p.salesBase = (Double) recsales[1];
-            }
-
-            // Taxes
-            Object[] rectaxes = (Object[]) new StaticSentence(app.getSession(),
-                    "SELECT SUM(taxlines.AMOUNT), SUM(taxlines.BASE) "
-                    + "FROM receipts, taxlines "
-                    + "WHERE receipts.ID = taxlines.RECEIPT AND receipts.MONEY = ?",
-                     SerializerWriteString.INSTANCE,
-                     new SerializerReadBasic(new Datas[]{
-                Datas.DOUBLE, Datas.DOUBLE}))
-                    .find(money);
-
-            if (rectaxes == null) {
-                p.salesTaxes = null;
-                p.salesTaxNet = null;
-            } else {
-                p.salesTaxes = (Double) rectaxes[0];
-                p.salesTaxNet = (Double) rectaxes[1];
-            }
-
-            List<SalesLine> asales = new StaticSentence(app.getSession(),
-                    "SELECT taxcategories.NAME, SUM(taxlines.AMOUNT), SUM(taxlines.BASE), "
-                    + "SUM(taxlines.BASE + taxlines.AMOUNT) "
-                    + "FROM receipts, taxlines, taxes, taxcategories "
-                    + "WHERE receipts.ID = taxlines.RECEIPT AND taxlines.TAXID = taxes.ID AND taxes.CATEGORY = taxcategories.ID "
-                    + "AND receipts.MONEY = ? "
-                    + "GROUP BY taxcategories.NAME",
-                     SerializerWriteString.INSTANCE,
-                     new SerializerReadClass(PaymentsReprintModel.SalesLine.class))
-                    .list(money);
-
-            if (asales == null) {
-                p.salesLines = new ArrayList<>();
-            } else {
-                p.salesLines = asales;
-            }
-
-            List<RemovedProductLines> removedLines = new StaticSentence(app.getSession(),
-                     "SELECT lineremoved.NAME, lineremoved.TICKETID, lineremoved.PRODUCTNAME, "
-                    + "SUM(lineremoved.UNITS) AS TOTAL_UNITS  "
-                    + "FROM lineremoved "
-                    + "WHERE lineremoved.REMOVEDDATE > ?"
-                    + "GROUP BY lineremoved.NAME, lineremoved.TICKETID, lineremoved.PRODUCTNAME",
-                     SerializerWriteDate.INSTANCE,
-                     new SerializerReadClass(PaymentsReprintModel.RemovedProductLines.class))
-                    .list(p.startDate);
-
-            if (removedLines == null) {
-                p.removedSalesLines = new ArrayList<>();
-            } else {
-                p.removedSalesLines = removedLines;
-            }
-
-            List<DrawerOpenedLines> drawerOpenedLines = new StaticSentence(app.getSession(),
-                     "SELECT OPENDATE, NAME, TICKETID  "
-                    + "FROM draweropened "
-                    + "WHERE TICKETID = 'No Sale' AND OPENDATE > ? "
-                    + "GROUP BY NAME, OPENDATE, TICKETID",
-                     SerializerWriteDate.INSTANCE,
-                     new SerializerReadClass(PaymentsReprintModel.DrawerOpenedLines.class))
-                    .list(p.startDate);
-
-            if (drawerOpenedLines == null) {
-                p.drawerOpenedLines = new ArrayList<>();
-            } else {
-                p.drawerOpenedLines = drawerOpenedLines;
-            }
-
-            // Product Sales
-            Object[] valproductsales = (Object[]) new StaticSentence(app.getSession(),
-                     "SELECT COUNT(*), SUM(ticketlines.UNITS), "
-                    + "SUM((ticketlines.PRICE + ticketlines.PRICE * taxes.RATE ) * ticketlines.UNITS) "
-                    + "FROM ticketlines, tickets, receipts, taxes "
-                    + "WHERE ticketlines.TICKET = tickets.ID "
-                    + "AND tickets.ID = receipts.ID "
-                    + "AND ticketlines.TAXID = taxes.ID "
-                    + "AND ticketlines.PRODUCT IS NOT NULL "
-                    + "AND receipts.MONEY = ? "
-                    + "GROUP BY receipts.MONEY",
-                     SerializerWriteString.INSTANCE,
-                     new SerializerReadBasic(new Datas[]{Datas.INT, Datas.DOUBLE, Datas.DOUBLE}))
-                    .find(money);
-
-            if (valproductsales == null) {
-                p.productSalesRows = 0;
-                p.productSalesTotalUnits = 0.0;
-                p.productSalesTotal = 0.0;
-            } else {
-                p.productSalesRows = (Integer) valproductsales[0];
-                p.productSalesTotalUnits = (Double) valproductsales[1];
-                p.productSalesTotal = (Double) valproductsales[2];
-            }
-
-            List<ProductSalesLine> products = new StaticSentence(app.getSession(),
-                     "SELECT products.NAME, SUM(ticketlines.UNITS), ticketlines.PRICE, taxes.RATE "
-                    + "FROM ticketlines, tickets, receipts, products, taxes "
-                    + "WHERE ticketlines.PRODUCT = products.ID "
-                    + "AND ticketlines.TICKET = tickets.ID "
-                    + "AND tickets.ID = receipts.ID "
-                    + "AND ticketlines.TAXID = taxes.ID "
-                    + "AND receipts.MONEY = ? "
-                    + "GROUP BY products.NAME, ticketlines.PRICE, taxes.RATE",
-                     SerializerWriteString.INSTANCE,
-                     new SerializerReadClass(PaymentsReprintModel.ProductSalesLine.class))
-                    .list(money);
-
-            if (products == null) {
-                p.productSalesLines = new ArrayList<>();
-            } else {
-                p.productSalesLines = products;
-            }
-
-            return p;
         }
-
         return null;
     }
 
@@ -413,7 +262,7 @@ public class PaymentsReprintModel {
         return Formats.CURRENCY.formatValue(paymentsTotal);
     }
 
-    public List<PaymentsLine> getPaymentLines() {
+    public List<PaymentsListLine> getPaymentLines() {
         return paymentsLines;
     }
 
@@ -526,7 +375,7 @@ public class PaymentsReprintModel {
 
             @Override
             public Object getValueAt(int row, int column) {
-                PaymentsLine l = paymentsLines.get(row);
+                PaymentsListLine l = paymentsLines.get(row);
                 switch (column) {
                     case 0:
                         return l.getType();
@@ -537,273 +386,6 @@ public class PaymentsReprintModel {
                 }
             }
         };
-    }
-
-    public static class CategorySalesLine implements SerializableRead {
-
-        private String m_CategoryName;
-        private Double m_CategoryUnits;
-        private Double m_CategorySum;
-
-        @Override
-        public void readValues(DataRead dr) throws BasicException {
-            m_CategoryName = dr.getString(1);
-            m_CategoryUnits = dr.getDouble(2);
-            m_CategorySum = dr.getDouble(3);
-        }
-
-        public String printCategoryName() {
-            return m_CategoryName;
-        }
-
-        public String printCategoryUnits() {
-            return Formats.DOUBLE.formatValue(m_CategoryUnits);
-        }
-
-        public Double getCategoryUnits() {
-            return m_CategoryUnits;
-        }
-
-        public String printCategorySum() {
-            return Formats.CURRENCY.formatValue(m_CategorySum);
-        }
-
-        public Double getCategorySum() {
-            return m_CategorySum;
-        }
-    }
-
-    public static class RemovedProductLines implements SerializableRead {
-
-        private String m_Name;
-        private String m_TicketId;
-        private String m_ProductName;
-        private Double m_TotalUnits;
-
-        @Override
-        public void readValues(DataRead dr) throws BasicException {
-            m_Name = dr.getString(1);
-            m_TicketId = dr.getString(2);
-            m_ProductName = dr.getString(3);
-            m_TotalUnits = dr.getDouble(4);
-        }
-
-        public String printWorkerName() {
-            return StringUtils.encodeXML(m_Name);
-        }
-
-        public String printTicketId() {
-            return StringUtils.encodeXML(m_TicketId);
-        }
-
-        public String printProductName() {
-            return StringUtils.encodeXML(m_ProductName);
-        }
-
-        public String printTotalUnits() {
-            return Formats.DOUBLE.formatValue(m_TotalUnits);
-        }
-
-    }
-
-    public static class DrawerOpenedLines implements SerializableRead {
-
-        private String m_DrawerOpened;
-        private String m_Name;
-        private String m_TicketId;
-
-        @Override
-        public void readValues(DataRead dr) throws BasicException {
-            m_DrawerOpened = dr.getString(1);
-            m_Name = dr.getString(2);
-            m_TicketId = dr.getString(3);
-        }
-
-        public String printDrawerOpened() {
-            return StringUtils.encodeXML(m_DrawerOpened);
-        }
-
-        public String printUserName() {
-            return StringUtils.encodeXML(m_Name);
-        }
-
-        public String printTicketId() {
-            return StringUtils.encodeXML(m_TicketId);
-        }
-    }
-
-    public static class ProductSalesLine implements SerializableRead {
-
-        private String m_ProductName;
-        private Double m_ProductUnits;
-        private Double m_ProductPrice;
-        private Double m_TaxRate;
-        private Double m_ProductPriceTax;
-        private Double m_ProductPriceNet;
-
-        @Override
-        public void readValues(DataRead dr) throws BasicException {
-            m_ProductName = dr.getString(1);
-            m_ProductUnits = dr.getDouble(2);
-            m_ProductPrice = dr.getDouble(3);
-            m_TaxRate = dr.getDouble(4);
-
-            m_ProductPriceTax = m_ProductPrice + m_ProductPrice * m_TaxRate;
-            m_ProductPriceNet = m_ProductPrice * m_TaxRate;
-        }
-
-        public String printProductName() {
-            return StringUtils.encodeXML(m_ProductName);
-        }
-
-        public String printProductUnits() {
-            return Formats.DOUBLE.formatValue(m_ProductUnits);
-        }
-
-        public Double getProductUnits() {
-            return m_ProductUnits;
-        }
-
-        public String printProductPrice() {
-            return Formats.CURRENCY.formatValue(m_ProductPrice);
-        }
-
-        public Double getProductPrice() {
-            return m_ProductPrice;
-        }
-
-        public String printTaxRate() {
-            return Formats.PERCENT.formatValue(m_TaxRate);
-        }
-
-        public Double getTaxRate() {
-            return m_TaxRate;
-        }
-
-        public String printProductPriceTax() {
-            return Formats.CURRENCY.formatValue(m_ProductPriceTax);
-        }
-
-        public String printProductSubValue() {
-            return Formats.CURRENCY.formatValue(m_ProductPriceTax * m_ProductUnits);
-        }
-
-        /**
-         * JG 4 Jun 2014
-         *
-         * @return
-         */
-        public String printProductPriceNet() {
-            return Formats.CURRENCY.formatValue(m_ProductPrice * m_ProductUnits);
-        }
-
-    }
-
-    public static class SalesLine implements SerializableRead {
-
-        private String m_SalesTaxName;
-        private Double m_SalesTaxes;
-        private Double m_SalesTaxNet;
-        private Double m_SalesTaxGross;
-
-        @Override
-        public void readValues(DataRead dr) throws BasicException {
-            m_SalesTaxName = dr.getString(1);
-            m_SalesTaxes = dr.getDouble(2);
-            m_SalesTaxNet = dr.getDouble(3);
-            m_SalesTaxGross = dr.getDouble(4);
-        }
-
-        public String printTaxName() {
-            return m_SalesTaxName;
-        }
-
-        public String printTaxes() {
-            return Formats.CURRENCY.formatValue(m_SalesTaxes);
-        }
-
-        public String printTaxNet() {
-            return Formats.CURRENCY.formatValue(m_SalesTaxNet);
-        }
-
-        public String printTaxGross() {
-            return Formats.CURRENCY.formatValue(m_SalesTaxes + m_SalesTaxNet);
-        }
-
-        public String getTaxName() {
-            return m_SalesTaxName;
-        }
-
-        public Double getTaxes() {
-            return m_SalesTaxes;
-        }
-
-        public Double getTaxNet() {
-            return m_SalesTaxNet;
-        }
-
-        public Double getTaxGross() {
-            return m_SalesTaxGross;
-        }
-    }
-
-    public static class CloseCash implements SerializableRead {
-
-        private String money;
-        private String host;
-        private Integer hostsequence;
-        private Date datestart;
-        private Date dateend;
-
-        @Override
-        public void readValues(DataRead dr) throws BasicException {
-            money = dr.getString(1);
-            host = dr.getString(2);
-            hostsequence = dr.getInt(3);
-            datestart = dr.getTimestamp(4);
-            dateend = dr.getTimestamp(5);
-        }
-
-        public String getMoney() {
-            return money;
-        }
-
-        public void setMoney(String money) {
-            this.money = money;
-        }
-
-        public String getHost() {
-            return host;
-        }
-
-        public void setHost(String host) {
-            this.host = host;
-        }
-
-        public Integer getHostsequence() {
-            return hostsequence;
-        }
-
-        public void setHostsequence(Integer hostsequence) {
-            this.hostsequence = hostsequence;
-        }
-
-        public Date getDatestart() {
-            return datestart;
-        }
-
-        public void setDatestart(Date datestart) {
-            this.datestart = datestart;
-        }
-
-        public Date getDateend() {
-            return dateend;
-        }
-
-        public void setDateend(Date dateend) {
-            this.dateend = dateend;
-        }
-
     }
 
     public AbstractTableModel getSalesModel() {
@@ -838,44 +420,5 @@ public class PaymentsReprintModel {
                 }
             }
         };
-    }
-
-
-    public static class PaymentsLine implements SerializableRead {
-
-        private String m_PaymentType;
-        private Double m_PaymentValue;
-        private String s_PaymentReason;
-
-        @Override
-        public void readValues(DataRead dr) throws BasicException {
-            m_PaymentType = dr.getString(1);
-            m_PaymentValue = dr.getDouble(2);
-            s_PaymentReason = dr.getString(3) == null ? "" : dr.getString(3);
-        }
-
-        public String printType() {
-            return AppLocal.getIntString("transpayment." + m_PaymentType);
-        }
-
-        public String getType() {
-            return m_PaymentType;
-        }
-
-        public String printValue() {
-            return Formats.CURRENCY.formatValue(m_PaymentValue);
-        }
-
-        public Double getValue() {
-            return m_PaymentValue;
-        }
-
-        public String printReason() {
-            return s_PaymentReason;
-        }
-
-        public String getReason() {
-            return s_PaymentReason;
-        }
     }
 }

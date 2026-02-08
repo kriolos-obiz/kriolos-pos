@@ -58,6 +58,8 @@ public abstract class JPaymentSelect extends javax.swing.JDialog implements JPay
     private DataLogicCustomers dlCustomers;
     private DataLogicSales dlSales;
 
+    private PaymentService paymentService;
+
     private final Map<String, JPaymentInterface> payments = new HashMap<>();
     private String m_sTransactionID;
     private static PaymentInfo returnPayment = null;
@@ -84,8 +86,9 @@ public abstract class JPaymentSelect extends javax.swing.JDialog implements JPay
         this.applyComponentOrientation(o);
     }
 
-    public void init(AppView app) {
+    public void init(AppView app, PaymentService paymentService) {
         this.app = app;
+        this.paymentService = paymentService;
         dlSystem = (DataLogicSystem) app.getBean("com.openbravo.pos.forms.DataLogicSystem");
         dlCustomers = (DataLogicCustomers) app.getBean("com.openbravo.pos.customers.DataLogicCustomers");
         dlSales = (DataLogicSales) app.getBean("com.openbravo.pos.forms.DataLogicSales");
@@ -113,15 +116,17 @@ public abstract class JPaymentSelect extends javax.swing.JDialog implements JPay
 
     /**
      * List of PaymentInfo
-     * @return 
+     * 
+     * @return
      */
     public List<PaymentInfo> getSelectedPayments() {
         return m_aPaymentInfo.getPayments();
     }
-    
+
     /**
      * Get PaymentInfoList
-     * @return 
+     * 
+     * @return
      */
     public PaymentInfoList getPaymentInfoList() {
         return m_aPaymentInfo;
@@ -133,7 +138,7 @@ public abstract class JPaymentSelect extends javax.swing.JDialog implements JPay
      * @return
      */
     public double getTotal() {
-        return m_aPaymentInfo.getTotal();
+        return paymentService.getTotal(m_aPaymentInfo);
     }
 
     /**
@@ -142,12 +147,11 @@ public abstract class JPaymentSelect extends javax.swing.JDialog implements JPay
      * @return
      */
     public double getPaidTotal() {
-        return m_aPaymentInfo.getPaidTotal();
+        return paymentService.getPaidTotal(m_aPaymentInfo);
     }
-    
 
     public boolean showDialog(double total, CustomerInfoExt customerext, double deposit) {
-        m_aPaymentInfo = new PaymentInfoList();
+        m_aPaymentInfo = paymentService.createPaymentList();
         accepted = false;
         total = total - deposit;
         m_dTotal = total;
@@ -159,7 +163,7 @@ public abstract class JPaymentSelect extends javax.swing.JDialog implements JPay
 
         addTabs();
 
-        // remove all tabs        
+        // remove all tabs
         m_jTabPayment.removeAll();
 
         return accepted;
@@ -167,7 +171,7 @@ public abstract class JPaymentSelect extends javax.swing.JDialog implements JPay
 
     public boolean showDialog(double total, CustomerInfoExt customerext) {
 
-        m_aPaymentInfo = new PaymentInfoList();
+        m_aPaymentInfo = paymentService.createPaymentList();
         accepted = false;
 
         m_dTotal = total;
@@ -178,7 +182,7 @@ public abstract class JPaymentSelect extends javax.swing.JDialog implements JPay
         setPrintSelectedLabel();
         m_jTotalEuros.setText(Formats.CURRENCY.formatValue(m_dTotal));
 
-        /** 
+        /**
          * m_jPayTotal.setText(Formats.CURRENCY.formatValue(m_dTotal));
          * N. Deppe 08/11/2018
          * Fix issue where dialog keeps moving lower and lower on the screen
@@ -193,14 +197,14 @@ public abstract class JPaymentSelect extends javax.swing.JDialog implements JPay
         addTabs();
 
         if (m_jTabPayment.getTabCount() == 0) {
-            // No payment panels available            
+            // No payment panels available
             m_aPaymentInfo.add(getDefaultPayment(total));
             accepted = true;
         } else {
             getRootPane().setDefaultButton(m_jButtonOK);
             printState();
             setVisible(true);
-        }     
+        }
         m_jTabPayment.removeAll();
 
         return accepted;
@@ -332,7 +336,7 @@ public abstract class JPaymentSelect extends javax.swing.JDialog implements JPay
             return "/com/openbravo/images/voucher.png";
         }
     }
-    
+
     // TODO: CARD
     public class JPaymentCardCreator implements JPaymentCreator {
 
@@ -567,12 +571,12 @@ public abstract class JPaymentSelect extends javax.swing.JDialog implements JPay
     private void printState() {
 
         m_jRemaininglEuros.setText(Formats.CURRENCY.formatValue(
-                m_dTotal - m_aPaymentInfo.getTotal()));
+                paymentService.calculateRemaining(m_aPaymentInfo, m_dTotal)));
         m_jButtonRemove.setEnabled(!m_aPaymentInfo.isEmpty());
         m_jTabPayment.setSelectedIndex(0);
         ((JPaymentInterface) m_jTabPayment.getSelectedComponent())
                 .activate(customerext,
-                        m_dTotal - m_aPaymentInfo.getTotal(),
+                        paymentService.calculateRemaining(m_aPaymentInfo, m_dTotal),
                         m_sTransactionID);
     }
 
@@ -601,7 +605,8 @@ public abstract class JPaymentSelect extends javax.swing.JDialog implements JPay
      * WARNING: Do NOT modify this code. The content of this method is always
      * regenerated by the Form Editor.
      */
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
+    // <editor-fold defaultstate="collapsed" desc="Generated
+    // Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
         jPanel4 = new javax.swing.JPanel();
@@ -636,7 +641,10 @@ public abstract class JPaymentSelect extends javax.swing.JDialog implements JPay
 
         m_jTotalEuros.setFont(new java.awt.Font("Arial", 0, 24)); // NOI18N
         m_jTotalEuros.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-        m_jTotalEuros.setBorder(javax.swing.BorderFactory.createCompoundBorder(javax.swing.BorderFactory.createLineBorder(javax.swing.UIManager.getDefaults().getColor("Button.darkShadow")), javax.swing.BorderFactory.createEmptyBorder(1, 4, 1, 4)));
+        m_jTotalEuros.setBorder(javax.swing.BorderFactory.createCompoundBorder(
+                javax.swing.BorderFactory
+                        .createLineBorder(javax.swing.UIManager.getDefaults().getColor("Button.darkShadow")),
+                javax.swing.BorderFactory.createEmptyBorder(1, 4, 1, 4)));
         m_jTotalEuros.setOpaque(true);
         m_jTotalEuros.setPreferredSize(new java.awt.Dimension(150, 30));
         m_jTotalEuros.setRequestFocusEnabled(false);
@@ -647,7 +655,10 @@ public abstract class JPaymentSelect extends javax.swing.JDialog implements JPay
 
         m_jRemaininglEuros.setFont(new java.awt.Font("Arial", 0, 24)); // NOI18N
         m_jRemaininglEuros.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-        m_jRemaininglEuros.setBorder(javax.swing.BorderFactory.createCompoundBorder(javax.swing.BorderFactory.createLineBorder(javax.swing.UIManager.getDefaults().getColor("Button.darkShadow")), javax.swing.BorderFactory.createEmptyBorder(1, 4, 1, 4)));
+        m_jRemaininglEuros.setBorder(javax.swing.BorderFactory.createCompoundBorder(
+                javax.swing.BorderFactory
+                        .createLineBorder(javax.swing.UIManager.getDefaults().getColor("Button.darkShadow")),
+                javax.swing.BorderFactory.createEmptyBorder(1, 4, 1, 4)));
         m_jRemaininglEuros.setOpaque(true);
         m_jRemaininglEuros.setPreferredSize(new java.awt.Dimension(150, 30));
         m_jRemaininglEuros.setRequestFocusEnabled(false);
@@ -655,7 +666,8 @@ public abstract class JPaymentSelect extends javax.swing.JDialog implements JPay
         jPanel6.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.CENTER, 5, 0));
 
         m_jButtonRemove.setFont(m_jButtonRemove.getFont());
-        m_jButtonRemove.setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/openbravo/images/btnminus.png"))); // NOI18N
+        m_jButtonRemove
+                .setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/openbravo/images/btnminus.png"))); // NOI18N
         m_jButtonRemove.setToolTipText(AppLocal.getIntString("jpaymentselect.payment.delpartial")); // NOI18N
         m_jButtonRemove.setPreferredSize(new java.awt.Dimension(80, 45));
         m_jButtonRemove.addActionListener(new java.awt.event.ActionListener() {
@@ -677,43 +689,67 @@ public abstract class JPaymentSelect extends javax.swing.JDialog implements JPay
         javax.swing.GroupLayout jPanel4Layout = new javax.swing.GroupLayout(jPanel4);
         jPanel4.setLayout(jPanel4Layout);
         jPanel4Layout.setHorizontalGroup(
-            jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel4Layout.createSequentialGroup()
-                .addGap(5, 5, 5)
-                .addComponent(m_jLblTotalEuros1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(m_jTotalEuros, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jPanel6, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addGroup(jPanel4Layout.createSequentialGroup()
-                        .addComponent(m_jLblRemainingEuros, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(m_jRemaininglEuros, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addGap(18, 18, 18)
-                .addComponent(m_jButtonAdd, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(m_jButtonRemove, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(4, 4, 4))
-        );
+                jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(jPanel4Layout.createSequentialGroup()
+                                .addGap(5, 5, 5)
+                                .addComponent(m_jLblTotalEuros1, javax.swing.GroupLayout.PREFERRED_SIZE,
+                                        javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addComponent(m_jTotalEuros, javax.swing.GroupLayout.PREFERRED_SIZE,
+                                        javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                        .addComponent(jPanel6, javax.swing.GroupLayout.PREFERRED_SIZE,
+                                                javax.swing.GroupLayout.DEFAULT_SIZE,
+                                                javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addGroup(jPanel4Layout.createSequentialGroup()
+                                                .addComponent(m_jLblRemainingEuros,
+                                                        javax.swing.GroupLayout.PREFERRED_SIZE, 120,
+                                                        javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                .addComponent(m_jRemaininglEuros,
+                                                        javax.swing.GroupLayout.PREFERRED_SIZE,
+                                                        javax.swing.GroupLayout.DEFAULT_SIZE,
+                                                        javax.swing.GroupLayout.PREFERRED_SIZE)))
+                                .addGap(18, 18, 18)
+                                .addComponent(m_jButtonAdd, javax.swing.GroupLayout.PREFERRED_SIZE,
+                                        javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(m_jButtonRemove, javax.swing.GroupLayout.PREFERRED_SIZE,
+                                        javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(4, 4, 4)));
         jPanel4Layout.setVerticalGroup(
-            jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel4Layout.createSequentialGroup()
-                .addGap(0, 0, Short.MAX_VALUE)
-                .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(m_jButtonRemove, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(m_jButtonAdd, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel4Layout.createSequentialGroup()
-                .addGap(5, 5, 5)
-                .addComponent(jPanel6, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(m_jLblTotalEuros1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(m_jRemaininglEuros, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(m_jLblRemainingEuros, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(m_jTotalEuros, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap())
-        );
+                jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel4Layout.createSequentialGroup()
+                                .addGap(0, 0, Short.MAX_VALUE)
+                                .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                        .addComponent(m_jButtonRemove, javax.swing.GroupLayout.Alignment.TRAILING,
+                                                javax.swing.GroupLayout.PREFERRED_SIZE,
+                                                javax.swing.GroupLayout.DEFAULT_SIZE,
+                                                javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(m_jButtonAdd, javax.swing.GroupLayout.Alignment.TRAILING,
+                                                javax.swing.GroupLayout.PREFERRED_SIZE,
+                                                javax.swing.GroupLayout.DEFAULT_SIZE,
+                                                javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel4Layout.createSequentialGroup()
+                                .addGap(5, 5, 5)
+                                .addComponent(jPanel6, javax.swing.GroupLayout.PREFERRED_SIZE,
+                                        javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                        .addComponent(m_jLblTotalEuros1, javax.swing.GroupLayout.PREFERRED_SIZE,
+                                                javax.swing.GroupLayout.DEFAULT_SIZE,
+                                                javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(m_jRemaininglEuros, javax.swing.GroupLayout.PREFERRED_SIZE,
+                                                javax.swing.GroupLayout.DEFAULT_SIZE,
+                                                javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(m_jLblRemainingEuros, javax.swing.GroupLayout.PREFERRED_SIZE,
+                                                javax.swing.GroupLayout.DEFAULT_SIZE,
+                                                javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(m_jTotalEuros, javax.swing.GroupLayout.PREFERRED_SIZE,
+                                                javax.swing.GroupLayout.DEFAULT_SIZE,
+                                                javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addContainerGap()));
 
         getContentPane().add(jPanel4, java.awt.BorderLayout.NORTH);
 
@@ -774,7 +810,8 @@ public abstract class JPaymentSelect extends javax.swing.JDialog implements JPay
 
         jPanel5.add(jPanel2, java.awt.BorderLayout.LINE_END);
 
-        m_jButtonPrint.setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/openbravo/images/printer24_off.png"))); // NOI18N
+        m_jButtonPrint
+                .setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/openbravo/images/printer24_off.png"))); // NOI18N
         m_jButtonPrint.setSelected(true);
         m_jButtonPrint.setToolTipText(AppLocal.getIntString("jpaymentselect.printer.tooltip")); // NOI18N
         m_jButtonPrint.setFocusPainted(false);
@@ -782,7 +819,8 @@ public abstract class JPaymentSelect extends javax.swing.JDialog implements JPay
         m_jButtonPrint.setMargin(new java.awt.Insets(8, 16, 8, 16));
         m_jButtonPrint.setPreferredSize(new java.awt.Dimension(80, 45));
         m_jButtonPrint.setRequestFocusEnabled(false);
-        m_jButtonPrint.setSelectedIcon(new javax.swing.ImageIcon(getClass().getResource("/com/openbravo/images/printer24.png"))); // NOI18N
+        m_jButtonPrint.setSelectedIcon(
+                new javax.swing.ImageIcon(getClass().getResource("/com/openbravo/images/printer24.png"))); // NOI18N
         m_jButtonPrint.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 m_jButtonPrintActionPerformed(evt);
@@ -802,39 +840,39 @@ public abstract class JPaymentSelect extends javax.swing.JDialog implements JPay
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 
-    private void m_jButtonRemoveActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_m_jButtonRemoveActionPerformed
+    private void m_jButtonRemoveActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_m_jButtonRemoveActionPerformed
 
-        m_aPaymentInfo.removeLast();
+        paymentService.removeLastPayment(m_aPaymentInfo);
         printState();
 
-    }//GEN-LAST:event_m_jButtonRemoveActionPerformed
+    }// GEN-LAST:event_m_jButtonRemoveActionPerformed
 
-    private void m_jButtonAddActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_m_jButtonAddActionPerformed
+    private void m_jButtonAddActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_m_jButtonAddActionPerformed
 
         PaymentInfo returnPayment = ((JPaymentInterface) m_jTabPayment.getSelectedComponent())
                 .executePayment();
         if (returnPayment != null) {
-            m_aPaymentInfo.add(returnPayment);
+            paymentService.addPayment(m_aPaymentInfo, returnPayment);
             printState();
         }
 
-    }//GEN-LAST:event_m_jButtonAddActionPerformed
+    }// GEN-LAST:event_m_jButtonAddActionPerformed
 
-    private void m_jTabPaymentStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_m_jTabPaymentStateChanged
+    private void m_jTabPaymentStateChanged(javax.swing.event.ChangeEvent evt) {// GEN-FIRST:event_m_jTabPaymentStateChanged
 
         if (m_jTabPayment.getSelectedComponent() != null) {
             ((JPaymentInterface) m_jTabPayment.getSelectedComponent())
                     .activate(customerext,
-                            m_dTotal - m_aPaymentInfo.getTotal(),
+                            paymentService.calculateRemaining(m_aPaymentInfo, m_dTotal),
                             m_sTransactionID);
             m_jRemaininglEuros.setText(
                     Formats.CURRENCY.formatValue(
-                            m_dTotal - m_aPaymentInfo.getTotal()));
+                            paymentService.calculateRemaining(m_aPaymentInfo, m_dTotal)));
         }
 
-    }//GEN-LAST:event_m_jTabPaymentStateChanged
+    }// GEN-LAST:event_m_jTabPaymentStateChanged
 
-    private void m_jButtonOKActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_m_jButtonOKActionPerformed
+    private void m_jButtonOKActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_m_jButtonOKActionPerformed
 
         SwingWorker<Object, Object> worker = new SwingWorker<>() {
             @Override
@@ -850,7 +888,7 @@ public abstract class JPaymentSelect extends javax.swing.JDialog implements JPay
                 m_jButtonOK.setEnabled(true);
                 m_jButtonCancel.setEnabled(true);
                 if (returnPayment != null) {
-                    m_aPaymentInfo.add(returnPayment);
+                    paymentService.addPayment(m_aPaymentInfo, returnPayment);
                     accepted = true;
                     dispose();
                 }
@@ -858,30 +896,30 @@ public abstract class JPaymentSelect extends javax.swing.JDialog implements JPay
         };
 
         worker.execute();
-    }//GEN-LAST:event_m_jButtonOKActionPerformed
+    }// GEN-LAST:event_m_jButtonOKActionPerformed
 
-    private void m_jButtonCancelActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_m_jButtonCancelActionPerformed
+    private void m_jButtonCancelActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_m_jButtonCancelActionPerformed
 
         dispose();
 
-    }//GEN-LAST:event_m_jButtonCancelActionPerformed
+    }// GEN-LAST:event_m_jButtonCancelActionPerformed
 
-    private void m_jButtonPrintActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_m_jButtonPrintActionPerformed
+    private void m_jButtonPrintActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_m_jButtonPrintActionPerformed
         if (!m_jButtonPrint.isSelected()) {
             jlblPrinterStatus.setText(AppLocal.getIntString("label.printerstatusOff"));
         } else {
             jlblPrinterStatus.setText(AppLocal.getIntString("label.printerstatusOn"));
         }
-    }//GEN-LAST:event_m_jButtonPrintActionPerformed
+    }// GEN-LAST:event_m_jButtonPrintActionPerformed
 
-    private void m_jTabPaymentKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_m_jTabPaymentKeyPressed
+    private void m_jTabPaymentKeyPressed(java.awt.event.KeyEvent evt) {// GEN-FIRST:event_m_jTabPaymentKeyPressed
 
         if (evt.getKeyCode() == KeyEvent.VK_F1) {
 
         } else if (evt.getKeyCode() == KeyEvent.VK_F2) {
-//            m_jEditLine.doClick();
+            // m_jEditLine.doClick();
         }
-    }//GEN-LAST:event_m_jTabPaymentKeyPressed
+    }// GEN-LAST:event_m_jTabPaymentKeyPressed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JPanel jPanel2;
@@ -903,7 +941,7 @@ public abstract class JPaymentSelect extends javax.swing.JDialog implements JPay
     // End of variables declaration//GEN-END:variables
 }
 
-//tabbedPane.setUI(new MyTabbedPaneUI());
+// tabbedPane.setUI(new MyTabbedPaneUI());
 class MyTabbedPaneUI extends MetalTabbedPaneUI {
 
     private final JTabbedPane tabPane;
@@ -927,7 +965,7 @@ class MyTabbedPaneUI extends MetalTabbedPaneUI {
         SwingUtilities.layoutCompoundLabel((JComponent) tabPane,
                 metrics, title, icon,
                 SwingUtilities.CENTER,
-                SwingUtilities.LEFT, //CENTER, &lt;----
+                SwingUtilities.LEFT, // CENTER, &lt;----
                 SwingUtilities.CENTER,
                 SwingUtilities.TRAILING,
                 tabRect,
@@ -935,8 +973,8 @@ class MyTabbedPaneUI extends MetalTabbedPaneUI {
                 textRect,
                 textIconGap);
         tabPane.putClientProperty("html", null);
-        textRect.translate(tabInsets.left, 0); //&lt;----
-        //textRect.width -= tabInsets.left+tabInsets.right;
+        textRect.translate(tabInsets.left, 0); // &lt;----
+        // textRect.width -= tabInsets.left+tabInsets.right;
 
         int xNudge = getTabLabelShiftX(tabPlacement, tabIndex, isSelected);
         int yNudge = getTabLabelShiftY(tabPlacement, tabIndex, isSelected);

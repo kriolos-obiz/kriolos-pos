@@ -2161,7 +2161,7 @@ public final class ProductsEditor extends com.openbravo.pos.panels.ValidationPan
                 jTableProductStock.setVisible(true);
             } else {
                 jTableProductStock.setVisible(false);
-                JOptionPane.showMessageDialog(null,
+                JOptionPane.showMessageDialog(this,
                         "No Stock Locations for this Product", "Locations", JOptionPane.INFORMATION_MESSAGE);
             }
             resetTranxTable();
@@ -2222,7 +2222,7 @@ public final class ProductsEditor extends com.openbravo.pos.panels.ValidationPan
             Clipboard clpbrd = Toolkit.getDefaultToolkit().getSystemClipboard();
             clpbrd.setContents(stringSelection, null);
 
-            JOptionPane.showMessageDialog(null,
+            JOptionPane.showMessageDialog(this,
                 AppLocal.getIntString("message.uuidcopy"));
         }
     }//GEN-LAST:event_jLabel1MouseClicked

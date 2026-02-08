@@ -79,20 +79,23 @@ public class JRootFrame extends javax.swing.JFrame implements AppMessage {
         } catch (BasicException ex) {
             //LOAD CONFIG PANEL
 
-            int opionRes = JMessageDialog.showConfirmDialog(this, 
-                    new MessageInf(MessageInf.SGN_DANGER, 
+            int opionRes = JMessageDialog.showConfirmDialog(this,
+                    new MessageInf(MessageInf.SGN_DANGER,
                             "<html>Application fail to start<br>Do you want to open the configuration panel?", ex));
 
             if (opionRes == JOptionPane.YES_OPTION) {
+                dispose();
                 JPanelConfiguration config = new JPanelConfiguration(m_props);
                 config.setCloseListener((JPanelConfiguration.CloseEvent e) -> {
-                    //This will be call when user press save or close button on config panel
                     dispose();
                     System.exit(0);
                 });
 
                 getContentPane().remove(splashScreen);
                 getContentPane().add(config, BorderLayout.CENTER);
+
+                setVisible(true);
+                return; // void (screenmode) execute
             } else {
                 dispose();
                 System.exit(0);
@@ -131,7 +134,7 @@ public class JRootFrame extends javax.swing.JFrame implements AppMessage {
     }
 
     private void modeKiosk() {
-
+        dispose();
         setUndecorated(true);
         setResizable(false);
 
