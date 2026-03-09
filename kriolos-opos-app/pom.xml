@@ -40,7 +40,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
         
         <mysql.version>9.2.0</mysql.version>
-        <jasperreports.version>7.0.1</jasperreports.version>
+        <jasperreports.version>7.0.4</jasperreports.version>
         <flatlaf.version>2.6</flatlaf.version>
     </properties>
 
