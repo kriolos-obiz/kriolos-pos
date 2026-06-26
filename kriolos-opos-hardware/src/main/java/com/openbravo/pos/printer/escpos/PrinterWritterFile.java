@@ -20,12 +20,13 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.file.Files;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- *
+ * Writer implementation that redirects raw printer bytes into a local file.
+ * Thread-safe implementation designed to handle high-concurrency POS printing.
+ * 
  * @author JG uniCenta
  */
 public class PrinterWritterFile extends PrinterWritter {
@@ -33,66 +34,87 @@ public class PrinterWritterFile extends PrinterWritter {
     private static final Logger LOGGER = Logger.getLogger(PrinterWritterFile.class.getName());
     private final String m_sFilePrinter;
     private OutputStream m_out;
+    
+    // Dedicated lock object to ensure atomicity and eliminate cross-method race conditions
+    private final Object lock = new Object();
 
     /**
-     *
-     * @param sFilePrinter
+     * Initializes the file writer with the target printer file path.
+     * 
+     * @param sFilePrinter The absolute or relative path to the destination file.
      */
     public PrinterWritterFile(String sFilePrinter) {
-        m_sFilePrinter = sFilePrinter;
-        m_out = null;
+        this.m_sFilePrinter = sFilePrinter;
+        this.m_out = null;
     }
 
     /**
-     *
-     * @param data
+     * Writes raw byte arrays to the designated printer file.
+     * Thread-safe block prevents data interleaving from concurrent sales.
+     * 
+     * @param data The raw byte array payload to write.
      */
     @Override
     protected void internalWrite(byte[] data) {
+        if (data == null || data.length == 0) {
+            return;
+        }
 
-        try {
-            File file = new File(m_sFilePrinter);
-            if (!file.exists()) {
-                Files.createFile(file.toPath());
+        synchronized (lock) {
+            try {
+                if (m_out == null) {
+                    File file = new File(m_sFilePrinter);
+                    File parentDir = file.getParentFile();
+                    
+                    if (parentDir != null && !parentDir.exists()) {
+                        if (!parentDir.mkdirs()) {
+                            LOGGER.log(Level.WARNING, "Failed to create directories for path: {0}", parentDir.getAbsolutePath());
+                        }
+                    }
+                    
+                    m_out = new FileOutputStream(file);
+                }
+                m_out.write(data);
+            } catch (IOException e) {
+                LOGGER.log(Level.SEVERE, "Exception occurred while writing data to file: " + m_sFilePrinter, e);
             }
-            if (m_out == null) {
-                m_out = new FileOutputStream(m_sFilePrinter);  // No poner append = true.
-            }
-            m_out.write(data);
-        } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "Exception on write to file: "+m_sFilePrinter, e);
         }
     }
 
     /**
-     *
+     * Flushes buffered data and explicitly releases file system locks.
      */
     @Override
     protected void internalFlush() {
-        try {
-            if (m_out != null) {
-                m_out.flush();
-                m_out.close();
-                m_out = null;
-            }
-        } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "Exception on flush to file: "+m_sFilePrinter, e);
+        synchronized (lock) {
+            closeFileResources();
         }
     }
 
     /**
-     *
+     * Closes the active file output stream and cleans up resources safely.
      */
     @Override
     protected void internalClose() {
-        try {
-            if (m_out != null) {
+        synchronized (lock) {
+            closeFileResources();
+        }
+    }
+
+    /**
+     * Helper method to centralize stream flushing, closing, and nullification.
+     * Must always be invoked within a synchronized block holding the lock.
+     */
+    private void closeFileResources() {
+        if (m_out != null) {
+            try {
                 m_out.flush();
                 m_out.close();
-                m_out = null;
+            } catch (IOException e) {
+                LOGGER.log(Level.SEVERE, "Exception occurred while closing file resources for: " + m_sFilePrinter, e);
+            } finally {
+                m_out = null; // Ensured to happen even if close() throws an exception
             }
-        } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "Exception on close file: "+m_sFilePrinter, e);
         }
     }
 }

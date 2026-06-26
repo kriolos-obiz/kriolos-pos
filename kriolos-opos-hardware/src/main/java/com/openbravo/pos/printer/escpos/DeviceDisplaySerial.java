@@ -18,7 +18,7 @@ package com.openbravo.pos.printer.escpos;
 
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.printer.DeviceDisplay;
-import com.openbravo.pos.printer.DeviceDisplayBase;
+import com.openbravo.pos.printer.DeviceDisplayEngine;
 /**
  *
  * @author adrianromero
@@ -27,21 +27,12 @@ public abstract class DeviceDisplaySerial implements DeviceDisplay {
     
     private String m_sName;    
 
-    /**
-     *
-     */
     protected PrinterWritter display;
 
-    /**
-     *
-     */
-    protected DeviceDisplayBase m_displaylines;
-    
-    /**
-     *
-     */
+    protected DeviceDisplayEngine baseDeviceDisplay;
+
     public DeviceDisplaySerial() {
-        m_displaylines = new DeviceDisplayBase(this);
+        baseDeviceDisplay = new DeviceDisplayEngine(this);
     }
     
     /**
@@ -71,15 +62,6 @@ public abstract class DeviceDisplaySerial implements DeviceDisplay {
     public String getDisplayDescription() {
         return null;
     }        
-
-    /**
-     *
-     * @return
-     */
-    @Override
-    public javax.swing.JComponent getDisplayComponent() {
-        return null;
-    }
     
     /**
      *
@@ -89,7 +71,7 @@ public abstract class DeviceDisplaySerial implements DeviceDisplay {
      */
     @Override
     public void writeVisor(int animation, String sLine1, String sLine2) {
-        m_displaylines.writeVisor(animation, sLine1, sLine2);
+        baseDeviceDisplay.writeVisor(animation, sLine1, sLine2);
     }
 
     /**
@@ -99,7 +81,7 @@ public abstract class DeviceDisplaySerial implements DeviceDisplay {
      */
     @Override
     public void writeVisor(String sLine1, String sLine2) {        
-        m_displaylines.writeVisor(sLine1, sLine2);
+        baseDeviceDisplay.writeVisor(sLine1, sLine2);
     }
      
     /**
@@ -107,7 +89,7 @@ public abstract class DeviceDisplaySerial implements DeviceDisplay {
      */
     @Override
     public void clearVisor() {
-        m_displaylines.clearVisor();
+        baseDeviceDisplay.clearVisor();
     }
     
     /**
