@@ -203,7 +203,7 @@ public abstract class JNumberDialog<T extends Number> extends javax.swing.JDialo
         );
 
         setSize(new java.awt.Dimension(326, 479));
-        setLocationRelativeTo(null);
+        //REMOVED SET LOCATION RELATIVE TO
     }// </editor-fold>//GEN-END:initComponents
 
     private void jcmdOKActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jcmdOKActionPerformed

@@ -285,7 +285,7 @@ public class JProductFinder extends javax.swing.JDialog {
         getContentPane().add(jPanel4, java.awt.BorderLayout.EAST);
 
         setSize(new java.awt.Dimension(758, 634));
-        setLocationRelativeTo(null);
+        //REMOVED SET LOCATION RELATIVE TO
     }// </editor-fold>//GEN-END:initComponents
 
     private void jListProductsMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jListProductsMouseClicked

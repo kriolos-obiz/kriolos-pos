@@ -226,7 +226,7 @@ public class JFind extends JDialog {
         getContentPane().add(jPanel2, java.awt.BorderLayout.SOUTH);
 
         setSize(new java.awt.Dimension(434, 251));
-        setLocationRelativeTo(null);
+        //REMOVED SET LOCATION RELATIVE TO
     }// </editor-fold>//GEN-END:initComponents
 
     private void jcmdCancelActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jcmdCancelActionPerformed

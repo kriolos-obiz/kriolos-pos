@@ -556,7 +556,7 @@ public class JBusinessPartnerFinder extends javax.swing.JDialog implements Edito
         getContentPane().add(jPanel3, java.awt.BorderLayout.CENTER);
 
         setSize(new java.awt.Dimension(758, 634));
-        setLocationRelativeTo(null);
+        //REMOVED SET LOCATION RELATIVE TO
     }// </editor-fold>//GEN-END:initComponents
     private void jcmdOKActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jcmdOKActionPerformed
 

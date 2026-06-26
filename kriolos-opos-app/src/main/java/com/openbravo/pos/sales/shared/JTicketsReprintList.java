@@ -395,7 +395,7 @@ TicketInfo ticket = dlSales.getReprintTicket(Id);
         getContentPane().add(jPanel3, java.awt.BorderLayout.SOUTH);
 
         setSize(new java.awt.Dimension(519, 399));
-        setLocationRelativeTo(null);
+        //REMOVED SET LOCATION RELATIVE TO
     }// </editor-fold>//GEN-END:initComponents
 
     private void m_jButtonCancelActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_m_jButtonCancelActionPerformed
