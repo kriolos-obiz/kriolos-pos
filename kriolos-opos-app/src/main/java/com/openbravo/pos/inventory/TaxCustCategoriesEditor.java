@@ -165,7 +165,7 @@ public final class TaxCustCategoriesEditor extends JPanel implements EditorRecor
             Clipboard clpbrd = Toolkit.getDefaultToolkit().getSystemClipboard();
             clpbrd.setContents(stringSelection, null);
         
-            JOptionPane.showMessageDialog(null, 
+            JOptionPane.showMessageDialog(this, 
                 AppLocal.getIntString("message.uuidcopy"));
         }
     }//GEN-LAST:event_jLabel2MouseClicked

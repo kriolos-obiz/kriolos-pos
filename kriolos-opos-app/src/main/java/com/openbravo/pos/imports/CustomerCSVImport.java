@@ -165,7 +165,7 @@ public class CustomerCSVImport extends JPanel implements JPanelView {
             customers.readHeaders();
 
             if (customers.getHeaderCount() < 5) {
-                JOptionPane.showMessageDialog(null,
+                JOptionPane.showMessageDialog(this,
                         "Incorrect header in your source file",
                         "Header Error",
                         JOptionPane.WARNING_MESSAGE);
@@ -220,7 +220,7 @@ public class CustomerCSVImport extends JPanel implements JPanelView {
             customers.close();
 
         } else {
-            JOptionPane.showMessageDialog(null, "Unable to locate csv file: "
+            JOptionPane.showMessageDialog(this, "Unable to locate csv file: "
                     + CSVFileName,
                     "File not found",
                     JOptionPane.WARNING_MESSAGE);
@@ -373,7 +373,7 @@ public class CustomerCSVImport extends JPanel implements JPanelView {
             }
 
         } else {
-            JOptionPane.showMessageDialog(null,
+            JOptionPane.showMessageDialog(this,
                     "Unable to locate "
                     + CSVFileName, "File not found",
                     JOptionPane.WARNING_MESSAGE);
@@ -386,7 +386,7 @@ public class CustomerCSVImport extends JPanel implements JPanelView {
         jtxtNoChange.setText(Integer.toString(noChange));
         jtxtBad.setText(Integer.toString(bad));
 
-        JOptionPane.showMessageDialog(null,
+        JOptionPane.showMessageDialog(this,
                 "Import Complete",
                 "Imported",
                 JOptionPane.WARNING_MESSAGE);

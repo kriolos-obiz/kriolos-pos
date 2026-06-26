@@ -1,0 +1,131 @@
+= Project Deep Analysis: KriolOS POS
+:toc:
+:toc-placement!:
+
+toc::[]
+
+== 1. Project Overview
+**KriolOS POS** is a Point of Sale system, forked from **UnicentaOPOS** (itself a fork of OpenBravoPOS). It is a Java-based desktop application using **Swing** for the UI, built with **Maven** as a multi-module project.
+
+* **Group ID**: `io.github.kriolos.opos`
+* **Artifact ID**: `kriolos-opos-parent`
+* **Version**: `1.0.0-SNAPSHOT`
+* **Java Version**: 17
+
+== 2. Architecture & Tech Stack
+
+=== Technology Stack
+* **Language**: Java 17
+* **Build Tool**: Maven (Multi-module)
+* **UI Framework**: Java Swing (NetBeans Platform modules used for layout)
+* **Database Access**: Custom JDBC wrapper/Session management (`com.openbravo.pos.forms.Session`, `DataLogicSystem`)
+* **Database Migration**: Liquibase
+* **Reporting**: Velocity (Receipt/Ticket generation)
+* **Testing**: JUnit 5
+* **Quality**: Checkstyle, PMD, SpotBugs
+
+=== Module Structure
+[cols="1,3"]
+|===
+| Module | Purpose
+
+| `kriolos-opos-app` 
+| Main application entry point (`StartPOS`) and core UI components (`JRootApp`, `JPrincipalApp`).
+
+| `kriolos-opos-domain` 
+| Core business domain models (`TicketInfo`, `PaymentInfo`, `CustomerInfoExt`). **Framework agnostic logic.**
+
+| `kriolos-opos-hardware` 
+| Abstraction layer for POS hardware (Printers, Scales, Scanners).
+
+| `kriolos-opos-base` 
+| Base utilities and shared infrastructure.
+
+| `kriolos-opos-assets-*` 
+| Images and Report templates.
+
+| `kriolos-opos-spi` 
+| Service Provider Interfaces (Likely for plugin/extension points).
+|===
+
+== 3. Core Architecture Components
+
+=== Application Lifecycle (`kriolos-opos-app`)
+* **Entry Point**: `com.openbravo.pos.forms.StartPOS` is the `main` class. It loads configuration (`AppConfig`) using command-line arguments.
+* **Root Controller**: `JRootApp` handles the main application window, session initialization, database migration checks, and hardware initialization.
+* **UI Management**: Uses a `CardLayout` to switch between `JAuthPanel` (Login) and `JPrincipalApp` (Main Application Interface).
+* **Instance Management**: Supports single-instance enforcement via `InstanceManager`.
+
+=== Domain Model (`kriolos-opos-domain`)
+* **Ticket (`TicketInfo`)**: The central entity representing a sales transaction. It aggregates `TicketLineInfo` (items), `PaymentInfo` (payments), `CustomerInfo`, and `TaxInfo`. Implements `SerializableRead` and `Externalizable` for data persistence/transfer.
+* **Payments (`PaymentInfo`)**: Abstract base class for payment methods, extended by specific types (e.g., `PaymentInfoMagcard`, `PaymentInfoTicket`).
+* **Data Transfer**: Domain objects often implement `readValues(DataRead dr)` for mapping from JDBC `ResultSet` equivalents.
+
+=== Hardware Abstraction (`kriolos-opos-hardware`)
+* **Device Support**: Explicit modules for `printer`, `scale`, and `scanner` (Scanpal2).
+* **Abstraction**: `DeviceTicket`, `DeviceScale`, `DeviceScanner` interfaces allow the app to interact with hardware without knowing specific implementation details.
+* **Printing**: Uses Velocity templates for defining receipt layouts, which are then parsed and sent to the `DeviceTicket` interface.
+
+== 4. Logic Extraction Plan (UI -> Domain)
+**Objective**: Extract business logic from `kriolos-opos-app` (Swing UI) to `kriolos-opos-domain` to facilitate migration to Quarkus.
+
+=== 4.1 Identified Logic in UI
+* **Sales Logic (`JPanelTicket.java` & `JTicketsBagTicket.java`)**:
+** `addTicketLine`: Adds a product to the ticket. Handles tax lookup.
+** `removeTicketLine`: Removes a line. Handles stock verification callbacks.
+** `printPartialTotals`: Updates UI labels (Model -> View sync).
+** `paintTicketLine`: Updates a specific line.
+** `countArticles`: Enables/Disables split button based on item count.
+** `saveCurrentTicket`: Persists ticket to shared storage.
+* **Payment Logic (`JPaymentSelect.java`)**:
+** `showDialog`: Initializes payment selection, calculates remaining total.
+** `printState`: Updates remaining amount UI.
+** `getDefaultPayment`: Logic to select default payment method.
+* **Inventory Logic**:
+** `checkStock`: Verifies product availability (in `JPanelTicket`).
+
+=== 4.2 Proposed Domain Services
+We will create new Service classes in `kriolos-opos-domain` to encapsulate this logic:
+
+#### `com.openbravo.pos.sales.SalesService`
+* **Purpose**: Manage the lifecycle of a `TicketInfo` object.
+* **Key Methods**:
+** `TicketInfo createTicket()`
+** `void addLine(TicketInfo ticket, ProductInfoExt product, double quantity)`
+** `void removeLine(TicketInfo ticket, int index)`
+** `void calculateTaxes(TicketInfo ticket)` (Moves logic from `TaxesLogic` integration)
+** `double getTotal(TicketInfo ticket)`
+
+#### `com.openbravo.pos.payment.PaymentService`
+* **Purpose**: Handle payment calculations and validation.
+* **Key Methods**:
+** `double calculateRemaining(TicketInfo ticket, List<PaymentInfo> payments)`
+** `PaymentInfo createPayment(String paymentType, double amount)`
+** `boolean validatePayment(PaymentInfo payment)`
+
+#### `com.openbravo.pos.inventory.InventoryService`
+* **Purpose**: Abstract stock checking.
+* **Key Methods**:
+** `ProductStock getStock(String productId)`
+** `boolean isStockAvailable(String productId, double quantity)`
+
+=== 4.3 Refactoring Steps
+. **Create Interfaces**: Define `SalesService`, `PaymentService`, and `InventoryService` interfaces in `kriolos-opos-domain`.
+. **Implement Default Services**: Create basic implementations in `kriolos-opos-domain`. (`SalesServiceImpl` created).
+. **Inject Services**: Update `JPanelTicket` to use `SalesService` instead of direct `m_oTicket` manipulation where complex logic exists.
+. **Refactor Payment**: Update `JPaymentSelect` to use `PaymentService`.
+
+NOTE: `TaxesLogic` was found to be already in `kriolos-opos-domain`, so no move was necessary.
+
+== 5. Key Design Patterns
+* **MVC (Model-View-Controller)**: Heavily used in Swing components (`JRootApp` acting as controller for the root view).
+* **Factory Pattern**: implementation of hardware devices (e.g., `DeviceScannerFactory`).
+* **Singleton/Instance Management**: `AppConfig`, `InstanceManager` for global configuration and singleton app enforcement.
+* **Data Access Object (DAO)**: `DataLogicSystem` acts as a facade/DAO for database operations, abstracting SQL execution.
+* **Service Provider Interface (SPI)**: Hinted by the `kriolos-opos-spi` module, likely for extensibility.
+
+== 6. Recommendations
+* **Legacy Codebase**: The "OpenBravo" package structure (`com.openbravo.pos`) is preserved, indicating a legacy fork. Refactoring to a new root package would be a significant effort.
+* **Swing UI**: The UI is built on Swing, which is mature but dated. Consider modernizing if a web or mobile interface is desired in the future.
+* **Database Coupling**: The data access layer seems custom-built. Adopting a standard ORM (like Hibernate/JPA) might simplify maintenance but requires significant refactoring.
+* **Java 17 Upgrade**: Being on Java 17 is excellent, allowing use of modern language features (Records, Switch expressions, etc.), though the codebase itself may not yet fully utilize them.

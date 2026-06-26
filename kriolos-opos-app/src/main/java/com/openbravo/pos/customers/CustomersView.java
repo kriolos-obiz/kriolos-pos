@@ -1501,7 +1501,7 @@ public final class CustomersView extends com.openbravo.pos.panels.ValidationPane
                 jLblTranCount.setText(TranCount + " for " + m_jName.getText());
             } else {
                 jTableCustomerTransactions.setVisible(false);
-                JOptionPane.showMessageDialog(null,
+                JOptionPane.showMessageDialog(this,
                         AppLocal.getIntString("message.nocustomertranx"),
                         AppLocal.getIntString("label.Transactions"),
                         JOptionPane.INFORMATION_MESSAGE);
@@ -1549,7 +1549,7 @@ public final class CustomersView extends com.openbravo.pos.panels.ValidationPane
             Clipboard clpbrd = Toolkit.getDefaultToolkit().getSystemClipboard();
             clpbrd.setContents(stringSelection, null);
 
-            JOptionPane.showMessageDialog(null,
+            JOptionPane.showMessageDialog(this,
                     AppLocal.getIntString("message.uuidcopy"));
         }
     }//GEN-LAST:event_jLabel7MouseClicked

@@ -214,7 +214,7 @@ public class JSupplierFinder extends javax.swing.JDialog implements EditorCreato
                     if (n != 1) {
                         this.setVisible(false);
                         appView.getAppUserView().showTask("com.openbravo.pos.suppliers.SuppliersPanel");
-                        JOptionPane.showMessageDialog(null,
+                        JOptionPane.showMessageDialog(this,
                                 "You must complete Account and Search Key Then Save to add to Ticket",
                                 "Create Supplier", JOptionPane.OK_OPTION);
                     }

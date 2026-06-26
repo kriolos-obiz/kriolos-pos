@@ -135,19 +135,27 @@ public class JPanelConfiguration extends JPanel implements JPanelView {
     }
 
     private void saveProperties() {
-
         try {
-            m_panelconfig.forEach(c -> {
-                c.saveProperties(config);
-            });
+            // Garante que a pasta pai existe antes de salvar
+            java.io.File parent = config.getConfigFile().getParentFile();
+            if (parent != null && !parent.exists()) {
+                parent.mkdirs();
+            }
 
+            m_panelconfig.forEach(c -> c.saveProperties(config));
             config.save();
+
             JOptionPane.showMessageDialog(this,
                     AppLocal.getIntString("message.restartchanges"),
                     AppLocal.getIntString("message.title"),
                     JOptionPane.INFORMATION_MESSAGE);
+
+            // Evento on sucess save
+            if (closeEventListener != null) {
+                closeEventListener.windowClosed(new CloseEvent(this));
+            }
         } catch (HeadlessException | IOException e) {
-            LOGGER.log(Level.WARNING, "loading properties", e);
+            LOGGER.log(Level.SEVERE, "Erro ao gravar ficheiro de configuração", e);
             JMessageDialog.showMessage(this,
                     new MessageInf(MessageInf.SGN_WARNING,
                             AppLocal.getIntString("message.cannotsaveconfig"), e));

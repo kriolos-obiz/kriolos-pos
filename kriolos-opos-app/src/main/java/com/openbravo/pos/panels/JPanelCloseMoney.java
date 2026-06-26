@@ -24,10 +24,7 @@ import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.gui.MessageInf;
 import com.openbravo.data.gui.TableRendererBasic;
-import com.openbravo.data.loader.Datas;
-import com.openbravo.data.loader.SerializerWriteBasic;
 import com.openbravo.data.loader.Session;
-import com.openbravo.data.loader.StaticSentence;
 import com.openbravo.format.Formats;
 import com.openbravo.pos.printer.TicketParser;
 import com.openbravo.pos.printer.TicketPrinterException;
@@ -35,14 +32,14 @@ import com.openbravo.pos.scripting.ScriptEngine;
 import com.openbravo.pos.scripting.ScriptException;
 import com.openbravo.pos.scripting.ScriptFactory;
 import java.awt.Dimension;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.Date;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.*;
+import com.openbravo.pos.payment.CashManagementService;
+import com.openbravo.pos.payment.CashManagementServiceImpl;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumnModel;
 
@@ -57,6 +54,8 @@ public class JPanelCloseMoney extends JPanel implements JPanelView, BeanFactoryA
     private DataLogicSystem dataLogicSystem;
 
     private PaymentsModel m_PaymentsToClose = null;
+
+    private CashManagementService cashManagementService;
 
     private TicketParser ticketParser;
 
@@ -75,8 +74,10 @@ public class JPanelCloseMoney extends JPanel implements JPanelView, BeanFactoryA
         dataLogicSystem = (DataLogicSystem) appView.getBean("com.openbravo.pos.forms.DataLogicSystem");
         ticketParser = new TicketParser(appView.getDeviceTicket(), dataLogicSystem);
 
+        cashManagementService = new CashManagementServiceImpl(appView.getSession(), dataLogicSystem);
+
         m_jTicketTable.setDefaultRenderer(Object.class, new TableRendererBasic(
-                new Formats[]{new FormatsPayment(), Formats.CURRENCY, Formats.INT}));
+                new Formats[] { new FormatsPayment(), Formats.CURRENCY, Formats.INT }));
         m_jTicketTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         m_jScrollTableTicket.getVerticalScrollBar().setPreferredSize(new Dimension(25, 25));
         m_jTicketTable.getTableHeader().setReorderingAllowed(false);
@@ -84,7 +85,7 @@ public class JPanelCloseMoney extends JPanel implements JPanelView, BeanFactoryA
         m_jTicketTable.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
         m_jsalestable.setDefaultRenderer(Object.class, new TableRendererBasic(
-                new Formats[]{Formats.STRING, Formats.CURRENCY, Formats.CURRENCY, Formats.CURRENCY}));
+                new Formats[] { Formats.STRING, Formats.CURRENCY, Formats.CURRENCY, Formats.CURRENCY }));
         m_jsalestable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         m_jScrollSales.getVerticalScrollBar().setPreferredSize(new Dimension(25, 25));
         m_jsalestable.getTableHeader().setReorderingAllowed(false);
@@ -182,97 +183,16 @@ public class JPanelCloseMoney extends JPanel implements JPanelView, BeanFactoryA
         jColumns.getColumn(2).setPreferredWidth(100);
         jColumns.getColumn(2).setResizable(false);
 
-        numOfLinesRemoved = 0;
-        numOfNoSales = 0;
-        Session dbSession = appView.getSession();
-
-        try (Connection connectionDB = dbSession.getConnection()) {
-            CloseMoneyDAO dao = new CloseMoneyDAO(connectionDB);
-            numOfNoSales = dao.getNumOfNoSales(m_PaymentsToClose.getDateStart());
-            numOfLinesRemoved = dao.getNumOfRemovedLines(m_PaymentsToClose.getDateStart());
-                
-        }
-        catch (SQLException ex) {
-            LOGGER.log(Level.WARNING, "Exception on loading Close Cash data: ", ex);
+        try {
+            numOfNoSales = cashManagementService.getNumOfNoSales(m_PaymentsToClose.getDateStart());
+            numOfLinesRemoved = cashManagementService.getNumOfRemovedLines(m_PaymentsToClose.getDateStart());
+        } catch (BasicException ex) {
+            Logger.getLogger(JPanelCloseMoney.class.getName()).log(Level.WARNING,
+                    "Exception on loading Close Cash data: ", ex);
         }
 
         m_jLinesRemoved.setText(numOfLinesRemoved.toString());
         m_jNoCashSales.setText(numOfNoSales.toString());
-    }
-
-    private void CloseCash() {
-
-        int res = JOptionPane.showConfirmDialog(this,
-                AppLocal.getIntString("message.wannaclosecash"),
-                AppLocal.getIntString("message.title"),
-                JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
-
-        if (res == JOptionPane.YES_OPTION) {
-
-            Date dNow = new Date();
-
-            try {
-
-                if (appView.getActiveCashDateEnd() == null) {
-                    new StaticSentence(appView.getSession(),
-                            "UPDATE closedcash SET DATEEND = ?, NOSALES = ? WHERE HOST = ? AND MONEY = ?",
-                            new SerializerWriteBasic(new Datas[]{
-                        Datas.TIMESTAMP,
-                        Datas.INT,
-                        Datas.STRING,
-                        Datas.STRING}))
-                            .exec(new Object[]{dNow, numOfNoSales,
-                        appView.getProperties().getHost(),
-                        appView.getActiveCashIndex()});
-                }
-            }
-            catch (BasicException e) {
-                MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE,
-                        AppLocal.getIntString("message.cannotclosecash"), e);
-                msg.show(this);
-            }
-
-            try {
-                // Create NEW CloshCash Sequence
-                appView.setActiveCash(UUID.randomUUID().toString(),
-                        appView.getActiveCashSequence() + 1, dNow, null);
-
-                // Create CURRENT CloseCash Sequence
-                dataLogicSystem.execInsertCash(new Object[]{appView.getActiveCashIndex(),
-                    appView.getProperties().getHost(),
-                    appView.getActiveCashSequence(),
-                    appView.getActiveCashDateStart(),
-                    appView.getActiveCashDateEnd(), 0});
-
-                dataLogicSystem.execDrawerOpened(new Object[]{appView.getAppUserView().getUser().getName(), "Close Cash"});
-
-                // Set ENDDATE CloseCash Date
-                m_PaymentsToClose.setDateEnd(dNow);
-
-                // print report
-                printPayments("Printer.CloseCash");
-
-                // Close Cash Message
-                JOptionPane.showMessageDialog(this,
-                        AppLocal.getIntString("message.closecashok"),
-                        AppLocal.getIntString("message.title"),
-                        JOptionPane.INFORMATION_MESSAGE);
-            }
-            catch (BasicException e) {
-                MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE,
-                        AppLocal.getIntString("message.cannotclosecash"), e);
-                msg.show(this);
-            }
-
-            try {
-                loadData();
-            }
-            catch (BasicException e) {
-                MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE,
-                        AppLocal.getIntString("label.noticketstoclose"), e);
-                msg.show(this);
-            }
-        }
     }
 
     private void printPayments(String report) {
@@ -288,9 +208,8 @@ public class JPanelCloseMoney extends JPanel implements JPanelView, BeanFactoryA
                 script.put("payments", m_PaymentsToClose);
                 script.put("nosales", numOfNoSales.toString());
                 ticketParser.printTicket(script.eval(sresource).toString());
-// JG 16 May 2012 use multicatch
-            }
-            catch (ScriptException | TicketPrinterException e) {
+                // JG 16 May 2012 use multicatch
+            } catch (ScriptException | TicketPrinterException e) {
                 MessageInf msg = new MessageInf(MessageInf.SGN_WARNING,
                         AppLocal.getIntString("message.cannotprintticket"), e);
                 msg.show(this);
@@ -321,7 +240,8 @@ public class JPanelCloseMoney extends JPanel implements JPanelView, BeanFactoryA
      * WARNING: Do NOT modify this code. The content of this method is always
      * regenerated by the Form Editor.
      */
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
+    // <editor-fold defaultstate="collapsed" desc="Generated
+    // Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
         jPanel1 = new javax.swing.JPanel();
@@ -442,13 +362,12 @@ public class JPanelCloseMoney extends JPanel implements JPanelView, BeanFactoryA
 
         m_jTicketTable.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
         m_jTicketTable.setModel(new javax.swing.table.DefaultTableModel(
-            new Object [][] {
+                new Object[][] {
 
-            },
-            new String [] {
+                },
+                new String[] {
 
-            }
-        ));
+                }));
         m_jTicketTable.setFocusable(false);
         m_jTicketTable.setIntercellSpacing(new java.awt.Dimension(0, 1));
         m_jTicketTable.setRequestFocusEnabled(false);
@@ -545,7 +464,8 @@ public class JPanelCloseMoney extends JPanel implements JPanelView, BeanFactoryA
         jPanel1.add(m_jCloseCash, new org.netbeans.lib.awtextra.AbsoluteConstraints(170, 450, -1, -1));
 
         m_jPrintCashPreview.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
-        m_jPrintCashPreview.setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/openbravo/images/printer.png"))); // NOI18N
+        m_jPrintCashPreview
+                .setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/openbravo/images/printer.png"))); // NOI18N
         m_jPrintCashPreview.setText(AppLocal.getIntString("button.partialcash")); // NOI18N
         m_jPrintCashPreview.setToolTipText(AppLocal.getIntString("tooltip.btn.partialcash")); // NOI18N
         m_jPrintCashPreview.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
@@ -595,7 +515,7 @@ public class JPanelCloseMoney extends JPanel implements JPanelView, BeanFactoryA
         add(jPanel1, java.awt.BorderLayout.CENTER);
     }// </editor-fold>//GEN-END:initComponents
 
-    private void m_jCloseCashActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_m_jCloseCashActionPerformed
+    private void m_jCloseCashActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_m_jCloseCashActionPerformed
 
         int res = JOptionPane.showConfirmDialog(this,
                 AppLocal.getIntString("message.wannaclosecash"),
@@ -606,13 +526,12 @@ public class JPanelCloseMoney extends JPanel implements JPanelView, BeanFactoryA
 
             String scriptId = "cash.close";
             try {
-                //Fire cash.closed event
+                // Fire cash.closed event
                 ScriptEngine scriptEngine = ScriptFactory.getScriptEngine(ScriptFactory.BEANSHELL);
                 DataLogicSystem dlSystem = (DataLogicSystem) appView.getBean("com.openbravo.pos.forms.DataLogicSystem");
                 String script = dlSystem.getResourceAsXML(scriptId);
                 scriptEngine.eval(script);
-            }
-            catch (BeanFactoryException | ScriptException e) {
+            } catch (BeanFactoryException | ScriptException e) {
                 LOGGER.log(Level.WARNING, "Exception on executing script: " + scriptId, e);
             }
 
@@ -621,19 +540,13 @@ public class JPanelCloseMoney extends JPanel implements JPanelView, BeanFactoryA
             try {
 
                 if (appView.getActiveCashDateEnd() == null) {
-                    new StaticSentence(appView.getSession(),
-                            "UPDATE closedcash SET DATEEND = ?, NOSALES = ? WHERE HOST = ? AND MONEY = ?",
-                            new SerializerWriteBasic(new Datas[]{
-                        Datas.TIMESTAMP,
-                        Datas.INT,
-                        Datas.STRING,
-                        Datas.STRING}))
-                            .exec(new Object[]{dNow, numOfNoSales,
-                        appView.getProperties().getHost(),
-                        appView.getActiveCashIndex()});
+                    cashManagementService.closeCash(appView.getProperties().getHost(),
+                            0, // sequence not used in update
+                            appView.getActiveCashIndex(),
+                            dNow,
+                            numOfNoSales);
                 }
-            }
-            catch (BasicException e) {
+            } catch (BasicException e) {
                 MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE,
                         AppLocal.getIntString("message.cannotclosecash"), e);
                 msg.show(this);
@@ -645,13 +558,14 @@ public class JPanelCloseMoney extends JPanel implements JPanelView, BeanFactoryA
                         appView.getActiveCashSequence() + 1, dNow, null);
 
                 // creamos la caja activa
-                dataLogicSystem.execInsertCash(new Object[]{appView.getActiveCashIndex(),
-                    appView.getProperties().getHost(),
-                    appView.getActiveCashSequence(),
-                    appView.getActiveCashDateStart(),
-                    appView.getActiveCashDateEnd(), 0});
+                dataLogicSystem.execInsertCash(new Object[] { appView.getActiveCashIndex(),
+                        appView.getProperties().getHost(),
+                        appView.getActiveCashSequence(),
+                        appView.getActiveCashDateStart(),
+                        appView.getActiveCashDateEnd(), 0 });
 
-                dataLogicSystem.execDrawerOpened(new Object[]{appView.getAppUserView().getUser().getName(), "Close Cash"});
+                dataLogicSystem
+                        .execDrawerOpened(new Object[] { appView.getAppUserView().getUser().getName(), "Close Cash" });
 
                 // ponemos la fecha de fin
                 m_PaymentsToClose.setDateEnd(dNow);
@@ -664,8 +578,7 @@ public class JPanelCloseMoney extends JPanel implements JPanelView, BeanFactoryA
                         AppLocal.getIntString("message.closecashok"),
                         AppLocal.getIntString("message.title"),
                         JOptionPane.INFORMATION_MESSAGE);
-            }
-            catch (BasicException e) {
+            } catch (BasicException e) {
                 MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE,
                         AppLocal.getIntString("message.cannotclosecash"), e);
                 msg.show(this);
@@ -673,30 +586,28 @@ public class JPanelCloseMoney extends JPanel implements JPanelView, BeanFactoryA
 
             try {
                 loadData();
-            }
-            catch (BasicException e) {
+            } catch (BasicException e) {
                 MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE,
                         AppLocal.getIntString("label.noticketstoclose"), e);
                 msg.show(this);
             }
 
         }
-    }//GEN-LAST:event_m_jCloseCashActionPerformed
+    }// GEN-LAST:event_m_jCloseCashActionPerformed
 
-    private void m_jPrintCashPreviewActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_m_jPrintCashPreviewActionPerformed
+    private void m_jPrintCashPreviewActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_m_jPrintCashPreviewActionPerformed
 
         printPayments("Printer.PartialCash");
 
-    }//GEN-LAST:event_m_jPrintCashPreviewActionPerformed
+    }// GEN-LAST:event_m_jPrintCashPreviewActionPerformed
 
-    private void m_jPrintCash1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_m_jPrintCash1ActionPerformed
+    private void m_jPrintCash1ActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_m_jPrintCash1ActionPerformed
         printPayments("Printer.CloseCash.Preview");
-    }//GEN-LAST:event_m_jPrintCash1ActionPerformed
+    }// GEN-LAST:event_m_jPrintCash1ActionPerformed
 
-    private void m_jReprintCashActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_m_jReprintCashActionPerformed
+    private void m_jReprintCashActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_m_jReprintCashActionPerformed
         appView.getAppUserView().showTask("com.openbravo.pos.panels.JPanelCloseMoneyReprint");
-    }//GEN-LAST:event_m_jReprintCashActionPerformed
-
+    }// GEN-LAST:event_m_jReprintCashActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel jLabel1;

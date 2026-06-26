@@ -189,7 +189,7 @@ public class JCustomerFinder extends javax.swing.JDialog implements EditorCreato
                         CustomerInfoExt customerInfoExt = customerInfoGlobal.getCustomerInfoExt();
                         this.setVisible(false);
                         appView.getAppUserView().showTask("com.openbravo.pos.customers.CustomersPanel");
-                        JOptionPane.showMessageDialog(null, 
+                        JOptionPane.showMessageDialog(this, 
                             "You must complete Account and Search Key Then Save to add to Ticket",
                             "Create Customer",JOptionPane.OK_OPTION);
                     }

@@ -375,7 +375,7 @@ public class StockManagement extends JPanel implements JPanelView {
                 jTableProductStock.setVisible(true);
             } else {
                 jTableProductStock.setVisible(false);
-                JOptionPane.showMessageDialog(null,
+                JOptionPane.showMessageDialog(this,
                         AppLocal.getIntString("message.nostocklocation"),
                         AppLocal.getIntString("message.title.nostocklocation"),
                         JOptionPane.INFORMATION_MESSAGE);
@@ -1235,7 +1235,7 @@ public class StockManagement extends JPanel implements JPanelView {
         if (m_jSupplier.getSelectedItem() != null) {
 //            saveData();
         } else {
-            JOptionPane.showMessageDialog(null,
+            JOptionPane.showMessageDialog(this,
                     AppLocal.getIntString("message.supplierinvalid"),
                     AppLocal.getIntString("message.title.supplierinvalid"),
                     JOptionPane.WARNING_MESSAGE);

@@ -469,7 +469,7 @@ public class PeopleView extends JPanel implements EditorRecord<Object> {
             Clipboard clpbrd = Toolkit.getDefaultToolkit().getSystemClipboard();
             clpbrd.setContents(stringSelection, null);
         
-            JOptionPane.showMessageDialog(null, 
+            JOptionPane.showMessageDialog(this,
                 AppLocal.getIntString("message.uuidcopy"));
         }
     }//GEN-LAST:event_jLabel1MouseClicked

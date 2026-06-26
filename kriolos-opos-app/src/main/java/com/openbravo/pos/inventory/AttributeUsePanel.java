@@ -51,8 +51,7 @@ public class AttributeUsePanel extends JPanelTable2 {
                 new Field("ATRIBUTESET_ID", Datas.STRING, Formats.STRING),
                 new Field("ATTRIBUTE_ID", Datas.STRING, Formats.STRING),
                 new Field(AppLocal.getIntString("label.order"), Datas.INT, Formats.INT, false, true, true),
-                new Field(AppLocal.getIntString("label.name"), Datas.STRING, Formats.STRING, true, true, true)
-        );
+                new Field(AppLocal.getIntString("label.name"), Datas.STRING, Formats.STRING, true, true, true));
 
         Table table = new Table(
                 "attributeuse",
@@ -62,9 +61,7 @@ public class AttributeUsePanel extends JPanelTable2 {
                 new Column("LINENO"));
 
         lpr = row.getListProvider(app.getSession(),
-                "SELECT ATTUSE.ID, ATTUSE.attributeset_ID, ATTUSE.ATTRIBUTE_ID, ATTUSE.LINENO, ATT.NAME " +
-                "FROM attributeuse ATTUSE, attribute ATT " +
-                "WHERE ATTUSE.ATTRIBUTE_ID = ATT.ID AND ATTUSE.attributeset_ID = ? ORDER BY LINENO", filter);
+                DataLogicAttribute.SQL_ATTRIBUTE_USE_LIST, filter);
         spr = row.getSaveProvider(app.getSession(), table);
 
         editor = new AttributeUseEditor(app, dirty);
@@ -87,7 +84,7 @@ public class AttributeUsePanel extends JPanelTable2 {
      * @return
      */
     @Override
-    public Component getFilter(){
+    public Component getFilter() {
         return filter.getComponent();
     }
 

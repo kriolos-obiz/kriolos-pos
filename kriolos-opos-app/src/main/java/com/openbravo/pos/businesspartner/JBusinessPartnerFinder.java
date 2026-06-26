@@ -183,7 +183,7 @@ public class JBusinessPartnerFinder extends javax.swing.JDialog implements Edito
                     if (n != 1) {
                         this.setVisible(false);
                         appView.getAppUserView().showTask("com.openbravo.pos.customers.CustomersPanel");
-                        JOptionPane.showMessageDialog(null, 
+                        JOptionPane.showMessageDialog(this, 
                             "You must complete Account and Search Key Then Save to add to Ticket",
                             "Create Customer",JOptionPane.OK_OPTION);
                     }

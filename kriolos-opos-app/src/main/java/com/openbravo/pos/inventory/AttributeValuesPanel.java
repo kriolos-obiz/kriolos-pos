@@ -49,8 +49,7 @@ public class AttributeValuesPanel extends JPanelTable2 {
         row = new Row(
                 new Field("ID", Datas.STRING, Formats.STRING),
                 new Field("ATTRIBUTE_ID", Datas.STRING, Formats.STRING),
-                new Field(AppLocal.getIntString("label.value"), Datas.STRING, Formats.STRING, true, true, true)
-        );
+                new Field(AppLocal.getIntString("label.value"), Datas.STRING, Formats.STRING, true, true, true));
 
         Table table = new Table(
                 "attributevalue",
@@ -59,7 +58,7 @@ public class AttributeValuesPanel extends JPanelTable2 {
                 new Column("VALUE"));
 
         lpr = row.getListProvider(app.getSession(),
-                "SELECT ID, ATTRIBUTE_ID, VALUE FROM attributevalue WHERE ATTRIBUTE_ID = ? ORDER BY VALUE ", filter);
+                DataLogicAttribute.SQL_ATTRIBUTE_VALUE_LIST, filter);
         spr = row.getSaveProvider(app.getSession(), table);
 
         editor = new AttributeValuesEditor(dirty);
@@ -81,7 +80,7 @@ public class AttributeValuesPanel extends JPanelTable2 {
      * @return
      */
     @Override
-    public Component getFilter(){
+    public Component getFilter() {
         return filter.getComponent();
     }
 

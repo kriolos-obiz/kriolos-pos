@@ -458,7 +458,7 @@ public class JTicketsBagShared extends JTicketsBag {
 
                 try {
                     if (!m_App.hasPermission("sales.ReprintTicket")) {
-                        JOptionPane.showMessageDialog(null,
+                        JOptionPane.showMessageDialog(JTicketsBagShared.this,
                                 AppLocal.getIntString("message.reprintticketnotallow"),
                                 AppLocal.getIntString("message.reprintticketnotallowtitle"),
                                 JOptionPane.INFORMATION_MESSAGE);

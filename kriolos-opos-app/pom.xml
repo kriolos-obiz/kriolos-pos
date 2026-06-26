@@ -122,12 +122,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             <version>2.2.224</version>
             <scope>runtime</scope>
         </dependency>
-        <!--<dependency>
-            <groupId>org.xerial</groupId>
-            <artifactId>sqlite-jdbc</artifactId>
-            <version>3.50.3.0</version>
-            <scope>runtime</scope>
-        </dependency>-->
         <dependency>
             <groupId>io.roastedroot</groupId>
             <artifactId>sqlite4j</artifactId>
@@ -258,6 +252,23 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                         </goals>
                     </execution>
                 </executions>
+                <configuration>
+                    <mainClass>com.openbravo.pos.forms.StartPOS</mainClass>
+                    <systemProperties>
+                        <!-- on: active anti-aliasing default.
+                            lcd: Optimized for LCD (subpixel rendering). (the best choice).
+                            gasp
+                            -->
+                        <systemProperty>
+                            <key>awt.useSystemAAFontSettings</key>
+                            <value>lcd</value>
+                        </systemProperty>
+                        <systemProperty>
+                            <key>swing.aatext</key>
+                            <value>true</value>
+                        </systemProperty>
+                    </systemProperties>
+                </configuration>
                 <dependencies>
                     <dependency>
                         <groupId>com.formdev</groupId>
@@ -325,10 +336,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             <id>run-JFrmConfig</id>
             <properties>
                 <exec.mainClass>com.openbravo.pos.config.JFrmConfig</exec.mainClass>
-                <!--
-                <exec.mainClass>com.openbravo.pos.sales.JResetPickupID</exec.mainClass>
-                <exec.mainClass>com.unicenta.pos.transfer.TransferPanel</exec.mainClass>
-                -->
             </properties>
         </profile>
         
@@ -338,30 +345,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                 <exec.mainClass>net.sf.jasperreports.view.JasperDesignViewer</exec.mainClass>
                 <exec.args>-XML -Fsrc/main/resources/com/openbravo/reports/products.jrxml</exec.args>
             </properties>
-        </profile>
-        <profile>
-            <id>dev_dbmigration</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.liquibase</groupId>
-                        <artifactId>liquibase-maven-plugin</artifactId>
-                        <configuration>             
-                            <!--     
-                            <propertyFile>src/main/resources/pos_liquidbase/liquibase.properties</propertyFile>
-                            -->
-                            <changeLogFile>src/main/resources/pos_liquidbase/db-changelog-master.xml</changeLogFile>
-                        </configuration> 
-                        <dependencies>
-                            <dependency> 
-                                <groupId>com.mysql</groupId>
-                                <artifactId>mysql-connector-j</artifactId>
-                                <version>${mysql.version}</version> 
-                            </dependency> 
-                        </dependencies>               
-                    </plugin> 
-                </plugins>
-            </build>
         </profile>
         
         <profile>
@@ -387,60 +370,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                                 </configuration>
                             </execution>
                         </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        
-        <profile>
-            <id>liquibase</id>
-            <build>
-                <plugins>
-                    <!-- 
-                        mvn -Pliquibase liquibase:updateSQL
-                        mvn -Pliquibase liquibase:updateSQL -Dliquibase.outputFile=update.sql
-                        mvn -Pliquibase liquibase:updateSQL -Dliquibase.outputFile=update.sql
-                    -->
-                    <plugin>
-                        <groupId>org.liquibase</groupId>
-                        <artifactId>liquibase-maven-plugin</artifactId>
-                        <configuration>
-                            <changeLogFile>src/main/resources/pos_liquidbase/db-changelog-master.xml</changeLogFile>
-                            <!--
-                            <driver>com.mysql.cj.jdbc.Driver</driver>
-                            <url>jdbc:mysql://localhost:3306/your_database</url>
-                            <username>your_username</username>
-                            <password>your_password</password>
-                            -->
-                            <!--                                                    
-                            <driver>org.mariadb.jdbc.Driver</driver>
-                            <url>jdbc:mysql://localhost:3306/your_database</url>
-                            <username>your_username</username>
-                            <password>your_password</password>
-                            -->
-                            <!--
-                            <driver>org.h2.Driver</driver>
-                            <url>jdbc:sqlite:./target/kriolos_test.db</url>
-                            -->
-                            <!-- 
-                            <driver>org.hsqldb.jdbc.JDBCDriver</driver>
-                            <url>jdbc:sqlite:./target/kriolos_test.db</url>
-                            -->
-                            <!--  -->                                                  
-                            <driver>io.roastedroot.sqlite4j.JDBC </driver>
-                            <url>jdbc:sqlite:./target/kriolos_test.db</url>
-                           
-                            <!-- OUTPUT FILE -->
-                            <outputFile>target/update.sql</outputFile>
-                        </configuration>
-                        <dependencies>
-                            <dependency>
-                                <groupId>io.roastedroot</groupId>
-                                <artifactId>sqlite4j</artifactId>
-                                <version>3.51.0.0</version>
-                                <scope>runtime</scope>
-                            </dependency>
-                        </dependencies>
                     </plugin>
                 </plugins>
             </build>
