@@ -250,7 +250,7 @@ public class JProductAttEdit2 extends javax.swing.JDialog {
         getContentPane().add(jPanel3, java.awt.BorderLayout.EAST);
 
         setSize(new java.awt.Dimension(656, 388));
-        setLocationRelativeTo(null);
+        //REMOVED SET LOCATION RELATIVE TO
     }// </editor-fold>//GEN-END:initComponents
 
     private void m_jButtonOKActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_m_jButtonOKActionPerformed

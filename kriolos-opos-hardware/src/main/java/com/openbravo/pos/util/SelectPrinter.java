@@ -195,7 +195,7 @@ public class SelectPrinter extends javax.swing.JDialog {
         );
 
         setSize(new java.awt.Dimension(353, 117));
-        setLocationRelativeTo(null);
+        //REMOVED SET LOCATION RELATIVE TO
     }// </editor-fold>//GEN-END:initComponents
 
     private void jcmdOKActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jcmdOKActionPerformed

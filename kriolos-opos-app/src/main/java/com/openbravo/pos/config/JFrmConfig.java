@@ -120,7 +120,7 @@ public class JFrmConfig extends javax.swing.JFrame {
         setSize(new java.awt.Dimension(0, 0));
 
         setSize(new java.awt.Dimension(808, 794));
-        setLocationRelativeTo(null);
+        //REMOVED SET LOCATION RELATIVE TO
     }// </editor-fold>//GEN-END:initComponents
 
 

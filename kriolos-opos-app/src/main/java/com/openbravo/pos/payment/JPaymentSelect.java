@@ -837,7 +837,7 @@ public abstract class JPaymentSelect extends javax.swing.JDialog implements JPay
         getContentPane().add(jPanel5, java.awt.BorderLayout.SOUTH);
 
         setSize(new java.awt.Dimension(758, 497));
-        setLocationRelativeTo(null);
+        //REMOVED SET LOCATION RELATIVE TO
     }// </editor-fold>//GEN-END:initComponents
 
     private void m_jButtonRemoveActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_m_jButtonRemoveActionPerformed

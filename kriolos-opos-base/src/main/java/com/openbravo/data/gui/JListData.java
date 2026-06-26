@@ -142,7 +142,7 @@ public class JListData extends javax.swing.JDialog {
         getContentPane().add(jToolBar1, java.awt.BorderLayout.NORTH);
 
         setSize(new java.awt.Dimension(264, 337));
-        setLocationRelativeTo(null);
+        //REMOVED SET LOCATION RELATIVE TO
     }// </editor-fold>//GEN-END:initComponents
 
     private void m_jCancelActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_m_jCancelActionPerformed

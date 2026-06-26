@@ -561,7 +561,7 @@ public class JCustomerFinder extends javax.swing.JDialog implements EditorCreato
         getContentPane().add(jPanel3, java.awt.BorderLayout.CENTER);
 
         setSize(new java.awt.Dimension(758, 634));
-        setLocationRelativeTo(null);
+        //REMOVED SET LOCATION RELATIVE TO
     }// </editor-fold>//GEN-END:initComponents
     private void jcmdOKActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jcmdOKActionPerformed
 
