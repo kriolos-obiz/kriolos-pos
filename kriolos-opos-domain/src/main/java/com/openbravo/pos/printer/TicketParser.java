@@ -17,6 +17,7 @@ package com.openbravo.pos.printer;
 
 import com.openbravo.basic.BasicException;
 import com.openbravo.pos.forms.DataLogicSystem;
+import com.openbravo.pos.printer.custom.DeviceDisplayPDLED8;
 import com.openbravo.pos.printer.escpos.DeviceDisplayLED8;
 import com.openbravo.pos.ticket.TicketInfo;
 import com.openbravo.pos.util.AudioUtils;
@@ -124,7 +125,7 @@ public class TicketParser extends DefaultHandler {
         barcodeType = null;
         barcodePosition = null;
         visorLineBuilder = null;
-        visorAnimation = DeviceDisplayBase.ANIMATION_NULL;
+        visorAnimation = DeviceDisplayEngine.ANIMATION_NULL;
         visorLine1 = null;
         visorLine2 = null;
         outputType = OUTPUT_NONE;
@@ -234,6 +235,37 @@ public class TicketParser extends DefaultHandler {
 
     private void handleTicketOutputStart(String qName, Attributes attributes) throws SAXException {
         switch (qName) {
+            
+            case "qrcode":
+                /* 
+                <qrcode size="5" ec="h">Texto</qrcode>
+                <qrcode ec="L">Texto</qrcode>
+                <qrcode>Texto</qrcode>
+                */
+                String sSize = attributes.getValue("size");
+                String sEc = attributes.getValue("ec");
+
+                int qrcodeSize = 4;       // Valor padrão,DevicePrinter.QRCODE_DEFAULT_EC 
+                char qrcodeErrorCode = 'M';      // Valor padrão tipo char DevicePrinter.QRCODE_DEFAULT_EC
+
+                // Processa o tamanho (int)
+                if (sSize != null && !sSize.isEmpty()) {
+                    try {
+                        qrcodeSize = Integer.parseInt(sSize);
+                    } catch (NumberFormatException e) {
+                        qrcodeSize = 4;
+                    }
+                }
+
+                // Processa o nível de correção (char)
+                if (sEc != null && !sEc.isEmpty()) {
+                    String cleanEc = sEc.trim();
+                    if (!cleanEc.isEmpty()) {
+                        qrcodeErrorCode = cleanEc.charAt(0); // Extrai estritamente o caractere da primeira posição
+                    }
+                }
+             break;
+
             case "logo":
                 currentText = new StringBuilder();
                 break;
@@ -250,10 +282,7 @@ public class TicketParser extends DefaultHandler {
                 break;
             case "text":
                 currentText = new StringBuilder();
-                textStyle = ("true".equals(attributes.getValue("bold"))
-                        ? DevicePrinter.STYLE_BOLD : DevicePrinter.STYLE_PLAIN)
-                        | ("true".equals(attributes.getValue("underline"))
-                        ? DevicePrinter.STYLE_UNDERLINE : DevicePrinter.STYLE_PLAIN);
+                textStyle = getFontStyle(attributes);
                 String sAlign = attributes.getValue("align");
                 textAlignment = parseTextAlignment(sAlign);
                 textLength = parseInt(attributes.getValue("length"), 0);
@@ -266,6 +295,9 @@ public class TicketParser extends DefaultHandler {
     private void handleTicketOutputEnd(String qName) throws SAXException {
         //String textContent = (currentText != null) ? currentText.toString() : null;
         switch (qName) {
+            case "qrcode":
+                //outputPrinter.printQRCode(currentText.toString(), qrcodeSize, qrcodeErrorCode);
+                break;
             case "logo":
                 //Star TSP700 to print stored logo image JDL
                 outputPrinter.printLogo();
@@ -323,6 +355,7 @@ public class TicketParser extends DefaultHandler {
                 visorLineBuilder = new StringBuilder();
                 break;
             case "text":
+                textStyle = parseInt(attributes.getValue("ligth"));
                 currentText = new StringBuilder();
                 String sAlign = attributes.getValue("align");
                 textAlignment = parseTextAlignment(sAlign);
@@ -370,14 +403,21 @@ public class TicketParser extends DefaultHandler {
                 } else {
                     visorLineBuilder.append(currentText);
                 }
-                if (this.textStyle > -1 && this.printer.getDeviceDisplay() instanceof DeviceDisplayLED8) {
-                    ((DeviceDisplayLED8) this.printer.getDeviceDisplay()).displayLight(this.textStyle);
+                
+                //Apply Display 'Light style' 
+                if(this.printer.getDeviceDisplay() instanceof DeviceDisplayLED8 deviceDisplay){
+                    deviceDisplay.displayLight(this.textStyle);
+                }
+
+                //Apply Display 'Status line'
+                if(this.printer.getDeviceDisplay() instanceof DeviceDisplayPDLED8 deviceDisplay){
+                    deviceDisplay.changeStatus(this.textStyle);
                 }
                 currentText = null;
                 break;
             case "display":
                 printer.getDeviceDisplay().writeVisor(visorAnimation, visorLine1, visorLine2);
-                visorAnimation = DeviceDisplayBase.ANIMATION_NULL;
+                visorAnimation = DeviceDisplayEngine.ANIMATION_NULL;
                 visorLine1 = null;
                 visorLine2 = null;
                 outputType = OUTPUT_NONE;
@@ -455,16 +495,27 @@ public class TicketParser extends DefaultHandler {
     private int parseAnimation(String animationString) {
         return switch (readString(animationString, "none")) {
             case "scroll" ->
-                DeviceDisplayBase.ANIMATION_SCROLL;
+                DeviceDisplayEngine.ANIMATION_SCROLL;
             case "flyer" ->
-                DeviceDisplayBase.ANIMATION_FLYER;
+                DeviceDisplayEngine.ANIMATION_FLYER;
             case "blink" ->
-                DeviceDisplayBase.ANIMATION_BLINK;
+                DeviceDisplayEngine.ANIMATION_BLINK;
             case "curtain" ->
-                DeviceDisplayBase.ANIMATION_CURTAIN;
+                DeviceDisplayEngine.ANIMATION_CURTAIN;
             default ->
-                DeviceDisplayBase.ANIMATION_NULL;
+                DeviceDisplayEngine.ANIMATION_NULL;
         };
+    }
+
+    private int getFontStyle(Attributes attributes) {
+        int fontStyle = DevicePrinter.STYLE_PLAIN;
+        if("true".equals(attributes.getValue("bold"))){
+            fontStyle = DevicePrinter.STYLE_BOLD;
+        }
+        if("true".equals(attributes.getValue("underline"))){
+            fontStyle = DevicePrinter.STYLE_UNDERLINE;
+        }
+        return fontStyle;
     }
 
     private int parseInt(String sValue, int iDefault) {
