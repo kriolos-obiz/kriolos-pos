@@ -249,6 +249,11 @@ public class DeviceTicket {
                     this.m_devicedisplay = new DeviceDisplayLED8(
                             pws.getPrinterWritter(sDisplayParam1, sDisplayParam2));
                     break;
+                case "pdled8":
+                    this.m_devicedisplay = new DeviceDisplayLED8(
+                            pws.getDisplayPrinterWritter(sDisplayParam1, sDisplayParam2, 2400)
+                    );
+                    break;
                 default:
                     m_devicedisplay = new DeviceDisplayNull();
                     break;
@@ -283,10 +288,31 @@ public class DeviceTicket {
     private static class PrinterWritterPool {
 
         private final Map<String, PrinterWritter> m_apool = new HashMap<>();
+        
+        private String genUniqueKey(String connector, String port){
+            return connector + "-->" + port;
+        }
+        
+        public PrinterWritter getDisplayPrinterWritter(String con, String port, int baud) throws TicketPrinterException {
+
+            String skey = genUniqueKey(con,port);
+            PrinterWritter pw = m_apool.get(skey);
+            if (pw == null) {
+
+                switch (con) {
+                    case "serial":
+                    case "rxtx":
+                        pw = new PrinterWritterRXTX(port, baud);
+                        m_apool.put(skey, pw);
+                        break;                
+                }
+            }
+            return pw;
+        }
 
         public PrinterWritter getPrinterWritter(String con, String port) throws TicketPrinterException {
 
-            String skey = con + "-->" + port;
+            String skey = genUniqueKey(con,port);
             PrinterWritter pw = m_apool.get(skey);
             if (pw == null) {
 
@@ -411,7 +437,8 @@ public class DeviceTicket {
     /**
      *
      * @param sLine
-     * @param iSize
+     * @param iSize Line maximun size
+     * 
      * @return Reduce spacing
      */
     public static String alignLeft(String sLine, int iSize) {

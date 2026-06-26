@@ -18,7 +18,6 @@ package com.openbravo.pos.printer.screen;
 
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.printer.DeviceDisplay;
-import javax.swing.JComponent;
 
 /**
  *
@@ -58,15 +57,6 @@ public class DeviceDisplayWindow extends javax.swing.JFrame implements DeviceDis
         return null;
     }        
 
-    /**
-     *
-     * @return
-     */
-    @Override
-    public JComponent getDisplayComponent() {
-        return null;
-    }
-    
     /**
      *
      * @param animation

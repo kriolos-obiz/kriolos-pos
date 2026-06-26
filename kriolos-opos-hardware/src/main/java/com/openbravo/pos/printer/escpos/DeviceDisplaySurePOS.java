@@ -55,9 +55,9 @@ public class DeviceDisplaySurePOS extends DeviceDisplaySerial {
     @Override
     public void repaintLines() {
         display.write(new byte[]{0x10, 0x00}); // VISOR HOME
-        display.write(trans.transString(DeviceTicket.alignLeft(m_displaylines.getLine1(), 20)));
+        display.write(trans.transString(DeviceTicket.alignLeft(baseDeviceDisplay.getLine1(), 20)));
         display.write(new byte[]{0x10, 0x14});
-        display.write(trans.transString(DeviceTicket.alignLeft(m_displaylines.getLine2(), 20)));        
+        display.write(trans.transString(DeviceTicket.alignLeft(baseDeviceDisplay.getLine2(), 20)));        
         display.flush();
     }
 }

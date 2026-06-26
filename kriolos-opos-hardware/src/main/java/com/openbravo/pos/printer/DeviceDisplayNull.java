@@ -57,14 +57,6 @@ public class DeviceDisplayNull implements DeviceDisplay {
         return m_sDescription;
     }        
 
-    /**
-     *
-     * @return
-     */
-    @Override
-    public javax.swing.JComponent getDisplayComponent() {
-        return null;
-    }
     
     /**
      *

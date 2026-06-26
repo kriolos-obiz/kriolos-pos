@@ -22,6 +22,7 @@ import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.forms.JPanelView;
 import com.openbravo.pos.printer.DeviceFiscalPrinter;
 import com.openbravo.pos.printer.DevicePrinter;
+import com.openbravo.pos.printer.screen.DeviceDisplayPanel;
 import java.util.List;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
@@ -39,21 +40,21 @@ public class JPanelPrinter extends JPanel implements JPanelView {
         initComponents();
 
         
-        if (oApp.getDeviceTicket().getDeviceDisplay().getDisplayComponent() != null) {
-            m_jDisplay.add(oApp.getDeviceTicket().getDeviceDisplay().getDisplayComponent());
+        if (oApp.getDeviceTicket().getDeviceDisplay() instanceof DeviceDisplayPanel deviceDisplay) {
+            displayJPanel.add(deviceDisplay);
         }     
         
         List<DevicePrinter> aprinters = oApp.getDeviceTicket().getDevicePrinterAll();
         for (int i = 0; i < aprinters.size(); i++) {   
             DevicePrinter printer = aprinters.get(i);
             if (printer.getPrinterComponent() != null) {
-                m_jPrinters.add(printer.getPrinterName(), printer.getPrinterComponent());
+                printersJTabbedPane.add(printer.getPrinterName(), printer.getPrinterComponent());
             }
         }
         
         DeviceFiscalPrinter fp = oApp.getDeviceTicket().getFiscalPrinter();
         if (fp.getFiscalComponent() != null) {
-            m_jPrinters.add(fp.getFiscalName(), fp.getFiscalComponent());
+            printersJTabbedPane.add(fp.getFiscalName(), fp.getFiscalComponent());
         }
     }
 
@@ -100,29 +101,29 @@ public class JPanelPrinter extends JPanel implements JPanelView {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        m_jDisplay = new javax.swing.JPanel();
-        jPanel1 = new javax.swing.JPanel();
-        m_jPrinters = new javax.swing.JTabbedPane();
+        displayJPanel = new javax.swing.JPanel();
+        printersJPanel = new javax.swing.JPanel();
+        printersJTabbedPane = new javax.swing.JTabbedPane();
 
         setPreferredSize(new java.awt.Dimension(480, 600));
         setRequestFocusEnabled(false);
         setLayout(new java.awt.BorderLayout());
-        add(m_jDisplay, java.awt.BorderLayout.NORTH);
+        add(displayJPanel, java.awt.BorderLayout.NORTH);
 
-        jPanel1.setBorder(javax.swing.BorderFactory.createEmptyBorder(5, 5, 5, 5));
-        jPanel1.setLayout(new java.awt.BorderLayout());
+        printersJPanel.setBorder(javax.swing.BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        printersJPanel.setLayout(new java.awt.BorderLayout());
 
-        m_jPrinters.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
-        jPanel1.add(m_jPrinters, java.awt.BorderLayout.CENTER);
+        printersJTabbedPane.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
+        printersJPanel.add(printersJTabbedPane, java.awt.BorderLayout.CENTER);
 
-        add(jPanel1, java.awt.BorderLayout.CENTER);
+        add(printersJPanel, java.awt.BorderLayout.CENTER);
     }// </editor-fold>//GEN-END:initComponents
     
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JPanel jPanel1;
-    private javax.swing.JPanel m_jDisplay;
-    private javax.swing.JTabbedPane m_jPrinters;
+    private javax.swing.JPanel displayJPanel;
+    private javax.swing.JPanel printersJPanel;
+    private javax.swing.JTabbedPane printersJTabbedPane;
     // End of variables declaration//GEN-END:variables
     
 }

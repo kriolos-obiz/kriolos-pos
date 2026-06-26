@@ -28,11 +28,15 @@ public class DeviceDisplayLED8 extends DeviceDisplaySerial {
         this.display.write(ESCPOS.VISOR_CLEAR);
         this.display.write(ESCPOS.VISOR_HOME);
         this.display.write(new byte[]{27, 81, 65});
-        this.display.write(this.trans.transString(DeviceTicket.alignLeft(this.m_displaylines.getLine1(), 8)));
+        this.display.write(this.trans.transString(DeviceTicket.alignLeft(this.baseDeviceDisplay.getLine1(), 8)));
         this.display.write(new byte[]{13});
         this.display.flush();
     }
 
+    /**
+     * Change Display Ligth Style
+     * @param iStyle 
+     */
     public void displayLight(int iStyle) {
         this.display.write(ESCPOS.SELECT_DISPLAY);
         switch (iStyle) {

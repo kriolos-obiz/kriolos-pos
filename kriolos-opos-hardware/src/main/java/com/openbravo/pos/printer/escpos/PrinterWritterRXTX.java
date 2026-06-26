@@ -16,7 +16,6 @@
  */
 package com.openbravo.pos.printer.escpos;
 
-// import javax.comm.*; // Java comm library
 import com.openbravo.pos.printer.TicketPrinterException;
 import gnu.io.*;
 import java.io.IOException;
@@ -25,86 +24,135 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- *
+ * Writer implementation for driving legacy receipt printers over serial ports
+ * using the RXTX (gnu.io) native communications library.
+ * 
  * @author JG uniCenta
  */
-public class PrinterWritterRXTX extends PrinterWritter /* implements SerialPortEventListener */ {
+public class PrinterWritterRXTX extends PrinterWritter {
+
     private static final Logger LOGGER = Logger.getLogger(PrinterWritterRXTX.class.getName());
-    private CommPortIdentifier m_PortIdPrinter;
-    private CommPort m_CommPortPrinter;  
+    private static final int DEFAULT_BAUD_RATE = 9600;
+
+    private CommPort commPort;
+    private OutputStream outstream;
+
+    private final String serialPortName;
+    private final int serialBaudRate;
+    private final int serialDataBits;
+    private final int serialStopBits;
+    private final int serialParity;
     
-    private String m_sPortPrinter;
-    private OutputStream m_out;
-    
-    /** Creates a new instance of PrinterWritterComm
-     * @param sPortPrinter
-     * @throws com.openbravo.pos.printer.TicketPrinterException */
-    public PrinterWritterRXTX(String sPortPrinter) throws TicketPrinterException {
-        m_sPortPrinter = sPortPrinter;
-        m_out = null; 
+    // Dedicated lock object to isolate serial hardware mutations across asynchronous threads
+    private final Object lock = new Object();
+
+    public PrinterWritterRXTX(String serialPortName) throws TicketPrinterException {
+        this(serialPortName, DEFAULT_BAUD_RATE);
     }
-    
+
+    public PrinterWritterRXTX(String serialPortName, int serialBaudRate) throws TicketPrinterException {
+        this(serialPortName, serialBaudRate, SerialPort.DATABITS_8, SerialPort.STOPBITS_1, SerialPort.PARITY_NONE);
+    }
+
+    public PrinterWritterRXTX(String serialPortName, int serialBaudRate, int serialDataBits, int serialStopBits, int serialParity) throws TicketPrinterException {
+        this.serialPortName = serialPortName;
+        this.serialBaudRate = serialBaudRate;
+        this.serialDataBits = serialDataBits;
+        this.serialStopBits = serialStopBits;
+        this.serialParity = serialParity;
+        this.outstream = null;
+    }
+
     /**
-     *
-     * @param data
+     * Initializes the serial interface, configures hardware parameters, and sends raw byte sequences.
      */
     @Override
     protected void internalWrite(byte[] data) {
-        try {  
-            if (m_out == null) {
-                m_PortIdPrinter = CommPortIdentifier.getPortIdentifier(m_sPortPrinter); // Tomamos el puerto                   
-                m_CommPortPrinter = m_PortIdPrinter.open("PORTID", 2000); // Abrimos el puerto       
+        if (data == null || data.length == 0) {
+            return;
+        }
 
-                m_out = m_CommPortPrinter.getOutputStream(); // Tomamos el chorro de escritura   
+        synchronized (lock) {
+            try {
+                if (outstream == null) {
+                    LOGGER.log(Level.INFO, "Opening serial port - Name: {0} | BaudRate: {1} | DataBits: {2} | StopBits: {3} | Parity: {4}",
+                            new Object[]{serialPortName, serialBaudRate, serialDataBits, serialStopBits, serialParity});
+                    
+                    CommPortIdentifier commPortIdentifier = CommPortIdentifier.getPortIdentifier(serialPortName);
+                    
+                    // Attempts to open the port claiming exclusive app ownership. Waits up to 2 seconds if busy.
+                    commPort = commPortIdentifier.open("PrinterWritterRXTX", 2000);
 
-                if (m_PortIdPrinter.getPortType() == CommPortIdentifier.PORT_SERIAL) {
-                    ((SerialPort)m_CommPortPrinter).setSerialPortParams(9600, SerialPort.DATABITS_8, SerialPort.STOPBITS_1, SerialPort.PARITY_NONE); // Configuramos el puerto
-                    ((SerialPort)m_CommPortPrinter).setFlowControlMode(SerialPort.FLOWCONTROL_RTSCTS_IN);  // this line prevents the printer tmu220 to stop printing after +-18 lines printed
-                    // this line prevents the printer tmu220 to stop printing after +-18 lines printed. Bug 8324
-                    // But if added a regression error appears. Bug 9417, Better to keep it commented.
-                    // ((SerialPort)m_CommPortPrinter).setFlowControlMode(SerialPort.FLOWCONTROL_RTSCTS_IN);
-    // Not needed to set parallel properties
-    //                } else if (m_PortIdPrinter.getPortType() == CommPortIdentifier.PORT_PARALLEL) {
-    //                    ((ParallelPort)m_CommPortPrinter).setMode(1);
+                    if (commPort instanceof SerialPort serialPort) {
+                        serialPort.setSerialPortParams(serialBaudRate, serialDataBits, serialStopBits, serialParity);
 
+                        // Fixes hardware freezing issues on legacy Epson TM-U220 matrix printers.
+                        // Automatically regulates hardware flow control using native RTS/CTS lines.
+                        serialPort.setFlowControlMode(SerialPort.FLOWCONTROL_RTSCTS_IN);
+                    }
+                    
+                    outstream = commPort.getOutputStream();
                 }
+                outstream.write(data);
+            } catch (NoSuchPortException | PortInUseException | UnsupportedCommOperationException | IOException e) {
+                LOGGER.log(Level.SEVERE, "Hardware exception occurred while writing to serial port: " + serialPortName, e);
+                // Hard reset states to prevent permanent port locks in the OS kernel
+                forceDisconnect();
             }
-            m_out.write(data);
-// JG 16 May 12 use multicatch
-        } catch (NoSuchPortException | PortInUseException | UnsupportedCommOperationException | IOException e) {
-            LOGGER.log(Level.SEVERE, "Exception on write: ", e);
-        }      
+        }
     }
-    
+
     /**
-     *
+     * Flushes buffered downstream streams into the native serial hardware pipeline.
      */
     @Override
     protected void internalFlush() {
-        try {  
-            if (m_out != null) {
-                m_out.flush();
+        synchronized (lock) {
+            try {
+                if (outstream != null) {
+                    outstream.flush();
+                }
+            } catch (IOException e) {
+                LOGGER.log(Level.SEVERE, "Exception occurred while flushing serial stream: " + serialPortName, e);
+                forceDisconnect();
             }
-        } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "Exception on flush: ", e);
-        }    
+        }
     }
-    
+
     /**
-     *
+     * Flushes variables, shuts down streams, and explicitly releases operating system COM locks.
      */
     @Override
     protected void internalClose() {
-        try {  
-            if (m_out != null) {
-                m_out.flush();
-                m_out.close();
-                m_out = null;
-                m_CommPortPrinter = null;
-                m_PortIdPrinter = null;
+        synchronized (lock) {
+            forceDisconnect();
+        }
+    }
+
+    /**
+     * Unconditionally teardown connection handles, flushes structures, and releases native system resources.
+     * Must be invoked safely within a synchronized block.
+     */
+    private void forceDisconnect() {
+        if (outstream != null) {
+            try {
+                outstream.flush();
+                outstream.close();
+            } catch (IOException e) {
+                LOGGER.log(Level.FINEST, "Failed to close serial output stream", e);
+            } finally {
+                outstream = null;
             }
-        } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "Exception on close: ", e);
-        }    
+        }
+        
+        if (commPort != null) {
+            try {
+                commPort.close(); // Crucial to allow other software to reuse the COM port
+            } catch (Exception e) {
+                LOGGER.log(Level.FINEST, "Failed to release serial hardware port handle", e);
+            } finally {
+                commPort = null;
+            }
+        }
     }
 }

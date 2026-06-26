@@ -118,6 +118,8 @@ public interface DevicePrinter {
     public void printLogo();
 
     public void printBarCode(String type, String position, String code);
+    
+    //public void printQRCode(String code, int size, char errorCorrection);
 
 // Do TextLine
     public void beginLine(int iTextSize);

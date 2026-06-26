@@ -17,7 +17,8 @@
 package com.openbravo.pos.printer.escpos;
 
 import com.openbravo.pos.forms.AppLocal;
-import java.util.LinkedList;
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -38,94 +39,95 @@ import javax.print.attribute.standard.JobName;
 public final class PrinterWritterRaw extends PrinterWritter {
     private static final Logger LOGGER = Logger.getLogger(PrinterWritterRaw.class.getName());
     
-    private byte[] m_printData;
+    // Replaced array concatenation with a stream to prevent memory reallocation leaks
+    private final ByteArrayOutputStream m_printBuffer;
     private PrintService printService;
     private final DocFlavor DOC_Flavor = DocFlavor.BYTE_ARRAY.AUTOSENSE;
 
     private final static String DOC_NAME = "Ticket";
     private final String printerName;
 
-
     public PrinterWritterRaw(String printerName) {
         this.printerName = printerName;
-        this.m_printData = null;
+        this.m_printBuffer = new ByteArrayOutputStream();
 
-        init();
-
+        // Look up the requested print service first
         PrintService[] services = PrintServiceLookup.lookupPrintServices(DOC_Flavor, null);
         for (PrintService ps : services) {
             if (ps.getName().contains(printerName)) {
-                // if we have found the prineter the start our print routine
                 printService = ps;
-                write(ESCPOS.INIT);
                 break;
             }
+        }
+
+        // Initialize the printer protocol only if the hardware device is located
+        if (printService != null) {
+            init();
+            write(ESCPOS.INIT);
+        } else {
+            LOGGER.log(Level.SEVERE, "Printer service not found for device name: {0}", printerName);
         }
     }
 
     public void init() {
-        byte[] inicode = concatByteArrays(ESCPOS.SELECT_PRINTER, new UnicodeTranslatorInt().getCodeTable());
-        this.m_printData = concatByteArrays(inicode, this.m_printData);
+        write(ESCPOS.SELECT_PRINTER);
+        write(new UnicodeTranslatorInt().getCodeTable());
     }
 
     @Override
-    public void write(byte[] data) {
-        m_printData = concatByteArrays(m_printData, data);
+    public synchronized void write(byte[] data) {
+        if (data != null) {
+            m_printBuffer.write(data, 0, data.length);
+        }
     }
 
     @Override
-    public void write(String sValue) {
-        m_printData = concatByteArrays(m_printData,sValue.getBytes());
+    public synchronized void write(String sValue) {
+        if (sValue != null) {
+            // Explicitly map fallback charset to ISO-8859-1 for standard POS character tables
+            byte[] bytes = sValue.getBytes(StandardCharsets.ISO_8859_1);
+            write(bytes);
+        }
     }
 
     @Override
-    protected void internalWrite(byte[] data) {
-    }
+    protected void internalWrite(byte[] data) {}
 
     @Override
-    protected void internalClose() {
-    }
+    protected void internalClose() {}
 
     @Override
-    protected void internalFlush() {
-    }
-
+    protected void internalFlush() {}
 
     @Override
     public void flush() {
         printJob();
     }  
-    
-    private byte[] concatByteArrays(byte[] a, byte[] b) {
-        if (a == null) {
-            return b;
+
+    private synchronized void printJob() {
+        if (null == printService) {
+            m_printBuffer.reset(); // Clear memory buffer safely even if target printer is offline
+            return;
         }
-        if (b == null) {
-            return a;
-        }
-        byte[] concat = new byte[a.length + b.length];
-        System.arraycopy(a, 0, concat, 0, a.length);
-        System.arraycopy(b, 0, concat, a.length, b.length);
-        return concat;
-    }
 
-    private void printJob() {
-        if (null != printService) {
-            try {
-                DocPrintJob pj = printService.createPrintJob();
-                DocAttributeSet docattributes = new HashDocAttributeSet();
+        try {
+            byte[] dataToSend = m_printBuffer.toByteArray();
+            if (dataToSend.length == 0) return;
 
-                docattributes.add(new DocumentName(DOC_NAME, Locale.getDefault()));
-                PrintRequestAttributeSet jobattributes = new HashPrintRequestAttributeSet();
-
-                jobattributes.add(new JobName(AppLocal.APP_NAME, Locale.getDefault()));
-                Doc doc = new SimpleDoc(m_printData, DOC_Flavor, docattributes);
-                pj.print(doc, jobattributes);
-            } catch (PrintException ex) {
-                LOGGER.log(Level.WARNING, "Exception on print: ", ex);
-            } finally {
-                m_printData = null;
-            }
+            DocPrintJob pj = printService.createPrintJob();
+            DocAttributeSet docattributes = new HashDocAttributeSet();
+            docattributes.add(new DocumentName(DOC_NAME, Locale.getDefault()));
+            
+            PrintRequestAttributeSet jobattributes = new HashPrintRequestAttributeSet();
+            jobattributes.add(new JobName(AppLocal.APP_NAME, Locale.getDefault()));
+            
+            Doc doc = new SimpleDoc(dataToSend, DOC_Flavor, docattributes);
+            pj.print(doc, jobattributes);
+            
+        } catch (PrintException ex) {
+            LOGGER.log(Level.WARNING, "Exception occurred during print job execution: ", ex);
+        } finally {
+            m_printBuffer.reset(); // Flush memory safely to prevent duplicate outputs on the next ticket
         }
     }
 }

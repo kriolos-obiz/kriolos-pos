@@ -559,7 +559,7 @@ public final class TicketInfo implements SerializableRead, Externalizable {
     }
 
     public String printHost() {
-        return host;
+        return StringUtils.encodeXML(this.host);
     }
 
     /**

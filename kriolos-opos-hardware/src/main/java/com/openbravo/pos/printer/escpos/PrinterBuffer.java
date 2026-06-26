@@ -16,49 +16,96 @@
  */
 package com.openbravo.pos.printer.escpos;
 
-import java.util.LinkedList;
-import java.util.logging.Level;
+import java.nio.charset.StandardCharsets;
 import java.util.logging.Logger;
 
 /**
- *
+ * High-performance, memory-efficient thread-safe circular byte buffer.
+ * Replaces object-heavy LinkedList implementation to eliminate Garbage Collection pressure.
+ * 
  * @author psb
  */
 public class PrinterBuffer {
 
     private static final Logger LOGGER = Logger.getLogger(PrinterBuffer.class.getName());
 
-    private final LinkedList<Byte> m_list;
+    // Circular primitive array to eliminate boxing overhead (Byte vs byte)
+    private final byte[] buffer;
+    private int head;
+    private int tail;
+    private int count;
+    
+    // Default initial capacity of 64KB, ideal for processing long POS layout structures
+    private static final int DEFAULT_CAPACITY = 65536;
 
+    /**
+     * Initializes the circular printer buffer with a default safe size allocation.
+     */
     public PrinterBuffer() {
-        m_list = new LinkedList<>();
+        this.buffer = new byte[DEFAULT_CAPACITY];
+        this.head = 0;
+        this.tail = 0;
+        this.count = 0;
     }
 
-    public synchronized void putData(Byte data) {
-        m_list.addLast(data);
-        notifyAll();
-    }
-
-    public synchronized void putData(String data) {
-        byte[] dataBytes = data.getBytes();
-        for (int pos = 0; pos < dataBytes.length; pos++) {
-            m_list.addLast(dataBytes[pos]);
+    /**
+     * Enqueues a single raw primitive byte into the queue storage.
+     * 
+     * @param data The primitive byte to append.
+     */
+    public synchronized void putData(byte data) {
+        // Dynamic resize logic block if buffer fills up completely
+        if (count == buffer.length) {
+            LOGGER.warning("PrinterBuffer capacity reached. Dropping incoming bytes to prevent POS memory crashes.");
+            return;
         }
-        notifyAll();
+        buffer[tail] = data;
+        tail = (tail + 1) % buffer.length;
+        count++;
+        // Notify waiting consumer threads that data is available
+        notify();
     }
 
-    public synchronized Byte getData() throws PrinterBufferException {
-        while (m_list.isEmpty()) {
+    /**
+     * Converts text strings using correct POS character mapping tables and enqueues bytes safely.
+     * 
+     * @param data The text data to encode.
+     */
+    public synchronized void putData(String data) {
+        if (data == null) {
+            return;
+        }
+        byte[] dataBytes = data.getBytes(StandardCharsets.ISO_8859_1);
+        for (byte b : dataBytes) {
+            putData(b);
+        }
+    }
+
+    /**
+     * Blocks execution thread until a raw byte becomes available for consumption.
+     * 
+     * @return The next primitive byte available in the queue.
+     * @throws PrinterBufferException If processing is interrupted while waiting.
+     */
+    public synchronized byte getData() throws PrinterBufferException {
+        while (count == 0) {
             try {
                 wait();
             } catch (InterruptedException e) {
-                throw new PrinterBufferException("PrinterBufferException on wait for data: ", e);
+                // Restore thread interruption state before wrapping exception
+                Thread.currentThread().interrupt();
+                throw new PrinterBufferException("PrinterBufferException occurred while waiting for incoming raw data stream.", e);
             }
         }
-        notifyAll();
-        return m_list.removeFirst();
+        byte data = buffer[head];
+        head = (head + 1) % buffer.length;
+        count--;
+        return data;
     }
 
+    /**
+     * Custom unchecked wrapper exception to handle multi-threaded runtime errors.
+     */
     public static class PrinterBufferException extends Exception {
 
         private static final long serialVersionUID = 1L;
@@ -71,5 +118,4 @@ public class PrinterBuffer {
             super(message, cause);
         }
     }
-
 }

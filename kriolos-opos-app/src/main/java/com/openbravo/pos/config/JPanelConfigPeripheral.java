@@ -160,6 +160,7 @@ public class JPanelConfigPeripheral extends javax.swing.JPanel implements PanelC
         jcboMachineDisplay.addItem("window");
         jcboMachineDisplay.addItem("dual");
         jcboMachineDisplay.addItem("led");
+        jcboMachineDisplay.addItem("pdled8");
         jcboMachineDisplay.addItem("javapos");
         jcboMachineDisplay.addItem("epson");
         jcboMachineDisplay.addItem("ld200");
@@ -521,6 +522,8 @@ public class JPanelConfigPeripheral extends javax.swing.JPanel implements PanelC
 // JG 6 May 2013 to switch
         String sMachineDisplay = comboValue(jcboMachineDisplay.getSelectedItem());
         switch (sMachineDisplay) {
+            case "led":
+            case "pdled8":
             case "epson":
             case "ld200":
             case "surepos":
@@ -2064,6 +2067,8 @@ public class JPanelConfigPeripheral extends javax.swing.JPanel implements PanelC
         CardLayout cl = (CardLayout) (m_jDisplayParams.getLayout());
 
         if ("epson".equals(jcboMachineDisplay.getSelectedItem()) ||
+                "led".equals(jcboMachineDisplay.getSelectedItem()) ||
+                "pdled8".equals(jcboMachineDisplay.getSelectedItem()) ||
                 "ld200".equals(jcboMachineDisplay.getSelectedItem()) ||
                 "surepos".equals(jcboMachineDisplay.getSelectedItem())) {
             cl.show(m_jDisplayParams, "comm");
