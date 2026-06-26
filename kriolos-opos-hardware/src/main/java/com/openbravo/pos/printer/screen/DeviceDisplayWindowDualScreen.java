@@ -17,7 +17,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
-import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -154,11 +153,6 @@ public class DeviceDisplayWindowDualScreen extends JFrame implements DeviceDispl
 
     @Override
     public String getDisplayDescription() {
-        return null;
-    }
-
-    @Override
-    public JComponent getDisplayComponent() {
         return null;
     }
 

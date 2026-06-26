@@ -18,7 +18,7 @@ package com.openbravo.pos.printer.screen;
 
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.printer.DeviceDisplay;
-import com.openbravo.pos.printer.DeviceDisplayBase;
+import com.openbravo.pos.printer.DeviceDisplayEngine;
 import java.awt.*;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
@@ -31,7 +31,7 @@ public class DeviceDisplayPanel extends JPanel implements DeviceDisplay {
     
     private String m_sName;
     
-    private DeviceDisplayBase m_displaylines;
+    private DeviceDisplayEngine deviceDisplayEngine;
 
     public DeviceDisplayPanel() {
         this(1.0);
@@ -48,7 +48,7 @@ public class DeviceDisplayPanel extends JPanel implements DeviceDisplay {
         
         jline1.setFont(new Font("Monospaced", Font.BOLD, (int)(16 * dZoom)));
         jline2.setFont(new Font("Monospaced", Font.BOLD, (int)(16 * dZoom)));
-        m_displaylines = new DeviceDisplayBase(this);
+        deviceDisplayEngine = new DeviceDisplayEngine(this);
     }
     
     /**
@@ -68,12 +68,11 @@ public class DeviceDisplayPanel extends JPanel implements DeviceDisplay {
     public String getDisplayDescription() {
         return null;
     }        
-
+    
     /**
      *
      * @return
      */
-    @Override
     public JComponent getDisplayComponent() {
         return this;
     }
@@ -87,7 +86,7 @@ public class DeviceDisplayPanel extends JPanel implements DeviceDisplay {
     @Override
     public void writeVisor(int animation, String sLine1, String sLine2) {
         
-        m_displaylines.writeVisor(animation, sLine1, sLine2);
+        deviceDisplayEngine.writeVisor(animation, sLine1, sLine2);
     }
     
     /**
@@ -98,7 +97,7 @@ public class DeviceDisplayPanel extends JPanel implements DeviceDisplay {
     @Override
     public void writeVisor(String sLine1, String sLine2) {
         
-        m_displaylines.writeVisor(sLine1, sLine2);
+        deviceDisplayEngine.writeVisor(sLine1, sLine2);
     }
 
     /**
@@ -106,7 +105,7 @@ public class DeviceDisplayPanel extends JPanel implements DeviceDisplay {
      */
     @Override
     public void clearVisor() {
-        m_displaylines.clearVisor();
+        deviceDisplayEngine.clearVisor();
     }
     
     /**
@@ -114,8 +113,8 @@ public class DeviceDisplayPanel extends JPanel implements DeviceDisplay {
      */
     @Override
     public void repaintLines() {
-        jline1.setText(m_displaylines.getLine1());
-        jline2.setText(m_displaylines.getLine2());
+        jline1.setText(deviceDisplayEngine.getLine1());
+        jline2.setText(deviceDisplayEngine.getLine2());
     }
     
     @Override

@@ -17,7 +17,7 @@
 package com.openbravo.pos.printer.javapos;
 
 import com.openbravo.pos.printer.DeviceDisplay;
-import com.openbravo.pos.printer.DeviceDisplayBase;
+import com.openbravo.pos.printer.DeviceDisplayEngine;
 import com.openbravo.pos.printer.TicketPrinterException;
 import jpos.JposException;
 import jpos.LineDisplay;
@@ -32,7 +32,7 @@ public class DeviceDisplayJavaPOS implements DeviceDisplay {
     private String m_sName;
     private LineDisplay m_ld;
     
-    private DeviceDisplayBase m_displaylines;
+    private DeviceDisplayEngine deviceDisplayEngine;
     
     /** Creates a new instance of DeviceDisplayJavaPOS
      * @param sDeviceName
@@ -49,7 +49,7 @@ public class DeviceDisplayJavaPOS implements DeviceDisplay {
             throw new TicketPrinterException(e.getMessage(), e);
         }
 
-        m_displaylines = new DeviceDisplayBase(this);
+        deviceDisplayEngine = new DeviceDisplayEngine(this);
    }
     
     /**
@@ -69,15 +69,6 @@ public class DeviceDisplayJavaPOS implements DeviceDisplay {
     public String getDisplayDescription() {
         return null;
     }      
-
-    /**
-     *
-     * @return
-     */
-    @Override
-    public javax.swing.JComponent getDisplayComponent() {
-        return null;
-    }
     
     /**
      *
@@ -87,7 +78,7 @@ public class DeviceDisplayJavaPOS implements DeviceDisplay {
      */
     @Override
     public void writeVisor(int animation, String sLine1, String sLine2) {
-        m_displaylines.writeVisor(animation, sLine1, sLine2);
+        deviceDisplayEngine.writeVisor(animation, sLine1, sLine2);
     }
 
     /**
@@ -97,7 +88,7 @@ public class DeviceDisplayJavaPOS implements DeviceDisplay {
      */
     @Override
     public void writeVisor(String sLine1, String sLine2) {        
-        m_displaylines.writeVisor(sLine1, sLine2);
+        deviceDisplayEngine.writeVisor(sLine1, sLine2);
     }
      
     /**
@@ -105,7 +96,7 @@ public class DeviceDisplayJavaPOS implements DeviceDisplay {
      */
     @Override
     public void clearVisor() {
-        m_displaylines.clearVisor();
+        deviceDisplayEngine.clearVisor();
     }
     
     /**
@@ -114,8 +105,8 @@ public class DeviceDisplayJavaPOS implements DeviceDisplay {
     @Override
     public void repaintLines() {
         try {
-            m_ld.displayTextAt(0, 0, m_displaylines.getLine1(), LineDisplayConst.DISP_DT_NORMAL);
-            m_ld.displayTextAt(1, 0, m_displaylines.getLine2(), LineDisplayConst.DISP_DT_NORMAL);
+            m_ld.displayTextAt(0, 0, deviceDisplayEngine.getLine1(), LineDisplayConst.DISP_DT_NORMAL);
+            m_ld.displayTextAt(1, 0, deviceDisplayEngine.getLine2(), LineDisplayConst.DISP_DT_NORMAL);
         } catch (JposException e) {
         }
     }
