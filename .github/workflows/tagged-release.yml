@@ -37,7 +37,6 @@ jobs:
           prerelease: false
           files: |
             LICENSE*
-            CHANGELOG*
             docs/guide-comercial/target/generated-docs/pdf/kriolos-pos-*.pdf
             docs/guide-devel/target/generated-docs/pdf/kriolos-pos-*.pdf
             docs/guide-user/target/generated-docs/pdf/kriolos-pos-*.pdf
