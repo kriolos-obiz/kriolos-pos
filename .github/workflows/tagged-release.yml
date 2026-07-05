@@ -95,9 +95,9 @@ jobs:
           name: maven-compiled-workspace
           path: .
 
-      # Removed offline flag (-o) to allow missing plugins resolution, and skipped compilation phases explicitly
+      # Fixed: Enclosed Maven property flags in quotes to prevent PowerShell parsing issues on Windows
       - name: Build Native Distribution Package with Maven
-        run: mvn package -Pdistribuition -B -Dmaven.main.skip=true -Dmaven.test.skip=true --file pom.xml
+        run: mvn package -Pjpackage -B "-Dmaven.main.skip=true" "-Dmaven.test.skip=true" --file pom.xml
 
       - name: Zip Artifact (Unix)
         if: matrix.os != 'windows-latest'

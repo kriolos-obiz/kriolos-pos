@@ -226,7 +226,7 @@
         </profile>
 
         <profile>
-            <id>distribuition</id>
+            <id>jpackage</id>
             <build>
                 <plugins>
                     <plugin>
