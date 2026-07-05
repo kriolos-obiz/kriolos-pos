@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<actions>
+    <action>
+        <actionName>CUSTOM-JPackage</actionName>
+        <displayName>JPackage</displayName>
+        <goals>
+            <goal>clean</goal>
+            <goal>package</goal>
+            <goal>jpackage:jpackage</goal>
+        </goals>
+    </action>
+    <action>
+        <actionName>CUSTOM-jpackage-dryRun</actionName>
+        <displayName>jpackage-dryRun</displayName>
+        <goals>
+            <goal>package</goal>
+            <goal>jpackage:jpackage</goal>
+            <goal>-Djpackage.dryRun=true</goal>
+        </goals>
+    </action>
+    <action>
+            <actionName>CUSTOM-jpackage-msi</actionName>
+            <displayName>jpackage-msi</displayName>
+            <goals>
+                <goal>jpackage:jpackage</goal>
+            </goals>
+            <activatedProfiles>
+                <activatedProfile>windows_64</activatedProfile>
+            </activatedProfiles>
+        </action>
+</actions>

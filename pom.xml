@@ -145,6 +145,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <module>kriolos-opos-i18n</module>
         <module>kriolos-opos-i18n_pt</module>
         <module>kriolos-opos-app</module>
+        <module>kriolos-opos-jpackage</module>
         <module>docs</module>
     </modules>
 
@@ -263,6 +264,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <defaultGoal>install</defaultGoal>
         <pluginManagement>
             <plugins>
+
+                <plugin>
+                    <groupId>org.panteleyev</groupId>
+                    <artifactId>jpackage-maven-plugin</artifactId>
+                    <version>1.8.0</version>
+                </plugin>
 
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
