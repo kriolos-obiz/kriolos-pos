@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  # 1. Single Job: Generates documentation, cross-platform apps, and initializes the GitHub Release
+  # 1. Single Job: Generates documentation, cross-platform apps, builds code, and initializes the GitHub Release
   build-docs:
     name: "Generate Docs & Create Release"
     runs-on: ubuntu-latest
@@ -26,9 +26,19 @@ jobs:
           distribution: 'adopt'
           cache: maven
 
-      # Build both docs and the cross-platform application package once
+      # Build everything: docs, classes, jars, and cross-platform packages
       - name: Build Docs and App Package with Maven
         run: mvn package -Pdocs-gen,distribuition -B --file pom.xml
+
+      # Share the compiled state (target folders and jars) with subsequent matrix jobs
+      - name: Upload Compiled Workspace Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: maven-compiled-workspace
+          path: |
+            .
+            !**/target/kriolosPOS*
+          retention-days: 1
 
       - name: Create Release and Upload Docs & Cross-Platform App
         uses: softprops/action-gh-release@v2
@@ -46,10 +56,10 @@ jobs:
             docs/guide-devel/target/generated-docs/pdf/kriolos-pos-*.pdf
             docs/guide-user/target/generated-docs/pdf/kriolos-pos-*.pdf
 
-  # 2. Matrix Job: Runs in parallel for each OS to build the OS-specific application binaries
+  # 2. Matrix Job: Runs in parallel for each OS to build the OS-specific application binaries using the cached build
   build-binaries:
     name: "Build Binary for ${{ matrix.os }}"
-    needs: build-docs # Ensures binaries are uploaded only after the release is created
+    needs: build-docs # Ensures binaries are uploaded only after the release and shared workspace are ready
     strategy:
       matrix:
         include:
@@ -78,10 +88,17 @@ jobs:
           distribution: 'adopt'
           cache: maven
 
-      - name: Build Distribution with Maven
-        run: mvn package -Pdistribuition -B --file pom.xml
+      # Download the pre-compiled workspace from the first job to avoid recompiling Java code
+      - name: Download Compiled Workspace Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: maven-compiled-workspace
+          path: .
 
-      # Fix applied here: using dynamic path resolution with wildcard to match folders or .app bundles safely
+      # Run Maven in offline mode (-o) and only trigger the JPackage goal instead of full compilation
+      - name: Build Native Distribution Package with Maven
+        run: mvn jpackage:jpackage -Pdistribuition -B -o --file pom.xml
+
       - name: Zip Artifact (Unix)
         if: matrix.os != 'windows-latest'
         run: |
