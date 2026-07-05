@@ -37,6 +37,7 @@ jobs:
           name: "Release ${{ github.ref_name }}"
           draft: false
           prerelease: false
+          generate_release_notes: true
           files: |
             LICENSE*
             CHANGELOG*
@@ -60,7 +61,7 @@ jobs:
             artifact_path: kriolos-opos-jpackage/target/kriolosPOS
           - os: macos-latest
             suffix: macos
-            artifact_path: kriolos-opos-jpackage/target/kriolosPOS
+            artifact_path: kriolos-opos-jpackage/target/kriolosPOS*
 
     runs-on: ${{ matrix.os }}
 
@@ -80,10 +81,11 @@ jobs:
       - name: Build Distribution with Maven
         run: mvn package -Pdistribuition -B --file pom.xml
 
+      # Fix applied here: using dynamic path resolution with wildcard to match folders or .app bundles safely
       - name: Zip Artifact (Unix)
         if: matrix.os != 'windows-latest'
         run: |
-          zip -r "kriolosPOS-${{ matrix.suffix }}.zip" "${{ matrix.artifact_path }}"
+          zip -r "kriolosPOS-${{ matrix.suffix }}.zip" ${{ matrix.artifact_path }}
 
       - name: Zip Artifact (Windows)
         if: matrix.os == 'windows-latest'
