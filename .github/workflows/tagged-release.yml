@@ -17,7 +17,7 @@ jobs:
           - os: windows-latest
             suffix: win
             artifact_path: kriolos-opos-jpackage/target/kriolosPOS
-          - os: maccos-latest
+          - os: macos-latest
             suffix: macos
             artifact_path: kriolos-opos-jpackage/target/kriolosPOS
 
@@ -37,7 +37,7 @@ jobs:
           cache: maven
 
       - name: Build with Maven
-        run: mvn package -Pdocs-gen,distribuition -B --file pom.xml
+        run: mvn package "-Pdocs-gen,distribuition" -B --file pom.xml
 
       - name: Zip Artifact (Unix)
         if: matrix.os != 'windows-latest'
