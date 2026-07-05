@@ -95,9 +95,9 @@ jobs:
           name: maven-compiled-workspace
           path: .
 
-      # Run Maven in offline mode (-o) and only trigger the JPackage goal instead of full compilation
+      # Changed from 'mvn jpackage:jpackage' to 'mvn package' to properly load configurations from pom.xml execution blocks
       - name: Build Native Distribution Package with Maven
-        run: mvn jpackage:jpackage -Pdistribuition -B -o --file pom.xml
+        run: mvn package -Pdistribuition -B -o --no-snapshot-updates --file pom.xml
 
       - name: Zip Artifact (Unix)
         if: matrix.os != 'windows-latest'
