@@ -95,9 +95,9 @@ jobs:
           name: maven-compiled-workspace
           path: .
 
-      # Changed from 'mvn jpackage:jpackage' to 'mvn package' to properly load configurations from pom.xml execution blocks
+      # Removed offline flag (-o) to allow missing plugins resolution, and skipped compilation phases explicitly
       - name: Build Native Distribution Package with Maven
-        run: mvn package -Pdistribuition -B -o --no-snapshot-updates --file pom.xml
+        run: mvn package -Pdistribuition -B -Dmaven.main.skip=true -Dmaven.test.skip=true --file pom.xml
 
       - name: Zip Artifact (Unix)
         if: matrix.os != 'windows-latest'
