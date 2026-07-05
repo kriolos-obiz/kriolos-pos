@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  # 1. Job Único: Gera apenas os documentos e cria a Release
+  # 1. Job FIRST: Generate Docs
   build-docs:
     name: "Generate Docs & Create Release"
     runs-on: ubuntu-latest
@@ -35,16 +35,17 @@ jobs:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           title: "Release ${{ github.ref_name }}"
           prerelease: false
+          allow_override: true  # allow jobs to write on this release
           files: |
             LICENSE*
             docs/guide-comercial/target/generated-docs/pdf/kriolos-pos-*.pdf
             docs/guide-devel/target/generated-docs/pdf/kriolos-pos-*.pdf
             docs/guide-user/target/generated-docs/pdf/kriolos-pos-*.pdf
 
-  # 2. Job em Matriz: Executa em paralelo para cada OS apenas o perfil de distribuição
+  # 2. Job in Matrix: Linux, macOS, Windows
   build-binaries:
     name: "Build Binary for ${{ matrix.os }}"
-    needs: build-docs # Garante que só avança após a release e os docs estarem criados
+    needs: build-docs
     strategy:
       matrix:
         include:
@@ -93,6 +94,7 @@ jobs:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           title: "Release ${{ github.ref_name }}"
           prerelease: false
+          allow_override: true  # Allow to override binaries
           files: |
             kriolosPOS-${{ matrix.suffix }}.zip
             kriolos-opos-app/target/*.zip
