@@ -9,27 +9,28 @@ permissions:
   contents: write
 
 jobs:
-  # 1. Single Job: Generates documentation and initializes the GitHub Release
+  # 1. Single Job: Generates documentation, cross-platform apps, and initializes the GitHub Release
   build-docs:
     name: "Generate Docs & Create Release"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           submodules: recursive
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '17'
           distribution: 'adopt'
           cache: maven
 
-      - name: Build Docs with Maven
-        run: mvn package -Pdocs-gen -B --file pom.xml
+      # Build both docs and the cross-platform application package once
+      - name: Build Docs and App Package with Maven
+        run: mvn package -Pdocs-gen,distribuition -B --file pom.xml
 
-      - name: Create Release and Upload Docs
+      - name: Create Release and Upload Docs & Cross-Platform App
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
@@ -39,11 +40,12 @@ jobs:
           files: |
             LICENSE*
             CHANGELOG*
+            kriolos-opos-app/target/kriolos-opos-app-*.zip
             docs/guide-comercial/target/generated-docs/pdf/kriolos-pos-*.pdf
             docs/guide-devel/target/generated-docs/pdf/kriolos-pos-*.pdf
             docs/guide-user/target/generated-docs/pdf/kriolos-pos-*.pdf
 
-  # 2. Matrix Job: Runs in parallel for each OS to build the application binaries
+  # 2. Matrix Job: Runs in parallel for each OS to build the OS-specific application binaries
   build-binaries:
     name: "Build Binary for ${{ matrix.os }}"
     needs: build-docs # Ensures binaries are uploaded only after the release is created
@@ -64,12 +66,12 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           submodules: recursive
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '17'
           distribution: 'adopt'
@@ -95,4 +97,3 @@ jobs:
           tag_name: ${{ github.ref_name }}
           files: |
             kriolosPOS-${{ matrix.suffix }}.zip
-            kriolos-opos-app/target/*.zip
