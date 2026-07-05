@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  # 1. Job FIRST: Generate Docs
+  # 1. Single Job: Generates documentation and initializes the GitHub Release
   build-docs:
     name: "Generate Docs & Create Release"
     runs-on: ubuntu-latest
@@ -30,22 +30,23 @@ jobs:
         run: mvn package -Pdocs-gen -B --file pom.xml
 
       - name: Create Release and Upload Docs
-        uses: marvinpinto/action-automatic-releases@latest
+        uses: softprops/action-gh-release@v2
         with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          title: "Release ${{ github.ref_name }}"
+          tag_name: ${{ github.ref_name }}
+          name: "Release ${{ github.ref_name }}"
+          draft: false
           prerelease: false
-          allow_override: true  # allow jobs to write on this release
           files: |
             LICENSE*
+            CHANGELOG*
             docs/guide-comercial/target/generated-docs/pdf/kriolos-pos-*.pdf
             docs/guide-devel/target/generated-docs/pdf/kriolos-pos-*.pdf
             docs/guide-user/target/generated-docs/pdf/kriolos-pos-*.pdf
 
-  # 2. Job in Matrix: Linux, macOS, Windows
+  # 2. Matrix Job: Runs in parallel for each OS to build the application binaries
   build-binaries:
     name: "Build Binary for ${{ matrix.os }}"
-    needs: build-docs
+    needs: build-docs # Ensures binaries are uploaded only after the release is created
     strategy:
       matrix:
         include:
@@ -89,12 +90,9 @@ jobs:
           Compress-Archive -Path "${{ matrix.artifact_path }}" -DestinationPath "kriolosPOS-${{ matrix.suffix }}.zip"
 
       - name: Upload Binaries to Release
-        uses: marvinpinto/action-automatic-releases@latest
+        uses: softprops/action-gh-release@v2
         with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          title: "Release ${{ github.ref_name }}"
-          prerelease: false
-          allow_override: true  # Allow to override binaries
+          tag_name: ${{ github.ref_name }}
           files: |
             kriolosPOS-${{ matrix.suffix }}.zip
             kriolos-opos-app/target/*.zip
