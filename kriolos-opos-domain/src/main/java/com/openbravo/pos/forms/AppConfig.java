@@ -46,18 +46,16 @@ import javax.swing.UnsupportedLookAndFeelException;
  */
 public class AppConfig implements AppProperties {
 
-    private static final Logger LOGGER = Logger.getLogger("com.openbravo.pos.forms.AppConfig");
+    private static final Logger LOGGER = Logger.getLogger(AppConfig.class.getName());
 
-    private static volatile AppConfig m_instance;
-    private Properties m_propsconfig;
+    private static volatile AppConfig INSTANCE;
+    private Properties properties;
     private File configfile;
 
-    private static final String APP_CONFIG_DIRECTORY = System.getProperty("user.home");
     private static final String APP_CONFIG_FILE_NAME = AppLocal.APP_ID + ".properties";
-    private static final File APP_CONFIG_FILE_DEFAULT = new File(APP_CONFIG_DIRECTORY, APP_CONFIG_FILE_NAME);
 
     /**
-     * unicenta resources file
+     * Configuration file
      *
      * @param configfile resource file
      */
@@ -67,40 +65,56 @@ public class AppConfig implements AppProperties {
         } else {
             this.configfile = getDefaultConfigFile();
         }
-        this.m_propsconfig = new SortedStoreProperties();
+        this.properties = new SortedStoreProperties();
     }
 
-    private static File getDefaultConfigFile() {
+    private static File getBaseApplicationDataDirectory(){
+
         String os = System.getProperty("os.name").toLowerCase();
         String userHome = System.getProperty("user.home");
-        File configDir;
+        // Cross-Platform data directory
+        String baseDirectory;
 
         if (os.contains("win")) {
-            // Windows: %APPDATA%/KriolOS/
-            String appData = System.getenv("APPDATA");
-            configDir = new File(appData != null ? appData : userHome, "KriolOS");
+            // Windows: %APPDATA%/KriolOS/data
+            baseDirectory = Paths.get(System.getenv("APPDATA"), "KriolOS").toString();
         } else if (os.contains("mac")) {
-            // macOS: ~/Library/Application Support/KriolOS/
-            configDir = new File(userHome, "Library/Application Support/KriolOS");
+            // macOS: ~/Library/Application Support/KriolOS/data
+            baseDirectory = Paths.get(userHome, "Library", "Application Support", "KriolOS").toString();
         } else {
-            // Linux/Unix (XDG): ~/.config/kriolos/
-            String xdgConfig = System.getenv("XDG_CONFIG_HOME");
-            configDir = (xdgConfig != null && !xdgConfig.isEmpty())
-                    ? new File(xdgConfig, "kriolos")
-                    : new File(userHome, ".config/kriolos");
+            // XDG_DATA_HOME is an environment variable used by Unix-like operating systems
+            // to determine where applications should store user-specific data files
+            // Linux/Unix (ex. of XDG_DATA_HOME): ~/.config/kriolos/
+
+            //Linux/Unix DEFAULT: ~/.local/share/kriolos
+            String xdgData = System.getenv("XDG_DATA_HOME");
+            baseDirectory = (xdgData != null && !xdgData.isEmpty())
+                    // XDG_DATA_HOME
+                    ? Paths.get(xdgData, "kriolos").toString()
+                    //DEFAULT
+                    : Paths.get(userHome, ".local", "share", "kriolos").toString();
         }
 
-        // Cria a pasta se não existir para evitar FileNotFoundException ao salvar
+        // Directory must exist
+        File configDir = new File(baseDirectory);
         if (!configDir.exists()) {
             configDir.mkdirs();
         }
 
-        return new File(configDir, APP_CONFIG_FILE_NAME);
+        LOGGER.info("Application Data Directory: " + baseDirectory);
+
+        return configDir;
+    }
+
+    private static File getDefaultConfigFile() {
+
+        File baseDirectory = getBaseApplicationDataDirectory();
+        return new File(baseDirectory, APP_CONFIG_FILE_NAME);
     }
 
 
     public String getAppDataDirectory() {
-        return APP_CONFIG_DIRECTORY;
+        return getBaseApplicationDataDirectory().getAbsolutePath();
     }
 
     /**
@@ -111,7 +125,7 @@ public class AppConfig implements AppProperties {
      */
     @Override
     public String getProperty(String sKey) {
-        return m_propsconfig.getProperty(sKey);
+        return properties.getProperty(sKey);
     }
 
     /**
@@ -188,9 +202,9 @@ public class AppConfig implements AppProperties {
      */
     public void setProperty(String sKey, String sValue) {
         if (sValue == null) {
-            m_propsconfig.remove(sKey);
+            properties.remove(sKey);
         } else {
-            m_propsconfig.setProperty(sKey, sValue);
+            properties.setProperty(sKey, sValue);
         }
     }
 
@@ -208,35 +222,35 @@ public class AppConfig implements AppProperties {
     }
 
     public synchronized static AppConfig getInstance() {
-        AppConfig m_inst = m_instance;
+        AppConfig m_inst = INSTANCE;
 
         //Double check locking pattern
         //Check for the first time
         if (m_inst == null) {
 
             synchronized (AppConfig.class) {
-                m_inst = m_instance;
+                m_inst = INSTANCE;
                 //if there is no instance available... create new one
                 if (m_inst == null) {
-                    m_instance = m_inst = new AppConfig(getDefaultConfigFile());
+                    INSTANCE = m_inst = new AppConfig(getDefaultConfigFile());
                 }
             }
         }
 
-        return m_instance;
+        return INSTANCE;
     }
 
     public Boolean getBoolean(String sKey) {
-        return Boolean.valueOf(m_propsconfig.getProperty(sKey));
+        return Boolean.valueOf(properties.getProperty(sKey));
     }
 
     public void setBoolean(String sKey, Boolean sValue) {
         if (sValue == null) {
-            m_propsconfig.remove(sKey);
+            properties.remove(sKey);
         } else if (sValue) {
-            m_propsconfig.setProperty(sKey, "true");
+            properties.setProperty(sKey, "true");
         } else {
-            m_propsconfig.setProperty(sKey, "false");
+            properties.setProperty(sKey, "false");
         }
     }
 
@@ -257,23 +271,23 @@ public class AppConfig implements AppProperties {
     try {
         if (file.exists() && file.isFile()) {
             try (InputStream in = new FileInputStream(file)) {
-                m_propsconfig.load(in);
+                properties.load(in);
             }
 
             //File not empty
             if (getProperty("db.URL") == null) {
-                m_propsconfig = defaultConfig();
+                properties = defaultConfig();
                 save();
             }
         } else {
-            m_propsconfig = defaultConfig();
+            properties = defaultConfig();
             save();
         }
     }catch (IOException e) {
         LOGGER.log(Level.WARNING, MessageFormat.format("IOException on load configuration file: {0}", file.getAbsolutePath()), e);
         try {
             LOGGER.log(Level.INFO, "Providing default configuration: ", e);
-            m_propsconfig = defaultConfig();
+            properties = defaultConfig();
         } catch (Exception ex) {
             LOGGER.log(Level.WARNING, "Fail getting default/factory configuration", ex);
         }
@@ -302,14 +316,14 @@ public class AppConfig implements AppProperties {
 
         LOGGER.log(Level.INFO, "Saving configuration to file: {0}", configfile.getAbsolutePath());
         try ( OutputStream out = new FileOutputStream(configfile)) {
-            m_propsconfig.store(out, AppLocal.APP_NAME + ". Configuration file.");
+            properties.store(out, AppLocal.APP_NAME + ". Configuration file.");
         } catch (IOException ex) {
             LOGGER.log(Level.SEVERE, "Fail saving configuration to file: " + configfile.getAbsolutePath(), ex);
         }
     }
 
     public void setFactoryConfig() {
-        this.m_propsconfig = defaultConfig();
+        this.properties = defaultConfig();
     }
 
     private Properties defaultConfig() {
@@ -318,30 +332,7 @@ public class AppConfig implements AppProperties {
 
         Properties propConfig = new SortedStoreProperties();
 
-        // Cross-Platform data directory
-        String os = System.getProperty("os.name").toLowerCase();
-        String userHome = System.getProperty("user.home");
-        String baseDirectory;
-
-        if (os.contains("win")) {
-            // Windows: %APPDATA%/KriolOS/data
-            baseDirectory = Paths.get(System.getenv("APPDATA"), "KriolOS", "data").toString();
-        } else if (os.contains("mac")) {
-            // macOS: ~/Library/Application Support/KriolOS/data
-            baseDirectory = Paths.get(userHome, "Library", "Application Support", "KriolOS", "data").toString();
-        } else {
-            // Linux: ~/.local/share/kriolos
-            String xdgData = System.getenv("XDG_DATA_HOME");
-            baseDirectory = (xdgData != null && !xdgData.isEmpty())
-                    ? Paths.get(xdgData, "kriolos").toString()
-                    : Paths.get(userHome, ".local", "share", "kriolos").toString();
-        }
-
-        // Directory must exist
-        File dbDir = new File(baseDirectory);
-        if (!dbDir.exists()) {
-            dbDir.mkdirs();
-        }
+        File baseDirectory = getBaseApplicationDataDirectory();
 
         propConfig.setProperty("db.multi", "false");
         propConfig.setProperty("override.check", "false");
@@ -353,7 +344,7 @@ public class AppConfig implements AppProperties {
 
 // primary DB
         propConfig.setProperty("db.name", "Main DB");
-        propConfig.setProperty("db.URL", "jdbc:hsqldb:file:"+Paths.get(baseDirectory, "kriolopos").toString());
+        propConfig.setProperty("db.URL", "jdbc:hsqldb:file:"+Paths.get(baseDirectory.getAbsolutePath(), "kriolopos").toString());
         propConfig.setProperty("db.schema", "kriolopos");
         propConfig.setProperty("db.options", ";shutdown=true");
         propConfig.setProperty("db.user", "kriolopos");

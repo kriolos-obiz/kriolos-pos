@@ -254,11 +254,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                 </executions>
                 <configuration>
                     <mainClass>com.openbravo.pos.forms.StartPOS</mainClass>
+                    <!--
+                    ### awt.useSystemAAFontSettings
+                        on: active antialiasing default.
+                        lcd: Optimized (Best choice) for LCD (subpixel rendering).
+                    ### java.desktop.appName
+                     -->
                     <systemProperties>
-                        <!-- on: active anti-aliasing default.
-                            lcd: Optimized for LCD (subpixel rendering). (the best choice).
-                            gasp
-                            -->
                         <systemProperty>
                             <key>awt.useSystemAAFontSettings</key>
                             <value>lcd</value>
@@ -266,6 +268,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                         <systemProperty>
                             <key>swing.aatext</key>
                             <value>true</value>
+                        </systemProperty>
+                        <systemProperty>
+                            <key>java.desktop.appName</key>
+                            <value>kriolosPOS</value>
                         </systemProperty>
                     </systemProperties>
                 </configuration>

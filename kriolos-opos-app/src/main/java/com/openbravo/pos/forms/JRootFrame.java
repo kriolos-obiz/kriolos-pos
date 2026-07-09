@@ -59,10 +59,23 @@ public class JRootFrame extends javax.swing.JFrame implements AppMessage {
 
         setTitle(AppLocal.APP_NAME + " - " + AppLocal.APP_VERSION);
         String image = "/com/openbravo/images/app_logo_48x48.png";
+
         try {
-            this.setIconImage(ImageIO.read(JRootFrame.class.getResourceAsStream(image)));
+            // 1. Load the frame icon (Classic Swing window decoration)
+            java.awt.Image appIcon = ImageIO.read(JRootFrame.class.getResourceAsStream(image));
+            this.setIconImage(appIcon);
+
+            // 2. Set the OS Taskbar icon (Modern cross-platform support)
+            if (java.awt.Taskbar.isTaskbarSupported()) {
+                java.awt.Taskbar taskbar = java.awt.Taskbar.getTaskbar();
+                taskbar.setIconImage(appIcon);
+            }
         } catch (IOException e) {
             LOGGER.log(Level.WARNING, "Exception load icon: " + image, e);
+        } catch (UnsupportedOperationException e) {
+            LOGGER.log(Level.CONFIG, "Taskbar API is not supported in this environment.", e);
+        } catch (SecurityException e) {
+            LOGGER.log(Level.WARNING, "Security exception encountered accessing the Taskbar.", e);
         }
 
         //SHOW SPLASH

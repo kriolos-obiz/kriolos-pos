@@ -16,8 +16,7 @@
 package com.openbravo.pos.forms;
 
 import com.openbravo.pos.instance.InstanceManager;
-import static java.awt.Frame.MAXIMIZED_BOTH;
-import java.io.File;
+
 import java.rmi.RemoteException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -32,51 +31,59 @@ public class StartPOS {
 
     public static void main(final String args[]) {
 
-        File configFile = (args.length > 0 ? new File(args[0]) : null);
-        AppConfig config = new AppConfig(configFile);
+        // Explicitly set the WM_CLASS for Linux window managers using a sanitized application name
+        String wmClass = AppLocal.APP_NAME.toLowerCase().replaceAll("\\s+", "-");
+        System.setProperty("sun.awt.wmclass", wmClass);
+
+        AppConfig config = AppConfig.getInstance();
         config.load();
-        AppConfig.applySystemProperties(config);
 
         SwingUtilities.invokeLater(new Runnable() {
 
             @Override
             public void run() {
 
-                final JRootFrame rootframe = new JRootFrame(config);
-                if (1 != 1 && "true".equals(config.getProperty("machine.uniqueinstance"))) {
-
-                    try {
-                        InstanceManager.queryInstance().restoreWindow();
-                    } catch (RemoteException | NotBoundException e) {
-                        String msg = "Cannot start the application. Another instance is alreday running";
-                        LOGGER.log(Level.WARNING, msg, e);
-                        //Open A Window a Present a message to User
-                        //Wait maximun 30 second and close
-                        JOptionPane.showMessageDialog(rootframe,
-                                msg,
-                                AppLocal.APP_NAME, JOptionPane.WARNING_MESSAGE);
-                        System.exit(-1000);
-                    }
-
-                    // Register the running application
-                    try {
-                        final InstanceManager instmanager = new InstanceManager(rootframe);
-                        instmanager.registerInstance();
-
-                    } catch (RemoteException | AlreadyBoundException e) {
-                        String msg = "Cannot start the application. Cannot register a new instance";
-                        LOGGER.log(Level.WARNING, msg, e);
-                        //Open A Window a Present a message to User
-                        //Wait maximun 30 second and close
-                        JOptionPane.showMessageDialog(rootframe,
-                                msg,
-                                AppLocal.APP_NAME, JOptionPane.WARNING_MESSAGE);
-                        System.exit(-1001);
-                    }
-                }
-                
-                rootframe.initFrame();
+                final JRootFrame rootFrame = new JRootFrame(config);
+                /*
+                TODO: THIS IS NOT WORKING
+                 checkSingletonInstance(rootFrame, config);
+                 */
+                rootFrame.initFrame();
             }
         });
+    }
+
+    private static void checkSingletonInstance(JRootFrame rootFrame,AppConfig config) {
+        if ("true".equals(config.getProperty("machine.uniqueinstance"))) {
+
+            try {
+                InstanceManager.queryInstance().restoreWindow();
+            } catch (RemoteException | NotBoundException e) {
+                String msg = "Cannot start the application. Another instance is already running";
+                LOGGER.log(Level.WARNING, msg, e);
+                //Open A Window a Present a message to User
+                //Wait maximun 30 second and close
+                JOptionPane.showMessageDialog(rootFrame,
+                        msg,
+                        AppLocal.APP_NAME, JOptionPane.WARNING_MESSAGE);
+                System.exit(-1000);
+            }
+
+            // Register the running application
+            try {
+                final InstanceManager instanceManager = new InstanceManager(rootFrame);
+                instanceManager.registerInstance();
+
+            } catch (RemoteException | AlreadyBoundException e) {
+                String msg = "Cannot start the application. Cannot register a single instance";
+                LOGGER.log(Level.WARNING, msg, e);
+                //Open A Window a Present a message to User
+                //Wait maximun 30 second and close
+                JOptionPane.showMessageDialog(rootFrame,
+                        msg,
+                        AppLocal.APP_NAME, JOptionPane.WARNING_MESSAGE);
+                System.exit(-1001);
+            }
+        }
     }
 }
