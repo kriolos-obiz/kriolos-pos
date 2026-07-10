@@ -34,9 +34,36 @@ import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
 /**
+ * A shared, multi-ticket implementation of the {@link JTicketsBag} controller.
+ * <p>
+ * This class manages a "layaway" or suspended ticket workflow where multiple active sales receipts
+ * can be temporarily stored in the database (as shared tickets) and resumed later. This is
+ * particularly useful in retail and bar environments, allowing an operator to put a customer's
+ * transaction on hold to serve someone else without losing progress.
+ * </p>
  *
- * @author JG uniCenta
+ * <h3>Core Features & Business Logic:</h3>
+ * <ul>
+ *   <li><b>Permission-Based Visibility:</b> Filters the list of shared tickets based on user roles.
+ *       Managers or users with override rights see all global tickets, while standard operators
+ *       are restricted to their own active entries.</li>
+ *   <li><b>Data Persistence Safety:</b> Automatically saves work-in-progress carts to the temporary database
+ *       ({@link DataLogicReceipts}) during screen transitions or new ticket instantiation, provided
+ *       the cart contains at least one line item.</li>
+ *   <li><b>Secure Transaction Voiding:</b> Enforces supervisor validation checks (PIN entry via
+ *       {@link JPasswordDialog}) before allowing terminal users to delete or void a running invoice.</li>
+ *   <li><b>Asynchronous Lookups:</b> Dispatches heavy database lookups—such as fetching shared lists
+ *       or closed historical tickets for reprinting—safely onto the Swing Event Dispatch Thread (EDT)
+ *       to keep the point-of-sale layout smooth and responsive.</li>
+ * </ul>
+ *
+ * @author KriolOS / JG uniCenta
+ * @version 1.0
+ * @see com.openbravo.pos.sales.JTicketsBag
+ * @see com.openbravo.pos.sales.shared.JTicketsBagSharedList
+ * @see javax.swing.JPanel
  */
+
 public class JTicketsBagShared extends JTicketsBag {
 
     private DataLogicReceipts dlReceipts = null;

@@ -56,15 +56,16 @@ public class JPanelConfigLocale extends javax.swing.JPanel implements PanelConfi
         jcboTime.addActionListener(dirty);
         jcboDatetime.addActionListener(dirty);
 
-        List<Locale> availablelocales = new ArrayList<>();
-        availablelocales.addAll(Arrays.asList(Locale.getAvailableLocales())); // Available java locales
-//        addLocale(availablelocales, new Locale("en", "GB", "")); // English GB
-//        addLocale(availablelocales, new Locale("en", "US", "")); // English USA
+        List<Locale> availableLocales = new ArrayList<>();
+        //TODO To be implemented with provider pattern
+        //availableLocales.addAll(Arrays.asList(Locale.getAvailableLocales())); // Available java locales
+        addLocale(availableLocales, new Locale("en", "GB", "")); // English GB
+        addLocale(availableLocales, new Locale("pt", "", "")); // Portuguese Portugal
 
-        Collections.sort(availablelocales, new LocaleComparator());
+        Collections.sort(availableLocales, new LocaleComparator());
 
-        //jcboLocale.addItem(new LocaleInfo(null));
-        for (Locale l : availablelocales) {
+        jcboLocale.addItem(new LocaleInfo(null));
+        for (Locale l : availableLocales) {
             jcboLocale.addItem(new LocaleInfo(l));
         }
 
