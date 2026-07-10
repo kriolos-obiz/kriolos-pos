@@ -24,11 +24,7 @@ import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.AbstractAction;
-import javax.swing.AbstractButton;
-import javax.swing.Action;
-import javax.swing.JButton;
-import javax.swing.SwingConstants;
+import javax.swing.*;
 
 /**
  *
@@ -154,10 +150,12 @@ public class JAuthPanel extends javax.swing.JPanel {
 
             try {
                 if (m_actionuser.authenticate()) {
-                    LOGGER.log(Level.INFO, "IS Logged");
+                    LOGGER.log(Level.INFO, "User is already Logged");
                     authListener.onSucess(m_actionuser);
                 } else {
-                    String sPassword = JPasswordDialog.showEditor(JAuthPanel.this,
+                    // Using getWindowAncestor guarantees finding the root top-level Frame/Dialog window.
+                    String sPassword = JPasswordDialog.showEditor(
+                            SwingUtilities.getWindowAncestor(JAuthPanel.this),
                             AppLocal.getIntString("label.Password"),
                             m_actionuser.getName(),
                             m_actionuser.getIcon());

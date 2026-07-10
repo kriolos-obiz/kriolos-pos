@@ -16,8 +16,6 @@
  */
 package com.openbravo.beans;
 
-import static com.openbravo.beans.JEditorTextDialog.getWindow;
-import static com.openbravo.beans.JEditorTextDialog.showDialog;
 import com.openbravo.editor.JEditorPassword;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.util.Hashcypher;
@@ -30,8 +28,11 @@ import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
 
 /**
+ * A specialized password entry dialog that extends JEditorTextDialog.
+ * It swaps the standard text editor field with a masked password input field.
+ * Inherits the Wayland/COSMIC geometric alignment fixes from JEditorTextDialog.
  *
- * @author poolb
+ * @author poolborges
  */
 public class JPasswordDialog extends JEditorTextDialog{
     
@@ -57,17 +58,30 @@ public class JPasswordDialog extends JEditorTextDialog{
         return showEditor(parent, title, message, null);
     }
 
+    /**
+     * Factory pattern method to instantiate and prepare the password dialog.
+     * Delegates window positioning rules to the parent's showDialog handler
+     * to prevent Wayland floating decoupling.
+     */
     public static String showEditor(Component parent, String title, String message, Icon icon) {
-        
-        Window window = getWindow(parent);      
-        
+
+        Window window = getWindow(parent);
         JPasswordDialog dialog;
-        if (window instanceof Frame) { 
+
+        if (window instanceof Frame) {
             dialog = new JPasswordDialog((Frame) window, true);
-        } else {
+        } else if (window instanceof Dialog) {
             dialog = new JPasswordDialog((Dialog) window, true);
+        } else {
+            // Fallback: build without a parent but force focus configurations
+            dialog = new JPasswordDialog((Frame) null, true);
         }
-        
+
+        // Explicitly enforce modality and hint to the window manager
+        // that this cannot exist independently of its ancestor hierarchy.
+        dialog.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
+
+        // Calls the shared parent method which contains the pack() and positioning logic
         return showDialog(dialog, title, message, icon);
     }
 

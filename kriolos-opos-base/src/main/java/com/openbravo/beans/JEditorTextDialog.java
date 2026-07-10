@@ -22,6 +22,10 @@ import com.openbravo.editor.JEditorText;
 import java.awt.*;
 import javax.swing.*;
 
+/**
+ * A modal dialog box used to input text via an on-screen visual keypad.
+ * Optimized for POS environments and compatible with Wayland/COSMIC compositors.
+ */
 public class JEditorTextDialog extends javax.swing.JDialog {
     
     private static LocaleResources m_resources;
@@ -44,25 +48,34 @@ public class JEditorTextDialog extends javax.swing.JDialog {
     }    
     
     private void init() {
-     
+
+        // Embed the custom input components into the layout panels
         jPanelKe.add(m_jKeyPad);
         jPanelInput.add(m_jtextEditor);
-        
+
+        // Initialize localized text resources if not already loaded
         if (m_resources == null) {
             m_resources = new LocaleResources();
             m_resources.addBundleName("beans_messages");
         }
-       
-        getRootPane().setDefaultButton(jcmdOK);   
-        
+
+        // Bind the Enter key to the OK button automatically
+        getRootPane().setDefaultButton(jcmdOK);
+
+        // Link the virtual keypad to the text field handler
         m_jtextEditor.addEditorKeys(m_jKeyPad);
         m_jtextEditor.reset();
         m_jtextEditor.activate();
-        
+
+        // Style the title panel header
         m_jPanelTitle.setBorder(RoundedBorder.createGradientBorder());
 
     }
-    
+
+    /**
+     * Dynamically swaps or updates the current text editor component.
+     * @param newTextEditor The new text editor instance to attach
+     */
     public void setEditor(JEditorText newTextEditor){
         jPanelInput.removeAll();
         m_jtextEditor = newTextEditor;
@@ -83,10 +96,20 @@ public class JEditorTextDialog extends javax.swing.JDialog {
         m_lblMessage.setText(message);
         m_lblMessage.setIcon(icon);
     }
-    
+
+    /**
+     * Helper method to recursively climb up the component tree
+     * to discover the active top-level Window owner.
+     */
     protected static Window getWindow(Component parent) {
         if (parent == null) {
-            return new JFrame();
+            // Search through all globally open windows to find active main application frame
+            for (Window w : Window.getWindows()) {
+                if (w.isShowing() && (w instanceof Frame || w instanceof Dialog)) {
+                    return w;
+                }
+            }
+            return null; // Do not return an anonymous, blank 'new JFrame()'
         } else if (parent instanceof Frame || parent instanceof Dialog) {
             return (Window) parent;
         } else {
@@ -102,6 +125,9 @@ public class JEditorTextDialog extends javax.swing.JDialog {
         return showEditor(parent, title, message, null);
     }
 
+    /**
+     * Factory pattern method to instantiate, position, and present the dialog box safely.
+     */
     public static String showEditor(Component parent, String title, String message, Icon icon) {
         
         Window window = getWindow(parent);      
@@ -115,9 +141,21 @@ public class JEditorTextDialog extends javax.swing.JDialog {
         
         return showDialog(dialog, title, message, icon);
     }
-    
+
+    /**
+     * Displays the dialog. Includes sizing and centering fixes specifically engineered
+     * to resolve floating/positioning bugs on Wayland and COSMIC desktop compositors.
+     */
     protected static String showDialog(JEditorTextDialog dialog, String title, String message, Icon icon) {
         dialog.setTitle(title, message, icon);
+
+        // 1. Pack calculates the exact UI component bounds.
+        // 2. setLocationRelativeTo maps the sub-surface center based on the owner's geometry.
+        // Without this ordering, XWayland handles the surface anonymously, opening it outside the app.
+        dialog.pack();
+        dialog.setLocationRelativeTo(dialog.getParent());
+
+        // Blocks runtime thread until dialog closure due to modal state
         dialog.setVisible(true);
         return dialog.getValue();
     }
