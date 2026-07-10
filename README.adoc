@@ -111,6 +111,13 @@ export _JAVA_OPTIONS="-Dawt.useSystemAAFontSettings=on -Dswing.aatext=true"
 ./mvnw exec:java -pl kriolos-opos-app "-Dexec.mainClass=com.openbravo.pos.forms.StartPOS"
 ----
 
+
+
+[source,bash]
+----
+./mvnw -pl :kriolos-opos-app compile exec:java
+----
+
 == Run DB on Docker 
 
 .Run MySQL database for Developer Env 

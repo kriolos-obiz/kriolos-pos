@@ -21,18 +21,41 @@ import com.openbravo.pos.sales.*;
 import com.openbravo.pos.sales.shared.JTicketsBagShared;
 
 /**
+ * A simplified, single-ticket implementation of the tickets bag controller that extends {@link JTicketsBagShared}.
+ * <p>
+ * This class modifies the multi-ticket behavior of the shared ticket bag into a strict "direct checkout"
+ * or retail workflow. By disabling the standard toolbar buttons upon initialization, it explicitly
+ * prevents operators from creating new concurrent tickets, putting transactions on hold, or browsing
+ * a suspended ticket list.
+ * </p>
+ *
+ * <h3>Workflow Adjustments:</h3>
+ * <ul>
+ *   <li><b>UI Restriction:</b> Invokes {@link #disableAllButtons()} in the constructor to lock down multi-ticket features.</li>
+ *   <li><b>Retained Operations:</b> Re-enables only the ticket deletion routine ({@link #setEnabledButtonDel(boolean)})
+ *       to ensure that operators can still void or cancel the current single checkout session under standard system rules.</li>
+ * </ul>
  *
  * @author JG uniCenta
+ * @version 1.0
+ * @see com.openbravo.pos.sales.shared.JTicketsBagShared
+ * @see com.openbravo.pos.sales.JTicketsBag
  */
 public class JTicketsBagSimple extends JTicketsBagShared {
-    
+
     /**
-     * 
-     * @param app
-     * @param panelticket 
+     * Constructs a new simple ticket bag manager.
+     * <p>
+     * Initializes the underlying shared components via {@code super(app, ticketsEditor)}, activates the
+     * primary container panel layout, and configures the button states to strictly enforce a single,
+     * direct sales transaction environment.
+     * </p>
+     *
+     * @param app         the application view context providing access to beans and permissions.
+     * @param ticketsEditor the central visual editor where the single active ticket lines are modified.
      */
-    public JTicketsBagSimple(AppView app, TicketsEditor panelticket) {
-        super(app, panelticket);
+    public JTicketsBagSimple(AppView app, TicketsEditor ticketsEditor) {
+        super(app, ticketsEditor);
         this.setEnabledPanel(true);
         this.disableAllButtons();
         this.setEnabledButtonDel(true);

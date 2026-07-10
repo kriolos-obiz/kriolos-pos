@@ -24,11 +24,11 @@ if(sales != null){
                         line.getTaxInfo()));
             sales.setSelectedIndex(index);
         } else {
-             java.awt.Toolkit.getDefaultToolkit().beep();
+             com.openbravo.pos.util.NotificationHelper.beepAndLog("Valor total ou taxa inválida para desconto.");
         }
     } else {
-        java.awt.Toolkit.getDefaultToolkit().beep();
+        com.openbravo.pos.util.NotificationHelper.beepAndLog("Nenhuma linha selecionada.");
     }
 } else {
-    java.awt.Toolkit.getDefaultToolkit().beep();
+    com.openbravo.pos.util.NotificationHelper.beepAndLog("Erro na operação de vendas. 'sales' is null");
 }

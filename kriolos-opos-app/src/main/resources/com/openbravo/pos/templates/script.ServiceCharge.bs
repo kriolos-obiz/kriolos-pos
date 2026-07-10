@@ -49,5 +49,5 @@ if (total > 0.0) {
     } 
     sales.setSelectedIndex(ticket.getLinesCount() - 1);
 } else { 
-    java.awt.Toolkit.getDefaultToolkit().beep(); 
+    com.openbravo.pos.util.NotificationHelper.beep();
 }
