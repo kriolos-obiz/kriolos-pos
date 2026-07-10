@@ -252,6 +252,10 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         return this;
     }
 
+
+    protected String getTicketBagMode(){
+        return getTicketsbag();
+    }
     private String getTicketsbag() {
         return getAppProperty("machine.ticketsbag");
     }
@@ -1756,8 +1760,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
 
                             resultok = true;
 
-                            if ("restaurant".equals(m_App.getProperties()
-                                    .getProperty("machine.ticketsbag")) && !ticket.getOldTicket()) {
+                            if (isRestaurantMode() && !ticket.getOldTicket()) {
                                 restDB.clearCustomerNameInTable(ticketext);
                                 restDB.clearWaiterNameInTable(ticketext);
                                 restDB.clearTicketIdInTable(ticketext);
@@ -2797,36 +2800,34 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     private void btnReprint1ActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_btnReprint1ActionPerformed
 
         // TODO GET LAST FROM DB (USER ID)
-        /*
-         * if (m_config.getProperty("lastticket.number") != null) {
-         * try {
-         * TicketInfo ticketInfo = dlSales.loadTicket(
-         * Integer.parseInt((m_config.getProperty("lastticket.type"))),
-         * Integer.parseInt((m_config.getProperty("lastticket.number"))));
-         * if (ticketInfo == null) {
-         * JFrame frame = new JFrame();
-         * JOptionPane.showMessageDialog(frame,
-         * AppLocal.getIntString("message.notexiststicket"),
-         * AppLocal.getIntString("message.notexiststickettitle"),
-         * JOptionPane.WARNING_MESSAGE);
-         * } else {
-         * try {
-         * taxeslogic.calculateTaxes(ticketInfo);
-         * //TicketTaxInfo[] taxlist = m_ticket.getTaxLines();
-         * } catch (TaxesException ex) {
-         * LOGGER.log(System.Logger.Level.WARNING, "Exception on: ", ex);
-         * }
-         * printTicket("Printer.ReprintTicket", ticketInfo, null);
-         * Notify("'Printed'");
-         * }
-         * } catch (BasicException ex) {
-         * LOGGER.log(System.Logger.Level.WARNING, "Exception on: ", ex);
-         * MessageInf msg = new MessageInf(MessageInf.SGN_WARNING,
-         * AppLocal.getIntString("message.cannotloadticket"), ex);
-         * msg.show(this);
-         * }
-         * }
-         */
+          if (m_config.getProperty("lastticket.number") != null) {
+              try {
+                  TicketInfo ticketInfo = dlSales.loadTicket(
+                  Integer.parseInt((m_config.getProperty("lastticket.type"))),
+                  Integer.parseInt((m_config.getProperty("lastticket.number"))));
+                  if (ticketInfo == null) {
+                      JFrame frame = new JFrame();
+                      JOptionPane.showMessageDialog(frame,
+                      AppLocal.getIntString("message.notexiststicket"),
+                      AppLocal.getIntString("message.notexiststickettitle"),
+                      JOptionPane.WARNING_MESSAGE);
+                  } else {
+                      try {
+                          taxeslogic.calculateTaxes(ticketInfo);
+                          //TicketTaxInfo[] taxlist = m_ticket.getTaxLines();
+                          } catch (TaxesException ex) {
+                            LOGGER.log(System.Logger.Level.WARNING, "Exception on: ", ex);
+                          }
+                          printTicket("Printer.ReprintTicket", ticketInfo, null);
+                          Notify("'Printed'");
+                      }
+              } catch (BasicException ex) {
+                  LOGGER.log(System.Logger.Level.WARNING, "Exception on: ", ex);
+                  MessageInf msg = new MessageInf(MessageInf.SGN_WARNING,
+                  AppLocal.getIntString("message.cannotloadticket"), ex);
+                  msg.show(this);
+              }
+          }
     }// GEN-LAST:event_btnReprint1ActionPerformed
 
     private void btnSplitActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_btnSplitActionPerformed
