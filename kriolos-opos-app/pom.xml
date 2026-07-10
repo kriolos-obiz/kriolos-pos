@@ -386,7 +386,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             <activation>
                 <os>
                     <family>linux</family>
-                    <arch>x86_64</arch>
                 </os>
             </activation>
             <build>
@@ -431,6 +430,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                                     <value>true</value>
                                 </systemProperty>
                             </systemProperties>
+
+                            <environmentVariables>
+                                <_JAVA_AWT_WM_NONREPARENTING>1</_JAVA_AWT_WM_NONREPARENTING>
+                            </environmentVariables>
                         </configuration>
                     </plugin>
                 </plugins>
