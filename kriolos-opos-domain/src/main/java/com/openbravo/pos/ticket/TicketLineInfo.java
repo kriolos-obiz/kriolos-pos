@@ -126,6 +126,10 @@ public class TicketLineInfo implements SerializableWrite, SerializableRead, Seri
 
         String pid;
 
+        if(attributes == null){
+            attributes = new Properties();
+        }
+
         if (product == null) {
             pid = null;
             tax = null;
@@ -454,11 +458,17 @@ public class TicketLineInfo implements SerializableWrite, SerializableRead, Seri
     }
 
     public void setProperty(String key, String value) {
-        attributes.setProperty(key, value);
+        setPropertyWithValidation(key, value);
+    }
+
+    private void setPropertyWithValidation(String key, String value) {
+        if(key != null && !key.isBlank() ) {
+            attributes.setProperty(key, value == null ? "" : value);
+        }
     }
 
     public void setProductTaxCategoryID(String taxID) {
-        attributes.setProperty("product.taxcategoryid", taxID);
+        setPropertyWithValidation("product.taxcategoryid", taxID);
     }
 
     public void setProductAttSetInstId(String value) {
@@ -469,12 +479,12 @@ public class TicketLineInfo implements SerializableWrite, SerializableRead, Seri
         if (value == null) {
             attributes.remove(value);
         } else {
-            attributes.setProperty("product.attsetdesc", value);
+            setPropertyWithValidation("product.attsetdesc", value);
         }
     }
 
-    public void setTicketUpdated(String key, String value) {
-        attributes.setProperty("ticket.updated", value);
+    public void setTicketUpdated(String value) {
+        setPropertyWithValidation("ticket.updated", value);
     }
 
     /**

@@ -43,11 +43,11 @@ if(sales != null){
                         line.getTaxInfo()));
             sales.setSelectedIndex(index + 1);
         } else {
-             java.awt.Toolkit.getDefaultToolkit().beep();
+             com.openbravo.pos.util.NotificationHelper.beep();
         }
     } else {
-        java.awt.Toolkit.getDefaultToolkit().beep();
+        com.openbravo.pos.util.NotificationHelper.beep();
     }
 } else {
-    java.awt.Toolkit.getDefaultToolkit().beep();
+    com.openbravo.pos.util.NotificationHelper.beep();
 }

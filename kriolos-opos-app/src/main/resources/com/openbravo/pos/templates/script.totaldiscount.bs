@@ -21,32 +21,52 @@
 
 import com.openbravo.format.Formats;
 import com.openbravo.pos.ticket.TicketLineInfo;
-import com.openbravo.pos.ticket.TicketProductInfo; 
+import com.openbravo.pos.ticket.TicketProductInfo;
+import com.openbravo.pos.util.NotificationHelper;
 
-if(sales != null){
-    discountrate = 1 - sales.getInputValue();
+// 1. Validate sales context
+if (sales == null) {
+    NotificationHelper.beepAndLog("Critical Error: Sales context is null.");
+    NotificationHelper.showError("System error: The sales module is not active.");
+    return;
+}
 
-    index = sales.getSelectedIndex();
-    if (index >= 0) {
-        if (ticket.getTotal() > 0.0 && discountrate > 0.0) {
-            sdiscount = Formats.PERCENT.formatValue((1-discountrate));
-            for (int number= 0; number < ticket.getLinesCount(); number++) {
-                line = ticket.getLine(number);
-                ticket.setLine(number,
-                new TicketLineInfo(
-                        line.getProductID(),
-                        line.getProductName() + " - Discount @  " + sdiscount + " was " + line.getPrice(),
-                        line.getProductTaxCategoryID(),
-                        line.getMultiply(),
-                        (double)Math.rint(line.getPrice() * discountrate *100) /100d,
-                        line.getTaxInfo())); 
-            }  
-        } else {  
-            java.awt.Toolkit.getDefaultToolkit().beep();
-        }
-    } else {
-        java.awt.Toolkit.getDefaultToolkit().beep();
-    }
-} else {
-    java.awt.Toolkit.getDefaultToolkit().beep();
+// 2. Validate line selection
+int index = sales.getSelectedIndex();
+if (index < 0) {
+    NotificationHelper.beepAndLog("Discount failed: No line selected.");
+    NotificationHelper.showWarning("Please select an item to apply the discount.");
+    return;
+}
+
+// 3. Validate the input (Discount rates)
+double discountValue = sales.getInputValue();
+double discountRate = 1.0 - discountValue;
+if (discountRate <= 0.0 || discountValue < 0.0) {
+    NotificationHelper.beepAndLog("Invalid action: Invalid discount rate (" + discountValue + ")");
+    NotificationHelper.showWarning("Discount must be between 0% and 100%.");
+    return;
+}
+
+// 4. Validate ticket total
+if (ticket.getTotal() <= 0.0) {
+    NotificationHelper.beepAndLog("Invalid action: Zero total");
+    NotificationHelper.showWarning("Total must be > 0 to apply a discount.");
+    return;
+}
+
+// --- MAIN BUSINESS LOGIC (Executes if guards pass) ---
+
+String sDiscount = Formats.PERCENT.formatValue(discountValue);
+
+for (int number = 0; number < ticket.getLinesCount(); number++) {
+    TicketLineInfo line = ticket.getLine(number);
+    ticket.setLine(number,
+    new TicketLineInfo(
+            line.getProductID(),
+            line.getProductName() + " - Discount @  " + sDiscount + " was " + line.getPrice(),
+            line.getProductTaxCategoryID(),
+            line.getMultiply(),
+            (double)Math.rint(line.getPrice() * discountRate * 100) / 100d,
+            line.getTaxInfo()));
 }

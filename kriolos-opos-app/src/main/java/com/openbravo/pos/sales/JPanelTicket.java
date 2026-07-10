@@ -212,16 +212,14 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
             sConfigRes = "";
         }
 
-        ScriptArg sa1 = new ScriptArg("ticket", m_oTicket);
-        ScriptArg sa2 = new ScriptArg("user", m_App.getAppUserView().getUser());
-        ScriptArg sa3 = new ScriptArg("sales", this);
+
 
         m_jbtnconfig = new JPanelButtons(m_App, new JPanelButtons.JPanelButtonListener() {
             @Override
             public void eval(String resource) {
 
                 LOGGER.log(System.Logger.Level.INFO, "Rrocessing code (resource id): " + resource);
-                evalScriptAndRefresh(resource, sa1, sa2, sa3);
+                evalScriptForExternalButtons(resource);
             }
 
             @Override
@@ -767,6 +765,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
      */
     public double getInputValue() {
         try {
+
             return Double.parseDouble(m_jPrice.getText());
         } catch (NumberFormatException ex) {
             LOGGER.log(System.Logger.Level.WARNING, "Exception on get input value from user: ", ex);
@@ -2024,12 +2023,15 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         }
     }
 
-    /**
-     *
-     * @param resource
-     * @param args
-     */
-    public void evalScriptAndRefresh(String resource, ScriptArg... args) {
+    private void evalScriptForExternalButtons(String resource) {
+        ScriptArg sa1 = new ScriptArg("ticket", m_oTicket);
+        ScriptArg sa2 = new ScriptArg("user", m_App.getAppUserView().getUser());
+        ScriptArg sa3 = new ScriptArg("sales", this);
+
+        evalScriptAndRefresh(resource, sa1, sa2, sa3);
+    }
+
+    private void evalScriptAndRefresh(String resource, ScriptArg... args) {
 
         if (resource == null) {
             MessageInf msg = new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.cannotexecute"));
@@ -2044,31 +2046,22 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         }
     }
 
-    private Object executeEvent(TicketInfo ticket, String ticketext, String eventkey, ScriptArg... args) {
+    private Object executeEvent(TicketInfo ticket, String ticketExt, String eventKey, ScriptArg... args) {
 
-        String resource = m_jbtnconfig.getEvent(eventkey);
+        String resource = m_jbtnconfig.getEvent(eventKey);
         if (resource == null) {
             return null;
         } else {
-            ScriptObject scr = new ScriptObject(ticket, ticketext);
+            ScriptObject scr = new ScriptObject(ticket, ticketExt);
             return evalScript(scr, resource, args);
         }
     }
 
-    /**
-     *
-     * @param sresourcename
-     * @return
-     */
     public String getResourceAsXML(String sresourcename) {
         return dlSystem.getResourceAsXML(sresourcename);
     }
 
-    /**
-     *
-     * @param sresourcename
-     * @return
-     */
+
     public BufferedImage getResourceAsImage(String sresourcename) {
         return dlSystem.getResourceAsImage(sresourcename);
     }
