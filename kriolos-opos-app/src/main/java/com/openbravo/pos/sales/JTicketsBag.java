@@ -25,9 +25,25 @@ import javax.swing.JComponent;
 import javax.swing.JPanel;
 
 /**
+ * Abstract controller and container for managing active sales tickets within the POS system.
+ * <p>
+ * This class serves as the foundational component for handling different ticketing workflows
+ * (e.g., standard retail tabs, restaurant table maps, or simplified direct checkouts).
+ * It acts as a bridge between the core sales data logic ({@link DataLogicSales}) and the
+ * visual ticket editor UI ({@link TicketsEditor}).
+ * </p>
+ * <p>
+ * Subclasses implement specific behaviors for ticket persistence, multi-ticket switching,
+ * and context-specific user interface components.
+ * </p>
  *
  * @author JG uniCenta
+ * @see javax.swing.JPanel
+ * @see com.openbravo.pos.sales.shared.JTicketsBagShared
+ * @see com.openbravo.pos.sales.restaurant.JTicketsBagRestaurantMap
+ * @see com.openbravo.pos.sales.simple.JTicketsBagSimple
  */
+
 public abstract class JTicketsBag extends JPanel {
     
     protected final static System.Logger LOGGER = System.getLogger(JTicketsBag.class.getName());
