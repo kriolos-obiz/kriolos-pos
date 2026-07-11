@@ -46,69 +46,94 @@
                 </executions>
             </plugin>
     
-            <plugin>
-                <groupId>org.panteleyev</groupId>
-                <artifactId>jpackage-maven-plugin</artifactId>
-                <configuration>
-                    <name>kriolosPOS</name>
-                    <appVersion>1.0.0</appVersion>
-                    <copyright>Paulo Borges</copyright>
-                    <description>KriolOS Point Of Sales</description>    
-                    <vendor>KriolOS</vendor>
-                    <type>APP_IMAGE</type>
-                    <input>${project.build.directory}/lib</input>
-                    <mainClass>${appMainClass}</mainClass>
-                    <mainJar>${appJar}</mainJar>
-                    <destination>${project.build.directory}/</destination>
-                    
-                    <!-- Change on profile for specific OS -->
-                    <icon>${project.basedir}/icons/app_icon.ico</icon>
- 
-                    <launchers>
-                        <launcher>
-                            <name>kriolosPOS-Config</name>
-                            <file>${project.basedir}/jpackage/launcher-pos-config.properties</file>
-                        </launcher>
-                        <launcher>
-                            <name>kriolosPOS-Transfer</name>
-                            <file>${project.basedir}/jpackage/launcher-pos-transfer.properties</file>
-                        </launcher>
-                        <launcher>
-                            <name>kriolosPOS-ResetPickup</name>
-                            <file>${project.basedir}/jpackage/launcher-pos-resetpickup.properties</file>
-                        </launcher>
-                    </launchers>
-                    
-                    <javaOptions>
-                        <option>-Dfile.encoding=UTF-8</option>
-                        <option>--add-opens=java.base/java.util=ALL-UNNAMED</option>
-                        <option>--add-opens=java.base/java.lang.ref=ALL-UNNAMED</option>
-                        <option>--add-opens=java.base/java.lang=ALL-UNNAMED</option>
-                    </javaOptions>
-                   
-                    <jLinkOptions>
-                        <jLinkOption>--strip-native-commands</jLinkOption>
-                        <jLinkOption>--strip-debug</jLinkOption>
-                        <jLinkOption>--no-man-pages</jLinkOption>
-                        <jLinkOption>--no-header-files</jLinkOption>                         
-                        <jLinkOption>--compress=2</jLinkOption>
 
-                    </jLinkOptions>
-                    
-                    <addmodules>
-                        <addmodule>java.base</addmodule>
-                        <addmodule>java.desktop</addmodule>
-                        <addmodule>java.logging</addmodule>
-                    </addmodules>
-                </configuration>
-            </plugin>
 
         </plugins>
     </build>
-    
+
     <profiles>
+        <!-- Perfil base que executa o jpackage na fase de package -->
         <profile>
-            <id>windows_32</id>
+            <id>jpackage</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.panteleyev</groupId>
+                        <artifactId>jpackage-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>jpackage</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <name>kriolosPOS</name>
+                            <appVersion>1.0.0</appVersion>
+                            <copyright>Paulo Borges</copyright>
+                            <description>KriolOS Point Of Sales</description>
+                            <vendor>KriolOS</vendor>
+                            <input>${project.build.directory}/lib</input>
+                            <mainClass>${appMainClass}</mainClass>
+                            <mainJar>${appJar}</mainJar>
+                            <destination>${project.build.directory}/</destination>
+
+                            <!-- Change on profile for specific OS -->
+                            <icon>${project.basedir}/icons/app_icon.ico</icon>
+
+                            <launchers>
+                                <launcher>
+                                    <name>kriolosPOS-Config</name>
+                                    <file>${project.basedir}/jpackage/launcher-pos-config.properties</file>
+                                </launcher>
+                                <launcher>
+                                    <name>kriolosPOS-Transfer</name>
+                                    <file>${project.basedir}/jpackage/launcher-pos-transfer.properties</file>
+                                </launcher>
+                                <launcher>
+                                    <name>kriolosPOS-ResetPickup</name>
+                                    <file>${project.basedir}/jpackage/launcher-pos-resetpickup.properties</file>
+                                </launcher>
+                            </launchers>
+
+                            <javaOptions>
+                                <option>-Dfile.encoding=UTF-8</option>
+                                <option>--add-opens=java.base/java.util=ALL-UNNAMED</option>
+                                <option>--add-opens=java.base/java.lang.ref=ALL-UNNAMED</option>
+                                <option>--add-opens=java.base/java.lang=ALL-UNNAMED</option>
+                            </javaOptions>
+
+                            <jLinkOptions>
+                                <jLinkOption>--strip-native-commands</jLinkOption>
+                                <jLinkOption>--strip-debug</jLinkOption>
+                                <jLinkOption>--no-man-pages</jLinkOption>
+                                <jLinkOption>--no-header-files</jLinkOption>
+                                <jLinkOption>--compress=2</jLinkOption>
+                            </jLinkOptions>
+
+                            <!-- DON'T UNCOMMENT, THIS IS NOT THE FULL LIST
+                            <addModules>
+                                <addModule>java.base</addModule>
+                                <addModule>java.desktop</addModule>
+                                <addModule>java.logging</addModule>
+                                <addModule>java.rmi</addModule>
+                                <addModule>java.sql</addModule>
+                                <addModule>java.xml</addModule>
+                            </addModules>
+                            -->
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- Profile per OS -->
+        <profile>
+            <id>jpackage-windows_32</id>
             <activation>
                 <os>
                     <family>windows</family>
@@ -126,26 +151,18 @@
                         <configuration>
                             <aboutUrl>https://github.com/poolborges/unicenta-pos</aboutUrl>
                             <icon>${project.basedir}/icons/app_icon.ico</icon>
-                            <winMenu>true</winMenu>
                             <type>MSI</type>
-                            <!--
-                              Start menu group this application is placed in.
-                            -->
-                            <winmenugroup>KriolOS/OPOS</winmenugroup>
-                            <!--
-                              Enable adding a dialog to choose a directory in which
-                              the product is installed.
-                              Default value: false
-                            -->
-                            <windirchooser>true</windirchooser>
+                            <winMenu>true</winMenu>
+                            <winMenuGroup>KriolOS/OPOS</winMenuGroup>
+                            <winDirChooser>true</winDirChooser>
                         </configuration>
                     </plugin>
-                </plugins> 
+                </plugins>
             </build>
         </profile>
-        
+
         <profile>
-            <id>windows_64</id>
+            <id>jpackage-windows_64</id>
             <activation>
                 <os>
                     <family>windows</family>
@@ -163,18 +180,18 @@
                         <configuration>
                             <aboutUrl>https://github.com/poolborges/unicenta-pos</aboutUrl>
                             <icon>${project.basedir}/icons/app_icon.ico</icon>
-                            <winMenu>true</winMenu>
                             <type>MSI</type>
-                            <winmenugroup>KriolOS/OPOS</winmenugroup>
-                            <windirchooser>true</windirchooser>
+                            <winMenu>true</winMenu>
+                            <winMenuGroup>KriolOS/OPOS</winMenuGroup>
+                            <winDirChooser>true</winDirChooser>
                         </configuration>
                     </plugin>
-                </plugins> 
+                </plugins>
             </build>
         </profile>
-        
+
         <profile>
-            <id>mac</id>
+            <id>jpackage-macos</id>
             <activation>
                 <os>
                     <family>mac</family>
@@ -191,14 +208,16 @@
                         <artifactId>jpackage-maven-plugin</artifactId>
                         <configuration>
                             <icon>${project.basedir}/icons/app_icon.icns</icon>
+                            <type>DMG</type>
+                            <macPackageIdentifier>io.github.kriolos-obiz.opos</macPackageIdentifier>
                         </configuration>
                     </plugin>
                 </plugins>
             </build>
         </profile>
-        
+
         <profile>
-            <id>linux</id>
+            <id>jpackage-linux</id>
             <activation>
                 <os>
                     <family>linux</family>
@@ -214,36 +233,17 @@
                         <groupId>org.panteleyev</groupId>
                         <artifactId>jpackage-maven-plugin</artifactId>
                         <configuration>
-                            <icon>${project.basedir}/icons/app_icon.icns</icon>
+                            <icon>${project.basedir}/icons/app_icon.png</icon>
                             <linuxShortcut>true</linuxShortcut>
-                            <linuxPackageName>krpos</linuxPackageName>
-                            <linuxAppCategory>Utilities</linuxAppCategory>
-                            <linuxMenuGroup>Utilities</linuxMenuGroup>
+                            <linuxPackageName>kriolos-pos</linuxPackageName>
+                            <linuxAppCategory>Office</linuxAppCategory>
+                            <linuxMenuGroup>Office</linuxMenuGroup>
                         </configuration>
                     </plugin>
                 </plugins>
             </build>
         </profile>
-
-        <profile>
-            <id>jpackage</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.panteleyev</groupId>
-                        <artifactId>jpackage-maven-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <phase>package</phase>
-                                <goals>
-                                    <goal>jpackage</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
     </profiles>
+
 
 </project>
