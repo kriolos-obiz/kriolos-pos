@@ -1,6 +1,9 @@
 package com.openbravo.pos.util;
 
 import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.logging.Level;
@@ -8,46 +11,78 @@ import java.util.logging.Logger;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
+import javax.sound.sampled.LineEvent;
+import javax.sound.sampled.UnsupportedAudioFileException;
 
 /**
+ * Utility class for handling asynchronous audio playback compatible from Java 8 to Java 26.
+ * Compliant with static code analysis (try-with-resources / rule enforcement).
  *
- * @author psb
+ * @author poolborges
  */
 public class AudioUtils {
 
-    private final static Logger LOGGER = Logger.getLogger(AudioUtils.class.getName());
-    
+    private static final Logger LOGGER = Logger.getLogger(AudioUtils.class.getName());
+    private static final int BUFFER_SIZE = 4096;
+
+    private AudioUtils() {
+    }
+
     public static void play(String resource) {
-        Clip oAudio;
         try {
-            // Get the URL of the audio resource
-            URL audioURL = AudioUtils.class.getClass().getClassLoader().getResource(resource);
+            URL audioURL = AudioUtils.class.getClassLoader().getResource(resource);
 
             if (audioURL != null) {
-                // Open an InputStream from the URL
-                try (InputStream audioStream = audioURL.openStream()) {
-                    // Wrap it in a BufferedInputStream for better performance
-                    BufferedInputStream bis = new BufferedInputStream(audioStream);
+                // Call the extracted method to get the fully buffered stream
+                AudioInputStream ais = createAudioStream(audioURL);
 
-                    // Get an AudioInputStream from the BufferedInputStream
-                    AudioInputStream ais = AudioSystem.getAudioInputStream(bis);
+                Clip oAudio = AudioSystem.getClip();
+                oAudio.open(ais);
 
-                    // Get a Clip instance
-                    oAudio = AudioSystem.getClip();
+                // Automatically release OS mixer lines when playback stops
+                oAudio.addLineListener(event -> {
+                    if (event.getType() == LineEvent.Type.STOP) {
+                        try {
+                            oAudio.close();
+                            ais.close();
+                        } catch (Exception ex) {
+                            LOGGER.log(Level.FINE, "Error releasing background audio lines", ex);
+                        }
+                    }
+                });
 
-                    // Open the Clip with the AudioInputStream
-                    oAudio.open(ais);
-
-                    // Now you can play the audio:
-                    oAudio.start(); // To play once
-                    // oAudio.loop(Clip.LOOP_CONTINUOUSLY); // To loop continuously
-                }
+                oAudio.start();
 
             } else {
                 LOGGER.warning("Audio resource not found: " + resource);
             }
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Exeception play audio from classpath resource: "+resource);
+            LOGGER.log(Level.SEVERE, "Exception playing audio from classpath resource: " + resource, e);
         }
+    }
+
+    /**
+     * Extracted method that reads the resource into memory and returns a safe AudioInputStream.
+     * All physical OS file descriptors are closed within the try-with-resources block.
+     */
+    private static AudioInputStream createAudioStream(URL audioURL) throws IOException, UnsupportedAudioFileException {
+        byte[] audioBuffer;
+
+        // Try-with-resources guarantees physical streams are closed immediately
+        try (InputStream audioStream = audioURL.openStream();
+             BufferedInputStream bis = new BufferedInputStream(audioStream);
+             ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+
+            byte[] buffer = new byte[BUFFER_SIZE];
+            int bytesRead;
+            while ((bytesRead = bis.read(buffer)) != -1) {
+                baos.write(buffer, 0, bytesRead);
+            }
+            audioBuffer = baos.toByteArray();
+        }
+
+        // Return the stream backed by the in-memory byte array
+        ByteArrayInputStream bais = new ByteArrayInputStream(audioBuffer);
+        return AudioSystem.getAudioInputStream(bais);
     }
 }
