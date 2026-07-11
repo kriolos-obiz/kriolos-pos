@@ -31,12 +31,9 @@ public class StartPOS {
 
     public static void main(final String args[]) {
 
-        // Explicitly set the WM_CLASS for Linux window managers using a sanitized application name
-        String wmClass = AppLocal.APP_NAME.toLowerCase().replaceAll("\\s+", "-");
-        System.setProperty("sun.awt.wmclass", wmClass);
-
         AppConfig config = AppConfig.getInstance();
         config.load();
+        AppConfig.applySystemProperties(config);
 
         SwingUtilities.invokeLater(new Runnable() {
 
