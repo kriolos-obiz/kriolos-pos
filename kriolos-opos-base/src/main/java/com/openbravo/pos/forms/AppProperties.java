@@ -42,4 +42,12 @@ public interface AppProperties {
      * @return key pair property
      */
     public String getProperty(String sKey);
+
+
+    /**
+     * Read the property from the key pair
+     * @param sKey key pair value
+     * @return key pair property
+     */
+    public String getProperty(String sKey, String defaultValue);
 }

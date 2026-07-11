@@ -18,15 +18,12 @@ package com.openbravo.pos.forms;
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.gui.JMessageDialog;
 import com.openbravo.data.gui.MessageInf;
-import java.awt.BorderLayout;
+
+import java.awt.*;
 import java.io.IOException;
 import java.rmi.RemoteException;
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
-import java.awt.Dimension;
-import java.awt.GraphicsDevice;
-import java.awt.GraphicsEnvironment;
-import java.awt.Toolkit;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.util.logging.Level;
@@ -202,13 +199,29 @@ public class JRootFrame extends javax.swing.JFrame implements AppMessage {
         java.awt.EventQueue.invokeLater(new Runnable() {
             @Override
             public void run() {
-                if (getExtendedState() == JFrame.ICONIFIED) {
-                    setExtendedState(JFrame.NORMAL);
+                // 1. De-iconify (De-minimize) if the frame is minimized
+                if ((getExtendedState() & Frame.ICONIFIED) != 0) {
+                    setExtendedState(getExtendedState() & ~Frame.ICONIFIED);
                 }
+
+                // 2. Force the window to the front layer
+                toFront();
+
+                // 3. Request focus safely
                 requestFocus();
+
+                // 4. Hack for modern OS to force focus bypass (Brings window on top)
+                try {
+                    boolean alwaysOnTopState = isAlwaysOnTop();
+                    setAlwaysOnTop(true);
+                    setAlwaysOnTop(alwaysOnTopState); // Reverts to original state immediately
+                } catch (SecurityException e) {
+                    LOGGER.log(Level.CONFIG, "Bypass always-on-top focus failed due to OS security.", e);
+                }
             }
         });
     }
+
 
     /**
      * This method is called from within the constructor to initialize the form.
