@@ -429,6 +429,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                                     <key>sun.java2d.xrender</key>
                                     <value>true</value>
                                 </systemProperty>
+                                <systemProperty>
+                                    <key>sun.awt.wmclass</key>
+                                    <value>kriolosPOS</value>
+                                </systemProperty>
                             </systemProperties>
 
                             <environmentVariables>
