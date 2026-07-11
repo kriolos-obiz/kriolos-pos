@@ -41,41 +41,46 @@ public class StartPOS {
             public void run() {
 
                 final JRootFrame rootFrame = new JRootFrame(config);
-                /*
-                TODO: THIS IS NOT WORKING
+
+                //CHECK SINGLE INSTANCE RMI
                  checkSingletonInstance(rootFrame, config);
-                 */
+
                 rootFrame.initFrame();
             }
         });
     }
 
-    private static void checkSingletonInstance(JRootFrame rootFrame,AppConfig config) {
+    private static void checkSingletonInstance(JRootFrame rootFrame, AppConfig config) {
         if ("true".equals(config.getProperty("machine.uniqueinstance"))) {
 
             try {
-                InstanceManager.queryInstance().restoreWindow();
-            } catch (RemoteException | NotBoundException e) {
-                String msg = "Cannot start the application. Another instance is already running";
-                LOGGER.log(Level.WARNING, msg, e);
-                //Open A Window a Present a message to User
-                //Wait maximun 30 second and close
+                // Try to find and contact an existing instance
+                InstanceManager.queryInstance(config).restoreWindow();
+
+                // If no exception occurs, another instance is already running
+                String msg = "Another instance of the application is already running.";
+                LOGGER.log(Level.INFO, msg);
                 JOptionPane.showMessageDialog(rootFrame,
                         msg,
-                        AppLocal.APP_NAME, JOptionPane.WARNING_MESSAGE);
-                System.exit(-1000);
+                        AppLocal.APP_NAME, JOptionPane.INFORMATION_MESSAGE);
+
+                // Exit this second instance cleanly
+                System.exit(0);
+
+            } catch (RemoteException | NotBoundException e) {
+                // Exception caught means no prior instance exists. Safe to proceed.
+                LOGGER.log(Level.INFO, "No previous instance found. Registering this instance...");
             }
 
-            // Register the running application
+            // Register this first running instance into the RMI registry
             try {
-                final InstanceManager instanceManager = new InstanceManager(rootFrame);
+                final InstanceManager instanceManager = new InstanceManager(rootFrame, config);
                 instanceManager.registerInstance();
+                LOGGER.log(Level.INFO, "Application instance registered successfully via RMI.");
 
             } catch (RemoteException | AlreadyBoundException e) {
                 String msg = "Cannot start the application. Cannot register a single instance";
                 LOGGER.log(Level.WARNING, msg, e);
-                //Open A Window a Present a message to User
-                //Wait maximun 30 second and close
                 JOptionPane.showMessageDialog(rootFrame,
                         msg,
                         AppLocal.APP_NAME, JOptionPane.WARNING_MESSAGE);
@@ -83,4 +88,5 @@ public class StartPOS {
             }
         }
     }
+
 }

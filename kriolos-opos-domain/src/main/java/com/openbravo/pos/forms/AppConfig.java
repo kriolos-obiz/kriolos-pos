@@ -128,6 +128,12 @@ public class AppConfig implements AppProperties {
         return properties.getProperty(sKey);
     }
 
+
+    @Override
+    public String getProperty(String sKey, String defaultValue) {
+        return properties.getProperty(sKey, defaultValue);
+    }
+
     /**
      *
      * @return Machine name
