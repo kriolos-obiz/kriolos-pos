@@ -185,7 +185,12 @@ public class DevicePrinterJavaPOS  implements DevicePrinter {
             LOGGER.log(Level.WARNING, "Excepion on printBarCode: ",e);
         }
     }
-    
+
+    @Override
+    public void printQRCode(String code, int size, char errorCorrection) {
+        LOGGER.log(Level.WARNING, "NOT IMPLEMENTED:  printQRCode");
+    }
+
     /**
      *
      * @param iTextSize

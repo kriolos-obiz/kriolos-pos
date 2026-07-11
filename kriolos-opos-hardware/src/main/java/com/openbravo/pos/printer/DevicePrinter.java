@@ -101,6 +101,10 @@ public interface DevicePrinter {
     public static final String BARCODE_CODE128 = "CODE128";
     public static final String BARCODE_CODE39 = "CODE39";
 
+//QrCode
+    public static final int QRCODE_DEFAULT_SIZE = 4;
+    public static final char QRCODE_DEFAULT_ERROR_CODE = 'M';
+
     public String getPrinterName();
 
     public String getPrinterDescription();
@@ -119,7 +123,7 @@ public interface DevicePrinter {
 
     public void printBarCode(String type, String position, String code);
     
-    //public void printQRCode(String code, int size, char errorCorrection);
+    public void printQRCode(String code, int size, char errorCorrection);
 
 // Do TextLine
     public void beginLine(int iTextSize);

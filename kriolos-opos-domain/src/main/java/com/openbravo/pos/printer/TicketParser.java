@@ -74,6 +74,10 @@ public class TicketParser extends DefaultHandler {
     private String currentUser;
     private String ticketId;
 
+    //QrCode
+    int qrcodeSize = DevicePrinter.QRCODE_DEFAULT_SIZE;
+    char qrcodeErrorCode =  DevicePrinter.QRCODE_DEFAULT_ERROR_CODE;
+
     public TicketParser(DeviceTicket printer, DataLogicSystem system) {
         this.printer = printer;
         this.dataLogicSystem = system;
@@ -237,33 +241,9 @@ public class TicketParser extends DefaultHandler {
         switch (qName) {
             
             case "qrcode":
-                /* 
-                <qrcode size="5" ec="h">Texto</qrcode>
-                <qrcode ec="L">Texto</qrcode>
-                <qrcode>Texto</qrcode>
-                */
-                String sSize = attributes.getValue("size");
-                String sEc = attributes.getValue("ec");
-
-                int qrcodeSize = 4;       // Valor padrão,DevicePrinter.QRCODE_DEFAULT_EC 
-                char qrcodeErrorCode = 'M';      // Valor padrão tipo char DevicePrinter.QRCODE_DEFAULT_EC
-
-                // Processa o tamanho (int)
-                if (sSize != null && !sSize.isEmpty()) {
-                    try {
-                        qrcodeSize = Integer.parseInt(sSize);
-                    } catch (NumberFormatException e) {
-                        qrcodeSize = 4;
-                    }
-                }
-
-                // Processa o nível de correção (char)
-                if (sEc != null && !sEc.isEmpty()) {
-                    String cleanEc = sEc.trim();
-                    if (!cleanEc.isEmpty()) {
-                        qrcodeErrorCode = cleanEc.charAt(0); // Extrai estritamente o caractere da primeira posição
-                    }
-                }
+                currentText = new StringBuilder();
+                qrcodeSize = parseInt(attributes.getValue("size"), DevicePrinter.QRCODE_DEFAULT_SIZE);
+                qrcodeErrorCode = parseChar(attributes.getValue("ec"), DevicePrinter.QRCODE_DEFAULT_ERROR_CODE);
              break;
 
             case "logo":
@@ -296,7 +276,8 @@ public class TicketParser extends DefaultHandler {
         //String textContent = (currentText != null) ? currentText.toString() : null;
         switch (qName) {
             case "qrcode":
-                //outputPrinter.printQRCode(currentText.toString(), qrcodeSize, qrcodeErrorCode);
+                outputPrinter.printQRCode(currentText.toString(), qrcodeSize, qrcodeErrorCode);
+                currentText = null;
                 break;
             case "logo":
                 //Star TSP700 to print stored logo image JDL
@@ -536,6 +517,17 @@ public class TicketParser extends DefaultHandler {
         } catch (NumberFormatException eNF) {
             return ddefault;
         }
+    }
+
+    private char parseChar(String sValue, char cDefault) {
+        char receiveChar = cDefault;
+        if (sValue != null && !sValue.isEmpty()) {
+            String cleanEc = sValue.trim();
+            if (!cleanEc.isEmpty()) {
+                receiveChar = cleanEc.charAt(0);
+            }
+        }
+        return receiveChar;
     }
 
     private double parseDouble(String sValue) {

@@ -159,6 +159,36 @@ Hooks
 
 
 
+== Element BarCode 'barcode'
+
+
+Attributes
+
+* size: Barcode size
+* position: Barcode text position (none, bottom, top)
+
+.Example using barcode
+[source, xml]
+----
+<ticket>
+  <barcode size="" position="{DEFAULT: bottom}|none|top">Text goes here</qrcode>
+</ticket>
+----
+
+
+== Element QrCode 'qrcode'
+
+* ec: QrCode Error Control Level (L, M, Q, H). Low, Medium, Q, High
+* size: QrCode size
+
+.Example
+[source, xml]
+----
+<ticket>
+  <qrcode size="100" ec="{DEFAULT M|L|H}">Text goes here</qrcode>
+</ticket>
+----
+
 == IDEIAS Printer
 
 .Diagram 1
