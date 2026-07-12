@@ -23,7 +23,6 @@
             <groupId>io.github.kriolos.opos</groupId>
             <artifactId>kriolos-opos-app</artifactId>
         </dependency>
-        
     </dependencies>
     
     <build>
@@ -45,9 +44,6 @@
                     </execution>
                 </executions>
             </plugin>
-    
-
-
         </plugins>
     </build>
 
@@ -64,40 +60,65 @@
                         <groupId>org.panteleyev</groupId>
                         <artifactId>jpackage-maven-plugin</artifactId>
                         <executions>
+
+                            <!-- Execution 1: Standalone Application Directory (App Image) -->
                             <execution>
+                                <id>create-app-image</id>
                                 <phase>package</phase>
                                 <goals>
                                     <goal>jpackage</goal>
                                 </goals>
+                                <configuration>
+                                    <type>APP_IMAGE</type>
+                                    <destination>${project.build.directory}/dist/image</destination>
+                                </configuration>
+                            </execution>
+
+                            <!-- Execution 2: Native Installer -->
+                            <execution>
+                                <id>create-installer</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>jpackage</goal>
+                                </goals>
+                                <configuration>
+                                    <destination>${project.build.directory}/dist/installer</destination>
+                                    <type>${installer.type}</type> <!-- Set dynamically by active profile -->
+                                    <icon>${app.icon}</icon>
+                                    <aboutUrl>https://github.com/kriolos-obiz/kriolos-pos</aboutUrl>
+
+                                    <!-- MACOS  OPTION -->
+                                    <macPackageIdentifier>io.github.kriolos-obiz.opos</macPackageIdentifier>
+
+                                    <!-- WINDOWS  OPTION -->
+                                    <winMenu>true</winMenu>
+                                    <winMenuGroup>KriolOS/OPOS</winMenuGroup>
+                                    <winDirChooser>true</winDirChooser>
+
+                                    <!-- LINUX  OPTION -->
+                                    <linuxShortcut>true</linuxShortcut>
+                                    <linuxPackageName>kriolos-pos</linuxPackageName>
+                                    <linuxAppCategory>Office</linuxAppCategory>
+                                    <linuxMenuGroup>Office</linuxMenuGroup>
+                                    <linuxDebMaintainer>Paulo Borges (aka poolborges)</linuxDebMaintainer>
+                                </configuration>
                             </execution>
                         </executions>
                         <configuration>
                             <name>kriolosPOS</name>
                             <appVersion>1.0.0</appVersion>
                             <copyright>Paulo Borges</copyright>
-                            <description>KriolOS Point Of Sales</description>
+                            <description>KriolOS Point of Sales</description>
                             <vendor>KriolOS</vendor>
                             <input>${project.build.directory}/lib</input>
                             <mainClass>${appMainClass}</mainClass>
                             <mainJar>${appJar}</mainJar>
                             <destination>${project.build.directory}/</destination>
 
-                            <!-- Change on profile for specific OS
-                            <icon>${project.basedir}/icons/app_icon.ico</icon>
-                             -->
-
                             <launchers>
                                 <launcher>
                                     <name>kriolosPOS-Config</name>
                                     <file>${project.basedir}/jpackage/launcher-pos-config.properties</file>
-                                </launcher>
-                                <launcher>
-                                    <name>kriolosPOS-Transfer</name>
-                                    <file>${project.basedir}/jpackage/launcher-pos-transfer.properties</file>
-                                </launcher>
-                                <launcher>
-                                    <name>kriolosPOS-ResetPickup</name>
-                                    <file>${project.basedir}/jpackage/launcher-pos-resetpickup.properties</file>
                                 </launcher>
                             </launchers>
 
@@ -134,117 +155,40 @@
 
         <!-- Profile per OS -->
         <profile>
-            <id>jpackage-windows_32</id>
+            <id>jpackage-windows</id>
             <activation>
-                <os>
-                    <family>windows</family>
-                    <arch>x86</arch>
-                </os>
+                <os><family>windows</family></os>
             </activation>
             <properties>
-                <libusb4java.classifier>windows-x86</libusb4java.classifier>
+                <!-- Windows:  MSI, EXE -->
+                <installer.type>MSI</installer.type>
+                <app.icon>${project.basedir}/icons/app_icon.ico</app.icon>
             </properties>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.panteleyev</groupId>
-                        <artifactId>jpackage-maven-plugin</artifactId>
-                        <configuration>
-                            <aboutUrl>https://github.com/poolborges/unicenta-pos</aboutUrl>
-                            <icon>${project.basedir}/icons/app_icon.ico</icon>
-                            <type>MSI</type>
-                            <winMenu>true</winMenu>
-                            <winMenuGroup>KriolOS/OPOS</winMenuGroup>
-                            <winDirChooser>true</winDirChooser>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
-        <profile>
-            <id>jpackage-windows_64</id>
-            <activation>
-                <os>
-                    <family>windows</family>
-                    <arch>x86_64</arch>
-                </os>
-            </activation>
-            <properties>
-                <libusb4java.classifier>windows-x86_64</libusb4java.classifier>
-            </properties>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.panteleyev</groupId>
-                        <artifactId>jpackage-maven-plugin</artifactId>
-                        <configuration>
-                            <aboutUrl>https://github.com/poolborges/unicenta-pos</aboutUrl>
-                            <icon>${project.basedir}/icons/app_icon.ico</icon>
-                            <type>MSI</type>
-                            <winMenu>true</winMenu>
-                            <winMenuGroup>KriolOS/OPOS</winMenuGroup>
-                            <winDirChooser>true</winDirChooser>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
         </profile>
 
         <profile>
             <id>jpackage-macos</id>
             <activation>
-                <os>
-                    <family>mac</family>
-                    <arch>x86_64</arch>
-                </os>
+                <os><family>mac</family></os>
             </activation>
             <properties>
-                <libusb4java.classifier>darwin-x86-64</libusb4java.classifier>
+                <!-- macOS:  DMG, PKG -->
+                <installer.type>DMG</installer.type>
+                <app.icon>${project.basedir}/icons/app_icon.icns</app.icon>
             </properties>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.panteleyev</groupId>
-                        <artifactId>jpackage-maven-plugin</artifactId>
-                        <configuration>
-                            <icon>${project.basedir}/icons/app_icon.icns</icon>
-                            <type>DMG</type>
-                            <macPackageIdentifier>io.github.kriolos-obiz.opos</macPackageIdentifier>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
         </profile>
 
         <profile>
             <id>jpackage-linux</id>
             <activation>
-                <os>
-                    <family>linux</family>
-                    <arch>x86_64</arch>
-                </os>
+                <os><family>unix</family></os>
             </activation>
             <properties>
-                <libusb4java.classifier>linux-x86_64</libusb4java.classifier>
+                <!-- Linux:  DEB, RPM -->
+                <installer.type>DEB</installer.type>
+                <app.icon>${project.basedir}/icons/app_icon.png</app.icon>
             </properties>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.panteleyev</groupId>
-                        <artifactId>jpackage-maven-plugin</artifactId>
-                        <configuration>
-                            <icon>${project.basedir}/icons/app_icon.png</icon>
-                            <linuxShortcut>true</linuxShortcut>
-                            <linuxPackageName>kriolos-pos</linuxPackageName>
-                            <linuxAppCategory>Office</linuxAppCategory>
-                            <linuxMenuGroup>Office</linuxMenuGroup>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
         </profile>
     </profiles>
-
 
 </project>
