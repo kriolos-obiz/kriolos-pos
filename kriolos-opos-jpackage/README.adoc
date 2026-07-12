@@ -35,6 +35,18 @@ jdeps --list-deps --ignore-missing-deps --multi-release 21 --class-path './targe
 
 * https://github.com/petr-panteleyev/jpackage-maven-plugin
 
+Customizing Resources (Icons and Licenses)
+
+To change the visual appearance or add a license agreement,
+jpackage looks for specific files in a resource directory.
+Create a folder structure in your project: src/main/resources/jpackage/
+
+Place your platform-specific files in that directory using these exact names:
+
+Windows: main.ico (App icon) and license.txt (License agreement screen)
+macOS: main.icns (App icon), license.txt, and background.tiff (DMG installer background image)
+Linux: main.png (App icon)
+
 == Pre-requisite
 
 * https://wixtoolset.org

@@ -38,6 +38,7 @@ jobs:
           path: |
             .
             !**/target/kriolosPOS*
+            !**/target/dist/**
           retention-days: 1
 
       - name: Create Release and Upload Docs & Cross-Platform App
@@ -65,13 +66,19 @@ jobs:
         include:
           - os: ubuntu-latest
             suffix: linux
-            artifact_path: kriolos-opos-jpackage/target/kriolosPOS
-          - os: windows-latest
-            suffix: win
-            artifact_path: kriolos-opos-jpackage/target/kriolosPOS
+            ext: "tar.gz"
+            image_path: kriolos-krpos-jpackage/target/dist/image
+            installer_glob: kriolos-krpos-jpackage/target/dist/installer/*.deb
           - os: macos-latest
             suffix: macos
-            artifact_path: kriolos-opos-jpackage/target/kriolosPOS*
+            ext: "tar.gz"
+            image_path: kriolos-krpos-jpackage/target/dist/image
+            installer_glob: kriolos-krpos-jpackage/target/dist/installer/*.dmg
+          - os: windows-latest
+            suffix: win
+            ext: "zip"
+            image_path: kriolos-krpos-jpackage/target/dist/image
+            installer_glob: kriolos-krpos-jpackage/target/dist/installer/*.msi
 
     runs-on: ${{ matrix.os }}
 
@@ -88,6 +95,13 @@ jobs:
           distribution: 'adopt'
           cache: maven
 
+      # Ensure packaging dependencies are available on the Linux runner to create DEB packages
+      - name: Install Linux Packaging Tools
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fakeroot dpkg-dev    
+
       # Download the pre-compiled workspace from the first job to avoid recompiling Java code
       - name: Download Compiled Workspace Artifacts
         uses: actions/download-artifact@v4
@@ -97,22 +111,42 @@ jobs:
 
       # Fixed: Enclosed Maven property flags in quotes to prevent PowerShell parsing issues on Windows
       - name: Build Native Distribution Package with Maven
-        run: mvn package -Pjpackage -B "-Dmaven.main.skip=true" "-Dmaven.test.skip=true" --file pom.xml
+        run: mvn package -Pjpackage -pl kriolos-krpos-jpackage -B "-Dmaven.main.skip=true" "-Dmaven.test.skip=true" --file pom.xml
 
-      - name: Zip Artifact (Unix)
+      # Compress standalone application directories using tar.gz on Unix to preserve executable permissions
+      - name: Tar Artifact (Unix)
         if: matrix.os != 'windows-latest'
         run: |
-          zip -r "kriolosPOS-${{ matrix.suffix }}.zip" ${{ matrix.artifact_path }}
+          cd ${{ matrix.image_path }}
+          tar -czf "${{ github.workspace }}/kriolosPOS-image-${{ matrix.suffix }}.${{ matrix.ext }}" .
 
+      # Compress standalone application directories using zip on Windows
       - name: Zip Artifact (Windows)
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
-          Compress-Archive -Path "${{ matrix.artifact_path }}" -DestinationPath "kriolosPOS-${{ matrix.suffix }}.zip"
+          Compress-Archive -Path "${{ matrix.image_path }}\*" -DestinationPath "kriolosPOS-image-${{ matrix.suffix }}.${{ matrix.ext }}" -Force
 
+      # Move native installer artifacts to the root directory for easier release upload
+      - name: Prepare Native Installer for Upload (Unix)
+        if: matrix.os != 'windows-latest'
+        run: |
+          cp ${{ matrix.installer_glob }} .
+
+      - name: Prepare Native Installer for Upload (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          Copy-Item -Path ${{ matrix.installer_glob }} -Destination .
+
+      # Upload both the standalone compressed images and the native system installers to the GitHub Release
       - name: Upload Binaries to Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
           files: |
-            kriolosPOS-${{ matrix.suffix }}.zip
+            kriolosPOS-image-*.*
+            *.deb
+            *.msi
+            *.dmg
+          fail_on_unmatched_files: false
