@@ -39,6 +39,8 @@ jobs:
             .
             !**/target/kriolosPOS*
             !**/target/dist/**
+            !.git/**
+            !.github/**
           retention-days: 1
 
       - name: Create Release and Upload Docs & Cross-Platform App
