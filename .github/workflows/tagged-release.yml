@@ -23,7 +23,7 @@ jobs:
         uses: actions/setup-java@v5
         with:
           java-version: '17'
-          distribution: 'adopt'
+          distribution: 'temurin'
           cache: maven
 
       # Build everything: docs, classes, jars, and cross-platform packages
@@ -92,7 +92,7 @@ jobs:
         uses: actions/setup-java@v5
         with:
           java-version: '17'
-          distribution: 'adopt'
+          distribution: 'temurin'
           cache: maven
 
       # Ensure packaging dependencies are available on the Linux runner to create DEB packages

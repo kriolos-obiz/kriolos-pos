@@ -26,7 +26,7 @@ jobs:
       uses: actions/setup-java@v3
       with:
         java-version: ${{ matrix.java }}
-        distribution: 'adopt'
+        distribution: 'temurin'
     - name: Make mvnw executable
       run: |
            if [ "$RUNNER_OS" == "Linux" ]; then
