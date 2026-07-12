@@ -88,7 +88,11 @@ public class DevicePrinterNull implements DevicePrinter {
      */
     @Override
     public void printBarCode(String type, String position, String code) {        
-    }    
+    }
+
+    @Override
+    public void printQRCode(String code, int size, char errorCorrection) {
+    }
 
     /**
      *

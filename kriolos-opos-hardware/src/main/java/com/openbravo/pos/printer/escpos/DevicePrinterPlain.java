@@ -19,6 +19,8 @@ package com.openbravo.pos.printer.escpos;
 import com.openbravo.pos.printer.DevicePrinter;
 import com.openbravo.pos.printer.TicketPrinterException;
 import java.awt.image.BufferedImage;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.JComponent;
 
 /**
@@ -26,7 +28,8 @@ import javax.swing.JComponent;
  * @author JG uniCenta
  */
 public class DevicePrinterPlain implements DevicePrinter  {
-    
+    private static final Logger LOGGER = Logger.getLogger(DevicePrinterPlain.class.getName());
+
     private static final byte[] NEW_LINE = {0x0D, 0x0A}; // Print and carriage return
       
     private final PrinterWritter out;
@@ -113,7 +116,12 @@ public class DevicePrinterPlain implements DevicePrinter  {
             out.write(NEW_LINE);
         }
     }
-    
+
+    @Override
+    public void printQRCode(String code, int size, char errorCorrection) {
+        LOGGER.log(Level.WARNING, "NOT IMPLEMENTED:  printQRCode");
+    }
+
     /**
      *
      * @param iTextSize

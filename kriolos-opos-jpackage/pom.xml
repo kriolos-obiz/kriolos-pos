@@ -82,8 +82,9 @@
                             <mainJar>${appJar}</mainJar>
                             <destination>${project.build.directory}/</destination>
 
-                            <!-- Change on profile for specific OS -->
+                            <!-- Change on profile for specific OS
                             <icon>${project.basedir}/icons/app_icon.ico</icon>
+                             -->
 
                             <launchers>
                                 <launcher>

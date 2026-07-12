@@ -178,6 +178,11 @@ public class DevicePrinterPrinter implements DevicePrinter {
         m_ticketcurrent.printBarCode(type, position, code);
     }
 
+    @Override
+    public void printQRCode(String code, int size, char errorCorrection) {
+        m_ticketcurrent.printQRCode(code, size, errorCorrection);
+    }
+
     /**
      * Method that is responsible for starting a new line on a receipt
      *

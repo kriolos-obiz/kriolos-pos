@@ -95,4 +95,10 @@ public abstract class BasicTicket implements PrintItem {
             printItemLine = null;
         }
     }
+
+    public void printQRCode(String code, int size, char errorCorrection) {
+        PrintItem pi = new PrintItemQrcode(code, getImageScale(), size, errorCorrection);
+        printItems.add(pi);
+        m_iBodyHeight += pi.getHeight();
+    }
 }

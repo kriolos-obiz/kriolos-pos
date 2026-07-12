@@ -120,6 +120,11 @@ public class DevicePrinterPanel extends javax.swing.JPanel implements DevicePrin
         m_ticketcurrent.printBarCode(type, position, code);
     }
 
+    @Override
+    public void printQRCode(String code, int size, char errorCorrection) {
+        m_ticketcurrent.printQRCode(code, size, errorCorrection);
+    }
+
     /**
      *
      * @param iTextSize

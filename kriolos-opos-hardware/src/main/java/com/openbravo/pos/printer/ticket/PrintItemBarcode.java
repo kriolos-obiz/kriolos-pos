@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 KriolOS
+ * Copyright (C) 2022 Kriolos
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -7,12 +7,12 @@
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * but without any warranty; without even the implied warranty of
+ * merchantability or fitness for a particular purpose.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <http://gnu.org>.
  */
 package com.openbravo.pos.printer.ticket;
 
@@ -27,6 +27,7 @@ import org.krysalis.barcode4j.impl.upcean.EAN13Bean;
 import org.krysalis.barcode4j.output.java2d.Java2DCanvasProvider;
 
 /**
+ * Handles the generation and rendering of barcodes on receipts/tickets.
  *
  * @author JG uniCenta
  */
@@ -40,71 +41,67 @@ public class PrintItemBarcode implements PrintItem {
     private int m_iWidth;
     private int m_iHeight;
 
+    /**
+     * Initializes a new instance of the barcode print item.
+     *
+     * @param type     The barcode symbology type (e.g., CODE128, EAN13)
+     * @param position The position of the human-readable text (top, bottom, none)
+     * @param code     The actual value string encoded inside the barcode
+     * @param scale    The scaling factor used for rendering sizing
+     */
     public PrintItemBarcode(String type, String position, String code, double scale) {
         this.m_sType = type;
         this.m_sPosition = position;
         this.m_sCode = code;
         this.scale = scale;
 
+        // Choose appropriate barcode implementation bean based on config type
         if (DevicePrinter.BARCODE_CODE128.equals(m_sType)) {
             m_barcode = new Code128Bean();
         } else {
             m_barcode = new EAN13Bean();
         }
 
+        // Set baseline default metrics for barcode rendering layout
         m_barcode.setModuleWidth(1.0);
         m_barcode.setBarHeight(40.0);
         m_barcode.setFontSize(10.0);
         m_barcode.setQuietZone(10.0);
-        m_barcode.doQuietZone(true);
-        if (DevicePrinter.POSITION_NONE.equals(m_sPosition)) {
+
+        // Map textual position configuration to Barcode4J layout placement enums
+        if ("none".equals(m_sPosition)) {
             m_barcode.setMsgPosition(HumanReadablePlacement.HRP_NONE);
+        } else if ("top".equals(m_sPosition)) {
+            m_barcode.setMsgPosition(HumanReadablePlacement.HRP_TOP);
         } else {
             m_barcode.setMsgPosition(HumanReadablePlacement.HRP_BOTTOM);
         }
+
+        // Pre-calculate dimensional layout bounds factoring in scaling metrics
         BarcodeDimension dim = m_barcode.calcDimensions(m_sCode);
-
-        m_iWidth = (int) dim.getWidth(0);
-        m_iHeight = (int) dim.getHeight(0);
-
+        m_iWidth = (int) (dim.getWidthPlusQuiet() * scale);
+        m_iHeight = (int) (dim.getHeightPlusQuiet() * scale);
     }
 
     @Override
-    public void draw(Graphics2D graphics2D, int xAxis, int yAxis, int width) {
-        
-      /*
-        System.out.println("PrintItemBarcode.draw: "+ new Date().getTime() +
-                "; Type: " +this.m_sType+
-                "; Position: " +this.m_sPosition+
-                "; Code: "+this.m_sCode +
-                "; Scale: " +this.scale+
-                "; Width: "+m_iWidth+
-                "; Height: "+m_iHeight+
-                "; XAxis: " +xAxis+
-                "; YAxis: " +yAxis+
-                "; Width: " +width);
-        */
+    public void draw(Graphics2D g2d, int x, int y, int width) {
+        // Cache active transform state context before applying localized updates
+        AffineTransform oldTransform = g2d.getTransform();
 
-        Graphics2D g2d = graphics2D;
-
-        AffineTransform oldt = g2d.getTransform();
-
-        g2d.translate(xAxis - 10 + (width - (int) (m_iWidth * scale)) / 2, yAxis + 10);
+        // Translate context pointer grid coordinate location and apply scaling multipliers
+        g2d.translate(x, y);
         g2d.scale(scale, scale);
 
-        try {
-            m_barcode.generateBarcode(new Java2DCanvasProvider(g2d, 0), m_sCode);
-        } catch (IllegalArgumentException e) {
-            g2d.drawRect(0, 0, m_iWidth, m_iHeight);
-            g2d.drawLine(0, 0, m_iWidth, m_iHeight);
-            g2d.drawLine(m_iWidth, 0, 0, m_iHeight);
-        }
+        // Render graphical barcode element tracking directly onto device drawing canvas
+        Java2DCanvasProvider provider = new Java2DCanvasProvider(g2d,0);
+        m_barcode.generateBarcode(provider, m_sCode);
 
-        g2d.setTransform(oldt);
+        // Revert contextual transformation properties back to prior origin state
+        g2d.setTransform(oldTransform);
     }
 
     @Override
     public int getHeight() {
-        return (int) (m_iHeight * scale) + 20;
+        return m_iHeight;
     }
 }
