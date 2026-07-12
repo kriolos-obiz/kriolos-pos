@@ -93,7 +93,7 @@ jobs:
 
       # 2. Overwrites/restores the compiled build files on top of the fresh repository clone
       - name: Download Compiled Workspace
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: maven-compiled-workspace
           path: .
@@ -114,14 +114,14 @@ jobs:
 
       # Download the pre-compiled workspace from the first job to avoid recompiling Java code
       - name: Download Compiled Workspace Artifacts
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: maven-compiled-workspace
           path: .
 
       # Fixed: Enclosed Maven property flags in quotes to prevent PowerShell parsing issues on Windows
       - name: Build Native Distribution Package with Maven
-        run: mvn package -Pjpackage -pl kriolos-krpos-jpackage -B "-Dmaven.main.skip=true" "-Dmaven.test.skip=true" --file pom.xml
+        run: mvn package -Pjpackage -pl kriolos-krpos-jpackage -am -B "-Dmaven.main.skip=true" "-Dmaven.test.skip=true" --file pom.xml
 
       # Compress standalone application directories using tar.gz on Unix to preserve executable permissions
       - name: Tar Artifact (Unix)
@@ -151,7 +151,7 @@ jobs:
 
       # Upload both the standalone compressed images and the native system installers to the GitHub Release
       - name: Upload Binaries to Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ github.ref_name }}
           files: |

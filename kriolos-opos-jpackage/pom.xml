@@ -8,7 +8,7 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>kriolos-krpos-jpackage</artifactId>
+    <artifactId>kriolos-opos-jpackage</artifactId>
     <packaging>pom</packaging>
     <name>Kriolos.POS.JPackage</name>
     
