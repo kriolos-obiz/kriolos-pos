@@ -85,10 +85,18 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
+      # 1. Clones the repository to restore the complete .git metadata structure
       - name: Checkout Code
         uses: actions/checkout@v7
         with:
           submodules: recursive
+
+      # 2. Overwrites/restores the compiled build files on top of the fresh repository clone
+      - name: Download Compiled Workspace
+        uses: actions/download-artifact@v7
+        with:
+          name: maven-compiled-workspace
+          path: .
 
       - name: Set up JDK 17
         uses: actions/setup-java@v5
