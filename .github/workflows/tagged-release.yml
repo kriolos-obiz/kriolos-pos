@@ -32,7 +32,7 @@ jobs:
 
       # Share the compiled state (target folders and jars) with subsequent matrix jobs
       - name: Upload Compiled Workspace Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: maven-compiled-workspace
           path: |
@@ -106,7 +106,7 @@ jobs:
 
       # Download the pre-compiled workspace from the first job to avoid recompiling Java code
       - name: Download Compiled Workspace Artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: maven-compiled-workspace
           path: .
