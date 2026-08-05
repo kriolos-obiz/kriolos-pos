@@ -184,6 +184,9 @@
             #if ($paymentline.name == "debt")
                 <line><text align="left" length="22" bold="true">A Crédito</text><text align="right" length="20">${paymentline.printTotal()}</text></line>
             #end
+            #if ($paymentline.name == "bank")
+                <line><text align="left" length="22" bold="true">Banco</text><text align ="right" length="20">${paymentline.printTotal()}</text></line>
+            #end
         #end
 
         <!-- Dynamic Footer Message Blocks -->
