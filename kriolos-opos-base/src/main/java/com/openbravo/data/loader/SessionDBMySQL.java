@@ -43,7 +43,7 @@ public class SessionDBMySQL implements SessionDB {
      * @return
      */
     public String INTEGER_NULL() {
-        return "CAST(NULL AS UNSIGNED INTEGER)";
+        return "CAST(NULL AS INTEGER)";
     }
 
     /**

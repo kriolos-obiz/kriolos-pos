@@ -48,6 +48,7 @@ public final class Session {
      * @throws java.sql.SQLException
      */
     public Session(String url, String user, String password) throws SQLException {
+        LOGGER.log(Level.INFO, "DB Session construct from url,username,password: " + url);
         this.datasource = null;
         fakeDS = new FakeDataSouce(url, user, password);
 
@@ -56,10 +57,13 @@ public final class Session {
 
         connect(); // no lazy connection
 
-        DB = getDiff();
+        DB = getSessionDBDriver();
     }
 
     public Session(DataSource ds) throws SQLException {
+        
+        
+        LOGGER.log(Level.INFO, "DB Session construct from datasource: " + ds.toString());
 
         this.datasource = ds;
         this.fakeDS = null;
@@ -69,7 +73,7 @@ public final class Session {
 
         connect(); // no lazy connection
 
-        DB = getDiff();
+        DB = getSessionDBDriver();
     }
 
     /**
@@ -224,7 +228,7 @@ public final class Session {
         return getConnection().getMetaData().getURL();
     }
 
-    private SessionDB getDiff() throws SQLException {
+    private SessionDB getSessionDBDriver() throws SQLException {
 
         String dbDriver = getConnection().getMetaData().getDriverName();
         String sdbmanager = getConnection().getMetaData().getDatabaseProductName();
