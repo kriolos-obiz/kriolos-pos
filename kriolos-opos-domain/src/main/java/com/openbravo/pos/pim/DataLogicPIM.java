@@ -102,7 +102,8 @@ public class DataLogicPIM extends BeanFactoryDataSingle {
                 + "CATSHOWNAME, "
                 + "CATORDER, "
                 + "CATALOGCOLOR, "
-                + "CATALOGENABLED "
+                + "CATALOGENABLED, "
+                + "PARENTID "
                 + "FROM categories "
                 + "WHERE ID = ? "
                 + "ORDER BY CATORDER, NAME",
@@ -114,7 +115,7 @@ public class DataLogicPIM extends BeanFactoryDataSingle {
      * @deprecated since Nov/2025
      * @return
      */
-    public final SentenceList<CategoryInfo> getCategoriesList() {
+    private final SentenceList<CategoryInfo> getCategoriesList() {
         return new StaticSentence(sessionDB,
                 "SELECT "
                 + "ID, "
@@ -124,7 +125,8 @@ public class DataLogicPIM extends BeanFactoryDataSingle {
                 + "CATSHOWNAME, "
                 + "CATORDER, "
                 + "CATALOGCOLOR, "
-                + "CATALOGENABLED "
+                + "CATALOGENABLED, "
+                + "PARENTID "
                 + "FROM categories "
                 + "ORDER BY NAME",
                 null,
@@ -156,7 +158,8 @@ public class DataLogicPIM extends BeanFactoryDataSingle {
                 + "CATSHOWNAME, "
                 + "CATORDER, "
                 + "CATALOGCOLOR, "
-                + "CATALOGENABLED "
+                + "CATALOGENABLED, "
+                + "PARENTID "
                 + "FROM categories "
                 + "WHERE PARENTID IS NULL "
                 + "ORDER BY NAME",
@@ -178,7 +181,8 @@ public class DataLogicPIM extends BeanFactoryDataSingle {
                 + "CATSHOWNAME, "
                 + "CATORDER, "
                 + "CATALOGCOLOR, "
-                + "CATALOGENABLED "
+                + "CATALOGENABLED, "
+                + "PARENTID "
                 + "FROM categories "
                 + "WHERE PARENTID IS NULL AND CATSHOWNAME = " + sessionDB.DB.TRUE()
                 + " "
@@ -203,7 +207,8 @@ public class DataLogicPIM extends BeanFactoryDataSingle {
                 + "CATSHOWNAME, "
                 + "CATORDER, "
                 + "CATALOGCOLOR, "
-                + "CATALOGENABLED "
+                + "CATALOGENABLED, "
+                + "PARENTID "
                 + "FROM categories "
                 + "WHERE PARENTID = ? "
                 + "ORDER BY CATORDER, NAME",

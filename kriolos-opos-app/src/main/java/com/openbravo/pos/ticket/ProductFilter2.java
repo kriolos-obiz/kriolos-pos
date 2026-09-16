@@ -42,7 +42,7 @@ import java.util.List;
  */
 public class ProductFilter2 extends javax.swing.JPanel implements ReportEditorCreator {
     
-    private SentenceList m_sentcat;
+    private DataLogicPIM dataLogicPIM;
     private ComboBoxValModel m_CategoryModel;
 
     /** Creates new form JQBFProduct */
@@ -57,9 +57,8 @@ public class ProductFilter2 extends javax.swing.JPanel implements ReportEditorCr
      */
     public void init(AppView app) {
          
-        DataLogicPIM dataLogicPIM = (DataLogicPIM) app.getBean("com.openbravo.pos.pim.DataLogicPIM");
+        dataLogicPIM = (DataLogicPIM) app.getBean("com.openbravo.pos.pim.DataLogicPIM");
 
-        m_sentcat = dataLogicPIM.getCategoriesList();
         m_CategoryModel = new ComboBoxValModel();          
          
         m_jCboName.setModel(ListQBFModelNumber.getMandatoryString());
@@ -73,7 +72,7 @@ public class ProductFilter2 extends javax.swing.JPanel implements ReportEditorCr
      */
     public void activate() throws BasicException {
 
-        List catlist = m_sentcat.list();
+        List catlist = dataLogicPIM.getCategoriesListAll();
         catlist.add(0, null);
         m_CategoryModel = new ComboBoxValModel(catlist);
         m_jCategory.setModel(m_CategoryModel);

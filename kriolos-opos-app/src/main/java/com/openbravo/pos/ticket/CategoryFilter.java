@@ -23,12 +23,10 @@ import com.openbravo.basic.BasicException;
 import com.openbravo.data.gui.ComboBoxValModel;
 import com.openbravo.data.loader.Datas;
 import com.openbravo.data.loader.QBFCompareEnum;
-import com.openbravo.data.loader.SentenceList;
 import com.openbravo.data.loader.SerializerWrite;
 import com.openbravo.data.loader.SerializerWriteBasic;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
-import com.openbravo.pos.forms.DataLogicSales;
 import com.openbravo.pos.pim.DataLogicPIM;
 import com.openbravo.pos.reports.ReportEditorCreator;
 import java.awt.Component;
@@ -40,7 +38,7 @@ import java.util.List;
  */
 public class CategoryFilter extends javax.swing.JPanel implements ReportEditorCreator {
     
-    private SentenceList m_sentcat;
+    private DataLogicPIM dataLogicPIM;
     private ComboBoxValModel m_CategoryModel;
 
     /** Creates new form JQBFProduct */
@@ -56,9 +54,8 @@ public class CategoryFilter extends javax.swing.JPanel implements ReportEditorCr
     @Override
     public void init(AppView app) {
          
-        DataLogicPIM dataLogicPIM = (DataLogicPIM) app.getBean("com.openbravo.pos.pim.DataLogicPIM");
+        dataLogicPIM = (DataLogicPIM) app.getBean("com.openbravo.pos.pim.DataLogicPIM");
 
-        m_sentcat = dataLogicPIM.getCategoriesList();
         m_CategoryModel = new ComboBoxValModel();          
 
     }
@@ -70,7 +67,7 @@ public class CategoryFilter extends javax.swing.JPanel implements ReportEditorCr
     @Override
     public void activate() throws BasicException {
 
-        List catlist = m_sentcat.list();
+        List catlist = dataLogicPIM.getCategoriesListAll();
         catlist.add(0, null);
         m_CategoryModel = new ComboBoxValModel(catlist);
         m_jCategory.setModel(m_CategoryModel);

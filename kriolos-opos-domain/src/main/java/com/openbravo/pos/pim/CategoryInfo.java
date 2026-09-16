@@ -34,6 +34,7 @@ public class CategoryInfo implements IKeyed {
 
     private static final long serialVersionUID = 8612449444103L;
     private String id;
+    private String parentId;
     private String name;
     private String textTip;
     private BufferedImage image;
@@ -62,6 +63,16 @@ public class CategoryInfo implements IKeyed {
     public String getID() {
         return id;
     }
+
+    public String getParentId() {
+        return parentId;
+    }
+
+    public void setParentId(String parentId) {
+        this.parentId = parentId;
+    }
+    
+    
 
     public String getName() {
         return name;
@@ -136,6 +147,7 @@ public class CategoryInfo implements IKeyed {
             catInfo.setCatalogOrder(dr.getString(6));
             catInfo.setCatalogColor(dr.getString(7));
             catInfo.setCatalogEnabled(dr.getBoolean(8));
+            catInfo.setParentId(dr.getString(9));
             
              return catInfo;
         };

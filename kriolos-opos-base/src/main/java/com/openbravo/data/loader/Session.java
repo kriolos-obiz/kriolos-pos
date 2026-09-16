@@ -55,9 +55,9 @@ public final class Session {
         mConnection = null;
         isTransactionBegin = false;
 
-        connect(); // no lazy connection
-
         DB = getSessionDBDriver();
+
+        connect(); // no lazy connection
     }
 
     public Session(DataSource ds) throws SQLException {
@@ -71,9 +71,9 @@ public final class Session {
         mConnection = null;
         isTransactionBegin = false;
 
-        connect(); // no lazy connection
-
         DB = getSessionDBDriver();
+
+        connect(); // no lazy connection
     }
 
     /**
