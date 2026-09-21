@@ -1076,6 +1076,23 @@ public class DataLogicPIM extends BeanFactoryDataSingle {
                 ProductInfo.getSerializerRead());
     }
 
+    public int getProductsCount() throws BasicException {
+        Object result = new StaticSentence(sessionDB,
+                "SELECT COUNT(*) as count FROM products",
+                com.openbravo.data.loader.SerializerReadInteger.INSTANCE)
+                .find();
+        return result == null ? 0 : ((Number) result).intValue();
+    }
+    
+    
+    public int getCategoriesCount() throws BasicException {
+        Object result = new StaticSentence(sessionDB,
+                "SELECT COUNT(*) as count FROM categories",
+                com.openbravo.data.loader.SerializerReadInteger.INSTANCE)
+                .find();
+        return result == null ? 0 : ((Number) result).intValue();
+    }
+
     public SentenceList<ProductInfoExtA> getProductList2() {
         return new StaticSentence(sessionDB,
                 new QBFBuilder(

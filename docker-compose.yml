@@ -16,18 +16,3 @@ services:
       - MARIADB_PASSWORD=kriolospos
       - TZ=Europe/Lisbon
       
-  kriolospos-mydb:
-    #image: mysql:8.4 #LTS (29 May 2029)
-    image: mariadb:11.4 #LTS (29 May 2029)
-    dns:
-      - 8.8.8.8
-    ports:
-      - "3307:3306"
-    volumes:
-      - ./.mysqldb:/var/lib/mysql:cached
-    environment:
-      - MARIADB_ROOT_PASSWORD=docker
-      - MARIADB_DATABASE=kriolospos
-      - MARIADB_USER=kriolospos
-      - MARIADB_PASSWORD=kriolospos
-      - TZ=Europe/Lisbon
