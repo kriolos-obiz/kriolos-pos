@@ -1,0 +1,36 @@
+= Development Guide
+:description: Developer reference, architectural designs, and coding guidelines for KriolOS POS.
+
+Welcome to the **Developer Guide** for KriolOS POS. This guide provides an overview of the system architecture, domain models, database layout, UI components, and peripheral integration.
+
+== Sections
+
+* **Vision & Community**:
+** xref:product-vision.adoc[Product Vision]
+** xref:contributors.adoc[Contributors]
+
+* **Architecture & Development**:
+** xref:develop-overview.adoc[Development Overview]
+** xref:modeling-overview.adoc[Domain Modeling]
+
+* **Database & Persistence**:
+** xref:database-overview.adoc[Database Overview]
+** xref:develop-database.adoc[Database Development]
+
+* **Hardware & Peripherals**:
+** xref:peripheral-overview.adoc[Peripheral Overview]
+** xref:printer-overview.adoc[Printers]
+** xref:support-barcode.adoc[Barcode Scanners]
+
+* **User Interface**:
+** xref:ui-guideslines.adoc[UI Guidelines]
+** xref:ui.jpanelbuttons.adoc[JPanel Buttons]
+
+* **Tickets & Sales**:
+** xref:develop-ticket.adoc[Ticket Development]
+** xref:bo-ticket.adoc[Back Office Tickets]
+
+* **Reports & Resources**:
+** xref:report.adoc[Reporting]
+** xref:support-pdf.adoc[PDF Support]
+** xref:resources-overview.adoc[Resources Overview]

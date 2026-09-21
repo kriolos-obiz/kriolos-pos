@@ -1,0 +1,246 @@
+[[gd-peripheral]]
+== Peripheral
+
+Peripheral chapter Hardware/Device
+
+=== Overview
+
+<TODO> 
+
+=== Common 
+
+* Serial or COM Port 
+** rfc2217 https://datatracker.ietf.org/doc/html/rfc2217
+
+=== Scale 
+
+.POS Scale Configuration example
+[source, ini]
+----
+machine.scale=caspdii:
+----
+
+.Supported Scales
+|====
+|Name |Weigth |Manufacture
+
+
+|AcomPC100
+|Kilogram
+|ACOM
+|W, CR (Hex 0x57,0X0D)
+|9600,7,1,even
+
+|averyberkel6720
+|Kilogram
+|AVERY
+|W, CR (Hex 0x57,0X0D)
+|9600,7,1,even
+
+|casiopd1
+|Kilogram
+|CASIO
+|9600,7,1,even
+
+|dialog1
+|Kilogram
+|...
+|5 (Hex 0x05) 
+|...
+
+|samsungesp
+|Kilogram
+|Samsung
+|
+|
+
+|caspdii
+|Gram
+|CAS
+|
+|
+
+|screen
+|Gram
+|...
+|
+|
+
+|MTIND221
+|Kilogram
+|Mettler Toledo
+|
+|
+
+|===
+
+----
+write(new byte[]{0x57, 0X0D}); //DEC (87, 13) ASCII ()
+----
+
+
+Mettler Toledo IND226 (MTIND221)
+
+* https://www.mt.com/es/en/home/library/operating-instructions/industrial-scales/IND221_IND226_User_Manual.html
+* SICS protocol for communications.
+* Example Command "SI${CR}${LF}"
+** RESPONSE "S${SP}S${SP}${WEIGTH}${SP}${!S}${CR}${LF}"
+** RESPONSE "S${SP}D${SP}${WEIGTH}${SP}${!S}${CR}${LF}"
+** !S - Ignore string
+
+
+.Serial Port Properties
+----
+speed: 9600
+Paridad:None
+stop bit: 1
+data bit: 8
+----
+
+Protocols supported:
+
+* ACOM. The scale command code is WCR (Hex 0x57,0X0D)
+* Samsung. The scale command code is $ (Hex 0x24). The weight is returned in kilos.
+* Dialog1. The scale command code is 5 (Hex 0x05). The weight is returned in grams 
+
+.Neptuno_56PPI
+----
+Velocidad: 9600
+Paridad: None
+BIT de parada: 1
+BIT de datos: 8
+----
+
+
+Encoding (More see ASCII table)
+
+* STX (start of text)
+* ETX (end of text)
+* READ MORE: https://www.sciencebuddies.org/science-fair-projects/references/ascii-table
+* CR (Carriage Return): ASCII 13 Decimal
+* LF(Line Feed): ASCII 10 Decimal ('')
+
+
+Avery Berkel 6720
+
+* Interface Protocols NCI, ECR, 8213 (Sharp), 2250 (Swintec), ATT, 0400 (Olympia).
+** NCI – NCI standard; 
+** ECR – Cash register compatible; 
+** 8213 – 8213 compatible (Sharp)
+** 2250 – 2250 compatible (Swintec); 
+** TEC – MA-1535/1595 compatible (TEC)*
+** ATT –  AT&T compatible
+** o4000 – Olympia Cash Register compatible (Approved for use with 30 and 60 lb or 7, 15, 30 and 60 kg capacities only)
+
+
+Units
+
+* Gram
+* Kilogram
+* Pound
+
+Reference
+
+* https://www.mt.com
+* http://wiki.openbravo.com/wiki/Projects:POS/Hardware_Installation_Guide
+
+=== Scanner
+
+.POS Scanner configuration example
+----
+machine.scanner=scanpal2
+----
+
+
+=== Printer
+
+ESC/POS:: Printer Command Specification (Epson protocol for thermal receipt printers.
+
+.Supported Devices
+|====
+|Name |Description
+
+|Epson
+|Receipt Printer
+
+|Ithaca
+|Receipt Printer
+
+|Star
+|Star Micronics
+
+|SurePOS
+|IBM SurePOS (POS Computer with integrated Receipt Printer)
+
+|TMU220
+|Epson TM-U220 Receipt Printer 
+
+|====
+
+.POS Printer configuration example
+----
+machine.printername=epson
+machine.printer=TYPE:PARAM1,PARAM2
+----
+
+
+TYPE (OLD URI)
+
+* serial 
+* rxtx
+* file
+
+
+
+.POS Printer configuration example
+----
+machine.printername=epson
+machine.printer=TYPE:PARAM1,PARAM2
+----
+
+
+TYPE (NEW URI)
+
+* screen
+* printer
+* epson
+* tmu220
+* star
+* ithaca
+* surepos
+* plain
+* javapos
+
+
+TYPE Printer (Paper Configuration)
+----
+----
+
+
+=== Display 
+
+Display Implemented
+
+* file 
+* serial
+* javapos
+
+.POS Printer configuration example
+----
+machine.display=javapos:
+----
+
+
+led8 (Display LED 8)
+
+== Audio 
+
+
+----
+Clip clip = AudioSystem.getClip();
+
+
+
+----
+
+

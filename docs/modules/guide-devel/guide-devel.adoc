@@ -1,0 +1,41 @@
+= KriolOS POS - Developer Guide
+:author: KriolOS Team
+:doctype: book
+:toc: left
+:toclevels: 3
+:numbered:
+:icons: font
+:source-highlighter: coderay
+:imagesdir: images
+
+include::pages/product-vision.adoc[]
+
+include::pages/contributors.adoc[]
+
+include::pages/develop-overview.adoc[]
+
+include::pages/modeling-overview.adoc[]
+
+include::pages/database-overview.adoc[]
+
+include::pages/develop-database.adoc[]
+
+include::pages/peripheral-overview.adoc[]
+
+include::pages/printer-overview.adoc[]
+
+include::pages/support-barcode.adoc[]
+
+include::pages/ui-guideslines.adoc[]
+
+include::pages/ui.jpanelbuttons.adoc[]
+
+include::pages/develop-ticket.adoc[]
+
+include::pages/bo-ticket.adoc[]
+
+include::pages/report.adoc[]
+
+include::pages/support-pdf.adoc[]
+
+include::pages/resources-overview.adoc[]

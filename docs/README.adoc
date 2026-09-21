@@ -1,40 +1,50 @@
-// Global settings
-:ascii-ids:
-:encoding: UTF-8
-:lang: en
-:icons: font
+= KriolOS POS Documentation
+:author: KriolOS Team
 :toc:
-:toc-placement!:
 :toclevels: 3
 :numbered:
-:stem:
 
-ifdef::env-github[]
-:imagesdir: https://raw.githubusercontent.com/poolborges/unicenta-pos/main/docs/images/
-:tip-caption: :bulb:
-:note-caption: :information_source:
-:important-caption: :heavy_exclamation_mark:
-:caution-caption: :fire:
-:warning-caption: :warning:
-:badges:
-:doc-dir: https://github.com/poolborges/unicenta-pos/tree/main/docs
-endif::[]
+Documentation for KriolOS POS is structured as an **Antora** component.
 
-[[doc]]
-= Project Documentation
-:author: Copyright (c) 2020-2022 KriolOS.
-:revnumber: 2022-08-23
-:revdate: {last-update-label} {docdatetime}
-:version-label!:
+== Structure
 
-== Docs
+* `antora.yml`: Component descriptor.
+* `antora-playbook.yml`: Antora site playbook.
+* `modules/`:
+** `ROOT/`: Main landing page (`pages/index.adoc`) and global navigation (`nav.adoc`).
+** `guide-devel/`: Developer guide pages and architecture docs.
+** `guide-user/`: User manual and setup instructions.
+** `guide-comercial/`: Commercial product vision and licensing.
+** `guide-migration/`: Migration roadmap and deep analysis.
+** `notes/`: Technical research and architecture notes (e.g. taxes, rounding).
 
-* link:{doc-dir}/guide-devel/[Developer Guide]
+== Building the Documentation
 
+=== Using Antora (Default)
 
+The documentation build runs with Antora by default:
+
+[source,bash]
+----
+mvn generate-resources -f docs/pom.xml
+# Or from the project root:
+mvn --projects docs generate-resources
+----
+
+Generated site output will be located in: `docs/target/antora/site/`.
+
+=== Using AsciiDoctor (Legacy Profile)
+
+To build using the legacy AsciiDoctor plugin:
+
+[source,bash]
+----
+mvn generate-resources -f docs/pom.xml -P asciidoctor
+----
+
+NOTE: Each module under `modules/` contains a master `.adoc` file (`guide-devel/guide-devel.adoc`, `guide-user/guide-user.adoc`, `guide-comercial/guide-comercial.adoc`, `guide-migration/guide-migration.adoc`, `notes/notes.adoc`) used by the `asciidoctor` profile to compile one comprehensive PDF per module into `docs/target/generated-docs/pdf/`.
 
 == References
 
-* AsciiDoc Home Page, http://www.methods.co.nz/asciidoc/
-* AsciiDoc cheatsheet, https://powerman.name/doc/asciidoc
-* Asciidoctor User Manual, https://asciidoctor.org/docs/user-manual/
+* https://docs.antora.org/[Antora Documentation]
+* https://asciidoctor.org/[Asciidoctor Documentation]

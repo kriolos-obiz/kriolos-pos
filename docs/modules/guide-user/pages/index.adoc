@@ -1,0 +1,8 @@
+= User Guide
+:description: End-user setup and operation documentation for KriolOS POS.
+
+Welcome to the **User Guide** for KriolOS POS.
+
+== Topics
+
+* xref:setup.adoc[Setup & Installation]: Instructions on how to download, configure prerequisites, and run KriolOS POS.

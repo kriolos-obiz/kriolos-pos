@@ -1,0 +1,19 @@
+site:
+  title: KriolOS POS Documentation
+  start_page: kriolos-pos:ROOT:index.adoc
+content:
+  sources:
+    - url: ..
+      start_path: docs
+      branches: HEAD
+ui:
+  bundle:
+    url: https://gitlab.com/antora/antora-ui-default/-/jobs/artifacts/HEAD/raw/build/ui-bundle.zip?job=bundle-stable
+    snapshot: true
+output:
+  dir: ./target/antora/site
+asciidoc:
+  attributes:
+    idprefix: ''
+    idseparator: '-'
+    source-highlighter: highlight.js

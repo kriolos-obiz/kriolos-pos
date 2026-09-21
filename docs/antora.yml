@@ -1,0 +1,11 @@
+name: kriolos-pos
+title: KriolOS POS Documentation
+version: '1.0'
+start_page: ROOT:index.adoc
+nav:
+  - modules/ROOT/nav.adoc
+  - modules/guide-devel/nav.adoc
+  - modules/guide-user/nav.adoc
+  - modules/guide-comercial/nav.adoc
+  - modules/guide-migration/nav.adoc
+  - modules/notes/nav.adoc
