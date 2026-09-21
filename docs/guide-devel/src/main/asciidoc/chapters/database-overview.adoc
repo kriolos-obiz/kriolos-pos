@@ -207,7 +207,8 @@ jdbc:hsqldb:file:~/kriolospos/
 
 .Connection Derby
 ----
-jdbc:derby:~/kriolospos/kriolopos-db;shutdown=true
+jdbc:derby:/home/dev/.local/share/kriolos/DERBY/kriolopos;shutdown=true
+jdbc:derby:/home/dev/.local/share/kriolos/DERBY/kriolopos;create=true
 ----
 
 

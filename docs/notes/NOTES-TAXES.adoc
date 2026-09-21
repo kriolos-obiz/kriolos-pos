@@ -1,0 +1,83 @@
+= Taxes
+
+== 1. Tax-Inclusive Calculation (Tax Inclusive / B2C)
+
+This is the mandatory method in retail and hospitality in the UK for the end consumer.
+The price the customer sees on the shelf or menu already includes VAT. The POS must extract the tax amount from this value.
+
+*Logic:*
+The total price is fixed. The net amount (excluding tax) and the VAT amount are calculated backwards.
+
+Mathematical Formulas:
+
+----
+Net Amount = Gross Price / (1 + Tax Rate)
+----
+
+----
+VAT Amount = Gross Price - Net Amount
+----
+
+.JAVA 17 EXAMPLE
+[source,java]
+----
+BigDecimal grossPrice = new BigDecimal("12.00"); // £12.00 on the shelf
+BigDecimal vatRate = new BigDecimal("0.20");     // 20% UK Standard VAT
+BigDecimal rateMultiplier = BigDecimal.ONE.add(vatRate); // 1.20
+
+BigDecimal netAmount = grossPrice.divide(rateMultiplier, 2, RoundingMode.HALF_UP); // £10.00
+BigDecimal vatAmount = grossPrice.subtract(netAmount); // £2.00
+----
+
+== 2. Tax-Exclusive Calculation (Tax Exclusive / B2B)
+
+This is the standard method for business-to-business (B2B) commerce.
+Prices are listed excluding tax in the catalog, and VAT is added only at checkout/invoicing.
+
+*Logic:*
+The base price is fixed.
+VAT is added to the total.
+
+Mathematical Formulas:
+
+----
+VAT Amount = Net Price * VAT Rate
+----
+
+----
+Gross Price = Net Price + VAT Amount
+----
+
+.JAVA 17 EXAMPLE
+[source,java]
+----
+BigDecimal netPrice = new BigDecimal("10.00");
+BigDecimal vatRate = new BigDecimal("0.20");
+
+BigDecimal vatAmount = netPrice.multiply(vatRate).setScale(2, RoundingMode.HALF_UP); // £2.00
+BigDecimal grossPrice = netPrice.add(vatAmount); // £12.00
+----
+
+== 3. Rounding: Line-by-Line vs. Accumulated Total
+
+This is a critical architectural decision in the database and POS engine.
+There are two ways to sum VAT on an invoice with multiple items:
+
+=== Option A: Line-Item Rounding
+
+VAT is calculated and rounded to two decimal places on each line item of the invoice. The invoice's total VAT is the sum of the already rounded VAT amounts.
+
+* *Advantage:* If the customer requests a split bill or returns a single item, values always match down to the penny/cent.
+* *Disadvantage:* Can cause small 1-cent/penny discrepancies in the final accumulated total on very long invoices.
+
+=== Option B: Subtotal Rounding
+
+The POS sums the net values of all lines (storing more than 2 decimal places internally) and only applies the VAT rate and rounds at the very end.
+
+* *Advantage:* Mathematically more precise for the invoice grand total.
+* *Disadvantage:* Turns partial return or split bill logic into a development headache when reconciling missing pennies/cents.
+
+== Recommendation for kriolOS POS
+
+For the UK market, the best architectural practice is to adopt **Tax-Inclusive Calculation** with **Line-Item Rounding**.
+In your Liquibase schema, always store values with 4 decimal places in the sales items table to prevent precision loss before the final rounding in JasperReports.
