@@ -28,7 +28,7 @@ public class SessionDBGeneric implements SessionDB {
      * @param name
      */
     public SessionDBGeneric(String name) {
-        this.name = name;
+        this.name = name != null ? name.trim().toUpperCase() : "GENERIC_DB";
     }
 
     /**
@@ -60,7 +60,7 @@ public class SessionDBGeneric implements SessionDB {
      * @return
      */
     public String CHAR_NULL() {
-        return "CAST(NULL AS CHAR)";
+        return "CAST(NULL AS CHAR(1))";
     }
 
     /**

@@ -51,7 +51,7 @@ public class SessionDBOracle implements SessionDB {
      * @return
      */
     public String CHAR_NULL() {
-        return "CAST(NULL AS CHAR)";
+        return "CAST(NULL AS VARCHAR(255))";
     }
 
     /**

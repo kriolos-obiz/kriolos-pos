@@ -28,7 +28,7 @@ public class SessionDBPostgreSQL implements SessionDB {
      */
     @Override
     public String TRUE() {
-        return "True";
+        return "TRUE";
     }
 
     /**
@@ -37,7 +37,7 @@ public class SessionDBPostgreSQL implements SessionDB {
      */
     @Override
     public String FALSE() {
-        return "False";
+        return "FALSE";
     }
 
     /**
@@ -55,7 +55,7 @@ public class SessionDBPostgreSQL implements SessionDB {
      */
     @Override
     public String CHAR_NULL() {
-        return "CAST(NULL AS CHAR)";
+        return "CAST(NULL AS VARCHAR(255))";
     }
 
     /**

@@ -592,7 +592,7 @@
                     <Container class="javax.swing.JPanel" name="m_jPanelTotals">
                       <Properties>
                         <Property name="preferredSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
-                          <Dimension value="[375, 60]"/>
+                          <Dimension value="[450, 60]"/>
                         </Property>
                       </Properties>
                       <Constraints>
@@ -681,7 +681,7 @@
                               <Dimension value="[80, 25]"/>
                             </Property>
                             <Property name="preferredSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
-                              <Dimension value="[80, 25]"/>
+                              <Dimension value="[125, 25]"/>
                             </Property>
                             <Property name="requestFocusEnabled" type="boolean" value="false"/>
                           </Properties>
@@ -718,7 +718,7 @@
                               <Dimension value="[80, 25]"/>
                             </Property>
                             <Property name="preferredSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
-                              <Dimension value="[80, 25]"/>
+                              <Dimension value="[125, 25]"/>
                             </Property>
                             <Property name="requestFocusEnabled" type="boolean" value="false"/>
                           </Properties>
@@ -755,7 +755,7 @@
                               <Dimension value="[80, 25]"/>
                             </Property>
                             <Property name="preferredSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
-                              <Dimension value="[100, 25]"/>
+                              <Dimension value="[125, 25]"/>
                             </Property>
                             <Property name="requestFocusEnabled" type="boolean" value="false"/>
                           </Properties>

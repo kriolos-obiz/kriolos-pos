@@ -55,7 +55,7 @@ public class SessionDBHSQLDB implements SessionDB {
      */
     @Override
     public String CHAR_NULL() {
-        return "CAST(NULL AS CHAR)";
+        return "CAST(NULL AS CHAR(1))";
     }
 
     /**
