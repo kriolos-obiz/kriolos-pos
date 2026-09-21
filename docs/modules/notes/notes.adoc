@@ -1,0 +1,11 @@
+= KriolOS POS - Technical & Architecture Notes
+:author: KriolOS Team
+:doctype: book
+:toc: left
+:toclevels: 3
+:numbered:
+:icons: font
+:source-highlighter: coderay
+:imagesdir: images
+
+include::pages/taxes.adoc[leveloffset=+1]

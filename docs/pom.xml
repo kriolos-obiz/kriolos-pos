@@ -19,17 +19,43 @@
         <asciidoc.images.directory>images</asciidoc.images.directory>
 
         <skipPdfGeneration>true</skipPdfGeneration>
+        <antora-maven-plugin.version>1.0.0-alpha.5</antora-maven-plugin.version>
     </properties>
-    
-    <modules>
-        <module>guide-devel</module>
-        <module>guide-comercial</module>
-        <module>guide-user</module>
-    </modules>
      
     <profiles>
         <profile>
-            <id>docs-gen</id>
+            <id>antora</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.antora</groupId>
+                        <artifactId>antora-maven-plugin</artifactId>
+                        <version>${antora-maven-plugin.version}</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <playbookFile>${project.basedir}/antora-playbook.yml</playbookFile>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>antora</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>asciidoctor</id>
+            <properties>
+                <asciidoc.source.directory>${basedir}/modules</asciidoc.source.directory>
+            </properties>
             <build>
                 <plugins>
                     <plugin>
@@ -66,8 +92,9 @@
                         <version>3.2.0</version>
                         <configuration>
                             <relativeBaseDir>true</relativeBaseDir>
-                            <sourceDirectory>${asciidoc.source.directory}</sourceDirectory>
-                            <outputDirectory>${asciidoc.output.directory}</outputDirectory>
+                            <outputDirectory>${asciidoc.output.directory}/pdf</outputDirectory>
+                            <backend>pdf</backend>
+                            <doctype>book</doctype>
                             <requires>
                                 <require>asciidoctor-diagram</require>
                             </requires>
@@ -83,46 +110,66 @@
                                 <app-product-name>KriolOS POS</app-product-name>
                                 <app-version>${project.version}</app-version>
                                 <app-package-base-name>kriolos</app-package-base-name>
+                                <source-highlighter>coderay</source-highlighter>
+                                <pdf-stylesdir>${project.basedir}/src/themes</pdf-stylesdir>
+                                <pdf-style>custom</pdf-style>
                             </attributes>
                         </configuration>
 
                         <executions>
                             <execution>
-                                <id>output-pdf</id>
+                                <id>pdf-guide-devel</id>
                                 <phase>generate-resources</phase>
                                 <goals>
                                     <goal>process-asciidoc</goal>
                                 </goals>
                                 <configuration>
-                                    <!-- <sourceDocumentName>index.adoc</sourceDocumentName> -->
-                                    <outputDirectory>${asciidoc.output.directory}/pdf</outputDirectory>
-                                    <backend>pdf</backend>
-                                    <doctype>book</doctype>
-                                    <attributes>
-                                        <source-highlighter>coderay</source-highlighter><!-- highlightjs does not work in PDF -->
-                                        <pdf-stylesdir>${project.basedir}/src/themes</pdf-stylesdir>
-                                        <pdf-style>custom</pdf-style>
-                                    </attributes>
+                                    <sourceDirectory>${basedir}/modules/guide-devel</sourceDirectory>
+                                    <sourceDocumentName>guide-devel.adoc</sourceDocumentName>
                                 </configuration>
                             </execution>
                             <execution>
-                                <id>output-html</id>
+                                <id>pdf-guide-user</id>
                                 <phase>generate-resources</phase>
                                 <goals>
                                     <goal>process-asciidoc</goal>
                                 </goals>
                                 <configuration>
-                                    <outputDirectory>${asciidoc.output.directory}/html</outputDirectory>
-                                    <preserveDirectories>true</preserveDirectories>
-                                    <backend>html5</backend>
-                                    <doctype>book</doctype>
-                                    <attributes>
-                                        <imagesdir>./images</imagesdir>
-                                        <sourceHighlighter>prettify</sourceHighlighter>
-                                        <toc>left</toc>
-                                        <numbered>true</numbered>
-                                        <!-- <stylesheet>../../../../asciidoctor-default.css</stylesheet> -->
-                                    </attributes>
+                                    <sourceDirectory>${basedir}/modules/guide-user</sourceDirectory>
+                                    <sourceDocumentName>guide-user.adoc</sourceDocumentName>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>pdf-guide-comercial</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>process-asciidoc</goal>
+                                </goals>
+                                <configuration>
+                                    <sourceDirectory>${basedir}/modules/guide-comercial</sourceDirectory>
+                                    <sourceDocumentName>guide-comercial.adoc</sourceDocumentName>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>pdf-guide-migration</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>process-asciidoc</goal>
+                                </goals>
+                                <configuration>
+                                    <sourceDirectory>${basedir}/modules/guide-migration</sourceDirectory>
+                                    <sourceDocumentName>guide-migration.adoc</sourceDocumentName>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>pdf-notes</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>process-asciidoc</goal>
+                                </goals>
+                                <configuration>
+                                    <sourceDirectory>${basedir}/modules/notes</sourceDirectory>
+                                    <sourceDocumentName>notes.adoc</sourceDocumentName>
                                 </configuration>
                             </execution>
                         </executions>
@@ -158,19 +205,6 @@
                                 <artifactId>asciidoctorj-epub3</artifactId>
                                 <version>2.2.0</version>
                             </dependency>
-        
-                            <!--
-                            <dependency>
-                                <groupId>org.asciidoctor</groupId>
-                                <artifactId>asciidoctorj</artifactId>
-                                <version>2.5.3</version>
-                            </dependency>
-                            <dependency>
-                                <groupId>org.jruby</groupId>
-                                <artifactId>jruby-complete</artifactId>
-                                <version>9.3.3.0</version>
-                            </dependency>
-                            -->
                         </dependencies>
                     </plugin>
                 </plugins>

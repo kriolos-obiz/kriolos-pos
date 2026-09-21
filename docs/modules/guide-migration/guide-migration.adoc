@@ -1,0 +1,11 @@
+= KriolOS POS - Migration & Architecture Guide
+:author: KriolOS Team
+:doctype: book
+:toc: left
+:toclevels: 3
+:numbered:
+:icons: font
+:source-highlighter: coderay
+:imagesdir: images
+
+include::pages/implementation_plan.adoc[leveloffset=+1]

@@ -1,0 +1,8 @@
+= Commercial Guide
+:description: Commercial overview and product vision for KriolOS POS.
+
+Welcome to the **Commercial Guide** for KriolOS POS.
+
+== Topics
+
+* xref:product-vision.adoc[Product Vision]: Discover the market opportunity, retail challenges, and architectural vision behind KriolOS POS.

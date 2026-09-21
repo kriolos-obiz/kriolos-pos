@@ -1,0 +1,37 @@
+= KriolOS POS Documentation
+:description: Welcome to the official documentation for KriolOS POS.
+
+image::kriolos-opos-screenshot.gif[KriolOS POS,align="center"]
+
+Welcome to the **KriolOS POS** documentation portal. 
+
+KriolOS POS is an open-source, Java-based Point of Sale (POS) solution designed for retail and hospitality environments.
+
+== Documentation Guides
+
+Browse through the available documentation sections:
+
+[cols="1,3",options="header"]
+|===
+| Guide | Description
+
+| xref:guide-devel:index.adoc[Developer Guide]
+| Architectural overviews, database design, UI development, peripheral integration, and coding guidelines.
+
+| xref:guide-user:index.adoc[User Guide]
+| Installation instructions, system prerequisites, environment setup, and operation manuals.
+
+| xref:guide-comercial:index.adoc[Commercial Guide]
+| Product vision, business capabilities, licensing, and strategic positioning.
+
+| xref:guide-migration:index.adoc[Migration Guide]
+| Deep analysis, tech stack migration plans, and project evolution roadmap.
+
+| xref:notes:index.adoc[Architecture Notes]
+| Technical research, tax calculation models, and architectural guidance.
+|===
+
+== Need Help?
+
+* **Issue Tracker**: https://github.com/kriolos-obiz/kriolos-pos/issues
+* **Source Code**: https://github.com/kriolos-obiz/kriolos-pos
