@@ -20,7 +20,9 @@ import com.openbravo.basic.BasicException;
 import com.openbravo.beans.JFlowPanel;
 import com.openbravo.beans.JPasswordDialog;
 import com.openbravo.data.gui.MessageInf;
+import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -36,20 +38,46 @@ public class JAuthPanel extends javax.swing.JPanel {
     private static final long serialVersionUID = 1L;
 
     private StringBuilder inputtext;
-    
-    private final DataLogicSystem m_dlSystem;
+    private AppView m_app;
+    private DataLogicSystem m_dlSystem;
     private final AuthListener authListener;
+    private DatabaseSelector databaseSelector;
 
-    public JAuthPanel(DataLogicSystem dlSystem, AuthListener authcListener) {
-        
-        authListener = authcListener;
-        m_dlSystem = dlSystem;
+    public JAuthPanel(AppView app, DataLogicSystem dlSystem, AppProperties props, AuthListener authcListener) {
+        this.m_app = app;
+        this.authListener = authcListener;
+        this.m_dlSystem = dlSystem;
+        this.databaseSelector = new DatabaseSelector(props);
         
         initComponents();
         initPanel();
     }
 
+    public JAuthPanel(DataLogicSystem dlSystem, AppProperties props, AuthListener authcListener) {
+        this(null, dlSystem, props, authcListener);
+    }
+
+    public JAuthPanel(DataLogicSystem dlSystem, AuthListener authcListener) {
+        this(null, dlSystem, AppConfig.getInstance(), authcListener);
+    }
+
     private void initPanel() {
+        if (databaseSelector != null) {
+            leftPanel.remove(leftHeaderPanel);
+            JPanel headerContainer = new JPanel(new BorderLayout());
+            headerContainer.add(leftHeaderPanel, BorderLayout.NORTH);
+            headerContainer.add(databaseSelector, BorderLayout.CENTER);
+            leftPanel.add(headerContainer, BorderLayout.NORTH);
+
+            databaseSelector.addDatabaseSelectListener(new DatabaseSelector.DatabaseSelectListener() {
+                @Override
+                public void onDatabaseSelected(String dbKey, String dbName) throws BasicException {
+                    if (m_app != null) {
+                        m_app.switchDatabase();
+                    }
+                }
+            });
+        }
        
         usersLisScrollPane.getVerticalScrollBar().setPreferredSize(new Dimension(30, 30));
         showListPeople();
@@ -64,7 +92,45 @@ public class JAuthPanel extends javax.swing.JPanel {
         });
     }
 
+    public DatabaseSelector getDatabaseSelector() {
+        return databaseSelector;
+    }
+
+    public void updateDataLogicSystem(DataLogicSystem dlSystem) {
+        this.m_dlSystem = dlSystem;
+        showListPeople();
+        revalidate();
+        repaint();
+    }
+
+    public void refreshUsers() {
+        showListPeople();
+        revalidate();
+        repaint();
+    }
+
     private void showListPeople() {
+
+        if (m_dlSystem == null) {
+            JPanel emptyPanel = new JPanel(new GridBagLayout());
+            emptyPanel.setOpaque(false);
+
+            java.net.URL imgURL = getClass().getResource("/com/openbravo/images/database.png");
+            Icon dbIcon = (imgURL != null) ? new ImageIcon(imgURL) : null;
+
+            JLabel lblPrompt = new JLabel(
+                    AppLocal.getIntString("message.databasenotselected"),
+                    dbIcon,
+                    SwingConstants.CENTER);
+            lblPrompt.setName("lblNoDatabaseSelected");
+            lblPrompt.setVerticalTextPosition(SwingConstants.BOTTOM);
+            lblPrompt.setHorizontalTextPosition(SwingConstants.CENTER);
+            lblPrompt.setIconTextGap(12);
+
+            emptyPanel.add(lblPrompt);
+            usersLisScrollPane.getViewport().setView(emptyPanel);
+            return;
+        }
 
         try {
 
@@ -104,10 +170,12 @@ public class JAuthPanel extends javax.swing.JPanel {
 
         if ((c == '\n') || (c == '?')) {
             AppUser user = null;
-            try {
-                user = m_dlSystem.findPeopleByCard(inputtext.toString());
-            } catch (BasicException ex) {
-                LOGGER.log(Level.WARNING, "Exception on findPeopleByCard: ", ex);
+            if (m_dlSystem != null) {
+                try {
+                    user = m_dlSystem.findPeopleByCard(inputtext.toString());
+                } catch (BasicException ex) {
+                    LOGGER.log(Level.WARNING, "Exception on findPeopleByCard: ", ex);
+                }
             }
 
             if (user == null) {

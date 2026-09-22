@@ -92,45 +92,7 @@ public class JRootApp extends JPanel implements AppView {
 
         applyComponentOrientation(ComponentOrientation.getOrientation(Locale.getDefault()));
 
-        try {
-            session = AppViewConnection.createSession(this, appProperties);
-
-        }
-        catch (BasicException e) {
-            throw new BasicException("Exception on DB createSession", e);
-        }
-
-        dlogicSystem = (DataLogicSystem) getBean("com.openbravo.pos.forms.DataLogicSystem");
-
-        cashManagementService = new CashManagementServiceImpl(session);
-
-        LOGGER.log(Level.INFO, "DB Migration execution Starting");
-        try {
-            com.openbravo.pos.data.DBMigrator.execDBMigration(session);
-            LOGGER.log(Level.INFO, "Database verification or migration done sucessfully");
-        }
-        catch (BasicException ex) {
-            throw new BasicException("Database verification fail", ex);
-        }
-
-        hostSavedProperties = dlogicSystem.getResourceAsProperties(getHostPropertyId());
-
-        if (checkActiveCash()) {
-            LOGGER.log(Level.WARNING, "Fail on verify ActiveCash");
-            throw new BasicException("Fail on verify ActiveCash");
-        }
-
-        setInventoryLocation();
-
-        initPeripheral();
-
-        setTitlePanel();
-
-        setStatusBarPanel();
-
         showLoginPanel();
-
-        logStartup();
     }
 
     private void setTitlePanel() {
@@ -436,15 +398,79 @@ public class JRootApp extends JPanel implements AppView {
     private void showLoginPanel() {
         LOGGER.log(Level.WARNING, "INFO :: showLoginPanel");
         if (mAuthPanel == null) {
-            mAuthPanel = new JAuthPanel(dlogicSystem, new JAuthPanel.AuthListener() {
+            mAuthPanel = new JAuthPanel(this, dlogicSystem, appProperties, new JAuthPanel.AuthListener() {
                 @Override
                 public void onSucess(AppUser user) {
                     openAppView(user);
                 }
             });
             contentContainerPanel.add(mAuthPanel, "login");
+            if (mAuthPanel.getDatabaseSelector() != null) {
+                mAuthPanel.getDatabaseSelector().autoSelectIfSingle();
+            }
         }
         showView("login");
+    }
+
+    public void switchDatabase() throws BasicException {
+        String dbKey = (mAuthPanel != null && mAuthPanel.getDatabaseSelector() != null)
+                ? mAuthPanel.getDatabaseSelector().getSelectedDbKey()
+                : null;
+
+        try {
+            waitCursorBegin();
+            LOGGER.log(Level.INFO, "Switching database: {0}", dbKey);
+
+            if (session != null) {
+                try {
+                    session.close();
+                } catch (SQLException ex) {
+                    LOGGER.log(Level.WARNING, "Error closing previous session: ", ex);
+                }
+            }
+
+            session = AppViewConnection.createSession(appProperties, dbKey);
+
+            LOGGER.log(Level.INFO, "DB Migration execution Starting");
+            try {
+                com.openbravo.pos.data.DBMigrator.execDBMigration(session);
+                LOGGER.log(Level.INFO, "Database verification or migration done successfully");
+            } catch (BasicException ex) {
+                throw new BasicException("Database verification fail", ex);
+            }
+
+            dlogicSystem = (DataLogicSystem) getBean("com.openbravo.pos.forms.DataLogicSystem");
+            dlogicSystem.init(session);
+
+            cashManagementService = new CashManagementServiceImpl(session);
+
+            hostSavedProperties = dlogicSystem.getResourceAsProperties(getHostPropertyId());
+
+            if (checkActiveCash()) {
+                LOGGER.log(Level.WARNING, "Fail on verify ActiveCash");
+                throw new BasicException("Fail on verify ActiveCash");
+            }
+
+            setInventoryLocation();
+            setTitlePanel();
+            setStatusBarPanel();
+
+            if (deviceTicket == null) {
+                initPeripheral();
+                logStartup();
+            } else {
+                ticketParser = new TicketParser(getDeviceTicket(), dlogicSystem);
+            }
+
+            if (mAuthPanel != null) {
+                mAuthPanel.updateDataLogicSystem(dlogicSystem);
+            }
+
+            LOGGER.log(Level.INFO, "Successfully completed switch to database");
+
+        } finally {
+            waitCursorEnd();
+        }
     }
 
     private void setStatusBarPanel() {

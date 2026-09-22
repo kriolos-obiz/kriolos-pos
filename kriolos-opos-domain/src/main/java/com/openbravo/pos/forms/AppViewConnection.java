@@ -34,9 +34,14 @@ import javax.swing.JOptionPane;
 public class AppViewConnection {
 
     private static final Logger LOGGER = Logger.getLogger(AppViewConnection.class.getName());
+    private static final String DEFAULT_DB = "db";
     private static final int MAX_BD = 10;
 
     private AppViewConnection() {
+    }
+
+    public static String getDefaultDB() {
+        return DEFAULT_DB;
     }
 
     public static Session createSession(AppProperties props) throws BasicException {
@@ -50,7 +55,7 @@ public class AppViewConnection {
             String sDBPassword = "";
             DBProperties dbProperties = null;
 
-            String dbID = "db";
+            String dbID = DEFAULT_DB;
             if ("true".equals(props.getProperty("db.multi"))) {
                 
                 List<String> dbNames = findAllDB(props);
@@ -74,35 +79,64 @@ public class AppViewConnection {
             
             LOGGER.log(Level.INFO, "Creae session for DB: "+dbURL);
 
-            return new Session(dbURL, sDBUser, sDBPassword);
+            return createSessionForDB(props, dbID);
 
-        } catch (SQLException ex) {
+        } catch (BasicException ex) {
+            throw ex;
+        } catch (Exception ex) {
             LOGGER.log(Level.WARNING, "Exception on session ", ex);
             throw new BasicException(AppLocal.getIntString("message.databaseconnectionerror"), ex);
         }
     }
 
-    private static List<String> findAllDB(AppProperties props) {
+    public static Session createDefaultSession(AppProperties props) throws BasicException {
+        return createSessionForDB(props, DEFAULT_DB);
+    }
+
+    public static Session createSession(AppProperties props, String dbID) throws BasicException {
+        return (dbID != null && !dbID.isBlank())
+                ? createSessionForDB(props, dbID)
+                : createDefaultSession(props);
+    }
+
+    public static Session createSessionForDB(AppProperties props, String dbID) throws BasicException {
+        try {
+            DBProperties dbProperties = getDBProperties(props, dbID != null ? dbID : DEFAULT_DB);
+            String sDBUser = dbProperties.sDBUser;
+            String sDBPassword = dbProperties.sDBPassword;
+            String dbURL = dbProperties.dbURL;
+
+            LOGGER.log(Level.INFO, "Create session for DB (" + dbID + "): " + dbURL);
+            return new Session(dbURL, sDBUser, sDBPassword);
+        } catch (SQLException ex) {
+            LOGGER.log(Level.WARNING, "Exception on session for DB " + dbID, ex);
+            throw new BasicException(AppLocal.getIntString("message.databaseconnectionerror"), ex);
+        }
+    }
+
+    public static List<String> findAllDB(AppProperties props) {
 
         List<String> dbNames = new ArrayList<>();
 
-        var defaulName = props.getProperty("db.name");
-        dbNames.add("db.name="+defaulName); // Add defaul Data base
+        var defaulName = props.getProperty(DEFAULT_DB + ".name");
+        dbNames.add(DEFAULT_DB + ".name=" + (defaulName != null ? defaulName : "Default DB"));
 
-        for (int count = 1; count < MAX_BD; count++) {
+        if ("true".equals(props.getProperty(DEFAULT_DB + ".multi"))) {
+            for (int count = 1; count < MAX_BD; count++) {
 
-            String curDbKey = "db" + count + ".name";
-            String curName = props.getProperty(curDbKey);
+                String curDbKey = DEFAULT_DB + count + ".name";
+                String curName = props.getProperty(curDbKey);
 
-            if (curName != null) {
-                dbNames.add(curDbKey+"="+curName);
+                if (curName != null) {
+                    dbNames.add(curDbKey + "=" + curName);
+                }
             }
         }
 
         return dbNames;
     }
 
-    private static String choseDB(Component parent, AppProperties props, Object[] dbs) {
+    public static String choseDB(Component parent, AppProperties props, Object[] dbs) {
 
         ImageIcon icon = new ImageIcon("/com/openbravo/images/app_logo_48x48");
         Object chosedDbName = JOptionPane.showInputDialog(
@@ -112,7 +146,7 @@ public class AppViewConnection {
                 JOptionPane.OK_OPTION,
                 icon,
                 dbs,
-                dbs[0]);
+                dbs != null && dbs.length > 0 ? dbs[0] : null);
 
         return (String) chosedDbName;
     }
