@@ -15,7 +15,8 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package com.openbravo.pos.forms;
-
+ 
+import com.openbravo.basic.BasicException;
 import com.openbravo.data.loader.Session;
 import com.openbravo.pos.printer.DeviceTicket;
 import com.openbravo.pos.scale.DeviceScale;
@@ -59,6 +60,8 @@ public interface AppView {
     public boolean hasPermission(String permission);
     
     public boolean closeAppView();
+    
+    public void switchDatabase() throws BasicException;
 
 }
 
