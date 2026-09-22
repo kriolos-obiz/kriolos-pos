@@ -19,6 +19,9 @@ import com.openbravo.pos.menu.JRootMenu;
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.gui.JMessageDialog;
 import com.openbravo.data.gui.MessageInf;
+import com.openbravo.pos.domain.navigation.MenuHistoryEngine;
+import com.openbravo.pos.domain.navigation.NavigationResult;
+import com.openbravo.pos.domain.navigation.ScreenRoute;
 import java.awt.CardLayout;
 import java.awt.Dimension;
 import java.util.Set;
@@ -45,6 +48,11 @@ public class JPrincipalApp extends JPanel implements AppUserView {
 
     private final JRootMenu rootMenu;
 
+    // --- Domain navigation (programmatic — NOT in NetBeans GEN block) ---
+    private final MenuHistoryEngine historyEngine = new MenuHistoryEngine();
+    private JButton btnNavBack;
+    private JButton btnNavForward;
+
     /**
      * Creates a JPanel
      *
@@ -63,6 +71,7 @@ public class JPrincipalApp extends JPanel implements AppUserView {
 
         initComponents();
         applyComponentOrientation(appRootPanel.getComponentOrientation());
+        initDomainAdapters();
 
         notificatorLabel = new JLabel();
         notificatorLabel.applyComponentOrientation(getComponentOrientation());
@@ -83,6 +92,112 @@ public class JPrincipalApp extends JPanel implements AppUserView {
         showView("<NULL>");
 
     }
+
+    // =========================================================================
+    // Domain adapter wiring — never inside GEN blocks
+    // =========================================================================
+
+    /**
+     * Programmatically creates and wires the back/forward navigation buttons
+     * into the content title bar, then sets {@code .setName()} anchors so the
+     * automation module and future web layers can locate them by domain field name.
+     *
+     * <p>Called immediately after {@code initComponents()} in the constructor.</p>
+     */
+    private void initDomainAdapters() {
+
+        // --- Back button ---
+        btnNavBack = new JButton();
+        btnNavBack.setName("navigationBack");                         // Rule 8: setName anchor
+        btnNavBack.setIcon(new ImageIcon(getClass().getResource("/com/openbravo/images/go-previous.png")));
+        btnNavBack.setToolTipText(AppLocal.getIntString("tooltip.back"));
+        btnNavBack.setEnabled(false);
+        btnNavBack.setFocusable(false);
+        btnNavBack.setFocusPainted(false);
+        btnNavBack.addActionListener(e -> onNavigateBack());
+
+        // --- Forward button ---
+        btnNavForward = new JButton();
+        btnNavForward.setName("navigationForward");                   // Rule 8: setName anchor
+        btnNavForward.setIcon(new ImageIcon(getClass().getResource("/com/openbravo/images/go-next.png")));
+        btnNavForward.setToolTipText(AppLocal.getIntString("tooltip.forward"));
+        btnNavForward.setEnabled(false);
+        btnNavForward.setFocusable(false);
+        btnNavForward.setFocusPainted(false);
+        btnNavForward.addActionListener(e -> onNavigateForward());
+
+        // --- Also name the existing title label for automation ---
+        contentTitleLabel.setName("screenTitle");                     // Rule 8: setName anchor
+
+        // --- Inject into the title bar (LINE_START = left edge of contentTItlePanel) ---
+        JPanel navButtonsPanel = new JPanel();
+        navButtonsPanel.setName("navigationButtonsPanel");            // Rule 8: setName anchor
+        navButtonsPanel.setOpaque(false);
+        navButtonsPanel.add(btnNavBack);
+        navButtonsPanel.add(btnNavForward);
+        contentTItlePanel.add(navButtonsPanel, java.awt.BorderLayout.LINE_END);
+        contentTItlePanel.setVisible(false);                         // restored when first view loads
+    }
+
+    // -------------------------------------------------------------------------
+    // Navigation event handlers — called from adapter button listeners
+    // -------------------------------------------------------------------------
+
+    private void onNavigateBack() {
+        NavigationResult result = historyEngine.back(this::currentViewCanDeactivate);
+        applyNavigationResult(result);
+    }
+
+    private void onNavigateForward() {
+        NavigationResult result = historyEngine.forward(this::currentViewCanDeactivate);
+        applyNavigationResult(result);
+    }
+
+    /**
+     * Deactivation guard — delegates to the active JPanelView.
+     * Returns {@code true} (allow navigation) if no view is active.
+     */
+    private boolean currentViewCanDeactivate() {
+        return rootMenu.getViewManager().deactivateLastView();
+    }
+
+    /**
+     * Applies the domain NavigationResult to the Swing UI.
+     * The domain never touches Swing — this adapter method is the only bridge.
+     */
+    private void applyNavigationResult(NavigationResult result) {
+        switch (result) {
+            case NavigationResult.Navigated n -> {
+                showView(n.target().taskClass());
+                updateTitleBar(n.target().title());
+                btnNavBack.setEnabled(n.canGoBack());
+                btnNavForward.setEnabled(n.canGoForward());
+            }
+            case NavigationResult.AlreadyCurrent ignored -> { /* no-op */ }
+            case NavigationResult.Blocked ignored -> {
+                LOGGER.info("Navigation blocked by active view deactivation guard");
+            }
+            case NavigationResult.NoHistory n -> {
+                LOGGER.fine("No history in direction: " + n.direction());
+                switch (n.direction()) {
+                    case BACK    -> btnNavBack.setEnabled(false);
+                    case FORWARD -> btnNavForward.setEnabled(false);
+                }
+            }
+        }
+    }
+
+    private void updateTitleBar(String title) {
+        if (title != null && !title.isBlank()) {
+            contentTItlePanel.setVisible(true);
+            contentTitleLabel.setText(title);
+        } else {
+            contentTItlePanel.setVisible(false);
+            contentTitleLabel.setText("");
+        }
+    }
+
+    // =========================================================================
 
     private void setMenuIcon() {
         if (menuColapseButton.getComponentOrientation().isLeftToRight()) {
@@ -177,9 +292,17 @@ public class JPrincipalApp extends JPanel implements AppUserView {
 
                 if (!rootMenu.getViewManager().checkIfLastView(viewPanel)) {
 
-                    if (rootMenu.getViewManager().getLastView() != null) {
-                        LOGGER.info("Call 'deactivate' on class: " + rootMenu.getViewManager().getLastView().getClass().getName());
-                        rootMenu.getViewManager().getLastView().deactivate();
+                    // --- Domain: push new route into history engine ---
+                    String sTitle = viewPanel.getTitle();
+                    ScreenRoute targetRoute = new ScreenRoute(sTaskClass, sTitle == null ? "" : sTitle);
+                    NavigationResult navResult = historyEngine.navigate(
+                            targetRoute,
+                            this::currentViewCanDeactivate);
+
+                    if (navResult instanceof NavigationResult.Blocked) {
+                        LOGGER.info("showTask blocked by active view deactivation guard for: " + sTaskClass);
+                        appRootPanel.waitCursorEnd();
+                        return;
                     }
 
                     viewPanel.getComponent().applyComponentOrientation(getComponentOrientation());
@@ -192,15 +315,8 @@ public class JPrincipalApp extends JPanel implements AppUserView {
 
                     setMenuVisible(getBounds().width > 800);
 
-                    showView(sTaskClass);
-                    String sTitle = viewPanel.getTitle();
-                    if (sTitle != null && !sTitle.isBlank()) {
-                        contentTItlePanel.setVisible(true);
-                        contentTitleLabel.setText(sTitle);
-                    } else {
-                        contentTItlePanel.setVisible(false);
-                        contentTitleLabel.setText("");
-                    }
+                    // Apply title bar and button states from domain result
+                    applyNavigationResult(navResult);
                 } else {
                     LOGGER.log(Level.INFO, "Already open: " + sTaskClass + ", Instance: " + viewPanel);
                 }

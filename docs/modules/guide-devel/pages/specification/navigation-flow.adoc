@@ -1,0 +1,152 @@
+= Navigation History Flow
+:description: Behavioral specification for the Back/Forward menu navigation history engine in KriolosPOS.
+:keywords: navigation, history, back, forward, MenuHistoryEngine, ScreenRoute
+
+== Overview
+
+This page specifies the behavioral rules for the Back/Forward navigation history engine
+introduced via the `MenuHistoryEngine` domain service.
+
+The implementation follows the Strangler Fig pattern: the existing `ViewManager` and
+`JPrincipalApp` screen-switching infrastructure is preserved; the domain engine is composed
+on top of it without replacing any legacy code.
+
+---
+
+== Bounded Context
+
+[cols="1,2", options="header"]
+|===
+| Property | Value
+| Module | `com.openbravo.pos.domain.navigation`
+| Maven artifact | `kriolos-opos-domain`
+| Driving adapter | `JPrincipalApp` (Swing)
+| Outbound ports | None — pure in-memory state machine
+|===
+
+---
+
+== Domain Records
+
+=== ScreenRoute
+
+[cols="1,1,2", options="header"]
+|===
+| Field | Type | Constraint
+| `taskClass` | `String` | Required, non-blank. Fully-qualified class name used as `CardLayout` key.
+| `title` | `String` | Optional. Null normalised to empty string. Displayed in title bar.
+|===
+
+`ScreenRoute.NULL_ROUTE` is the sentinel for the initial "no screen loaded" state.
+
+=== NavigationResult (sealed)
+
+[cols="1,3", options="header"]
+|===
+| Variant | Meaning
+| `Navigated(target, canGoBack, canGoForward)` | Navigation succeeded. Adapter must call `showView()` and update button states.
+| `AlreadyCurrent(current)` | Target equals active screen. No UI change needed.
+| `Blocked(current)` | Active screen's `deactivate()` returned `false`. No state mutation. Adapter may warn user.
+| `NoHistory(direction)` | Back/forward requested but stack is empty. Adapter must disable the respective button.
+|===
+
+---
+
+== State Machine
+
+[source]
+----
+  [NULL_ROUTE]
+       |
+       | navigate(A)
+       v
+      [A]  <-----------+
+       |               |
+       | navigate(B)   | back()
+       v               |
+      [B]  ----------->'
+       |
+       | navigate(C) -- clears forward stack
+       v
+      [C]
+----
+
+=== Invariants
+
+. A call to `navigate(route, guard)` where `route == current` always returns `AlreadyCurrent`. No stack mutation.
+. `navigate()` with a new route clears the forward stack entirely.
+. Back/Forward never mutate state when the deactivation guard returns `false`.
+. History stack is capped at 50 entries (oldest dropped) to prevent unbounded memory growth.
+. `reset()` clears both stacks and resets `current` to `NULL_ROUTE`. Must be called on session logout.
+
+---
+
+== UI Component Mappings (`setName()` anchors)
+
+[cols="1,1,2", options="header"]
+|===
+| Component | `setName()` value | Domain field / action
+| `btnNavBack` (`JButton`) | `navigationBack` | Triggers `MenuHistoryEngine.back()`
+| `btnNavForward` (`JButton`) | `navigationForward` | Triggers `MenuHistoryEngine.forward()`
+| `contentTitleLabel` (`JLabel`) | `screenTitle` | Displays `ScreenRoute.title()`
+| `navButtonsPanel` (`JPanel`) | `navigationButtonsPanel` | Container for both nav buttons
+|===
+
+---
+
+== Swing Adapter Lifecycle
+
+[source]
+----
+Constructor
+  └── initComponents()          // NetBeans GEN block — do not touch
+  └── initDomainAdapters()      // creates buttons, sets names, wires listeners
+
+showTask(className)
+  └── build ScreenRoute(className, title)
+  └── historyEngine.navigate(route, deactivationGuard)
+      ├── Navigated  → showView() + updateTitleBar() + enable/disable buttons
+      ├── Blocked    → log, return early (no CardLayout change)
+      └── AlreadyCurrent → log, no-op
+
+onNavigateBack()
+  └── historyEngine.back(deactivationGuard)
+      └── applyNavigationResult()
+
+onNavigateForward()
+  └── historyEngine.forward(deactivationGuard)
+      └── applyNavigationResult()
+----
+
+---
+
+== Error Conditions
+
+[cols="1,2,2", options="header"]
+|===
+| Condition | Engine result | Adapter action
+| Screen refuses deactivation | `Blocked` | Log warning. No panel change. Optionally surface to user.
+| Back pressed at root screen | `NoHistory(BACK)` | Disable back button.
+| Forward pressed with no forward history | `NoHistory(FORWARD)` | Disable forward button.
+| Null/blank `taskClass` | `IllegalArgumentException` (domain) | Adapter catches, logs as SEVERE, shows error dialog.
+|===
+
+---
+
+== Regression Verification Checklist
+
+. [ ] Navigate to Sales → title bar shows "Sales", Back disabled, Forward disabled.
+. [ ] Navigate to Stock → title bar shows "Stock", Back enabled, Forward disabled.
+. [ ] Click Back → title bar shows "Sales", Back disabled, Forward enabled.
+. [ ] Click Forward → title bar shows "Stock", Back enabled, Forward disabled.
+. [ ] Navigate to Reports from Stock → Forward stack cleared, Forward disabled.
+. [ ] Open same screen twice → `AlreadyCurrent` — no duplicate history entry.
+. [ ] Screen with blocked `deactivate()` → no navigation, no button state change.
+. [ ] Logout → `historyEngine.reset()` called → both buttons disabled on re-login.
+
+---
+
+== Related Assets
+
+* link:../../architecture-principles.adoc[Architecture Principles] — full 14-rule protocol
+* JSON Schema: xref:attachment$specification/navigation-screen-route.schema.json[navigation-screen-route.schema.json]

@@ -3,8 +3,11 @@
 ** xref:product-vision.adoc[Product Vision]
 ** xref:contributors.adoc[Contributors]
 ** Architecture & Modeling
+*** xref:architecture-principles.adoc[Architecture Principles]
 *** xref:develop-overview.adoc[Development Overview]
 *** xref:modeling-overview.adoc[Domain Modeling]
+*** Specifications
+**** xref:specification/navigation-flow.adoc[Navigation History Flow]
 ** Database
 *** xref:database-overview.adoc[Database Overview]
 *** xref:develop-database.adoc[Database Development]
