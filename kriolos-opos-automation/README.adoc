@@ -1,0 +1,225 @@
+= KriolOS POS Automation
+:author: Copyright (c) KriolOS Team.
+:toc:
+:toc-placement!:
+:icons: font
+
+Automated UI Robot testing, milestone screenshot capture ("Print Screen"), and full-session screen recording for the KriolOS POS Java Swing application.
+
+toc::[]
+
+== Overview
+
+`kriolos-opos-automation` provides automated functional testing and visual verification of the Swing desktop UI without manual interaction. Powered by **AssertJ-Swing 3.17.1**, **JUnit 5**, and **FFmpeg**, it drives the application lifecycle directly on the Event Dispatch Thread (EDT).
+
+=== What It Does
+
+* **Automated Application Boot**: Programmatically launches `StartPOS.main()` within an isolated test harness.
+* **UI Robot Interaction**:
+** Discovers and clicks operator/user login buttons (e.g. `Administrator`).
+** Enters credentials / submits authentication.
+** Navigates to the Sales interface.
+** Interacts with catalog product buttons to add items to the cart.
+* **Milestone Screenshots**: Automatically captures high-resolution PNG snapshots at every major milestone.
+* **Screen Recording**: Captures the entire desktop or virtual X11 screen into an MP4 video (`session.mp4`).
+
+---
+
+== Module Structure & Architecture
+
+[source]
+----
+kriolos-opos-automation/
+├── pom.xml
+├── README.adoc
+└── src/test/java/io/github/kriolos/opos/automation/
+    ├── BasePosRobotIT.java             <-- Abstract Base Robot Test Harness
+    ├── DatabaseSelectionIT.java        <-- Test Use Case 1: Select DB Only
+    ├── PosLoginIT.java                 <-- Test Use Case 2: Operator Login Only
+    ├── PosSalesFlowIT.java             <-- Test Use Case 3: Complete Sales & Cash Payment Flow
+    ├── PosSalesRobotIT.java            <-- Complete Suite (delegates to Action Drivers)
+    ├── FfmpegScreenRecorder.java       <-- Wayland-safe in-memory frame recording to MP4
+    ├── ScreenshotHelper.java           <-- Wayland-safe in-memory Swing PNG snapshot engine
+    └── actions/                        <-- Reusable UI Drivers / Robot Action Facades
+        ├── DatabaseSelectionAction.java <-- Multi-database selection dialog handler
+        ├── MainWindowAction.java        <-- JRootFrame lifecycle and window sizing
+        ├── LoginAction.java             <-- Operator selection & password dialog
+        ├── MenuNavigationAction.java    <-- Side menu navigation & view switching
+        ├── SalesAction.java             <-- Catalog product clicks & '=' payment trigger
+        └── PaymentDialogAction.java     <-- Payment method tab selection & confirmation
+----
+
+---
+
+== Prerequisites
+
+* **Java 17+**
+* **X11 Display or Xvfb** (for Linux desktop or headless CI)
+* **FFmpeg** (required if video recording is enabled):
++
+[source,bash]
+----
+# Ubuntu / Debian
+sudo apt-get update && sudo apt-get install -y ffmpeg xvfb
+----
+
+---
+
+== How to Run
+
+=== 1. Run All Automation Tests (Desktop with Active Display)
+
+From the root of the repository:
+
+[source,bash]
+----
+./mvnw test -f kriolos-opos-automation/pom.xml
+----
+
+=== 2. Run Specific Test Use Cases
+
+==== A. Test Database Selection Only (`DatabaseSelectionIT`)
+Verifies detection of the multi-database selection dialog, default selection of the first database (index 0), and transition to main app launch:
+
+[source,bash]
+----
+./mvnw test -f kriolos-opos-automation/pom.xml -Dtest=DatabaseSelectionIT
+----
+
+==== B. Test Operator Login Only (`PosLoginIT`)
+Verifies operator selection, password prompt submission, and transitioning to authenticated user state:
+
+[source,bash]
+----
+./mvnw test -f kriolos-opos-automation/pom.xml -Dtest=PosLoginIT
+----
+
+==== C. Test Complete Sales Flow (`PosSalesFlowIT`)
+Executes the full end-to-end sales lifecycle:
+1. Select DB (index 0 / `Main DB`)
+2. Login operator (`admin`)
+3. Open Sales view
+4. Add catalog product to cart
+5. Press `=` to open Payment dialog
+6. Select Cash payment method and verify received amount
+7. Press OK to complete sale and close ticket
+
+[source,bash]
+----
+./mvnw test -f kriolos-opos-automation/pom.xml -Dtest=PosSalesFlowIT
+----
+
+==== D. Run Complete Milestone Suite (`PosSalesRobotIT`)
+
+[source,bash]
+----
+./mvnw test -f kriolos-opos-automation/pom.xml -Dtest=PosSalesRobotIT
+----
+
+=== 3. Multi-Database Configurations (`db.multi=true`)
+
+When the configuration file has multiple databases enabled (`db.multi=true`), the first dialog presented by the application is the **Database Selection** dialog.
+
+The robot automatically detects this dialog, captures a screenshot (`00_database_selection.png`), and confirms the selection.
+
+* **Default (First DB)**: No parameters needed. The robot automatically selects the first database in the list (index `0`, e.g. `Main DB`) and clicks OK.
+* **Select a specific database**: Use `-Dtest.db=<name>`:
+
+[source,bash]
+----
+./mvnw test -f kriolos-opos-automation/pom.xml -Dtest.db=DBSecond
+----
+
+=== 4. Behavioral Pacing (`-Dtest.behavior=human` vs `-Dtest.behavior=robot`)
+ 
+You can control the execution pacing of the robot using the `test.behavior` (or `behavior`) parameter:
+ 
+* **`human` (default)**: Introduces realistic observational pauses (800ms - 1500ms) before and after each interaction (selecting databases, entering passwords, clicking operator buttons, and picking products). This makes the actions clearly observable when watching the screen or reviewing the MP4 recording.
+* **`robot`**: Executes interactions immediately without artificial pauses, maximizing execution speed for CI/CD pipelines.
+ 
+[source,bash]
+----
+# Fast automated CI/CD execution
+./mvnw test -f kriolos-opos-automation/pom.xml -Dtest.behavior=robot
+
+# Human observational execution (ideal for recording demos)
+./mvnw test -f kriolos-opos-automation/pom.xml -Dtest.behavior=human
+----
+ 
+=== 5. Window Mode Control (`-Dtest.window.maximize=true|false`)
+ 
+Control whether the main application window is maximized or stays windowed:
+ 
+* **`true` (default)**: Automatically maximizes the main application window (`Frame.MAXIMIZED_BOTH`).
+* **`false`**: Preserves the windowed dimensions configured in `kriolos-opos.properties`.
+ 
+[source,bash]
+----
+./mvnw test -f kriolos-opos-automation/pom.xml -Dtest.window.maximize=false
+----
+ 
+=== 6. Run with a Custom Operator Account
+ 
+By default, the robot attempts to log in with `admin` (or `manager` / `empl`). You can specify a different operator account via `-Dtest.user`:
+ 
+[source,bash]
+----
+./mvnw test -f kriolos-opos-automation/pom.xml -Dtest.user=manager
+----
+ 
+=== 7. Run Without Video Recording (Screenshots Only)
+ 
+If you only want milestone screenshots and do not want to record an MP4 video:
+ 
+[source,bash]
+----
+./mvnw test -f kriolos-opos-automation/pom.xml -Dtest.record.video=false
+----
+ 
+=== 8. Run Headless in CI / Docker (Virtual X11 Display via Xvfb)
+
+In headless environments (GitHub Actions, GitLab CI, or headless Linux servers) without a physical monitor, use `xvfb-run` to provide a virtual 1080p X11 server:
+
+[source,bash]
+----
+xvfb-run -s "-screen 0 1920x1080x24" ./mvnw test -f kriolos-opos-automation/pom.xml
+----
+
+---
+
+== Output Artifacts & Reports
+
+After test execution, all recordings and milestone snapshots are saved under `target/recordings/pos_sales_run/`:
+
+[cols="1,2", options="header"]
+|===
+| Artifact | Description
+| `target/recordings/pos_sales_run/session.mp4`
+| Full video recording of the Swing session (H.264 / 25 fps).
+
+| `.../screenshots/*_01_app_started.png`
+| Snapshot taken immediately after `StartPOS` initializes and displays `JRootFrame`.
+
+| `.../screenshots/*_02_user_logged_in.png`
+| Snapshot after clicking operator button and completing authentication.
+
+| `.../screenshots/*_03_sales_screen_ready.png`
+| Snapshot showing the active Sales panel and catalog layout.
+
+| `.../screenshots/*_04_item_added_to_cart.png`
+| Snapshot after clicking a catalog item and updating the ticket lines.
+
+| `.../screenshots/*_05_final_state.png`
+| Final screen capture before teardown and window closure.
+|===
+
+---
+
+== Wayland-Safe Direct Rendering (Screenshots & Video)
+
+On modern Linux environments running **Wayland**, standard OS-level display grabs (like `java.awt.Robot.createScreenCapture()` and `ffmpeg -f x11grab`) are blocked for security, resulting in solid black screenshots and black video files.
+
+`kriolos-opos-automation` overcomes this completely using **direct in-memory Swing 2D graphics rendering**:
+* **Screenshots (`ScreenshotHelper`)**: Traverses the in-memory Swing visual tree (`component.printAll(g2)`), writing crisp, full-color PNG images directly without touching OS display buffers.
+* **Video Recording (`FfmpegScreenRecorder`)**: Runs a background capture loop rendering the visible Swing frame and any active modal dialogs (Database Selection, Login, Password), piping raw BGR frames directly to `ffmpeg -f rawvideo` via standard input.
+* **100% Platform Independent**: Works flawlessly on **Wayland**, **X11**, **macOS**, **Windows**, and **headless CI (Docker/Xvfb)**.
