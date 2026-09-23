@@ -87,3 +87,95 @@ Render modal dialogs directly inside `JRootFrame`'s `GlassPane` or `JLayeredPane
 * **Dimmed Backdrop**: Semi-transparent dark overlay blocking clicks to background POS panels.
 * **Wayland Immune**: Completely bypasses all XWayland window mapping and multi-window compositor bugs.
 
+---
+
+== [BUG-003] Missing Date Values & Schema Constraints on Inserts After Liquibase `now()` Removal
+
+[cols="1,3"]
+|===
+| **Issue ID** | BUG-003
+| **Status** | Queued for Resolution / Verification
+| **Reported Component** | `pos_liquidbase/db-changelog-v4_5.xml`, `DataLogicOrders`, `DataLogicSystem`, `DataLogicPresenceManagement`
+|===
+
+=== Symptom & Context
+To support SQLite and database-agnostic schemas, `defaultValueComputed="now()"` / `CURRENT_TIMESTAMP` and `defaultValueDate` were removed from `pos_liquidbase/db-changelog-v4_5.xml` in commits `db592823` and `020d6175`. 
+Consequently, database tables no longer generate default timestamps automatically upon insertion. Application code in `DataLogic*` must supply valid `java.util.Date` instances for non-nullable timestamp/datetime columns.
+
+=== Findings from the Last 2 Liquibase Commits
+
+==== 1. Commit `020d6175` ("Liquidbase DB Agnostic: remove liquidbase computed value")
+Removed `defaultValueComputed="now()"` from:
+1. `draweropened.opendate` (`datetime`, `NOT NULL`)
+2. `lineremoved.removeddate` (`datetime`, `NOT NULL`)
+3. `orders.ordertime` (`datetime`, `NOT NULL`)
+4. `shift_breaks.starttime` (`datetime`, `NOT NULL`)
+5. `shift_breaks.endtime` (`datetime`, `NOT NULL`)
+
+==== 2. Commit `db592823` ("BREAK CHANGE - liquidbase change timestamp to datetime")
+1. Changed `CURRENT_TIMESTAMP` to `now()` across tables (subsequently removed in `020d6175`).
+2. Removed hardcoded `defaultValueDate="2022-01-01T00:00:01"` from:
+   * `customers.memodate` (nullable)
+   * `products.memodate` (nullable)
+   * `reservations.datenew` (`NOT NULL`)
+
+=== Detailed Audit of Tables & `DataLogic` Inserts
+
+[cols="1,1,2,2"]
+|===
+| Table & Column | Nullable? | Current Java Handling in `DataLogic` | Audit Status & Defect
+
+| `orders.ordertime`
+| `NOT NULL`
+| * `DataLogicSystem.addOrder`:
+`if (ordertime == null) ordertime = Long.toString(new Date().getTime());`
+* `DataLogicOrders.addOrder`: accepts `String ordertime`, passes directly without null-check or default.
+* `RemoteOrderDisplay`: passes `null` for `ordertime`.
+| **DEFECT**:
+1. `DataLogicOrders.addOrder` passes `null` when not provided, violating the `NOT NULL` constraint.
+2. In both `DataLogicSystem` and `DataLogicOrders`, `ordertime` is typed as `String` but mapped to `Datas.TIMESTAMP`. At runtime, `DatasTIMESTAMP` expects a `java.util.Date`, leading to `ClassCastException` (`String` cannot be cast to `Date`).
+
+| `shift_breaks.endtime`
+| `NOT NULL`
+| * `DataLogicPresenceManagement.StartBreak`: executes `INSERT INTO shift_breaks (ID, SHIFTID, BREAKID, STARTTIME) VALUES (?, ?, ?, ?)`.
+* Does **NOT** supply `endtime`.
+| **DEFECT**:
+1. When starting a break, `endtime` is unknown.
+2. Liquibase defines `shift_breaks.endtime` as `<constraints nullable="false"/>`.
+3. Because the default was removed and the INSERT omits `endtime`, executing `StartBreak` fails with a `NOT NULL` constraint violation.
+4. `endtime` must be made nullable in the schema, as `EndBreak` explicitly updates it: `WHERE ENDTIME IS NULL`.
+
+| `shift_breaks.starttime`
+| `NOT NULL`
+| * `DataLogicPresenceManagement.StartBreak`: passes `new Date()` for parameter 4 (`STARTTIME`).
+| **OK**: Supplied in Java.
+
+| `draweropened.opendate`
+| `NOT NULL`
+| * `DataLogicSystem.execDrawerOpened`: requires `Date openDate`.
+* Callers (`JPanelCloseMoney`, `TicketParser`) supply `dNow` or `new Date()`.
+| **OK**: Supplied in Java.
+
+| `lineremoved.removeddate`
+| `NOT NULL`
+| * `DataLogicSales.addTicketLineRemoved`: supplies `new Date()`.
+* `DataLogicSales.addTicketDeleted`: supplies `new Date()`.
+| **OK**: Supplied in Java.
+
+| `reservations.datenew`
+| `NOT NULL`
+| * `DataLogicCustomers.getReservationsInsert`: supplies `res[2]` (`m_timereservation.getDate()`).
+| **OK**: Supplied in Java.
+
+| `customers.memodate`
+| `NULLABLE`
+| * `DataLogicCustomers` / `DataLogicSales`: sets `memodate` (or null if empty).
+| **OK**: Column is nullable.
+
+| `products.memodate`
+| `NULLABLE`
+| * `DataLogicSales` / `DataLogicPIM`: sets `memodate` (or null if empty).
+| **OK**: Column is nullable.
+|===
+
+
