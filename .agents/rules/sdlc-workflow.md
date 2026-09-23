@@ -11,6 +11,8 @@
 
 ## 2. Swing UI & Lifecycle Guidelines
 - **NetBeans Protected Blocks**: NEVER edit `// GEN-BEGIN:initComponents` or `// GEN-END:initComponents` manually.
+- **Generated Event Handlers Delegation Rule**: Inside generated event handler methods (`//GEN-FIRST:event_...`), MUST ALWAYS call a single private method with clear naming. All implementation logic belongs inside that dedicated private method, never inline inside the generated handler block.
+- **Javadoc on Private & Handler Methods**: Always document extracted private methods and helper methods with comprehensive Javadoc detailing their purpose, design rationale, parameters, UI state transitions, and platform-specific constraints (e.g. Wayland framebuffer validation, window hierarchy resolution).
 - **View Transitions**: When activating views (e.g. CardLayout), always invoke `viewPanel.activate()` to ensure data loaders and subcomponents synchronize properly.
 - **Global Title Panel**: Do not hide navigation or header panels based on empty titles; keep them permanently accessible unless explicitly configured otherwise.
 

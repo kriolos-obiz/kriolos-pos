@@ -47,14 +47,36 @@ public class JMessageDialog extends javax.swing.JDialog {
         return optionChosed;
     }
 
+    /**
+     * Resolves the appropriate parent {@link Window} hierarchy for the modal dialog.
+     * <p>
+     * Proper window hierarchy resolution is critical under modern desktop window managers
+     * (especially Linux Wayland / XWayland composites). If an isolated {@code new JFrame()}
+     * is created without attachment, the dialog lacks transient-for hints and top-level
+     * window grouping.
+     * </p>
+     *
+     * @param parent the candidate parent component, or {@code null}
+     * @return the resolved ancestor {@link Window} (Frame or Dialog), the first active showing Frame,
+     *         or {@link JOptionPane#getRootFrame()} as a safe fallback
+     */
     private static Window getWindow(Component parent) {
-        if (parent == null) {
-            return new JFrame();
-        } else if (parent instanceof Frame || parent instanceof Dialog) {
-            return (Window) parent;
-        } else {
-            return getWindow(parent.getParent());
+        if (parent != null) {
+            if (parent instanceof Frame || parent instanceof Dialog) {
+                return (Window) parent;
+            }
+            Window w = SwingUtilities.getWindowAncestor(parent);
+            if (w != null) {
+                return w;
+            }
         }
+        // Fallback to active/showing Frame to ensure proper window ownership and transient-for hints
+        for (Frame f : Frame.getFrames()) {
+            if (f.isShowing()) {
+                return f;
+            }
+        }
+        return JOptionPane.getRootFrame();
     }
 
     /**
@@ -71,6 +93,15 @@ public class JMessageDialog extends javax.swing.JDialog {
         return createMessageDialog(parent, inf, true);
     }
 
+    /**
+     * Constructs, initializes, lays out, and displays the modal {@link JMessageDialog}.
+     *
+     * @param parent the parent component used to anchor and center the dialog
+     * @param inf the message metadata and payload model (icon, signal code, text, cause)
+     * @param showConfirm {@code true} to display the Cancel button for confirmation mode,
+     *                    {@code false} for informational/alert mode
+     * @return the chosen option index (0 for OK, -1 for Cancel or close)
+     */
     private static int createMessageDialog(Component parent, MessageInf inf, boolean showConfirm) {
         Window window = getWindow(parent);
         JMessageDialog myMsg;
@@ -81,7 +112,9 @@ public class JMessageDialog extends javax.swing.JDialog {
         }
 
         myMsg.initComponents();
-        myMsg.applyComponentOrientation(parent.getComponentOrientation());
+        if (parent != null) {
+            myMsg.applyComponentOrientation(parent.getComponentOrientation());
+        }
         myMsg.jscrException.setVisible(false);
         myMsg.getRootPane().setDefaultButton(myMsg.jcmdOK);
 
@@ -131,8 +164,32 @@ public class JMessageDialog extends javax.swing.JDialog {
             myMsg.jtxtException.setText(sb.toString());
         }
         myMsg.jtxtException.setCaretPosition(0);
+
+        // Prepare dialog layout and surface validation prior to mapping
+        myMsg.prepareAndValidateDialog(window);
+
         myMsg.setVisible(true);
         return myMsg.getOptionChosed();
+    }
+
+    /**
+     * Prepares and forces layout validation and surface repainting for the dialog.
+     * <p>
+     * <b>Rationale (BUG-001):</b> On Linux composited window managers (Wayland / FlatLaf),
+     * displaying unvalidated dialog geometries can lead to uninitialized black/blank frame
+     * buffers until user interaction triggers OS damage events. Explicitly invoking
+     * {@link #pack()}, {@link #setLocationRelativeTo(Component)}, {@code revalidate()},
+     * and {@code repaint()} synchronizes component layout dimensions and peer surface buffers
+     * before or immediately after visibility changes.
+     * </p>
+     *
+     * @param owner the relative owner window to center upon, or {@code null} to center on screen
+     */
+    private void prepareAndValidateDialog(Window owner) {
+        pack();
+        setLocationRelativeTo(owner);
+        getContentPane().revalidate();
+        getContentPane().repaint();
     }
 
     /**
@@ -243,39 +300,73 @@ public class JMessageDialog extends javax.swing.JDialog {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jcmdMoreActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jcmdMoreActionPerformed
-
-        jcmdMore.setEnabled(true);
-        setSize(getWidth(), 310);
-        if(jscrException.isVisible()){
-            jscrException.setVisible(false);
-        }else{
-            jscrException.setVisible(true);
-        }
-        validate();
-
+        handleToggleExceptionDetails();
     }//GEN-LAST:event_jcmdMoreActionPerformed
 
+    /**
+     * Toggles visibility of the exception stack trace details text area.
+     * <p>
+     * Expands or collapses the exception scroll pane and triggers dialog recalculation
+     * via {@link #prepareAndValidateDialog(Window)} to dynamically adapt the window size
+     * and prevent visual tearing or unrendered frame buffers on composited window managers.
+     * </p>
+     */
+    private void handleToggleExceptionDetails() {
+        jcmdMore.setEnabled(true);
+        jscrException.setVisible(!jscrException.isVisible());
+        prepareAndValidateDialog(getOwner());
+    }
+
     private void jcmdOKActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jcmdOKActionPerformed
+        handleAccept();
+    }//GEN-LAST:event_jcmdOKActionPerformed
+
+    /**
+     * Handles acceptance or confirmation action triggered by the OK button.
+     * <p>
+     * Sets option choice {@code 0} (OK), hides the dialog, and disposes native window resources.
+     * </p>
+     */
+    private void handleAccept() {
         this.optionChosed = 0;
         setVisible(false);
         dispose();
-    }//GEN-LAST:event_jcmdOKActionPerformed
+    }
 
     /**
      * Closes the dialog
      */
     private void closeDialog(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_closeDialog
-        optionChosed = -1;
-        setVisible(false);
-        dispose();
+        handleWindowClosing();
     }//GEN-LAST:event_closeDialog
 
-    private void jcmdCancelActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jcmdCancelActionPerformed
-        // TODO add your handling code here:
+    /**
+     * Handles the dialog window closing event (e.g. user clicked window manager close button).
+     * <p>
+     * Sets option choice {@code -1} (Cancel/Dismiss), hides the dialog, and disposes native window resources.
+     * </p>
+     */
+    private void handleWindowClosing() {
         this.optionChosed = -1;
         setVisible(false);
         dispose();
+    }
+
+    private void jcmdCancelActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jcmdCancelActionPerformed
+        handleCancel();
     }//GEN-LAST:event_jcmdCancelActionPerformed
+
+    /**
+     * Handles cancellation action triggered by the Cancel button.
+     * <p>
+     * Sets option choice {@code -1} (Cancel), hides the dialog, and disposes native window resources.
+     * </p>
+     */
+    private void handleCancel() {
+        this.optionChosed = -1;
+        setVisible(false);
+        dispose();
+    }
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

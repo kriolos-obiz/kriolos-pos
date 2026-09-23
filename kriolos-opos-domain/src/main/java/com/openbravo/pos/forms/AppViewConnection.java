@@ -19,6 +19,8 @@ import com.openbravo.basic.BasicException;
 import com.openbravo.data.loader.Session;
 import com.openbravo.pos.util.AltEncrypter;
 import java.awt.Component;
+import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -114,6 +116,50 @@ public class AppViewConnection {
         }
     }
 
+    /**
+     * Performs an isolated, direct connection test against the specified database configuration.
+     * <p>
+     * <b>Behavior Specification:</b>
+     * <ul>
+     *   <li><b>If Connection OK:</b> Completes silently without popup dialogs, recording an INFO log entry.</li>
+     *   <li><b>If Connection Fails:</b> Logs the root cause exception at WARNING level and throws
+     *       a {@link BasicException} wrapping the {@link SQLException} so callers can display an error dialog.</li>
+     * </ul>
+     * </p>
+     *
+     * @param props the application properties
+     * @param dbID the database identifier key, or null for default
+     * @throws BasicException if the database connection fails or is invalid
+     */
+    public static void testConnection(AppProperties props, String dbID) throws BasicException {
+        String targetDbId = (dbID != null && !dbID.isBlank()) ? dbID : DEFAULT_DB;
+        DBProperties dbProperties = getDBProperties(props, targetDbId);
+        String sDBUser = dbProperties.sDBUser;
+        String sDBPassword = dbProperties.sDBPassword;
+        String dbURL = dbProperties.dbURL;
+
+        LOGGER.log(Level.INFO, "Testing database connection for ({0}): {1}", new Object[]{targetDbId, dbURL});
+        try (Connection conn = DriverManager.getConnection(dbURL, sDBUser, sDBPassword)) {
+            if (conn == null || !conn.isValid(3)) {
+                throw new SQLException("Connection test returned invalid status for URL: " + dbURL);
+            }
+            LOGGER.log(Level.INFO, "Database connection test successful (silent) for ({0})", targetDbId);
+        } catch (SQLException ex) {
+            LOGGER.log(Level.WARNING, "Database connection test failed for DB " + targetDbId + ": " + ex.getMessage(), ex);
+            throw new BasicException(AppLocal.getIntString("message.databaseconnectionerror"), ex);
+        }
+    }
+
+    /**
+     * Performs an isolated connection test against the default database configuration.
+     *
+     * @param props the application properties
+     * @throws BasicException if the default database connection fails
+     */
+    public static void testConnection(AppProperties props) throws BasicException {
+        testConnection(props, DEFAULT_DB);
+    }
+
     public static List<String> findAllDB(AppProperties props) {
 
         List<String> dbNames = new ArrayList<>();
@@ -162,9 +208,15 @@ public class AppViewConnection {
             dbProps.sDBPassword = cypher.decrypt(dbProps.sDBPassword.substring(6));
         }
 
-        dbProps.dbURL = props.getProperty(dbID + ".URL")
-                + props.getProperty(dbID + ".schema")
-                + props.getProperty(dbID + ".options");
+        String rawUrl = props.getProperty(dbID + ".URL");
+        if (rawUrl == null) {
+            rawUrl = props.getProperty(dbID + ".url", "");
+        }
+        String schema = props.getProperty(dbID + ".schema", "");
+        String options = props.getProperty(dbID + ".options", "");
+        dbProps.dbURL = (rawUrl != null ? rawUrl : "")
+                + (schema != null ? schema : "")
+                + (options != null ? options : "");
 
         return dbProps;
     }
