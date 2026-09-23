@@ -1,0 +1,30 @@
+= Troubleshooting & Known Issues
+:navtitle: Known Issues
+
+This page documents known operational issues, platform-specific rendering anomalies, and backlog bugs slated for investigation.
+
+== [BUG-001] Dialog Opens with Black Content on Pop!_OS 24.04 LTS
+
+[cols="1,3"]
+|===
+| **Issue ID** | BUG-001
+| **Status** | Open / Deferred (Post-Navigation PR)
+| **Reported Platform** | Linux Pop!_OS 24.04 LTS (Noble), COSMIC / Wayland
+| **Component** | Swing Dialogs (`JMessageDialog`, `JOptionPane`, FlatLaf)
+|===
+
+=== Symptom
+When opening modal dialogs (such as database error notifications or message dialogs), the window contents appear completely black/blank upon initialization. The UI components (labels, buttons, text areas) only render after the user clicks inside the dialog or moves/drags the window across the screen to force a repaint event.
+
+=== Probable Causes & Hypotheses
+1. **Java2D Compositor Invalidation**: Modern Linux compositors under Wayland/XWayland may defer initial buffer swap for undecorated or newly mapped Swing windows until a damage event is issued.
+2. **FlatLaf Window Decorations**: FlatLaf custom title bar and window decoration drawing interacting with XWayland frame buffers.
+3. **Hardware Acceleration Flags**: Java2D OpenGL or XRender pipeline synchronization (`-Dsun.java2d.opengl=true` or `-Dsun.java2d.xrender=true`).
+
+=== Investigation & Action Plan (Post-PR)
+* [ ] Test Java runtime rendering flags:
+** `-Dsun.java2d.opengl=false`
+** `-Dsun.java2d.xrender=false`
+** `-Dflatlaf.useWindowDecorations=false`
+* [ ] Audit `JMessageDialog` / dialog launch code to ensure `revalidate()` and `repaint()` are invoked on the Event Dispatch Thread (EDT) immediately after `pack()` / `setVisible(true)`.
+* [ ] Verify behavior across native X11 vs XWayland sessions on Pop!_OS.

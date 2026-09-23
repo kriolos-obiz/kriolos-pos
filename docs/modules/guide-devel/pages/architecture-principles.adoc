@@ -1,0 +1,574 @@
+= Architecture & Migration Principles
+:description: KriolosPOS — 14-rule protocol for incremental Hexagonal Architecture migration from legacy Java Swing monolith.
+:keywords: hexagonal architecture, strangler fig, modular monolith, java 17, bounded context, clean architecture
+:toc: left
+:toclevels: 3
+:sectnums:
+:icons: font
+:source-highlighter: rouge
+:rouge-style: github
+
+== Overview
+
+This page is the *permanent Source of Truth* for all architecture, migration, and development protocol decisions in the KriolosPOS project — a modernized fork of uniCenta oPOS.
+
+It governs the incremental extraction of business logic from a legacy Java Swing monolith into a clean, modular, framework-agnostic domain layer using Java 17 and Hexagonal Architecture principles.
+
+IMPORTANT: All 14 rules defined here are *mandatory and non-negotiable*. Any contribution that violates a rule must be rejected at review time.
+
+---
+
+== Rule 1 — Core Philosophy: KISS Principle
+
+> "SIMPLE IS ALWAYS THE BETTER CHOICE."
+
+=== Guidelines
+
+* Avoid introducing complex Design Patterns unless the business logic *forces* it.
+* Prefer readable, explicit, linear code over deeply nested abstractions.
+* Do not create interfaces, factories, or registries speculatively (YAGNI).
+* Get straight to the code — no architectural manifestos in commit outputs.
+
+=== Java 17 Toolbox
+
+Use modern Java 17 features to write concise, bulletproof domain logic with minimal boilerplate:
+
+[cols="1,2", options="header"]
+|===
+| Feature | Use Case
+| `record` | Immutable domain models, value objects, command/result payloads
+| Sealed interfaces | Exhaustive domain state machines (e.g., `PaymentState`, `TicketStatus`)
+| Pattern matching (`instanceof`) | Type-safe dispatch without casting boilerplate
+| Switch expressions | Exhaustive, expression-form business rule mapping
+| `Optional<T>` | Explicit absence without null propagation
+| `List.of()` / `Map.of()` | Immutable data structures for domain results
+|===
+
+.Example — Sealed domain result
+[source,java]
+----
+public sealed interface PaymentResult
+    permits PaymentResult.Success, PaymentResult.Declined, PaymentResult.Error {
+
+    record Success(BigDecimal amountPaid, BigDecimal change) implements PaymentResult {}
+    record Declined(String reason)                          implements PaymentResult {}
+    record Error(String technicalMessage)                  implements PaymentResult {}
+}
+----
+
+---
+
+== Rule 2 — Strangler Fig Pattern
+
+* The existing Swing UI is the *active, production-ready delivery mechanism* and must remain fully compilable and functional at all times.
+* New domain logic grows *alongside* legacy code — never instead of it.
+* Legacy code is strangled incrementally: one feature, one file, one method at a time.
+
+CAUTION: A contribution that breaks Swing compilation is an *immediate blocker* regardless of the quality of the domain layer change.
+
+---
+
+== Rule 3 — Hexagonal Architecture (Ports & Adapters)
+
+[source]
+----
+ +--------------------------------------------------------+
+ |  DRIVING ADAPTERS (Inbound)                            |
+ |  Swing JPanel/ActionListener  |  REST (future)         |
+ +-------------------+------------------------------------+
+                     | calls
+ +-------------------v------------------------------------+
+ |  DOMAIN CORE                                           |
+ |  Domain Services  |  Domain Records  |  Domain Events  |
+ +-------------------+------------------------------------+
+                     | calls
+ +-------------------v------------------------------------+
+ |  DRIVEN ADAPTERS (Outbound) - implement Ports          |
+ |  DataLogicSales  |  JasperReports  |  BeanShell        |
+ |  Printer         |  Peripheral     |  FileSystem        |
+ +--------------------------------------------------------+
+----
+
+* *Inbound Port*: A use-case interface the driving adapter calls (optional for simple cases).
+* *Outbound Port*: An interface the domain core calls; infrastructure implements it.
+* Domain core has *zero knowledge* of Swing, JDBC, JasperReports, or BeanShell.
+
+=== Swing Adapter Responsibility Contract
+
+A refactored Swing Adapter method does *only* three things:
+
+. *Extract* raw values from visual components (`getText`, `getSelectedItem`, etc.)
+. *Delegate* to the Domain Service with a typed command/request object
+. *Apply* the domain result back to visual components (`setText`, `setEnabled`, etc.)
+
+.Adapter method skeleton
+[source,java]
+----
+private void onConfirmPaymentAction() {
+    // 1. Extract
+    BigDecimal cashReceived = new BigDecimal(txtCashReceived.getText().trim());
+
+    // 2. Delegate
+    PaymentResult result = paymentService.processPayment(
+        PaymentCommand.of(sessionContext, activeTicket, cashReceived)
+    );
+
+    // 3. Apply
+    switch (result) {
+        case PaymentResult.Success s -> {
+            lblChange.setText(s.change().toPlainString());
+            closePaymentPanel();
+        }
+        case PaymentResult.Declined d -> showError(d.reason());
+        case PaymentResult.Error e   -> logAndAlert(e.technicalMessage());
+    }
+}
+----
+
+---
+
+== Rule 4 — Modular Monolith: Bounded Contexts
+
+Each business capability lives in a *strictly isolated domain module/package*:
+
+[source]
+----
+com.openbravo.pos.domain.shared        <- Shared Kernel only
+com.openbravo.pos.domain.sales
+com.openbravo.pos.domain.inventory
+com.openbravo.pos.domain.payments
+com.openbravo.pos.domain.rbac
+com.openbravo.pos.domain.navigation
+com.openbravo.pos.domain.reporting
+----
+
+=== Cross-Module Communication Rules
+
+* A module *cannot* import internal classes of another module.
+* Cross-module communication uses *only*:
+** Shared Kernel value objects (`com.openbravo.pos.domain.shared`)
+** Public API interfaces (outbound ports exposed by the producing module)
+** Domain Events (immutable records published at module boundaries)
+* Each module must be *copy-paste portable* into a standalone Quarkus, Spring Boot, or WebforJ project with no hidden sibling-module dependencies.
+
+---
+
+== Rule 5 — Package Namespace Preservation
+
+The historical base namespace `com.openbravo` is *frozen and immutable*.
+
+[cols="1,2", options="header"]
+|===
+| Constraint | Detail
+| New domain packages | Created *under* `com.openbravo.pos.domain.*`
+| Existing legacy classes | *Never renamed or moved*
+| Legacy integration | Only via Outbound Port interfaces; legacy classes implement or wrap ports
+|===
+
+---
+
+== Rule 6 — Mandatory Invariants
+
+=== 6.1 Data Integrity — SQL Preservation
+
+* Existing SQL queries, result-set mappings, and DB schema interactions are *never modified* during a domain extraction.
+* Extraction wraps legacy `DataLogic*` singletons behind an Outbound Port; the SQL inside remains *byte-for-byte identical*.
+
+=== 6.2 Financial Precision — BigDecimal
+
+* *Never* use `float` or `double` for monetary values.
+* Preserve the *exact* `RoundingMode` and `BigDecimal` scale already present in legacy code.
+* Domain records carry monetary amounts as `BigDecimal`.
+
+.Shared Kernel Money value object
+[source,java]
+----
+// com.openbravo.pos.domain.shared
+public record Money(BigDecimal amount, Currency currency) {
+    public Money {
+        Objects.requireNonNull(amount);
+        Objects.requireNonNull(currency);
+        amount = amount.setScale(2, RoundingMode.HALF_EVEN); // match legacy scale
+    }
+}
+----
+
+=== 6.3 Multi-Tax System Integrity
+
+* Complex, nested, or cumulative multi-tax logic must remain *structurally intact* when separated from UI context.
+* Tax rules are modelled in the domain layer — not flattened or simplified during extraction.
+
+=== 6.4 Internationalization (I18N / L10N)
+
+* Domain services return *locale-agnostic* data payloads (codes, enums, `BigDecimal`, identifiers).
+* The Swing Adapter resolves resource bundle strings for display.
+* *No user-facing strings are hardcoded* in the domain layer.
+
+---
+
+== Rule 7 — UI Adapter & NetBeans Form Rules
+
+=== 7.1 NetBeans XML GUI Form Preservation
+
+CAUTION: *Never manually edit code inside `// GEN-BEGIN:initComponents` ... `// GEN-END:initComponents` blocks.* These blocks are owned by the NetBeans GUI Builder and will be overwritten.
+
+.Wiring pattern
+[source,java]
+----
+public MyPanel() {
+    initComponents();       // GEN-BEGIN/END - do not touch
+    initDomainAdapters();   // our hook - all domain wiring goes here
+}
+
+private void initDomainAdapters() {
+    // setName() calls, listener wiring, service injection
+}
+----
+
+=== 7.2 Component Identification — `setName()` URN Anchoring
+
+Every Swing component *touched during a refactoring* must receive a unique identifier via `.setName()` following the **URN specification with mandatory `kriolos:` prefix**: `kriolos:<domain>:<component-or-action>`.
+
+[cols="1,1,2", options="header"]
+|===
+| Rule | Format | Example
+| URN specification | `kriolos:<domain>:<component>` | `btnNavBack.setName("kriolos:navigation:back")`
+| Action / Button URN | `kriolos:<domain>:<action>` | `btnNavForward.setName("kriolos:navigation:forward")`
+| Field / Input URN | `kriolos:<domain>:<field>` | `txtCashReceived.setName("kriolos:sales:cash-received-amount")`
+| Applied in `initDomainAdapters()` | Never in GEN blocks | `btnConfirm.setName("kriolos:sales:confirm-payment")`
+| Purpose | Automation hook & web-layer mapping | Standardized URN links Swing to Domain to future Web component
+|===
+
+---
+
+== Rule 8 — Quality, Testing & Automation
+
+=== 8.1 JUnit 5 — Domain Service Tests
+
+Every extracted Domain Service or Record must have a corresponding JUnit 5 test class covering:
+
+* Happy path
+* Edge cases (zero amounts, max values, boundary tax transitions)
+* Rounding correctness (assert `BigDecimal` scale and value exactly)
+* Null / invalid input guards
+
+.Test naming convention
+[source]
+----
+src/test/java/com/openbravo/pos/domain/sales/PaymentServiceTest.java
+----
+
+.Minimal test skeleton
+[source,java]
+----
+@DisplayName("PaymentService")
+class PaymentServiceTest {
+
+    @Test
+    @DisplayName("exact change is zero when cash equals total")
+    void exactPayment_yieldsZeroChange() {
+        var result = paymentService.processPayment(
+            PaymentCommand.of(session, ticket, new BigDecimal("12.50")));
+        assertInstanceOf(PaymentResult.Success.class, result);
+        assertEquals(BigDecimal.ZERO.setScale(2),
+            ((PaymentResult.Success) result).change());
+    }
+}
+----
+
+=== 8.2 Automation Module Integration
+
+* `setName()` (Rule 7.2) is the primary automation hook — no additional instrumentation required.
+* Provide a boilerplate automation integration test per adapter:
+
+[source,java]
+----
+@AutomationTest(screen = "PaymentPanel")
+class PaymentPanelAutomationTest {
+
+    @Test
+    void workflow_cashPayment_capturesScreenshot() {
+        automation.navigate("PaymentPanel");
+        automation.type("cashReceivedAmount", "20.00");
+        automation.click("confirmPayment");
+        automation.assertVisible("changeAmount");
+        automation.screenshot("cash_payment_success");
+    }
+}
+----
+
+---
+
+== Rule 9 — Specification Assets (Antora Canonical Paths)
+
+Every refactoring task must produce or update assets at:
+
+[cols="1,2", options="header"]
+|===
+| Asset Type | Canonical Path
+| Behavioral flow / business rules (AsciiDoc) | `modules/<module>/pages/specification/<feature>.adoc`
+| Data contract / payload schema (JSON Schema) | `modules/<module>/assets/attachments/specification/<feature>.schema.json`
+|===
+
+NOTE: AsciiDoc spec pages must be valid Antora pages — no hardcoded absolute repository paths.
+
+---
+
+== Rule 10 — Stateless Domain (No Legacy Singletons)
+
+* The domain layer must be *completely stateless and thread-safe*.
+* Domain services must *never* access static global objects such as `AppView`, `JRootApp`, or any Swing singleton.
+* Active user context, terminal ID, locale, and session state are passed as *immutable parameters* into every domain use case call.
+
+.SessionContext — Shared Kernel record
+[source,java]
+----
+// com.openbravo.pos.domain.shared
+public record SessionContext(String operatorId, String terminalId, Locale locale) {}
+----
+
+.Anti-pattern (forbidden)
+[source,java]
+----
+// FORBIDDEN - couples domain to Swing singleton
+String operatorId = AppView.getApp().getSession().getCurrentUser().getId();
+----
+
+.Correct pattern
+[source,java]
+----
+// CORRECT - Swing Adapter extracts and passes context explicitly
+PaymentResult result = paymentService.processPayment(
+    PaymentCommand.of(sessionContext, activeTicket, cashReceived)
+);
+----
+
+---
+
+== Rule 11 — Domain Exceptions Only
+
+* Business logic must *never* throw or propagate infrastructure-specific exceptions (`SQLException`, `JRException`, `IOException`) across layer boundaries.
+* All error conditions wrap into *semantic, domain-scoped exceptions* within the bounded context package:
+
+[source]
+----
+com.openbravo.pos.domain.sales.SalesException
+com.openbravo.pos.domain.payments.PaymentException
+com.openbravo.pos.domain.inventory.InventoryException
+----
+
+* The infrastructure adapter catches raw infrastructure exceptions and rethrows as the domain exception.
+* The Swing Adapter catches the domain exception and renders the error. *The domain never calls UI message loops.*
+
+.Exception wrapping in infrastructure adapter
+[source,java]
+----
+@Override
+public TicketRecord findById(String ticketId) {
+    try {
+        // ... JDBC call, SQL unchanged ...
+    } catch (SQLException e) {
+        throw new SalesException("Ticket lookup failed: " + ticketId, e);
+    }
+}
+----
+
+---
+
+== Rule 12 — Full Data Hydration
+
+* Persistence Outbound Ports must return *fully materialized records* — all fields populated before the method returns.
+* *Forbidden* across layer boundaries:
+** Active `ResultSet` or JDBC cursor references
+** Lazy-loaded proxy objects
+** Unclosed streams or iterators backed by a live DB connection
+* Domain `record` types are the canonical hydrated form; construct them inside the infrastructure adapter.
+
+.Infrastructure adapter hydration pattern
+[source,java]
+----
+@Override
+public List<TicketLineRecord> findLinesByTicket(String ticketId) {
+    List<TicketLineRecord> lines = new ArrayList<>();
+    try (PreparedStatement ps = conn.prepareStatement(SQL_FIND_LINES)) {
+        ps.setString(1, ticketId);
+        try (ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                lines.add(new TicketLineRecord(
+                    rs.getString("ID"),
+                    rs.getString("PRODUCT"),
+                    rs.getBigDecimal("PRICE"),
+                    rs.getInt("UNITS")
+                ));
+            }
+        }
+    } catch (SQLException e) {
+        throw new SalesException("Line fetch failed: " + ticketId, e);
+    }
+    return List.copyOf(lines); // immutable - safe across threads
+}
+----
+
+---
+
+== Rule 13 — Token Efficiency (Contributor Output Contract)
+
+[cols="1,2", options="header"]
+|===
+| Constraint | Detail
+| Diff-only outputs | Never output an entire legacy file — only modified/added methods with `// ... rest unchanged` markers
+| No duplication | Do not re-emit SQL, unchanged records, or unmodified Swing boilerplate
+| No filler | No architectural explanations or conversational padding in code outputs
+| Verification checklist | Always include a minimal step-by-step regression confirmation checklist
+|===
+
+---
+
+== Rule 14 — SDLC & Git Branching Protocol
+
+=== 14.1 Git Branching Mandate
+
+Every incremental feature extraction or refactoring task runs on a dedicated feature branch:
+
+[source,shell]
+----
+git checkout -b feature/decouple-<module-name>
+# e.g.: feature/decouple-navigation, feature/decouple-sales-tax
+----
+
+* All file creations, code diffs, and spec assets are committed to this branch.
+* Branch is *never* merged until Phase E verification is complete.
+
+=== 14.2 Stage-Gate SDLC — Mandatory Phases
+
+[cols="^1,2,3", options="header"]
+|===
+| Phase | Name | Deliverable
+| A | Analysis & Discovery | Workspace scan, legacy pathway map, structural risk flags
+| B | Domain & Spec Design | Java 17 Records/Services/Ports + Antora AsciiDoc + JSON Schema (no legacy code touched)
+| C | Adapter Implementation | Diff-only Swing adapter updates, `initDomainAdapters()`, `setName()` table
+| D | Testing Matrix | JUnit 5 domain tests + automation screenshot integration boilerplate
+| E | Verification & Merge Readiness | Compilation safety checklist + concrete `git` command sequence for safe merge review
+|===
+
+CAUTION: Legacy code must *not* be modified until Phase B specifications are reviewed and Phase A risks are resolved.
+
+=== 14.3 Agile Trunk-Based Integration Protocol (Atomic PR & Merge)
+
+[WARNING]
+====
+*CRITICAL CONSTRAINT: NEVER COMMIT OR PUSH DIRECTLY TO MAIN*
+
+Direct commits and direct pushes to `main` (or `master`) are *strictly forbidden* for both developers and AI assistants. All work—including small tweaks, documentation, and bug fixes—must be developed on a dedicated branch (`feature/*` or `fix/*`) and merged into `main` exclusively through a reviewed Pull Request.
+====
+
+To maintain an Agile cadence with short, reliable feedback loops and eliminate dependency debt, the project strictly mandates an **atomic PR-and-merge integration cycle**:
+
+[source]
+----
+feature/decouple-<module-A> (Phase A-E Complete)
+  └── 1. Push branch to remote
+  └── 2. Open Pull Request (PR) & Validate Automation Tests
+  └── 3. Merge PR into main
+        └── 4. Locally: git checkout main && git pull origin main
+              └── 5. Cut next branch: git checkout -b feature/decouple-<module-B>
+----
+
+==== Mandatory Rules for Feature Transitions
+
+. *Never Commit or Push Directly to `main` (Strict)*:
+Always work on a dedicated branch. Ensure local `main` remains untouched except via `git pull origin main`.
+
+. *No Stacked Feature Branches (Strict)*:
+Never create a new feature branch (`feature/decouple-<module-B>`) off an unmerged feature branch (`feature/decouple-<module-A>`).
++
+* *Rationale*: Stacked branches drag unreviewed commits into future reviews, multiply merge conflict risks, blur bounded context boundaries, and pollute git diffs.
+
+. *Agile Single-Piece Flow*:
+Each decoupled capability (e.g. `navigation`, `sales`, `payments`) represents a single, verifiable, production-ready increment. Merging it to `main` immediately anchors the Strangler Fig progress and provides a clean, green baseline for the next sprint or task.
+
+. *Continuous Verification Gate*:
+A branch is ready for PR merge only when:
+* Domain unit tests pass (`mvn test -pl kriolos-opos-domain`).
+* Swing app compiles without errors (`mvn compile -pl kriolos-opos-app -am`).
+* Robot automation test passes (`mvn test-compile -f kriolos-opos-automation/pom.xml`).
+* NetBeans GUI builder form blocks (`// GEN-BEGIN`) remain 100% untouched.
+
+. *Standard Transition Command Sequence*:
++
+[source,shell]
+----
+# 1. Push completed feature branch
+git push -u origin feature/decouple-<current-module>
+
+# 2. (After PR approved and merged on remote) Synchronize local main
+git checkout main
+git pull origin main
+
+# 3. Cut next isolated feature branch from clean main
+git checkout -b feature/decouple-<next-module>
+----
+
+---
+
+== Appendix A — Full 14-Rule Protocol Table
+
+[cols="^1,3,2", options="header"]
+|===
+| # | Rule | Key Constraint
+| 1 | KISS — Java 17 features, no over-engineering | Prefer linear, readable code
+| 2 | Strangler Fig — Swing stays green and compilable | No Big Bang rewrites
+| 3 | Hexagonal Architecture — Ports & Adapters | Domain has zero infra imports
+| 4 | Modular Monolith — Bounded Contexts | Zero cross-module coupling
+| 5 | `com.openbravo` namespace frozen | New code under `com.openbravo.pos.domain.*`
+| 6 | SQL / BigDecimal / multi-tax / I18N invariants | Zero tolerance for drift
+| 7 | NetBeans GEN blocks untouched — use `initDomainAdapters()` | Never edit GEN blocks
+| 8 | `setName("kriolos:<domain>:<component>")` URN on every touched component | Mandatory `kriolos:` prefix (e.g. `kriolos:navigation:back`)
+| 9 | JUnit 5 for domain + automation boilerplate for adapters | Required per extraction
+| 10 | Stateless domain — no AppView/JRootApp singletons | Pass SessionContext as immutable parameter
+| 11 | Domain exceptions only — no SQLException crossing boundaries | Infra wraps; Swing renders
+| 12 | Full data hydration — no live cursors/lazy proxies across layers | Return List.copyOf() of materialized records
+| 13 | Token efficiency — diff-only outputs, no filler | Verification checklist required
+| 14 | SDLC & Agile Trunk Integration (Atomic PR & Merge) | No stacked branches; PR -> Merge -> Pull -> New Branch
+|===
+
+---
+
+== Appendix B — Bounded Context Package Index
+
+[source]
+----
+com.openbravo.pos.domain.shared
+    Money, TaxedAmount, EntityId, SessionContext, DomainEvent
+
+com.openbravo.pos.domain.sales
+    TicketService, TicketRecord, TicketLineRecord, SalesPort, SalesException
+
+com.openbravo.pos.domain.payments
+    PaymentService, PaymentCommand, PaymentResult, PaymentPort, PaymentException
+
+com.openbravo.pos.domain.inventory
+    ProductService, ProductRecord, StockPort, InventoryException
+
+com.openbravo.pos.domain.rbac
+    UserSession, RoleRecord, AuthorizationService, RbacPort
+
+com.openbravo.pos.domain.navigation
+    NavigationService, ScreenRoute, NavigationEvent
+
+com.openbravo.pos.domain.reporting
+    ReportRequest, ReportResult, ReportingPort
+----
+
+---
+
+== Appendix C — Per-Extraction Output Checklist
+
+Each refactoring output must include *all* of the following:
+
+. *Domain layer additions* — Records, Services, Ports (correct bounded context package)
+. *Adapter diff* — Modified methods only, with `// ... rest unchanged` markers
+. *`setName()` injection table* — Component to domain field name mapping
+. *Specification assets* — Paths and content for `pages/specification/` and `assets/attachments/specification/`
+. *Verification checklist* — Step-by-step regression confirmation steps
+. *JUnit 5 test* — Domain unit test + automation adapter boilerplate

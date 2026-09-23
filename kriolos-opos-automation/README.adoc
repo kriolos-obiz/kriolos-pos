@@ -37,6 +37,7 @@ kriolos-opos-automation/
     ├── DatabaseSelectionIT.java        <-- Test Use Case 1: Select DB Only
     ├── PosLoginIT.java                 <-- Test Use Case 2: Operator Login Only
     ├── PosSalesFlowIT.java             <-- Test Use Case 3: Complete Sales & Cash Payment Flow
+    ├── PosNavigationIT.java            <-- Test Use Case 4: Back/Forward Navigation History
     ├── PosSalesRobotIT.java            <-- Complete Suite (delegates to Action Drivers)
     ├── FfmpegScreenRecorder.java       <-- Wayland-safe in-memory frame recording to MP4
     ├── ScreenshotHelper.java           <-- Wayland-safe in-memory Swing PNG snapshot engine
@@ -45,6 +46,7 @@ kriolos-opos-automation/
         ├── MainWindowAction.java        <-- JRootFrame lifecycle and window sizing
         ├── LoginAction.java             <-- Operator selection & password dialog
         ├── MenuNavigationAction.java    <-- Side menu navigation & view switching
+        ├── NavigationHistoryAction.java <-- Back/Forward navigation buttons & URN assertion
         ├── SalesAction.java             <-- Catalog product clicks & '=' payment trigger
         └── PaymentDialogAction.java     <-- Payment method tab selection & confirmation
 ----
@@ -109,7 +111,15 @@ Executes the full end-to-end sales lifecycle:
 ./mvnw test -f kriolos-opos-automation/pom.xml -Dtest=PosSalesFlowIT
 ----
 
-==== D. Run Complete Milestone Suite (`PosSalesRobotIT`)
+==== D. Test Back/Forward Navigation (`PosNavigationIT`)
+Verifies Back and Forward history button states, URN component identification, and screen switching:
+
+[source,bash]
+----
+./mvnw test -f kriolos-opos-automation/pom.xml -Dtest=PosNavigationIT
+----
+
+==== E. Run Complete Milestone Suite (`PosSalesRobotIT`)
 
 [source,bash]
 ----
