@@ -2,6 +2,7 @@ package io.github.kriolos.opos.automation;
 
 import com.openbravo.pos.forms.StartPOS;
 import io.github.kriolos.opos.automation.actions.DatabaseSelectionAction;
+import io.github.kriolos.opos.automation.actions.InstanceManagerAction;
 import io.github.kriolos.opos.automation.actions.LoginAction;
 import io.github.kriolos.opos.automation.actions.MainWindowAction;
 import io.github.kriolos.opos.automation.actions.MenuNavigationAction;
@@ -35,6 +36,7 @@ import java.util.logging.Logger;
  *       <li>{@link MenuNavigationAction}</li>
  *       <li>{@link SalesAction}</li>
  *       <li>{@link PaymentDialogAction}</li>
+ *       <li>{@link InstanceManagerAction}</li>
  *     </ul>
  *   </li>
  * </ul>
@@ -54,6 +56,7 @@ public abstract class BasePosRobotIT {
     protected MenuNavigationAction menuNav;
     protected SalesAction sales;
     protected NavigationHistoryAction navHistory;
+    protected InstanceManagerAction instanceManager;
 
     // Common Configuration
     protected static final boolean RECORD_VIDEO = Boolean.parseBoolean(System.getProperty("test.record.video", "true"));
@@ -79,15 +82,19 @@ public abstract class BasePosRobotIT {
         screenshotHelper = new ScreenshotHelper(getScenarioName());
         robot = BasicRobot.robotWithCurrentAwtHierarchy();
 
-        // 1. Initialize Reusable Action Drivers
+        // 1. By default for automated UI testing, disable unique instance check to allow multi-instance execution
+        System.setProperty("machine.uniqueinstance", System.getProperty("test.pos.uniqueinstance", "false"));
+
+        // 2. Initialize Reusable Action Drivers
         dbSelection = new DatabaseSelectionAction(robot, screenshotHelper, IS_HUMAN);
         mainWindow = new MainWindowAction(robot, screenshotHelper, IS_HUMAN);
         login = new LoginAction(robot, screenshotHelper, IS_HUMAN);
         menuNav = new MenuNavigationAction(robot, screenshotHelper, IS_HUMAN);
         sales = new SalesAction(robot, screenshotHelper, IS_HUMAN);
         navHistory = new NavigationHistoryAction(screenshotHelper, IS_HUMAN);
+        instanceManager = new InstanceManagerAction(robot, screenshotHelper, IS_HUMAN);
 
-        // 2. Start screen recording if enabled
+        // 3. Start screen recording if enabled
         if (RECORD_VIDEO) {
             File videoFile = new File("target/recordings/" + getScenarioName() + "/session.mp4");
             videoRecorder = new FfmpegScreenRecorder(videoFile);
@@ -97,7 +104,7 @@ public abstract class BasePosRobotIT {
         LOGGER.log(Level.INFO, "[BasePosRobotIT] Pacing mode: {0}",
                 (IS_HUMAN ? "HUMAN (observational delays enabled)" : "ROBOT (fast/no artificial delays)"));
 
-        // 3. Launch application
+        // 4. Launch application
         launchApplication();
     }
 
@@ -122,6 +129,15 @@ public abstract class BasePosRobotIT {
      */
     protected FrameFixture bootAndAttachMainWindow() {
         dbSelection.handleIfPresent(TARGET_DB);
+
+        // Fail-fast if another instance warning dialog appears
+        if (instanceManager.isDuplicateInstanceDialogPresent(1000)) {
+            LOGGER.log(Level.WARNING, "[BasePosRobotIT] Detected Duplicate Instance dialog! Capturing and dismissing...");
+            instanceManager.assertDuplicateInstanceDialog(2000);
+            instanceManager.dismissDuplicateInstanceDialog();
+            throw new IllegalStateException("Another instance of KriolOS POS is already running. Set machine.uniqueinstance=false or close the existing instance.");
+        }
+
         FrameFixture window = mainWindow.attach(45000);
         mainWindow.configureWindowMode(MAXIMIZE_WINDOW);
         dbSelection.selectDatabaseInPanel(window.target(), TARGET_DB);
