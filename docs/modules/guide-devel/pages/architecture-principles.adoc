@@ -489,6 +489,7 @@ Each decoupled capability (e.g. `navigation`, `sales`, `payments`) represents a 
 
 . *Continuous Verification Gate*:
 A branch is ready for PR merge only when:
+* Code compiles strictly against minimum *JDK 17* baseline (`<maven.compiler.release>17</maven.compiler.release>`) to satisfy the GitHub Actions CI/CD matrix (testing JDK 17 minimum up to the latest JDK).
 * Domain unit tests pass (`mvn test -pl kriolos-opos-domain`).
 * Swing app compiles without errors (`mvn compile -pl kriolos-opos-app -am`).
 * Robot automation test passes (`mvn test-compile -f kriolos-opos-automation/pom.xml`).

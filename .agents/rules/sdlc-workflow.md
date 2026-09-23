@@ -40,3 +40,12 @@
 
 ## 5. Bug Tracking
 - Any platform-specific or deferred bugs (such as Wayland black dialog rendering `BUG-001`) must be documented in `docs/modules/guide-devel/pages/troubleshooting-known-issues.adoc` before moving to the next task.
+
+## 6. Java Version Compatibility & CI/CD Matrix
+- **Minimum JDK Baseline**: The minimum supported and compiled Java version is **JDK 17** (`<maven.compiler.release>17</maven.compiler.release>`).
+- **CI/CD Matrix**: GitHub Actions verifies across both the **Minimum (JDK 17)** and the **Latest available JDK** (e.g. JDK 26).
+- **Local Dev Trap Avoidance**:
+  - Dev machines often run newer JDKs (e.g. JDK 21, JDK 25).
+  - **NEVER** use language features, classes, or APIs introduced after Java 17 (e.g. `SequencedCollection`, string enhancements, post-17 pattern matching).
+  - Code must strictly compile against Java 17 bytecode and API specifications (`--release 17`).
+  - Before pushing to PR, verify that all added or modified code complies with JDK 17 to prevent CI/CD build failures.
