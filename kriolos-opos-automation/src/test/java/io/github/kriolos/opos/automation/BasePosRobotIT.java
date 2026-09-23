@@ -5,6 +5,7 @@ import io.github.kriolos.opos.automation.actions.DatabaseSelectionAction;
 import io.github.kriolos.opos.automation.actions.LoginAction;
 import io.github.kriolos.opos.automation.actions.MainWindowAction;
 import io.github.kriolos.opos.automation.actions.MenuNavigationAction;
+import io.github.kriolos.opos.automation.actions.NavigationHistoryAction;
 import io.github.kriolos.opos.automation.actions.PaymentDialogAction;
 import io.github.kriolos.opos.automation.actions.SalesAction;
 import org.assertj.swing.core.BasicRobot;
@@ -52,6 +53,7 @@ public abstract class BasePosRobotIT {
     protected LoginAction login;
     protected MenuNavigationAction menuNav;
     protected SalesAction sales;
+    protected NavigationHistoryAction navHistory;
 
     // Common Configuration
     protected static final boolean RECORD_VIDEO = Boolean.parseBoolean(System.getProperty("test.record.video", "true"));
@@ -83,6 +85,7 @@ public abstract class BasePosRobotIT {
         login = new LoginAction(robot, screenshotHelper, IS_HUMAN);
         menuNav = new MenuNavigationAction(robot, screenshotHelper, IS_HUMAN);
         sales = new SalesAction(robot, screenshotHelper, IS_HUMAN);
+        navHistory = new NavigationHistoryAction(screenshotHelper, IS_HUMAN);
 
         // 2. Start screen recording if enabled
         if (RECORD_VIDEO) {
