@@ -11,15 +11,19 @@ import java.util.logging.Logger;
 /**
  * Reusable Action Driver for Back/Forward navigation button workflows.
  *
- * <p>Locates buttons by their {@code .setName()} anchors:
+ * <p>Locates buttons by their {@code .setName()} anchors (URN format):
  * <ul>
- *   <li>{@code "navigationBack"}    — the Back button in JPrincipalApp</li>
- *   <li>{@code "navigationForward"} — the Forward button in JPrincipalApp</li>
- *   <li>{@code "screenTitle"}       — the content title label</li>
+ *   <li>{@code "navigation:back"}    — the Back button in JPrincipalApp</li>
+ *   <li>{@code "navigation:forward"} — the Forward button in JPrincipalApp</li>
+ *   <li>{@code "navigation:title"}   — the content title label</li>
  * </ul>
  * </p>
  */
 public class NavigationHistoryAction {
+
+    public static final String NAME_NAV_BACK = "navigation:back";
+    public static final String NAME_NAV_FORWARD = "navigation:forward";
+    public static final String NAME_SCREEN_TITLE = "navigation:title";
 
     private static final Logger LOGGER = Logger.getLogger(NavigationHistoryAction.class.getName());
 
@@ -34,12 +38,12 @@ public class NavigationHistoryAction {
     // -------------------------------------------------------------------------
 
     /**
-     * Asserts the Back button ({@code name="navigationBack"}) is enabled.
+     * Asserts the Back button ({@code name="navigation:back"}) is enabled.
      */
     public void assertBackEnabled(FrameFixture window) {
-        JButton btn = findNavButton(window, "navigationBack");
+        JButton btn = findNavButton(window, NAME_NAV_BACK);
         assert btn != null && btn.isEnabled()
-                : "[NavigationHistoryAction] Expected 'navigationBack' to be enabled";
+                : "[NavigationHistoryAction] Expected 'navigation:back' to be enabled";
         LOGGER.log(Level.INFO, "[NavigationHistoryAction] Back button is enabled — OK");
     }
 
@@ -47,33 +51,33 @@ public class NavigationHistoryAction {
      * Asserts the Back button is disabled.
      */
     public void assertBackDisabled(FrameFixture window) {
-        JButton btn = findNavButton(window, "navigationBack");
+        JButton btn = findNavButton(window, NAME_NAV_BACK);
         assert btn != null && !btn.isEnabled()
-                : "[NavigationHistoryAction] Expected 'navigationBack' to be disabled";
+                : "[NavigationHistoryAction] Expected 'navigation:back' to be disabled";
     }
 
     /**
-     * Asserts the Forward button ({@code name="navigationForward"}) is enabled.
+     * Asserts the Forward button ({@code name="navigation:forward"}) is enabled.
      */
     public void assertForwardEnabled(FrameFixture window) {
-        JButton btn = findNavButton(window, "navigationForward");
+        JButton btn = findNavButton(window, NAME_NAV_FORWARD);
         assert btn != null && btn.isEnabled()
-                : "[NavigationHistoryAction] Expected 'navigationForward' to be enabled";
+                : "[NavigationHistoryAction] Expected 'navigation:forward' to be enabled";
     }
 
     /**
      * Asserts the Forward button is disabled.
      */
     public void assertForwardDisabled(FrameFixture window) {
-        JButton btn = findNavButton(window, "navigationForward");
+        JButton btn = findNavButton(window, NAME_NAV_FORWARD);
         assert btn != null && !btn.isEnabled()
-                : "[NavigationHistoryAction] Expected 'navigationForward' to be disabled";
+                : "[NavigationHistoryAction] Expected 'navigation:forward' to be disabled";
     }
 
     /** Clicks the Back button and waits for UI to settle. */
     public void clickBack(FrameFixture window) {
         pace(500);
-        JButton btn = findNavButton(window, "navigationBack");
+        JButton btn = findNavButton(window, NAME_NAV_BACK);
         if (btn != null && btn.isEnabled()) {
             SwingUtilities.invokeLater(btn::doClick);
             LOGGER.log(Level.INFO, "[NavigationHistoryAction] Clicked Back");
@@ -86,7 +90,7 @@ public class NavigationHistoryAction {
     /** Clicks the Forward button and waits for UI to settle. */
     public void clickForward(FrameFixture window) {
         pace(500);
-        JButton btn = findNavButton(window, "navigationForward");
+        JButton btn = findNavButton(window, NAME_NAV_FORWARD);
         if (btn != null && btn.isEnabled()) {
             SwingUtilities.invokeLater(btn::doClick);
             LOGGER.log(Level.INFO, "[NavigationHistoryAction] Clicked Forward");

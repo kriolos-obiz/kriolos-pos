@@ -108,8 +108,8 @@ public class JPrincipalApp extends JPanel implements AppUserView {
 
         // --- Back button ---
         btnNavBack = new JButton();
-        btnNavBack.setName("navigationBack");                         // Rule 8: setName anchor
-        btnNavBack.setIcon(new ImageIcon(getClass().getResource("/com/openbravo/images/go-previous.png")));
+        btnNavBack.setName("navigation:back");                        // Rule 7.2: URN setName anchor
+        btnNavBack.setIcon(new ImageIcon(getClass().getResource("/com/openbravo/images/1leftarrow.png")));
         btnNavBack.setToolTipText(AppLocal.getIntString("tooltip.back"));
         btnNavBack.setEnabled(false);
         btnNavBack.setFocusable(false);
@@ -118,8 +118,8 @@ public class JPrincipalApp extends JPanel implements AppUserView {
 
         // --- Forward button ---
         btnNavForward = new JButton();
-        btnNavForward.setName("navigationForward");                   // Rule 8: setName anchor
-        btnNavForward.setIcon(new ImageIcon(getClass().getResource("/com/openbravo/images/go-next.png")));
+        btnNavForward.setName("navigation:forward");                     // Rule 7.2: URN setName anchor
+        btnNavForward.setIcon(new ImageIcon(getClass().getResource("/com/openbravo/images/1rightarrow.png")));
         btnNavForward.setToolTipText(AppLocal.getIntString("tooltip.forward"));
         btnNavForward.setEnabled(false);
         btnNavForward.setFocusable(false);
@@ -127,11 +127,11 @@ public class JPrincipalApp extends JPanel implements AppUserView {
         btnNavForward.addActionListener(e -> onNavigateForward());
 
         // --- Also name the existing title label for automation ---
-        contentTitleLabel.setName("screenTitle");                     // Rule 8: setName anchor
+        contentTitleLabel.setName("navigation:title");                // Rule 7.2: URN setName anchor
 
         // --- Inject into the title bar (LINE_START = left edge of contentTItlePanel) ---
         JPanel navButtonsPanel = new JPanel();
-        navButtonsPanel.setName("navigationButtonsPanel");            // Rule 8: setName anchor
+        navButtonsPanel.setName("navigation:buttons-panel");          // Rule 7.2: URN setName anchor
         navButtonsPanel.setOpaque(false);
         navButtonsPanel.add(btnNavBack);
         navButtonsPanel.add(btnNavForward);
@@ -166,25 +166,22 @@ public class JPrincipalApp extends JPanel implements AppUserView {
      * The domain never touches Swing — this adapter method is the only bridge.
      */
     private void applyNavigationResult(NavigationResult result) {
-        switch (result) {
-            case NavigationResult.Navigated n -> {
-                showView(n.target().taskClass());
-                updateTitleBar(n.target().title());
-                btnNavBack.setEnabled(n.canGoBack());
-                btnNavForward.setEnabled(n.canGoForward());
-            }
-            case NavigationResult.AlreadyCurrent ignored -> { /* no-op */ }
-            case NavigationResult.Blocked ignored -> {
-                LOGGER.info("Navigation blocked by active view deactivation guard");
-            }
-            case NavigationResult.NoHistory n -> {
-                LOGGER.fine("No history in direction: " + n.direction());
-                switch (n.direction()) {
-                    case BACK    -> btnNavBack.setEnabled(false);
-                    case FORWARD -> btnNavForward.setEnabled(false);
-                }
+        if (result instanceof NavigationResult.Navigated n) {
+            showView(n.target().taskClass());
+            updateTitleBar(n.target().title());
+            btnNavBack.setEnabled(n.canGoBack());
+            btnNavForward.setEnabled(n.canGoForward());
+        } else if (result instanceof NavigationResult.Blocked) {
+            LOGGER.info("Navigation blocked by active view deactivation guard");
+        } else if (result instanceof NavigationResult.NoHistory n) {
+            LOGGER.fine("No history in direction: " + n.direction());
+            if (n.direction() == NavigationResult.Direction.BACK) {
+                btnNavBack.setEnabled(false);
+            } else if (n.direction() == NavigationResult.Direction.FORWARD) {
+                btnNavForward.setEnabled(false);
             }
         }
+        // AlreadyCurrent: no-op
     }
 
     private void updateTitleBar(String title) {

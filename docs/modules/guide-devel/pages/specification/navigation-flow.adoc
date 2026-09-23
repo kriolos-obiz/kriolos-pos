@@ -81,15 +81,15 @@ on top of it without replacing any legacy code.
 
 ---
 
-== UI Component Mappings (`setName()` anchors)
+== UI Component Mappings (`setName()` URN anchors)
 
 [cols="1,1,2", options="header"]
 |===
-| Component | `setName()` value | Domain field / action
-| `btnNavBack` (`JButton`) | `navigationBack` | Triggers `MenuHistoryEngine.back()`
-| `btnNavForward` (`JButton`) | `navigationForward` | Triggers `MenuHistoryEngine.forward()`
-| `contentTitleLabel` (`JLabel`) | `screenTitle` | Displays `ScreenRoute.title()`
-| `navButtonsPanel` (`JPanel`) | `navigationButtonsPanel` | Container for both nav buttons
+| Component | `setName()` URN value | Domain field / action
+| `btnNavBack` (`JButton`) | `navigation:back` | Triggers `MenuHistoryEngine.back()`
+| `btnNavForward` (`JButton`) | `navigation:forward` | Triggers `MenuHistoryEngine.forward()`
+| `contentTitleLabel` (`JLabel`) | `navigation:title` | Displays `ScreenRoute.title()`
+| `navButtonsPanel` (`JPanel`) | `navigation:buttons-panel` | Container for both nav buttons
 |===
 
 ---

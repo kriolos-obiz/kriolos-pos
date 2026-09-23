@@ -225,16 +225,18 @@ private void initDomainAdapters() {
 }
 ----
 
-=== 7.2 Component Identification — `setName()` Anchoring
+=== 7.2 Component Identification — `setName()` URN Anchoring
 
-Every Swing component *touched during a refactoring* must receive a unique name via `.setName()`.
+Every Swing component *touched during a refactoring* must receive a unique identifier via `.setName()` following the **URN specification**: `<domain>:<component-or-action>`.
 
 [cols="1,1,2", options="header"]
 |===
 | Rule | Format | Example
-| Mirror domain field name exactly | camelCase string | `txtCashReceived.setName("cashReceivedAmount")`
-| Applied in `initDomainAdapters()` | Never in GEN blocks | `btnConfirm.setName("confirmPayment")`
-| Purpose | Automation hook & web-layer mapping | Links Swing to Domain Record to future Web component
+| URN specification | `<domain>:<component>` | `btnNavBack.setName("navigation:back")`
+| Action / Button URN | `<domain>:<action>` | `btnNavForward.setName("navigation:forward")`
+| Field / Input URN | `<domain>:<field>` | `txtCashReceived.setName("sales:cash-received-amount")`
+| Applied in `initDomainAdapters()` | Never in GEN blocks | `btnConfirm.setName("sales:confirm-payment")`
+| Purpose | Automation hook & web-layer mapping | Standardized URN links Swing to Domain to future Web component
 |===
 
 ---
@@ -434,7 +436,7 @@ public List<TicketLineRecord> findLinesByTicket(String ticketId) {
 | 5 | `com.openbravo` namespace frozen | New code under `com.openbravo.pos.domain.*`
 | 6 | SQL / BigDecimal / multi-tax / I18N invariants | Zero tolerance for drift
 | 7 | NetBeans GEN blocks untouched — use `initDomainAdapters()` | Never edit GEN blocks
-| 8 | `setName("domainField")` on every touched component | camelCase mirror of domain record field
+| 8 | `setName("<domain>:<component>")` URN on every touched component | URN specification (e.g. `navigation:back`, `navigation:forward`)
 | 9 | JUnit 5 for domain + automation boilerplate for adapters | Required per extraction
 | 10 | Stateless domain — no AppView/JRootApp singletons | Pass SessionContext as immutable parameter
 | 11 | Domain exceptions only — no SQLException crossing boundaries | Infra wraps; Swing renders
