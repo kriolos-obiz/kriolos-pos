@@ -17,11 +17,12 @@ package com.openbravo.pos.forms;
 
 import com.openbravo.pos.instance.InstanceManager;
 
+import java.io.File;
+import java.rmi.AlreadyBoundException;
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.rmi.AlreadyBoundException;
-import java.rmi.NotBoundException;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
@@ -29,9 +30,23 @@ public class StartPOS {
 
     private static final Logger LOGGER = Logger.getLogger(StartPOS.class.getName());
 
+    // Exit action can be customized during test automation to avoid abrupt JVM termination
+    private static Runnable exitAction = () -> System.exit(0);
+
+    public static void setExitAction(Runnable action) {
+        exitAction = (action != null) ? action : () -> System.exit(0);
+    }
+
+    public static void resetExitAction() {
+        exitAction = () -> System.exit(0);
+    }
+
     public static void main(final String args[]) {
 
-        AppConfig config = AppConfig.getInstance();
+        File configFile = (args != null && args.length > 0 && args[0] != null && !args[0].isBlank())
+                ? new File(args[0])
+                : null;
+        AppConfig config = (configFile != null) ? AppConfig.getInstance(configFile) : AppConfig.getInstance();
         config.load();
         AppConfig.applySystemProperties(config);
 
@@ -43,14 +58,16 @@ public class StartPOS {
                 final JRootFrame rootFrame = new JRootFrame(config);
 
                 //CHECK SINGLE INSTANCE RMI
-                 checkSingletonInstance(rootFrame, config);
+                if (!checkSingletonInstance(rootFrame, config)) {
+                    return;
+                }
 
                 rootFrame.initFrame();
             }
         });
     }
 
-    private static void checkSingletonInstance(JRootFrame rootFrame, AppConfig config) {
+    static boolean checkSingletonInstance(JRootFrame rootFrame, AppConfig config) {
         if ("true".equals(config.getProperty("machine.uniqueinstance"))) {
 
             try {
@@ -65,7 +82,8 @@ public class StartPOS {
                         AppLocal.APP_NAME, JOptionPane.INFORMATION_MESSAGE);
 
                 // Exit this second instance cleanly
-                System.exit(0);
+                exitAction.run();
+                return false;
 
             } catch (RemoteException | NotBoundException e) {
                 // Exception caught means no prior instance exists. Safe to proceed.
@@ -84,9 +102,11 @@ public class StartPOS {
                 JOptionPane.showMessageDialog(rootFrame,
                         msg,
                         AppLocal.APP_NAME, JOptionPane.WARNING_MESSAGE);
-                System.exit(-1001);
+                exitAction.run();
+                return false;
             }
         }
+        return true;
     }
 
 }

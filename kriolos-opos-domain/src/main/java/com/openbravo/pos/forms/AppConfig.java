@@ -109,6 +109,29 @@ public class AppConfig implements AppProperties {
     }
 
     private static File getDefaultConfigFile() {
+        // 1. Try to get custom config file from system property or environment variable
+        String customPath = System.getProperty("kriolos.config");
+        if (customPath == null || customPath.isBlank()) {
+            customPath = System.getProperty("app.config");
+        }
+        if (customPath == null || customPath.isBlank()) {
+            customPath = System.getProperty("config.file");
+        }
+        if (customPath == null || customPath.isBlank()) {
+            customPath = System.getenv("KRIOLOS_CONFIG");
+        }
+        if (customPath == null || customPath.isBlank()) {
+            customPath = System.getenv("APP_CONFIG");
+        }
+
+        if (customPath != null && !customPath.isBlank()) {
+            File customFile = new File(customPath.trim());
+            if (customFile.isDirectory()) {
+                return new File(customFile, APP_CONFIG_FILE_NAME);
+            }
+            LOGGER.info("Using custom configuration file from system variable: " + customFile.getAbsolutePath());
+            return customFile;
+        }
 
         File baseDirectory = getBaseApplicationDataDirectory();
         return new File(baseDirectory, APP_CONFIG_FILE_NAME);
@@ -119,18 +142,26 @@ public class AppConfig implements AppProperties {
     }
 
     /**
-     * Get key pair value from properties resource
+     * Get key pair value from properties resource (with System property override fallback)
      *
      * @param sKey key pair value
      * @return key pair from .properties filename
      */
     @Override
     public String getProperty(String sKey) {
+        String sysVal = System.getProperty(sKey);
+        if (sysVal != null && !sysVal.isBlank()) {
+            return sysVal;
+        }
         return properties.getProperty(sKey);
     }
 
     @Override
     public String getProperty(String sKey, String defaultValue) {
+        String sysVal = System.getProperty(sKey);
+        if (sysVal != null && !sysVal.isBlank()) {
+            return sysVal;
+        }
         return properties.getProperty(sKey, defaultValue);
     }
 
@@ -244,6 +275,35 @@ public class AppConfig implements AppProperties {
         }
 
         return INSTANCE;
+    }
+
+    /**
+     * Initializes or returns the singleton AppConfig with a specific configuration file.
+     *
+     * @param configFile the specific configuration file to use
+     * @return the AppConfig singleton instance
+     */
+    public synchronized static AppConfig getInstance(File configFile) {
+        if (configFile != null) {
+            synchronized (AppConfig.class) {
+                INSTANCE = new AppConfig(configFile);
+                return INSTANCE;
+            }
+        }
+        return getInstance();
+    }
+
+    /**
+     * Explicitly reinitializes the singleton instance with a given configuration file.
+     *
+     * @param configFile the configuration file
+     * @return the newly initialized AppConfig instance
+     */
+    public synchronized static AppConfig init(File configFile) {
+        synchronized (AppConfig.class) {
+            INSTANCE = new AppConfig(configFile);
+            return INSTANCE;
+        }
     }
 
     public Boolean getBoolean(String sKey) {
