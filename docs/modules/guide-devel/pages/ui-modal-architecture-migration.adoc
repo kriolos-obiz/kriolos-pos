@@ -1,0 +1,250 @@
+= Modal Architecture Migration: Panel-First Design & PosUIModal
+:navtitle: Modal Migration (PosUIModal)
+
+This document specifies the architectural transition from legacy `javax.swing.JDialog` inheritance to a **Panel-First Modal Architecture** powered by `PosUIModal`.
+
+== 1. Problem Statement & Motivation
+
+Historically, modal interactions across KriolOS POS were implemented by having classes directly extend `javax.swing.JDialog`. This design created severe architectural and platform-level issues:
+
+1. **Tight Container Coupling**: UI panels are permanently tied to a native top-level window. They cannot be hosted in-frame, embedded in tabs, rendered inside web wrappers, or tested without spawning native OS windows.
+2. **Wayland & FlatLaf Black Buffer Rendering (BUG-001)**: On modern Linux Wayland compositors (Pop!_OS COSMIC / GNOME), unvalidated dialogs that omit explicit layout validation passes render with an unpainted, solid-black framebuffer until an external damage event (click/drag) is received.
+3. **Modal Window Detachment & Focus Loss (BUG-002)**: On Linux XWayland, modal dialogs detach as secondary OS windows in the dock/taskbar. Clicking outside or focusing the main window causes the dialog to slip behind the main POS screen, leaving the UI unresponsive with the blocking dialog hidden.
+4. **Fragmentation of Window Handling**: Over 20 dialogs independently attempt to resolve parent frames (`new JFrame()`, `SwingUtilities.windowForComponent`), frequently triggering `NullPointerException` when `parent == null`.
+
+== 2. Architectural Solution: Panel-First Design (`PosUIModal`)
+
+=== Core Principles
+1. **Content Extends `javax.swing.JPanel`**: All dialog content forms extend `JPanel` rather than `JDialog`.
+2. **Consistent Suffix Convention**: All modal panel classes must use the **`*ModalPanel`** suffix for clear categorization across the project.
+3. **Centralized Modal Orchestration (`PosUIModal`)**: A unified, fluent controller in `com.openbravo.data.gui.modal.PosUIModal` handles presentation, window ownership, centering, and lifecycle.
+4. **Pluggable Presentation Strategies**:
+   * **`NATIVE_DIALOG`**: Managed `JDialog` wrapper with automatic owner resolution, FlatLaf framebuffer validation (curing `BUG-001`), and IntelliJ-style focus pinning (curing `BUG-002`).
+   * **`IN_FRAME_OVERLAY`**: Single-window in-frame modal overlay rendered on `JRootFrame`'s `JLayeredPane.MODAL_LAYER` with a darkened backdrop scrim and `SecondaryLoop` blocking—**completely eliminating secondary OS windows**.
+   * **Configurable**: Configurable at runtime via `ui.modal.mode = dialog | overlay` or `-Dkriolos.ui.modal.mode=...`.
+
+---
+
+== 3. NetBeans GUI Builder (`.form`) Specification
+
+When converting dialogs designed with the NetBeans GUI Builder:
+
+[IMPORTANT]
+====
+NetBeans `.form` files are XML metadata paired with Swing classes.
+* For `JDialog`, the root element is:
+  `+<Form type="org.netbeans.modules.form.forminfo.JDialogFormInfo">+`
+* For `JPanel`, the root element MUST be:
+  `+<Form type="org.netbeans.modules.form.forminfo.JPanelFormInfo">+`
+
+If a `.java` file is changed to `extends JPanel` without updating `.form`, NetBeans GUI Builder will regenerate incompatible `JDialog` methods (`setDefaultCloseOperation`, `pack()`) inside `//GEN-BEGIN:initComponents`, breaking compilation.
+====
+
+=== Backward-Compatible Migration Pattern
+To guarantee zero regressions and seamless backwards compatibility:
+1. Create the new visual form as `*ModalPanel.java` + `*ModalPanel.form` with `JPanelFormInfo`.
+2. Keep the legacy `*Dialog.java` as a thin delegate wrapper:
+[source,java]
+----
+public class JEditorTextDialog extends JDialog {
+    public static String showEditor(Component parent, String title) {
+        EditorTextModalPanel panel = new EditorTextModalPanel();
+        PosUIModal modal = PosUIModal.create(parent, panel).setTitle(title);
+        modal.show();
+        return panel.getValue();
+    }
+}
+----
+
+---
+
+== 4. Dialog Inventory & Identification Mapping Catalog
+
+Every modal dialog across the codebase is assigned a unique identifier (`MODAL-xxx`) for tracking, testing, and migration verification.
+
+[cols="1,3,1,3,2",options="header"]
+|===
+| ID | Current Class (`extends JDialog`) | .form? | Proposed New Class (`extends JPanel`) | Category / Purpose
+
+| `MODAL-001`
+| `com.openbravo.data.gui.JMessageDialog`
+| Yes
+| `com.openbravo.data.gui.modal.MessageModalPanel`
+| System alerts, warnings, and expandable exception diagnostics.
+
+| `MODAL-002`
+| `com.openbravo.beans.JEditorTextDialog`
+| Yes
+| `com.openbravo.beans.modal.EditorTextModalPanel`
+| On-screen touch keypad for text and alphanumeric input.
+
+| `MODAL-003`
+| `com.openbravo.beans.JCalendarDialog` (Date)
+| Yes
+| `com.openbravo.beans.modal.CalendarModalPanel`
+| Month calendar grid for date selection.
+
+| `MODAL-004`
+| `com.openbravo.beans.JCalendarDialog` (Time)
+| Yes
+| `com.openbravo.beans.modal.CalendarTimeModalPanel`
+| Date and analog clock picker for timestamp selection.
+
+| `MODAL-005`
+| `com.openbravo.beans.JIntegerDialog`
+| Yes
+| `com.openbravo.beans.modal.IntegerNumberModalPanel`
+| Numeric keypad for integer unit quantities.
+
+| `MODAL-006`
+| `com.openbravo.beans.JDoubleDialog`
+| Yes
+| `com.openbravo.beans.modal.DoubleNumberModalPanel`
+| Numeric keypad for currency and decimal price input.
+
+| `MODAL-007`
+| `com.openbravo.beans.DinerNumber`
+| Yes
+| `com.openbravo.beans.modal.DinerNumberModalPanel`
+| Counter keypad for restaurant table guest count.
+
+| `MODAL-008`
+| `com.openbravo.beans.JPasswordDialog`
+| No
+| `com.openbravo.beans.modal.PasswordModalPanel`
+| Masked keypad for manager PIN override and authentication.
+
+| `MODAL-009`
+| `com.openbravo.data.gui.JFind`
+| Yes
+| `com.openbravo.data.gui.modal.FindModalPanel`
+| Record search, field matching, and filtering query dialog.
+
+| `MODAL-010`
+| `com.openbravo.data.gui.JSort`
+| Yes
+| `com.openbravo.data.gui.modal.SortModalPanel`
+| Multi-level column ordering and sorting dialog.
+
+| `MODAL-011`
+| `com.openbravo.data.gui.JListData`
+| Yes
+| `com.openbravo.data.gui.modal.ListDataModalPanel`
+| Generic list item selector dialog.
+
+| `MODAL-012`
+| `com.openbravo.pos.payment.JPaymentSelect`
+| Yes
+| `com.openbravo.pos.payment.modal.PaymentSelectModalPanel`
+| Checkout payment method tabs (Cash, Card, Debt, Paper, etc.).
+
+| `MODAL-013`
+| `com.openbravo.pos.customers.JCustomerFinder`
+| Yes
+| `com.openbravo.pos.customers.modal.CustomerFinderModalPanel`
+| Customer lookup and association dialog.
+
+| `MODAL-014`
+| `com.openbravo.pos.panels.JProductFinder`
+| Yes
+| `com.openbravo.pos.panels.modal.ProductFinderModalPanel`
+| Product catalog search and line item selection.
+
+| `MODAL-015`
+| `com.openbravo.pos.panels.JTicketsFinder`
+| Yes
+| `com.openbravo.pos.panels.modal.TicketsFinderModalPanel`
+| Receipt history and ticket reprint finder.
+
+| `MODAL-016`
+| `com.openbravo.pos.admin.JDlgChangePassword`
+| No
+| `com.openbravo.pos.admin.modal.ChangePasswordModalPanel`
+| User credential and password update dialog.
+|===
+
+---
+
+== 5. BeanShell Script Templates (`.bs`) Audit (Read-Only)
+
+[IMPORTANT]
+====
+**CRITICAL PROJECT RULE**:
+BeanShell (`.bs`) template files **MUST NOT BE MODIFIED** during this migration. They are audited and formally documented below for reference and future roadmap enhancements only.
+====
+
+Multiple dynamic BeanShell script templates located in `kriolos-opos-app/src/main/resources/com/openbravo/pos/templates/` currently invoke dialogs directly, typically passing `null` as the parent window:
+
+[cols="2,1,2,3",options="header"]
+|===
+| Script File | Line(s) | Call Snippet | Architectural Impact & Known Behavior
+
+| `Ticket.Close.bs`
+| L24, L55
+| `pane.createDialog("Cash payment")`
+| Constructs an independent `JDialog` detached from the main application frame.
+
+| `Cash.Close.bs`
+| L26-27
+| `import javax.swing.JDialog;`
+| Imports native dialog constructs for cash management closing.
+
+| `script.StockCurrentSet.bs`
+| L42, L57
+| `JOptionPane.showMessageDialog(null, ...)`
+| Spawns unparented dialog tied to `SharedOwnerFrame`, causing window focus drops behind POS on Pop!_OS / Wayland.
+
+| `script.StockCurrentAdd.bs`
+| L40, L51
+| `JOptionPane.showMessageDialog(null, ...)`
+| Spawns unparented warning dialogs when stock level is insufficient.
+
+| `script.Event.Total.bs`
+| L32
+| `JOptionPane.showMessageDialog(null, ...)`
+| Spawns unparented warning dialog before ticket closing.
+
+| `script.upsell.bs`
+| L45-50
+| `JOptionPane.showOptionDialog(null, ...)`
+| Spawns unparented yes/no option dialog for cross-sell recommendations.
+
+| `script.SetPerson.bs`
+| L22
+| `JOptionPane.showInputDialog("Enter Waiter", ...)`
+| Spawns unparented text input prompt dialog for waiter assignment.
+
+| `Ticket.SetPerson.bs`
+| L21
+| `JOptionPane.showInputDialog("Enter Waiter", ...)`
+| Spawns unparented text input prompt dialog for waiter assignment.
+|===
+
+=== Future Roadmap for Scripting (Deferred)
+When BeanShell modernization is prioritized in a future milestone:
+1. Expose `PosUIModal` into the BeanShell scripting context (e.g., as a global `modal` helper or static utility).
+2. Scripts will then be updated to call `modal.showMessage(...)`, `modal.confirm(...)`, or `modal.input(...)` so they automatically bind to `JRootFrame` and participate in the in-frame modal overlay or focus guard without spawning unparented OS windows.
+3. For now, all `.bs` files remain strictly untouched.
+
+---
+
+== 6. Acceptance Testing & Pre-Screen Baseline
+
+An autonomous acceptance test suite (`PosDialogPreScreenBaselineIT`) executes every modal dialog in the catalog, asserts non-black framebuffer rendering, captures golden baseline snapshots, and dismisses them automatically.
+
+=== Pre-Screen Verification Results
+All baseline tests pass autonomously with **100% non-black framebuffer verification**:
+
+* `MODAL-001` -> `01_message_dialog_warning.png`
+* `MODAL-001` -> `02_message_dialog_exception.png`
+* `MODAL-002` -> `03_editor_text_dialog.png`
+* `MODAL-003` -> `04_calendar_dialog_date.png`
+* `MODAL-004` -> `05_calendar_dialog_time.png`
+* `MODAL-005` -> `06_integer_dialog.png`
+* `MODAL-006` -> `07_double_dialog.png`
+* `MODAL-007` -> `08_diner_number.png`
+* `MODAL-008` -> `09_password_dialog.png`
+* `MODAL-009` -> `10_find_dialog.png`
+* `MODAL-010` -> `11_sort_dialog.png`
+
+These golden images are persisted under `screenshots/baseline/` and will be compared against the post-migration `PosUIModal` screenshots to guarantee pixel-perfect visual fidelity.

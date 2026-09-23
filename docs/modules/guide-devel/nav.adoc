@@ -18,6 +18,7 @@
 ** User Interface
 *** xref:ui-guideslines.adoc[UI Guidelines]
 *** xref:ui.jpanelbuttons.adoc[JPanel Buttons]
+*** xref:ui-modal-architecture-migration.adoc[Modal Architecture Migration (PosUIModal)]
 ** Tickets & Sales
 *** xref:develop-ticket.adoc[Ticket Development]
 *** xref:bo-ticket.adoc[Back Office Tickets]
