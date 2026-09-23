@@ -25,3 +25,5 @@
 *** xref:report.adoc[Reporting Overview]
 *** xref:support-pdf.adoc[PDF Support]
 *** xref:resources-overview.adoc[Resources Overview]
+** Troubleshooting
+*** xref:troubleshooting-known-issues.adoc[Known Issues]

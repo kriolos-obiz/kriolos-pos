@@ -424,6 +424,83 @@ public List<TicketLineRecord> findLinesByTicket(String ticketId) {
 
 ---
 
+== Rule 14 — SDLC & Git Branching Protocol
+
+=== 14.1 Git Branching Mandate
+
+Every incremental feature extraction or refactoring task runs on a dedicated feature branch:
+
+[source,shell]
+----
+git checkout -b feature/decouple-<module-name>
+# e.g.: feature/decouple-navigation, feature/decouple-sales-tax
+----
+
+* All file creations, code diffs, and spec assets are committed to this branch.
+* Branch is *never* merged until Phase E verification is complete.
+
+=== 14.2 Stage-Gate SDLC — Mandatory Phases
+
+[cols="^1,2,3", options="header"]
+|===
+| Phase | Name | Deliverable
+| A | Analysis & Discovery | Workspace scan, legacy pathway map, structural risk flags
+| B | Domain & Spec Design | Java 17 Records/Services/Ports + Antora AsciiDoc + JSON Schema (no legacy code touched)
+| C | Adapter Implementation | Diff-only Swing adapter updates, `initDomainAdapters()`, `setName()` table
+| D | Testing Matrix | JUnit 5 domain tests + automation screenshot integration boilerplate
+| E | Verification & Merge Readiness | Compilation safety checklist + concrete `git` command sequence for safe merge review
+|===
+
+CAUTION: Legacy code must *not* be modified until Phase B specifications are reviewed and Phase A risks are resolved.
+
+=== 14.3 Agile Trunk-Based Integration Protocol (Atomic PR & Merge)
+
+To maintain an Agile cadence with short, reliable feedback loops and eliminate dependency debt, the project strictly mandates an **atomic PR-and-merge integration cycle**:
+
+[source]
+----
+feature/decouple-<module-A> (Phase A-E Complete)
+  └── 1. Push branch to remote
+  └── 2. Open Pull Request (PR) & Validate Automation Tests
+  └── 3. Merge PR into main
+        └── 4. Locally: git checkout main && git pull origin main
+              └── 5. Cut next branch: git checkout -b feature/decouple-<module-B>
+----
+
+==== Mandatory Rules for Feature Transitions
+
+. *No Stacked Feature Branches (Strict)*:
+Never create a new feature branch (`feature/decouple-<module-B>`) off an unmerged feature branch (`feature/decouple-<module-A>`).
++
+* *Rationale*: Stacked branches drag unreviewed commits into future reviews, multiply merge conflict risks, blur bounded context boundaries, and pollute git diffs.
+
+. *Agile Single-Piece Flow*:
+Each decoupled capability (e.g. `navigation`, `sales`, `payments`) represents a single, verifiable, production-ready increment. Merging it to `main` immediately anchors the Strangler Fig progress and provides a clean, green baseline for the next sprint or task.
+
+. *Continuous Verification Gate*:
+A branch is ready for PR merge only when:
+* Domain unit tests pass (`mvn test -pl kriolos-opos-domain`).
+* Swing app compiles without errors (`mvn compile -pl kriolos-opos-app -am`).
+* Robot automation test passes (`mvn test-compile -f kriolos-opos-automation/pom.xml`).
+* NetBeans GUI builder form blocks (`// GEN-BEGIN`) remain 100% untouched.
+
+. *Standard Transition Command Sequence*:
++
+[source,shell]
+----
+# 1. Push completed feature branch
+git push -u origin feature/decouple-<current-module>
+
+# 2. (After PR approved and merged on remote) Synchronize local main
+git checkout main
+git pull origin main
+
+# 3. Cut next isolated feature branch from clean main
+git checkout -b feature/decouple-<next-module>
+----
+
+---
+
 == Appendix A — Full 14-Rule Protocol Table
 
 [cols="^1,3,2", options="header"]
@@ -442,7 +519,7 @@ public List<TicketLineRecord> findLinesByTicket(String ticketId) {
 | 11 | Domain exceptions only — no SQLException crossing boundaries | Infra wraps; Swing renders
 | 12 | Full data hydration — no live cursors/lazy proxies across layers | Return List.copyOf() of materialized records
 | 13 | Token efficiency — diff-only outputs, no filler | Verification checklist required
-| 14 | Antora canonical paths for all spec assets | AsciiDoc in pages/specification/, JSON Schema in assets/attachments/specification/
+| 14 | SDLC & Agile Trunk Integration (Atomic PR & Merge) | No stacked branches; PR -> Merge -> Pull -> New Branch
 |===
 
 ---
@@ -485,34 +562,3 @@ Each refactoring output must include *all* of the following:
 . *Specification assets* — Paths and content for `pages/specification/` and `assets/attachments/specification/`
 . *Verification checklist* — Step-by-step regression confirmation steps
 . *JUnit 5 test* — Domain unit test + automation adapter boilerplate
-
----
-
-== Rule 14 — SDLC & Git Branching Protocol
-
-=== 14.1 Git Branching Mandate
-
-Every incremental feature extraction or refactoring task runs on a dedicated feature branch:
-
-[source,shell]
-----
-git checkout -b feature/decouple-<module-name>
-# e.g.: feature/decouple-navigation, feature/decouple-sales-tax
-----
-
-* All file creations, code diffs, and spec assets are committed to this branch.
-* Branch is *never* merged until Phase E verification is complete.
-
-=== 14.2 Stage-Gate SDLC — Mandatory Phases
-
-[cols="^1,2,3", options="header"]
-|===
-| Phase | Name | Deliverable
-| A | Analysis & Discovery | Workspace scan, legacy pathway map, structural risk flags
-| B | Domain & Spec Design | Java 17 Records/Services/Ports + Antora AsciiDoc + JSON Schema (no legacy code touched)
-| C | Adapter Implementation | Diff-only Swing adapter updates, `initDomainAdapters()`, `setName()` table
-| D | Testing Matrix | JUnit 5 domain tests + automation screenshot integration boilerplate
-| E | Verification & Merge Readiness | Compilation safety checklist + concrete `git` command sequence for safe merge review
-|===
-
-CAUTION: Legacy code must *not* be modified until Phase B specifications are reviewed and Phase A risks are resolved.

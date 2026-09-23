@@ -17,3 +17,4 @@
 /kriolos-opos-app/nbproject/
 /dev/
 **/derby.log
+*.code-workspace
