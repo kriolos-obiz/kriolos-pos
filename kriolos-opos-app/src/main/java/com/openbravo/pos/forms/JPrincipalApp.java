@@ -129,14 +129,26 @@ public class JPrincipalApp extends JPanel implements AppUserView {
         // --- Also name the existing title label for automation ---
         contentTitleLabel.setName("kriolos:navigation:title");        // Rule 7.2: URN setName anchor
 
-        // --- Inject into the title bar (LINE_START = left edge of contentTItlePanel) ---
-        JPanel navButtonsPanel = new JPanel();
+        // --- Configure title panel layout: Navigation buttons on the LEFT (LINE_START) ---
+        contentTItlePanel.removeAll();
+        contentTItlePanel.setLayout(new java.awt.BorderLayout(6, 0));
+        contentTItlePanel.setBorder(javax.swing.BorderFactory.createCompoundBorder(
+                javax.swing.BorderFactory.createMatteBorder(0, 0, 1, 0, java.awt.Color.darkGray),
+                javax.swing.BorderFactory.createEmptyBorder(2, 4, 2, 4)));
+
+        contentTitleLabel.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 4, 0, 0));
+        contentTitleLabel.setPreferredSize(null);
+        contentTitleLabel.setMaximumSize(null);
+
+        JPanel navButtonsPanel = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEADING, 2, 0));
         navButtonsPanel.setName("kriolos:navigation:buttons-panel");  // Rule 7.2: URN setName anchor
         navButtonsPanel.setOpaque(false);
         navButtonsPanel.add(btnNavBack);
         navButtonsPanel.add(btnNavForward);
-        contentTItlePanel.add(navButtonsPanel, java.awt.BorderLayout.LINE_END);
-        contentTItlePanel.setVisible(false);                         // restored when first view loads
+
+        contentTItlePanel.add(navButtonsPanel, java.awt.BorderLayout.LINE_START);
+        contentTItlePanel.add(contentTitleLabel, java.awt.BorderLayout.CENTER);
+        contentTItlePanel.setVisible(false);                         // hidden until first view loads
     }
 
     // -------------------------------------------------------------------------
@@ -144,13 +156,31 @@ public class JPrincipalApp extends JPanel implements AppUserView {
     // -------------------------------------------------------------------------
 
     private void onNavigateBack() {
-        NavigationResult result = historyEngine.back(this::currentViewCanDeactivate);
-        applyNavigationResult(result);
+        try {
+            appRootPanel.waitCursorBegin();
+            NavigationResult result = historyEngine.back(this::currentViewCanDeactivate);
+            if (result instanceof NavigationResult.Navigated n) {
+                JPanelView viewPanel = resolveView(n.target().taskClass());
+                displayAndActivateView(viewPanel, n.target().taskClass());
+            }
+            applyNavigationResult(result);
+        } finally {
+            appRootPanel.waitCursorEnd();
+        }
     }
 
     private void onNavigateForward() {
-        NavigationResult result = historyEngine.forward(this::currentViewCanDeactivate);
-        applyNavigationResult(result);
+        try {
+            appRootPanel.waitCursorBegin();
+            NavigationResult result = historyEngine.forward(this::currentViewCanDeactivate);
+            if (result instanceof NavigationResult.Navigated n) {
+                JPanelView viewPanel = resolveView(n.target().taskClass());
+                displayAndActivateView(viewPanel, n.target().taskClass());
+            }
+            applyNavigationResult(result);
+        } finally {
+            appRootPanel.waitCursorEnd();
+        }
     }
 
     /**
@@ -167,7 +197,6 @@ public class JPrincipalApp extends JPanel implements AppUserView {
      */
     private void applyNavigationResult(NavigationResult result) {
         if (result instanceof NavigationResult.Navigated n) {
-            showView(n.target().taskClass());
             updateTitleBar(n.target().title());
             btnNavBack.setEnabled(n.canGoBack());
             btnNavForward.setEnabled(n.canGoForward());
@@ -185,13 +214,8 @@ public class JPrincipalApp extends JPanel implements AppUserView {
     }
 
     private void updateTitleBar(String title) {
-        if (title != null && !title.isBlank()) {
-            contentTItlePanel.setVisible(true);
-            contentTitleLabel.setText(title);
-        } else {
-            contentTItlePanel.setVisible(false);
-            contentTitleLabel.setText("");
-        }
+        contentTItlePanel.setVisible(true);
+        contentTitleLabel.setText(title != null ? title : "");
     }
 
     // =========================================================================
@@ -234,11 +258,14 @@ public class JPrincipalApp extends JPanel implements AppUserView {
     public boolean deactivate() {
         if (rootMenu.getViewManager().deactivateLastView()) {
             showView("<NULL>");
+            contentTItlePanel.setVisible(false);
+            historyEngine.reset();
+            btnNavBack.setEnabled(false);
+            btnNavForward.setEnabled(false);
             return true;
         } else {
             return false;
         }
-
     }
 
     @Override
@@ -255,6 +282,40 @@ public class JPrincipalApp extends JPanel implements AppUserView {
         cl.show(contentContainerPanel, sView);
     }
 
+    private JPanelView resolveView(String sTaskClass) {
+        JPanelView viewPanel = rootMenu.getViewManager().getCreatedViews().get(sTaskClass);
+        if (viewPanel == null) {
+            viewPanel = rootMenu.getViewManager().getPreparedViews().get(sTaskClass);
+            if (viewPanel == null) {
+                try {
+                    viewPanel = (JPanelView) appRootPanel.getBean(sTaskClass);
+                } catch (BeanFactoryException e) {
+                    LOGGER.log(Level.SEVERE, "Exception on get a JPanelView Bean for class: " + sTaskClass, e);
+                    viewPanel = new JPanelNull(appRootPanel, e);
+                }
+            }
+            rootMenu.getViewManager().getCreatedViews().put(sTaskClass, viewPanel);
+        }
+        return viewPanel;
+    }
+
+    private void displayAndActivateView(JPanelView viewPanel, String sTaskClass) {
+        viewPanel.getComponent().applyComponentOrientation(getComponentOrientation());
+        addView(viewPanel.getComponent(), sTaskClass);
+        showView(sTaskClass);
+        LOGGER.info("Call 'activate' on class: " + sTaskClass);
+        try {
+            viewPanel.activate();
+            rootMenu.getViewManager().setLastView(viewPanel);
+        } catch (BasicException e) {
+            LOGGER.log(Level.SEVERE, "Exception on activate class: " + sTaskClass, e);
+            JMessageDialog.showMessage(this,
+                    new MessageInf(MessageInf.SGN_WARNING,
+                            AppLocal.getIntString("message.notactive"), e));
+        }
+        setMenuVisible(getBounds().width > 800);
+    }
+
     @Override
     public AppUser getUser() {
         return appCurrentUser;
@@ -269,23 +330,7 @@ public class JPrincipalApp extends JPanel implements AppUserView {
 
             if (appCurrentUser.hasPermission(sTaskClass)) {
 
-                JPanelView viewPanel = rootMenu.getViewManager().getCreatedViews().get(sTaskClass);
-                if (viewPanel == null) {
-
-                    viewPanel = rootMenu.getViewManager().getPreparedViews().get(sTaskClass);
-
-                    if (viewPanel == null) {
-
-                        try {
-                            viewPanel = (JPanelView) appRootPanel.getBean(sTaskClass);
-                        } catch (BeanFactoryException e) {
-                            LOGGER.log(Level.SEVERE, "Exception on get a JPanelView Bean for class: " + sTaskClass, e);
-                            viewPanel = new JPanelNull(appRootPanel, e);
-                        }
-                    }
-
-                    rootMenu.getViewManager().getCreatedViews().put(sTaskClass, viewPanel);
-                }
+                JPanelView viewPanel = resolveView(sTaskClass);
 
                 if (!rootMenu.getViewManager().checkIfLastView(viewPanel)) {
 
@@ -298,19 +343,10 @@ public class JPrincipalApp extends JPanel implements AppUserView {
 
                     if (navResult instanceof NavigationResult.Blocked) {
                         LOGGER.info("showTask blocked by active view deactivation guard for: " + sTaskClass);
-                        appRootPanel.waitCursorEnd();
                         return;
                     }
 
-                    viewPanel.getComponent().applyComponentOrientation(getComponentOrientation());
-                    addView(viewPanel.getComponent(), sTaskClass);
-
-                    LOGGER.info("Call 'activate' on class: " + sTaskClass);
-                    viewPanel.activate();
-
-                    rootMenu.getViewManager().setLastView(viewPanel);
-
-                    setMenuVisible(getBounds().width > 800);
+                    displayAndActivateView(viewPanel, sTaskClass);
 
                     // Apply title bar and button states from domain result
                     applyNavigationResult(navResult);
