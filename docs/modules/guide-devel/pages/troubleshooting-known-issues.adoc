@@ -8,7 +8,7 @@ This page documents known operational issues, platform-specific rendering anomal
 [cols="1,3"]
 |===
 | **Issue ID** | BUG-001
-| **Status** | Open / Deferred (Post-Navigation PR)
+| **Status** | Queued for Resolution
 | **Reported Platform** | Linux Pop!_OS 24.04 LTS (Noble), COSMIC / Wayland
 | **Component** | Swing Dialogs (`JMessageDialog`, `JOptionPane`, FlatLaf)
 |===
@@ -16,15 +16,166 @@ This page documents known operational issues, platform-specific rendering anomal
 === Symptom
 When opening modal dialogs (such as database error notifications or message dialogs), the window contents appear completely black/blank upon initialization. The UI components (labels, buttons, text areas) only render after the user clicks inside the dialog or moves/drags the window across the screen to force a repaint event.
 
-=== Probable Causes & Hypotheses
-1. **Java2D Compositor Invalidation**: Modern Linux compositors under Wayland/XWayland may defer initial buffer swap for undecorated or newly mapped Swing windows until a damage event is issued.
-2. **FlatLaf Window Decorations**: FlatLaf custom title bar and window decoration drawing interacting with XWayland frame buffers.
-3. **Hardware Acceleration Flags**: Java2D OpenGL or XRender pipeline synchronization (`-Dsun.java2d.opengl=true` or `-Dsun.java2d.xrender=true`).
+=== Technical Root Cause
+In `JMessageDialog.java`, the dialog sets a hardcoded size (`setSize(new Dimension(482, 345))`) inside `initComponents()`, but **never invokes `pack()`**, **never calls `setLocationRelativeTo(...)`**, and **never invokes `revalidate()` / `repaint()`** prior to `setVisible(true)`. On modern Linux XWayland/Wayland compositors with FlatLaf dark themes, showing an unvalidated window leaves the backing buffer unpainted until an external damage event (click/drag) is issued.
 
-=== Investigation & Action Plan (Post-PR)
-* [ ] Test Java runtime rendering flags:
-** `-Dsun.java2d.opengl=false`
-** `-Dsun.java2d.xrender=false`
-** `-Dflatlaf.useWindowDecorations=false`
-* [ ] Audit `JMessageDialog` / dialog launch code to ensure `revalidate()` and `repaint()` are invoked on the Event Dispatch Thread (EDT) immediately after `pack()` / `setVisible(true)`.
-* [ ] Verify behavior across native X11 vs XWayland sessions on Pop!_OS.
+=== Resolution Plan
+1. Call `myMsg.pack()` to calculate dynamic component layout geometry.
+2. Call `myMsg.setLocationRelativeTo(owner)` to center the dialog over its parent.
+3. Call `myMsg.revalidate()` and trigger an explicit repaint pass prior to mapping.
+
+---
+
+== [BUG-002] Modal Dialog Detaches as 2nd Window and Disappears Behind Main Window
+
+[cols="1,3"]
+|===
+| **Issue ID** | BUG-002
+| **Status** | Queued for Resolution
+| **Reported Platform** | Linux Pop!_OS 24.04 LTS (Noble), COSMIC / Wayland / X11
+| **Component** | `JMessageDialog`, `JDialog` window ownership & modality
+|===
+
+=== Symptom
+1. When a modal blocking dialog opens, it creates a second, detached window in the OS taskbar/dock and Alt+Tab switcher.
+2. Clicking outside the dialog or clicking the main application window causes the dialog to disappear behind the main window.
+3. Users lose visibility of the blocking dialog while the main window remains unresponsive.
+
+=== Comparison of IDE Behaviors
+* **NetBeans IDE Behavior**: Opens dialog as a 2nd window; clicking main window brings main window forward *without* the dialog, burying it behind.
+* **IntelliJ IDEA Behavior**: Opens dialog as a 2nd window; clicking main window immediately brings the main window *with the modal dialog pinned on top and blocked*. The dialog never gets lost.
+* **Target POS Behavior**: At minimum IntelliJ IDEA behavior (pinned on top, never hidden); ideal target is a single-window in-frame overlay.
+
+=== Technical Root Cause
+In `com.openbravo.data.gui.JMessageDialog.java` (lines 50–58):
+[source,java]
+----
+private static Window getWindow(Component parent) {
+    if (parent == null) {
+        return new JFrame(); // <--- CRITICAL BUG!
+    } else if (parent instanceof Frame || parent instanceof Dialog) {
+        return (Window) parent;
+    } else {
+        return getWindow(parent.getParent());
+    }
+}
+----
+When `parent` is null or not yet attached to a Frame, `getWindow` constructs a disposable `new JFrame()`. Because the dialog's owner is a dummy invisible frame rather than the real `JRootFrame`, the Linux window manager receives no `WM_TRANSIENT_FOR` relationship. The dialog becomes an independent root window that detaches from the main window and drops behind it upon focus change.
+
+=== Resolution Strategies (Queued for Next Sprint/Issue)
+
+==== Strategy A: Solid Window Ownership & Focus Guard (IntelliJ Pattern)
+1. **Real Ancestor Resolution**: Replace `new JFrame()` with active `JRootFrame` detection:
+[source,java]
+----
+private static Window getWindow(Component parent) {
+    if (parent != null) {
+        Window w = SwingUtilities.getWindowAncestor(parent);
+        if (w != null) return w;
+    }
+    for (Frame f : Frame.getFrames()) {
+        if (f.isShowing() && f instanceof JRootFrame) return f;
+    }
+    return JOptionPane.getRootFrame();
+}
+----
+2. **Window Focus Guard**: Add a `WindowFocusListener` to the owner window while the dialog is active. When the main window receives focus or is clicked, it immediately calls `dialog.toFront()` and `dialog.requestFocus()`, ensuring the dialog never goes behind.
+
+==== Strategy B: Single-Window In-Frame Modal Overlay
+Render modal dialogs directly inside `JRootFrame`'s `GlassPane` or `JLayeredPane.MODAL_LAYER`:
+* **Zero OS Windows**: Exactly 1 window in the OS taskbar and dock.
+* **Dimmed Backdrop**: Semi-transparent dark overlay blocking clicks to background POS panels.
+* **Wayland Immune**: Completely bypasses all XWayland window mapping and multi-window compositor bugs.
+
+---
+
+== [BUG-003] Missing Date Values & Schema Constraints on Inserts After Liquibase `now()` Removal
+
+[cols="1,3"]
+|===
+| **Issue ID** | BUG-003
+| **Status** | Queued for Resolution / Verification
+| **Reported Component** | `pos_liquidbase/db-changelog-v4_5.xml`, `DataLogicOrders`, `DataLogicSystem`, `DataLogicPresenceManagement`
+|===
+
+=== Symptom & Context
+To support SQLite and database-agnostic schemas, `defaultValueComputed="now()"` / `CURRENT_TIMESTAMP` and `defaultValueDate` were removed from `pos_liquidbase/db-changelog-v4_5.xml` in commits `db592823` and `020d6175`. 
+Consequently, database tables no longer generate default timestamps automatically upon insertion. Application code in `DataLogic*` must supply valid `java.util.Date` instances for non-nullable timestamp/datetime columns.
+
+=== Findings from the Last 2 Liquibase Commits
+
+==== 1. Commit `020d6175` ("Liquidbase DB Agnostic: remove liquidbase computed value")
+Removed `defaultValueComputed="now()"` from:
+1. `draweropened.opendate` (`datetime`, `NOT NULL`)
+2. `lineremoved.removeddate` (`datetime`, `NOT NULL`)
+3. `orders.ordertime` (`datetime`, `NOT NULL`)
+4. `shift_breaks.starttime` (`datetime`, `NOT NULL`)
+5. `shift_breaks.endtime` (`datetime`, `NOT NULL`)
+
+==== 2. Commit `db592823` ("BREAK CHANGE - liquidbase change timestamp to datetime")
+1. Changed `CURRENT_TIMESTAMP` to `now()` across tables (subsequently removed in `020d6175`).
+2. Removed hardcoded `defaultValueDate="2022-01-01T00:00:01"` from:
+   * `customers.memodate` (nullable)
+   * `products.memodate` (nullable)
+   * `reservations.datenew` (`NOT NULL`)
+
+=== Detailed Audit of Tables & `DataLogic` Inserts
+
+[cols="1,1,2,2"]
+|===
+| Table & Column | Nullable? | Current Java Handling in `DataLogic` | Audit Status & Defect
+
+| `orders.ordertime`
+| `NOT NULL`
+| * `DataLogicSystem.addOrder`:
+`if (ordertime == null) ordertime = Long.toString(new Date().getTime());`
+* `DataLogicOrders.addOrder`: accepts `String ordertime`, passes directly without null-check or default.
+* `RemoteOrderDisplay`: passes `null` for `ordertime`.
+| **DEFECT**:
+1. `DataLogicOrders.addOrder` passes `null` when not provided, violating the `NOT NULL` constraint.
+2. In both `DataLogicSystem` and `DataLogicOrders`, `ordertime` is typed as `String` but mapped to `Datas.TIMESTAMP`. At runtime, `DatasTIMESTAMP` expects a `java.util.Date`, leading to `ClassCastException` (`String` cannot be cast to `Date`).
+
+| `shift_breaks.endtime`
+| `NOT NULL`
+| * `DataLogicPresenceManagement.StartBreak`: executes `INSERT INTO shift_breaks (ID, SHIFTID, BREAKID, STARTTIME) VALUES (?, ?, ?, ?)`.
+* Does **NOT** supply `endtime`.
+| **DEFECT**:
+1. When starting a break, `endtime` is unknown.
+2. Liquibase defines `shift_breaks.endtime` as `<constraints nullable="false"/>`.
+3. Because the default was removed and the INSERT omits `endtime`, executing `StartBreak` fails with a `NOT NULL` constraint violation.
+4. `endtime` must be made nullable in the schema, as `EndBreak` explicitly updates it: `WHERE ENDTIME IS NULL`.
+
+| `shift_breaks.starttime`
+| `NOT NULL`
+| * `DataLogicPresenceManagement.StartBreak`: passes `new Date()` for parameter 4 (`STARTTIME`).
+| **OK**: Supplied in Java.
+
+| `draweropened.opendate`
+| `NOT NULL`
+| * `DataLogicSystem.execDrawerOpened`: requires `Date openDate`.
+* Callers (`JPanelCloseMoney`, `TicketParser`) supply `dNow` or `new Date()`.
+| **OK**: Supplied in Java.
+
+| `lineremoved.removeddate`
+| `NOT NULL`
+| * `DataLogicSales.addTicketLineRemoved`: supplies `new Date()`.
+* `DataLogicSales.addTicketDeleted`: supplies `new Date()`.
+| **OK**: Supplied in Java.
+
+| `reservations.datenew`
+| `NOT NULL`
+| * `DataLogicCustomers.getReservationsInsert`: supplies `res[2]` (`m_timereservation.getDate()`).
+| **OK**: Supplied in Java.
+
+| `customers.memodate`
+| `NULLABLE`
+| * `DataLogicCustomers` / `DataLogicSales`: sets `memodate` (or null if empty).
+| **OK**: Column is nullable.
+
+| `products.memodate`
+| `NULLABLE`
+| * `DataLogicSales` / `DataLogicPIM`: sets `memodate` (or null if empty).
+| **OK**: Column is nullable.
+|===
+
+

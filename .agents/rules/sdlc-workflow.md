@@ -11,6 +11,8 @@
 
 ## 2. Swing UI & Lifecycle Guidelines
 - **NetBeans Protected Blocks**: NEVER edit `// GEN-BEGIN:initComponents` or `// GEN-END:initComponents` manually.
+- **Generated Event Handlers Delegation Rule**: Inside generated event handler methods (`//GEN-FIRST:event_...`), MUST ALWAYS call a single private method with clear naming. All implementation logic belongs inside that dedicated private method, never inline inside the generated handler block.
+- **Javadoc on Private & Handler Methods**: Always document extracted private methods and helper methods with comprehensive Javadoc detailing their purpose, design rationale, parameters, UI state transitions, and platform-specific constraints (e.g. Wayland framebuffer validation, window hierarchy resolution).
 - **View Transitions**: When activating views (e.g. CardLayout), always invoke `viewPanel.activate()` to ensure data loaders and subcomponents synchronize properly.
 - **Global Title Panel**: Do not hide navigation or header panels based on empty titles; keep them permanently accessible unless explicitly configured otherwise.
 
@@ -40,3 +42,12 @@
 
 ## 5. Bug Tracking
 - Any platform-specific or deferred bugs (such as Wayland black dialog rendering `BUG-001`) must be documented in `docs/modules/guide-devel/pages/troubleshooting-known-issues.adoc` before moving to the next task.
+
+## 6. Java Version Compatibility & CI/CD Matrix
+- **Minimum JDK Baseline**: The minimum supported and compiled Java version is **JDK 17** (`<maven.compiler.release>17</maven.compiler.release>`).
+- **CI/CD Matrix**: GitHub Actions verifies across both the **Minimum (JDK 17)** and the **Latest available JDK** (e.g. JDK 26).
+- **Local Dev Trap Avoidance**:
+  - Dev machines often run newer JDKs (e.g. JDK 21, JDK 25).
+  - **NEVER** use language features, classes, or APIs introduced after Java 17 (e.g. `SequencedCollection`, string enhancements, post-17 pattern matching).
+  - Code must strictly compile against Java 17 bytecode and API specifications (`--release 17`).
+  - Before pushing to PR, verify that all added or modified code complies with JDK 17 to prevent CI/CD build failures.

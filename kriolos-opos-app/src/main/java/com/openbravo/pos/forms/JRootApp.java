@@ -429,6 +429,9 @@ public class JRootApp extends JPanel implements AppView {
                 }
             }
 
+            // Perform isolated database connection test first (silent if OK, logs & throws if failed)
+            AppViewConnection.testConnection(appProperties, dbKey);
+
             session = AppViewConnection.createSession(appProperties, dbKey);
 
             LOGGER.log(Level.INFO, "DB Migration execution Starting");
