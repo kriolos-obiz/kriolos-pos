@@ -455,6 +455,13 @@ CAUTION: Legacy code must *not* be modified until Phase B specifications are rev
 
 === 14.3 Agile Trunk-Based Integration Protocol (Atomic PR & Merge)
 
+[WARNING]
+====
+*CRITICAL CONSTRAINT: NEVER COMMIT OR PUSH DIRECTLY TO MAIN*
+
+Direct commits and direct pushes to `main` (or `master`) are *strictly forbidden* for both developers and AI assistants. All work—including small tweaks, documentation, and bug fixes—must be developed on a dedicated branch (`feature/*` or `fix/*`) and merged into `main` exclusively through a reviewed Pull Request.
+====
+
 To maintain an Agile cadence with short, reliable feedback loops and eliminate dependency debt, the project strictly mandates an **atomic PR-and-merge integration cycle**:
 
 [source]
@@ -468,6 +475,9 @@ feature/decouple-<module-A> (Phase A-E Complete)
 ----
 
 ==== Mandatory Rules for Feature Transitions
+
+. *Never Commit or Push Directly to `main` (Strict)*:
+Always work on a dedicated branch. Ensure local `main` remains untouched except via `git pull origin main`.
 
 . *No Stacked Feature Branches (Strict)*:
 Never create a new feature branch (`feature/decouple-<module-B>`) off an unmerged feature branch (`feature/decouple-<module-A>`).

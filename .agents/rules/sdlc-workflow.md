@@ -26,6 +26,10 @@
   - Use `StartPOS.setExitAction(Runnable)` during tests to intercept `System.exit` without killing the test runner JVM.
 
 ## 4. Agile Trunk-Based Integration & Atomic PRs (Rule 14.3)
+- **CRITICAL CONSTRAINT - NEVER COMMIT OR PUSH DIRECTLY TO MAIN**:
+  - Direct commits and direct pushes to `main` (or `master`) are STRICTLY FORBIDDEN.
+  - All changes, fixes, and documentation must originate from a dedicated feature or bugfix branch (`feature/<name>` or `fix/<name>`).
+  - Merging into `main` must ALWAYS happen via a reviewed GitHub Pull Request.
 - **Never Stack Branches**: Complete one feature atomically.
 - **Standard Flow**:
   1. Develop and verify locally on `feature/<feature-name>`.
