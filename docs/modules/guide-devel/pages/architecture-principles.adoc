@@ -227,15 +227,15 @@ private void initDomainAdapters() {
 
 === 7.2 Component Identification — `setName()` URN Anchoring
 
-Every Swing component *touched during a refactoring* must receive a unique identifier via `.setName()` following the **URN specification**: `<domain>:<component-or-action>`.
+Every Swing component *touched during a refactoring* must receive a unique identifier via `.setName()` following the **URN specification with mandatory `kriolos:` prefix**: `kriolos:<domain>:<component-or-action>`.
 
 [cols="1,1,2", options="header"]
 |===
 | Rule | Format | Example
-| URN specification | `<domain>:<component>` | `btnNavBack.setName("navigation:back")`
-| Action / Button URN | `<domain>:<action>` | `btnNavForward.setName("navigation:forward")`
-| Field / Input URN | `<domain>:<field>` | `txtCashReceived.setName("sales:cash-received-amount")`
-| Applied in `initDomainAdapters()` | Never in GEN blocks | `btnConfirm.setName("sales:confirm-payment")`
+| URN specification | `kriolos:<domain>:<component>` | `btnNavBack.setName("kriolos:navigation:back")`
+| Action / Button URN | `kriolos:<domain>:<action>` | `btnNavForward.setName("kriolos:navigation:forward")`
+| Field / Input URN | `kriolos:<domain>:<field>` | `txtCashReceived.setName("kriolos:sales:cash-received-amount")`
+| Applied in `initDomainAdapters()` | Never in GEN blocks | `btnConfirm.setName("kriolos:sales:confirm-payment")`
 | Purpose | Automation hook & web-layer mapping | Standardized URN links Swing to Domain to future Web component
 |===
 
@@ -436,7 +436,7 @@ public List<TicketLineRecord> findLinesByTicket(String ticketId) {
 | 5 | `com.openbravo` namespace frozen | New code under `com.openbravo.pos.domain.*`
 | 6 | SQL / BigDecimal / multi-tax / I18N invariants | Zero tolerance for drift
 | 7 | NetBeans GEN blocks untouched — use `initDomainAdapters()` | Never edit GEN blocks
-| 8 | `setName("<domain>:<component>")` URN on every touched component | URN specification (e.g. `navigation:back`, `navigation:forward`)
+| 8 | `setName("kriolos:<domain>:<component>")` URN on every touched component | Mandatory `kriolos:` prefix (e.g. `kriolos:navigation:back`)
 | 9 | JUnit 5 for domain + automation boilerplate for adapters | Required per extraction
 | 10 | Stateless domain — no AppView/JRootApp singletons | Pass SessionContext as immutable parameter
 | 11 | Domain exceptions only — no SQLException crossing boundaries | Infra wraps; Swing renders

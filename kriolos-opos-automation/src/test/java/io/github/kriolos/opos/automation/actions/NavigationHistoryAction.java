@@ -13,17 +13,17 @@ import java.util.logging.Logger;
  *
  * <p>Locates buttons by their {@code .setName()} anchors (URN format):
  * <ul>
- *   <li>{@code "navigation:back"}    — the Back button in JPrincipalApp</li>
- *   <li>{@code "navigation:forward"} — the Forward button in JPrincipalApp</li>
- *   <li>{@code "navigation:title"}   — the content title label</li>
+ *   <li>{@code "kriolos:navigation:back"}    — the Back button in JPrincipalApp</li>
+ *   <li>{@code "kriolos:navigation:forward"} — the Forward button in JPrincipalApp</li>
+ *   <li>{@code "kriolos:navigation:title"}   — the content title label</li>
  * </ul>
  * </p>
  */
 public class NavigationHistoryAction {
 
-    public static final String NAME_NAV_BACK = "navigation:back";
-    public static final String NAME_NAV_FORWARD = "navigation:forward";
-    public static final String NAME_SCREEN_TITLE = "navigation:title";
+    public static final String NAME_NAV_BACK = "kriolos:navigation:back";
+    public static final String NAME_NAV_FORWARD = "kriolos:navigation:forward";
+    public static final String NAME_SCREEN_TITLE = "kriolos:navigation:title";
 
     private static final Logger LOGGER = Logger.getLogger(NavigationHistoryAction.class.getName());
 

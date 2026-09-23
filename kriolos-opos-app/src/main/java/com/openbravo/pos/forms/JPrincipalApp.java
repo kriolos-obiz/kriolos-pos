@@ -108,7 +108,7 @@ public class JPrincipalApp extends JPanel implements AppUserView {
 
         // --- Back button ---
         btnNavBack = new JButton();
-        btnNavBack.setName("navigation:back");                        // Rule 7.2: URN setName anchor
+        btnNavBack.setName("kriolos:navigation:back");                // Rule 7.2: URN setName anchor
         btnNavBack.setIcon(new ImageIcon(getClass().getResource("/com/openbravo/images/1leftarrow.png")));
         btnNavBack.setToolTipText(AppLocal.getIntString("tooltip.back"));
         btnNavBack.setEnabled(false);
@@ -118,7 +118,7 @@ public class JPrincipalApp extends JPanel implements AppUserView {
 
         // --- Forward button ---
         btnNavForward = new JButton();
-        btnNavForward.setName("navigation:forward");                     // Rule 7.2: URN setName anchor
+        btnNavForward.setName("kriolos:navigation:forward");             // Rule 7.2: URN setName anchor
         btnNavForward.setIcon(new ImageIcon(getClass().getResource("/com/openbravo/images/1rightarrow.png")));
         btnNavForward.setToolTipText(AppLocal.getIntString("tooltip.forward"));
         btnNavForward.setEnabled(false);
@@ -127,11 +127,11 @@ public class JPrincipalApp extends JPanel implements AppUserView {
         btnNavForward.addActionListener(e -> onNavigateForward());
 
         // --- Also name the existing title label for automation ---
-        contentTitleLabel.setName("navigation:title");                // Rule 7.2: URN setName anchor
+        contentTitleLabel.setName("kriolos:navigation:title");        // Rule 7.2: URN setName anchor
 
         // --- Inject into the title bar (LINE_START = left edge of contentTItlePanel) ---
         JPanel navButtonsPanel = new JPanel();
-        navButtonsPanel.setName("navigation:buttons-panel");          // Rule 7.2: URN setName anchor
+        navButtonsPanel.setName("kriolos:navigation:buttons-panel");  // Rule 7.2: URN setName anchor
         navButtonsPanel.setOpaque(false);
         navButtonsPanel.add(btnNavBack);
         navButtonsPanel.add(btnNavForward);

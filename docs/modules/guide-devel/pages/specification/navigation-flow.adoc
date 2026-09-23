@@ -86,10 +86,10 @@ on top of it without replacing any legacy code.
 [cols="1,1,2", options="header"]
 |===
 | Component | `setName()` URN value | Domain field / action
-| `btnNavBack` (`JButton`) | `navigation:back` | Triggers `MenuHistoryEngine.back()`
-| `btnNavForward` (`JButton`) | `navigation:forward` | Triggers `MenuHistoryEngine.forward()`
-| `contentTitleLabel` (`JLabel`) | `navigation:title` | Displays `ScreenRoute.title()`
-| `navButtonsPanel` (`JPanel`) | `navigation:buttons-panel` | Container for both nav buttons
+| `btnNavBack` (`JButton`) | `kriolos:navigation:back` | Triggers `MenuHistoryEngine.back()`
+| `btnNavForward` (`JButton`) | `kriolos:navigation:forward` | Triggers `MenuHistoryEngine.forward()`
+| `contentTitleLabel` (`JLabel`) | `kriolos:navigation:title` | Displays `ScreenRoute.title()`
+| `navButtonsPanel` (`JPanel`) | `kriolos:navigation:buttons-panel` | Container for both nav buttons
 |===
 
 ---
