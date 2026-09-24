@@ -18,7 +18,7 @@ package com.openbravo.pos.forms;
 
 import com.openbravo.basic.BasicException;
 import com.openbravo.beans.JFlowPanel;
-import com.openbravo.beans.JPasswordDialog;
+import com.openbravo.beans.JPasswordPanel;
 import com.openbravo.data.gui.MessageInf;
 import com.openbravo.pos.forms.AppProperties.DatabaseConfig;
 import java.awt.BorderLayout;
@@ -240,7 +240,7 @@ public class JAuthPanel extends javax.swing.JPanel {
                     authListener.onSucess(m_actionuser);
                 } else {
                     // Using getWindowAncestor guarantees finding the root top-level Frame/Dialog window.
-                    String sPassword = JPasswordDialog.showEditor(
+                    String sPassword = JPasswordPanel.show(
                             SwingUtilities.getWindowAncestor(JAuthPanel.this),
                             AppLocal.getIntString("label.Password"),
                             m_actionuser.getName(),

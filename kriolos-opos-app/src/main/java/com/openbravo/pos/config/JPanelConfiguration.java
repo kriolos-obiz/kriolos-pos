@@ -21,7 +21,7 @@ import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppProperties;
 import com.openbravo.basic.BasicException;
-import com.openbravo.data.gui.JMessageDialog;
+import com.openbravo.data.gui.JMessagePanel;
 import com.openbravo.data.gui.MessageInf;
 import java.awt.HeadlessException;
 import java.io.IOException;
@@ -113,7 +113,7 @@ public class JPanelConfiguration extends JPanel implements JPanelView {
                 c.loadProperties(config);
             });
         } catch (Exception e) {
-            JMessageDialog.showMessage(this,
+            JMessagePanel.showMessage(this,
                     new MessageInf(MessageInf.SGN_WARNING,
                             AppLocal.getIntString("message.cannotrestoreconfig"), e));
         }
@@ -128,7 +128,7 @@ public class JPanelConfiguration extends JPanel implements JPanelView {
             });
         } catch (Exception e) {
             LOGGER.log(Level.WARNING, "loading properties", e);
-            JMessageDialog.showMessage(this,
+            JMessagePanel.showMessage(this,
                     new MessageInf(MessageInf.SGN_WARNING,
                             AppLocal.getIntString("message.cannotloadconfig"), e));
         }
@@ -156,7 +156,7 @@ public class JPanelConfiguration extends JPanel implements JPanelView {
             }
         } catch (HeadlessException | IOException e) {
             LOGGER.log(Level.SEVERE, "Erro ao gravar ficheiro de configuração", e);
-            JMessageDialog.showMessage(this,
+            JMessagePanel.showMessage(this,
                     new MessageInf(MessageInf.SGN_WARNING,
                             AppLocal.getIntString("message.cannotsaveconfig"), e));
         }

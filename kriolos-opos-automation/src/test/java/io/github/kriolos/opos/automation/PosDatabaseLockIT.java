@@ -1,7 +1,7 @@
 package io.github.kriolos.opos.automation;
 
 import com.openbravo.basic.BasicException;
-import com.openbravo.data.gui.JMessageDialog;
+import com.openbravo.data.gui.JMessagePanel;
 import com.openbravo.data.gui.MessageInf;
 import com.openbravo.pos.forms.AppConfig;
 import com.openbravo.pos.forms.AppLocal;
@@ -154,9 +154,6 @@ public class PosDatabaseLockIT {
             protected boolean isMatching(JDialog dialog) {
                 if (!dialog.isShowing()) {
                     return false;
-                }
-                if (dialog instanceof JMessageDialog) {
-                    return true;
                 }
                 String title = dialog.getTitle();
                 return title != null && (

@@ -24,7 +24,7 @@ import java.beans.PropertyChangeListener;
 import com.openbravo.pos.forms.DataLogicSales;
 import javax.swing.JFrame;
 import com.openbravo.basic.BasicException;
-import com.openbravo.data.gui.JMessageDialog;
+import com.openbravo.data.gui.JMessagePanel;
 import com.openbravo.data.gui.MessageInf;
 import com.openbravo.format.Formats;
 import com.openbravo.pos.forms.AppConfig;
@@ -619,7 +619,7 @@ public class JProductLineEdit extends javax.swing.JDialog {
             m_jBtnPriceUpdate.setEnabled(false);
         } catch (BasicException ex) {
             LOGGER.log(Level.WARNING, "Exception update products pricesell for ID: " + productID, ex);
-            JMessageDialog.showMessage(this,
+            JMessagePanel.showMessage(this,
                     new MessageInf(MessageInf.SGN_DANGER, "Unable to update product sell price. ", ex));
         }
 

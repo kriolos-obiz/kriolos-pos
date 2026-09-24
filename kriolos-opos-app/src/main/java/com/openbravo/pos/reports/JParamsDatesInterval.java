@@ -17,7 +17,7 @@
 package com.openbravo.pos.reports;
 
 import com.openbravo.basic.BasicException;
-import com.openbravo.beans.JCalendarDialog;
+import com.openbravo.beans.JCalendarDlgPanel;
 import com.openbravo.data.loader.Datas;
 import com.openbravo.data.loader.QBFCompareEnum;
 import com.openbravo.data.loader.SerializerWrite;
@@ -210,7 +210,7 @@ public class JParamsDatesInterval extends javax.swing.JPanel implements ReportEd
         } catch (BasicException e) {
             date = null;
         }        
-        date = JCalendarDialog.showCalendarTimeHours(this, date);
+        date = JCalendarDlgPanel.showCalendarTimeHours(this, date);
         if (date != null) {
             jTxtStartDate.setText(Formats.TIMESTAMP.formatValue(date));
         }             
@@ -224,7 +224,7 @@ public class JParamsDatesInterval extends javax.swing.JPanel implements ReportEd
         } catch (BasicException e) {
             date = null;
         }        
-        date = JCalendarDialog.showCalendarTimeHours(this, date);
+        date = JCalendarDlgPanel.showCalendarTimeHours(this, date);
         if (date != null) {
             jTxtEndDate.setText(Formats.TIMESTAMP.formatValue(date));
         }          

@@ -17,7 +17,7 @@
 package com.openbravo.pos.admin;
 
 import com.openbravo.basic.BasicException;
-import com.openbravo.beans.JPasswordDialog;
+import com.openbravo.beans.JPasswordPanel;
 import com.openbravo.data.gui.ComboBoxValModel;
 import com.openbravo.data.loader.SentenceList;
 import com.openbravo.data.user.*;
@@ -408,7 +408,7 @@ public class PeopleView extends JPanel implements EditorRecord<Object> {
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
 
-        String sNewPassword = JPasswordDialog.changePassword(this);
+        String sNewPassword = JPasswordPanel.changePassword(this);
         if (sNewPassword != null) {
             m_sPassword = sNewPassword;
             m_Dirty.setDirty(true);

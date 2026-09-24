@@ -14,18 +14,7 @@
     </properties>
     
     <dependencies>
-        
-        <dependency>
-            <groupId>io.github.kriolos.opos</groupId>
-            <artifactId>kriolos-opos-ui-flatlaf</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.github.kriolos.opos</groupId>
-            <artifactId>kriolos-opos-ui-native</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
-            <scope>test</scope>
-        </dependency>
+        <!-- No implementation dependencies here: ui-api is the SPI contract only.
+             Implementations (ui-flatlaf, ui-native) depend on ui-api, never the reverse. -->
     </dependencies>
 </project>

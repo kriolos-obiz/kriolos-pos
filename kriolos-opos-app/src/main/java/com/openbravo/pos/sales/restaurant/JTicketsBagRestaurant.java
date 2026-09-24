@@ -20,8 +20,8 @@
 package com.openbravo.pos.sales.restaurant;
 
 import com.openbravo.basic.BasicException;
-import com.openbravo.beans.JPasswordDialog;
-import com.openbravo.data.gui.JMessageDialog;
+import com.openbravo.beans.JPasswordPanel;
+import com.openbravo.data.gui.JMessagePanel;
 import com.openbravo.data.gui.MessageInf;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
@@ -130,7 +130,7 @@ public class JTicketsBagRestaurant extends javax.swing.JPanel {
             }
             catch (ScriptException | TicketPrinterException e) {
                 LOGGER.log(Level.WARNING, "Exception on executing script: " + sresourcename, e);
-                JMessageDialog.showMessage(this,
+                JMessagePanel.showMessage(this,
                         new MessageInf(MessageInf.SGN_NOTICE,
                                 AppLocal.getIntString("message.cannotprint"), e));
             }
@@ -235,7 +235,7 @@ public class JTicketsBagRestaurant extends javax.swing.JPanel {
         boolean allowDeleteTicket = true;
         if (appView.getProperties().getProperty("override.check").equals("true")) {
             String pin = appView.getProperties().getProperty("override.pin");
-            String iValue = JPasswordDialog.showEditor(this, AppLocal.getIntString("title.override.enterpin"));
+            String iValue = JPasswordPanel.show(this, AppLocal.getIntString("title.override.enterpin"));
 
             if (iValue != null && !iValue.isBlank() && iValue.equals(pin)) {
                 allowDeleteTicket = true;

@@ -21,7 +21,7 @@ import com.openbravo.pos.forms.DataLogicSystem;
 import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.basic.BasicException;
-import com.openbravo.beans.JPasswordDialog;
+import com.openbravo.beans.JPasswordPanel;
 import com.openbravo.data.gui.ComboBoxValModel;
 import com.openbravo.data.gui.ListKeyed;
 import com.openbravo.data.gui.MessageInf;
@@ -548,7 +548,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
 
             if (getAppProperty("override.check").equals("true")) {
                 String pin = getAppProperty("override.pin");
-                String iValue = JPasswordDialog.showEditor(this, AppLocal.getIntString("title.override.enterpin"));
+                String iValue = JPasswordPanel.show(this, AppLocal.getIntString("title.override.enterpin"));
 
                 if (iValue != null && iValue.equals(pin)) {
                     pinOK = true;

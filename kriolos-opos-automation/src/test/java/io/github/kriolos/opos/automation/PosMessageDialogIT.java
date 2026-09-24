@@ -1,6 +1,6 @@
 package io.github.kriolos.opos.automation;
 
-import com.openbravo.data.gui.JMessageDialog;
+import com.openbravo.data.gui.JMessagePanel;
 import com.openbravo.data.gui.MessageInf;
 import org.assertj.swing.core.BasicRobot;
 import org.assertj.swing.core.GenericTypeMatcher;
@@ -58,7 +58,7 @@ public class PosMessageDialogIT {
 
         String testMsg = "Database connection test message";
         Thread dialogThread = new Thread(() -> {
-            JMessageDialog.showMessage(null, new MessageInf(MessageInf.SGN_WARNING, testMsg));
+            JMessagePanel.showMessage(null, new MessageInf(MessageInf.SGN_WARNING, testMsg));
         }, "MessageDialogThread");
         dialogThread.setDaemon(true);
         dialogThread.start();
@@ -105,7 +105,7 @@ public class PosMessageDialogIT {
 
         Thread dialogThread = new Thread(() -> {
             MessageInf inf = new MessageInf(MessageInf.SGN_DANGER, errorMsg, new RuntimeException(rootCauseMsg));
-            JMessageDialog.showMessage(null, inf);
+            JMessagePanel.showMessage(null, inf);
         }, "ExceptionDialogThread");
         dialogThread.setDaemon(true);
         dialogThread.start();
@@ -151,9 +151,6 @@ public class PosMessageDialogIT {
             protected boolean isMatching(JDialog dialog) {
                 if (!dialog.isShowing()) {
                     return false;
-                }
-                if (dialog instanceof JMessageDialog) {
-                    return true;
                 }
                 String title = dialog.getTitle();
                 return title != null && (

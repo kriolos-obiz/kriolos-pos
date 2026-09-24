@@ -17,7 +17,7 @@ package com.openbravo.pos.forms;
 
 import com.openbravo.pos.menu.JRootMenu;
 import com.openbravo.basic.BasicException;
-import com.openbravo.data.gui.JMessageDialog;
+import com.openbravo.data.gui.JMessagePanel;
 import com.openbravo.data.gui.MessageInf;
 import com.openbravo.pos.domain.navigation.MenuHistoryEngine;
 import com.openbravo.pos.domain.navigation.NavigationResult;
@@ -309,7 +309,7 @@ public class JPrincipalApp extends JPanel implements AppUserView {
             rootMenu.getViewManager().setLastView(viewPanel);
         } catch (BasicException e) {
             LOGGER.log(Level.SEVERE, "Exception on activate class: " + sTaskClass, e);
-            JMessageDialog.showMessage(this,
+            JMessagePanel.showMessage(this,
                     new MessageInf(MessageInf.SGN_WARNING,
                             AppLocal.getIntString("message.notactive"), e));
         }
@@ -356,14 +356,14 @@ public class JPrincipalApp extends JPanel implements AppUserView {
             } else {
 
                 LOGGER.log(Level.INFO, "NO PERMISSION on call class: : " + sTaskClass);
-                JMessageDialog.showMessage(this,
+                JMessagePanel.showMessage(this,
                         new MessageInf(MessageInf.SGN_WARNING,
                                 AppLocal.getIntString("message.notpermissions"), "<html>"+sTaskClass));
             }
             appRootPanel.waitCursorEnd();
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Exception on show class: " + sTaskClass, e);
-            JMessageDialog.showMessage(this,
+            JMessagePanel.showMessage(this,
                     new MessageInf(MessageInf.SGN_WARNING,
                             AppLocal.getIntString("message.notactive"), e));
         }
@@ -381,18 +381,18 @@ public class JPrincipalApp extends JPanel implements AppUserView {
                 try {
                     MessageInf m = myProcess.execute();
                     if (m != null) {
-                        JMessageDialog.showMessage(JPrincipalApp.this, m);
+                        JMessagePanel.showMessage(JPrincipalApp.this, m);
                     }
                 } catch (BasicException eb) {
-                    JMessageDialog.showMessage(JPrincipalApp.this, new MessageInf(eb));
+                    JMessagePanel.showMessage(JPrincipalApp.this, new MessageInf(eb));
                 }
             } catch (BeanFactoryException e) {
-                JMessageDialog.showMessage(JPrincipalApp.this,
+                JMessagePanel.showMessage(JPrincipalApp.this,
                         new MessageInf(MessageInf.SGN_WARNING,
                                 AppLocal.getIntString("label.LoadError"), e));
             }
         } else {
-            JMessageDialog.showMessage(JPrincipalApp.this,
+            JMessagePanel.showMessage(JPrincipalApp.this,
                     new MessageInf(MessageInf.SGN_WARNING,
                             AppLocal.getIntString("message.notpermissions")));
         }

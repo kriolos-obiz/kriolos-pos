@@ -16,7 +16,7 @@
 package com.openbravo.pos.sales;
 
 import com.openbravo.basic.BasicException;
-import com.openbravo.data.gui.JMessageDialog;
+import com.openbravo.data.gui.JMessagePanel;
 import com.openbravo.data.gui.MessageInf;
 import com.openbravo.data.loader.Session;
 import com.openbravo.pos.forms.AppLocal;
@@ -61,7 +61,7 @@ public class JPanelResetPickupId extends JPanel implements JPanelView {
 
         } catch (BasicException | HeadlessException ex) {
             LOGGER.log(Level.WARNING, "Exception reset pickup number", ex);
-            JMessageDialog.showMessage(this, new MessageInf(MessageInf.SGN_DANGER, "Unable to reset PickupID", ex));
+            JMessagePanel.showMessage(this, new MessageInf(MessageInf.SGN_DANGER, "Unable to reset PickupID", ex));
         }
     }
 

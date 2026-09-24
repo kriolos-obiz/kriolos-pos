@@ -22,7 +22,7 @@ import java.awt.*;
 import java.util.ArrayList;
 import javax.swing.*;
 import com.openbravo.basic.BasicException;
-import com.openbravo.data.gui.JMessageDialog;
+import com.openbravo.data.gui.JMessagePanel;
 import com.openbravo.data.gui.ListKeyed;
 import com.openbravo.data.gui.MessageInf;
 import com.openbravo.pos.cash.CashManagementService;
@@ -337,7 +337,7 @@ public class JTicketsBagTicket extends JTicketsBag {
                             .printTicket(script.eval(m_dlSystem.getResourceAsXML("Printer.TicketPreview")).toString());
                 } catch (ScriptException | TicketPrinterException e) {
                     LOGGER.log(Level.WARNING, null, e);
-                    JMessageDialog.showMessage(this, new MessageInf(MessageInf.SGN_NOTICE,
+                    JMessagePanel.showMessage(this, new MessageInf(MessageInf.SGN_NOTICE,
                             AppLocal.getIntString("message.cannotprintticket"), e));
                 }
             }

@@ -1,15 +1,15 @@
 package io.github.kriolos.opos.automation;
 
 import com.openbravo.basic.BasicException;
-import com.openbravo.beans.DinerNumber;
-import com.openbravo.beans.JCalendarDialog;
-import com.openbravo.beans.JDoubleDialog;
-import com.openbravo.beans.JEditorTextDialog;
-import com.openbravo.beans.JIntegerDialog;
-import com.openbravo.beans.JPasswordDialog;
+import com.openbravo.beans.DinerNumberPanel;
+import com.openbravo.beans.JCalendarDlgPanel;
+import com.openbravo.beans.JDoublePanel;
+import com.openbravo.beans.JEditorTextPanel;
+import com.openbravo.beans.JIntegerPanel;
+import com.openbravo.beans.JPasswordPanel;
 import com.openbravo.data.gui.FindInfo;
 import com.openbravo.data.gui.JFind;
-import com.openbravo.data.gui.JMessageDialog;
+import com.openbravo.data.gui.JMessagePanel;
 import com.openbravo.data.gui.JSort;
 import com.openbravo.data.gui.MessageInf;
 import com.openbravo.data.loader.ComparatorCreator;
@@ -97,7 +97,7 @@ public class PosDialogPreScreenBaselineIT {
     @DisplayName("Pre-Screen MODAL-001a: JMessageDialog Warning Message")
     public void testPreScreen_MODAL001a_MessageDialogWarning() throws Exception {
         captureAndDismiss("01a_message_dialog_warning_DIALOG", () -> {
-            JMessageDialog.showMessage(dummyParent, new MessageInf(MessageInf.SGN_WARNING, "Database lock held by another instance."));
+            JMessagePanel.showMessage(dummyParent, new MessageInf(MessageInf.SGN_WARNING, "Database lock held by another instance."));
         });
     }
 
@@ -107,7 +107,7 @@ public class PosDialogPreScreenBaselineIT {
         captureAndDismissWithExpand("01b_message_dialog_exception_DIALOG", () -> {
             Exception rootCause = new java.sql.SQLException("Connection refused: port 9001 blocked by external process");
             BasicException basicEx = new BasicException("Database Connection Failed", rootCause);
-            JMessageDialog.showMessage(dummyParent, new MessageInf(MessageInf.SGN_DANGER, "Fatal Database Initialization Error", basicEx));
+            JMessagePanel.showMessage(dummyParent, new MessageInf(MessageInf.SGN_DANGER, "Fatal Database Initialization Error", basicEx));
         });
     }
 
@@ -133,7 +133,7 @@ public class PosDialogPreScreenBaselineIT {
     @DisplayName("Pre-Screen MODAL-002: JEditorTextDialog On-Screen Keypad")
     public void testPreScreen_MODAL002_EditorTextDialog() throws Exception {
         captureAndDismiss("02_editor_text_dialog_DIALOG", () -> {
-            JEditorTextDialog.showEditor(dummyParent, "Input Customer Name", "Please enter the customer name:");
+            JEditorTextPanel.show(dummyParent, "Input Customer Name", "Please enter the customer name:");
         });
     }
 
@@ -149,7 +149,7 @@ public class PosDialogPreScreenBaselineIT {
     @DisplayName("Pre-Screen MODAL-003: JCalendarDialog Date Picker")
     public void testPreScreen_MODAL003_CalendarDialogDate() throws Exception {
         captureAndDismiss("03_calendar_dialog_date_DIALOG", () -> {
-            JCalendarDialog.showCalendar(dummyParent, new Date());
+            JCalendarDlgPanel.showCalendar(dummyParent, new Date());
         });
     }
 
@@ -157,7 +157,7 @@ public class PosDialogPreScreenBaselineIT {
     @DisplayName("Pre-Screen MODAL-004: JCalendarDialog Date and Time Picker")
     public void testPreScreen_MODAL004_CalendarDialogTime() throws Exception {
         captureAndDismiss("04_calendar_dialog_time_DIALOG", () -> {
-            JCalendarDialog.showCalendarTime(dummyParent, new Date());
+            JCalendarDlgPanel.showCalendarTime(dummyParent, new Date());
         });
     }
 
@@ -181,7 +181,7 @@ public class PosDialogPreScreenBaselineIT {
     @DisplayName("Pre-Screen MODAL-005: JIntegerDialog Number Keypad")
     public void testPreScreen_MODAL005_IntegerDialog() throws Exception {
         captureAndDismiss("05_integer_dialog_DIALOG", () -> {
-            JIntegerDialog.showComponent(dummyParent, "Input Quantity", "Enter number of units:");
+            JIntegerPanel.show(dummyParent, "Input Quantity", "Enter number of units:");
         });
     }
 
@@ -197,7 +197,7 @@ public class PosDialogPreScreenBaselineIT {
     @DisplayName("Pre-Screen MODAL-006: JDoubleDialog Price/Currency Keypad")
     public void testPreScreen_MODAL006_DoubleDialog() throws Exception {
         captureAndDismiss("06_double_dialog_DIALOG", () -> {
-            JDoubleDialog.showComponent(dummyParent, "Input Custom Price", "Enter unit price:");
+            JDoublePanel.show(dummyParent, "Input Custom Price", "Enter unit price:");
         });
     }
 
@@ -213,7 +213,7 @@ public class PosDialogPreScreenBaselineIT {
     @DisplayName("Pre-Screen MODAL-007: DinerNumber Guests Keypad")
     public void testPreScreen_MODAL007_DinerNumber() throws Exception {
         captureAndDismiss("07_diner_number_DIALOG", () -> {
-            DinerNumber.showEditNumber(dummyParent, "Select Guest Count", "Number of guests:", null);
+            DinerNumberPanel.show(dummyParent, "Select Guest Count", "Number of guests:", null);
         });
     }
 
@@ -229,7 +229,7 @@ public class PosDialogPreScreenBaselineIT {
     @DisplayName("Pre-Screen MODAL-008: JPasswordDialog Secret Keypad")
     public void testPreScreen_MODAL008_PasswordDialog() throws Exception {
         captureAndDismiss("08_password_dialog_DIALOG", () -> {
-            JPasswordDialog.showEditor(dummyParent, "Enter Manager PIN", "PIN Required for Override:");
+            JPasswordPanel.show(dummyParent, "Enter Manager PIN", "PIN Required for Override:");
         });
     }
 

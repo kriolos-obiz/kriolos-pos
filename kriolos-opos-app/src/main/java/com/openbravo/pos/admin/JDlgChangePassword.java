@@ -16,7 +16,7 @@
 
 package com.openbravo.pos.admin;
 
-import com.openbravo.data.gui.JMessageDialog;
+import com.openbravo.data.gui.JMessagePanel;
 import com.openbravo.data.gui.MessageInf;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.util.Hashcypher;
@@ -217,10 +217,10 @@ public class JDlgChangePassword extends javax.swing.JDialog {
                 m_sNewPassword = Hashcypher.hashString(new String(jtxtPasswordNew.getPassword()));
                 dispose();
             } else {
-                JMessageDialog.showMessage(this, new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.BadPassword")));
+                JMessagePanel.showMessage(this, new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.BadPassword")));
             }
         } else {
-            JMessageDialog.showMessage(this, new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.changepassworddistinct")));
+            JMessagePanel.showMessage(this, new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.changepassworddistinct")));
         }
     }//GEN-LAST:event_jcmdOKActionPerformed
     

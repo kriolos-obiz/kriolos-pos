@@ -16,7 +16,7 @@
 package com.openbravo.pos.forms;
 
 import com.openbravo.basic.BasicException;
-import com.openbravo.data.gui.JMessageDialog;
+import com.openbravo.data.gui.JMessagePanel;
 import com.openbravo.data.gui.MessageInf;
 
 import java.awt.*;
@@ -88,7 +88,7 @@ public class JRootFrame extends javax.swing.JFrame implements AppMessage {
         } catch (BasicException ex) {
             //LOAD CONFIG PANEL
 
-            int opionRes = JMessageDialog.showConfirmDialog(this,
+            int opionRes = JMessagePanel.showConfirmDialog(this,
                     new MessageInf(MessageInf.SGN_DANGER,
                             "<html>Application fail to start<br>Do you want to open the configuration panel?", ex));
 
