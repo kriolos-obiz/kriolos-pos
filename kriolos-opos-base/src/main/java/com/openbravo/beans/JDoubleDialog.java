@@ -54,19 +54,7 @@ public class JDoubleDialog extends JNumberDialog<Double> {
         return showComponent(parent, title, message, null);
     }
 
-    public static Double showComponent(Component parent, String title, String message, Icon icon){
-    
-        Window window = SwingUtilities.windowForComponent(parent);
-        
-        JDoubleDialog entryDialog;
-        if (window instanceof Frame) { 
-            entryDialog = new JDoubleDialog((Frame) window, true);
-        } else {
-            entryDialog = new JDoubleDialog((Dialog) window, true);
-        }
-        
-        entryDialog.setTitle(title, message, icon);
-        entryDialog.setVisible(true);
-        return entryDialog.getValue();
+    public static Double showComponent(Component parent, String title, String message, Icon icon) {
+        return JDoublePanel.show(parent, title, message, icon);
     }
 }

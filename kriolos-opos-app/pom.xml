@@ -40,7 +40,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
         
         <mysql.version>9.2.0</mysql.version>
-        <flatlaf.version>2.6</flatlaf.version>
     </properties>
 
     <dependencies>
@@ -76,6 +75,23 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>kriolos-opos-l10n-pt-cv</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.github.kriolos.opos</groupId>
+            <artifactId>kriolos-opos-ui-api</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.kriolos.opos</groupId>
+            <artifactId>kriolos-opos-ui-flatlaf</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.github.kriolos.opos</groupId>
+            <artifactId>kriolos-opos-ui-native</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
             <scope>runtime</scope>
         </dependency>
 
@@ -180,26 +196,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
            <artifactId>kotlin-stdlib</artifactId> 
        </dependency>
         -->
-        <!-- flatlaf - Swing LaF -->
-        <dependency>
-            <groupId>com.formdev</groupId>
-            <artifactId>flatlaf</artifactId>
-            <version>${flatlaf.version}</version>
-            <scope>compile</scope> <!-- NBM:PROVIDED -->
-        </dependency>
-        <!-- Flat Look and Feel addon for SwingX -->
-        <dependency>
-            <groupId>com.formdev</groupId>
-            <artifactId>flatlaf-swingx</artifactId>
-            <version>${flatlaf.version}</version>
-            <scope>runtime</scope> 
-        </dependency>
-        <dependency> 
-            <groupId>com.formdev</groupId> 
-            <artifactId>flatlaf-intellij-themes</artifactId> 
-            <version>${flatlaf.version}</version>
-            <scope>runtime</scope> 
-        </dependency>
+        
         
         <dependency>
             <groupId>net.coobird</groupId>
@@ -294,12 +291,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                     </systemProperties>
                 </configuration>
                 <dependencies>
-                    <dependency>
-                        <groupId>com.formdev</groupId>
-                        <artifactId>flatlaf</artifactId>
-                        <version>${flatlaf.version}</version>
-                        <scope>compile</scope> <!-- RUN: PROVIDED -->
-                    </dependency>
                     <!-- ValidationAPI and NBM WRAPPER  -->
                     <dependency>
                         <groupId>org.netbeans.external</groupId> 

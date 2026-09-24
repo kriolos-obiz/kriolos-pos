@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 KriolOS
+ * Copyright (C) 2026 KriolOS
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,29 +14,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.openbravo.pos.core.spi.gui;
-
-
-import javax.swing.UIManager;
-import javax.swing.UIManager.LookAndFeelInfo;
-import java.util.ArrayList;
-import java.util.List;
+package com.openbravo.pos.ui.api;
 
 /**
- *
- * @author poolborges
+ * Supported display modes for the POS environment.
  */
-public class DefaultLafProvider implements LafProvider {
-
-    @Override
-    public List<LafInfo> getLafInfoList() {
-        List<LafInfo> lafs = new ArrayList<>();
-
-        LookAndFeelInfo[] ls = UIManager.getInstalledLookAndFeels();
-        for (LookAndFeelInfo laf : ls) {
-            lafs.add(new LafInfo(laf.getName(), laf.getClassName()));
-        }
-
-        return lafs;
-    }
+public enum ThemeMode {
+    LIGHT,
+    DARK
 }
+

@@ -82,19 +82,7 @@ public class DinerNumber extends javax.swing.JDialog {
         return showEditNumber(parent, title, message, null);
     }
     public static Double showEditNumber(Component parent, String title, String message, Icon icon) {
-        
-        Window window = SwingUtilities.windowForComponent(parent);
-        
-        DinerNumber myMsg;
-        if (window instanceof Frame) { 
-            myMsg = new DinerNumber((Frame) window, true);
-        } else {
-            myMsg = new DinerNumber((Dialog) window, true);
-        }
-        
-        myMsg.setTitle(title, message, icon);
-        myMsg.setVisible(true);
-        return myMsg.m_value;
+        return DinerNumberPanel.show(parent, title, message, icon);
     }
     
     /** This method is called from within the constructor to

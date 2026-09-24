@@ -15,21 +15,27 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>
 package com.openbravo.pos.forms;
 
-import com.openbravo.format.Formats;
-import com.openbravo.pos.spi.localization.LocalizationFactory;
-import com.openbravo.pos.spi.localization.LocalizationProvider;
+import com.openbravo.basic.BasicException;
+import com.openbravo.data.loader.Session;
+import com.openbravo.pos.util.AltEncrypter;
+import java.awt.Component;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Paths;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
@@ -37,9 +43,8 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.LookAndFeel;
-import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.ImageIcon;
+import javax.swing.JOptionPane;
 
 /**
  * Creation and Editing of stored settings
@@ -142,7 +147,8 @@ public class AppConfig implements AppProperties {
     }
 
     /**
-     * Get key pair value from properties resource (with System property override fallback)
+     * Get key pair value from properties resource (with System property
+     * override fallback)
      *
      * @param sKey key pair value
      * @return key pair from .properties filename
@@ -253,7 +259,8 @@ public class AppConfig implements AppProperties {
     private String getLocalHostName() {
         try {
             return java.net.InetAddress.getLocalHost().getHostName();
-        } catch (java.net.UnknownHostException eUH) {
+        }
+        catch (java.net.UnknownHostException eUH) {
             return "localhost";
         }
     }
@@ -278,7 +285,8 @@ public class AppConfig implements AppProperties {
     }
 
     /**
-     * Initializes or returns the singleton AppConfig with a specific configuration file.
+     * Initializes or returns the singleton AppConfig with a specific
+     * configuration file.
      *
      * @param configFile the specific configuration file to use
      * @return the AppConfig singleton instance
@@ -294,7 +302,8 @@ public class AppConfig implements AppProperties {
     }
 
     /**
-     * Explicitly reinitializes the singleton instance with a given configuration file.
+     * Explicitly reinitializes the singleton instance with a given
+     * configuration file.
      *
      * @param configFile the configuration file
      * @return the newly initialized AppConfig instance
@@ -339,22 +348,21 @@ public class AppConfig implements AppProperties {
                 try (InputStream in = new FileInputStream(file)) {
                     properties.load(in);
                 }
-
-                //File not empty
-                if (getProperty("db.URL") == null) {
-                    properties = defaultConfig();
-                    save();
-                }
             } else {
                 properties = defaultConfig();
-                save();
             }
-        } catch (IOException e) {
+
+            migrateDBProperties2026();
+            save();
+
+        }
+        catch (IOException e) {
             LOGGER.log(Level.WARNING, MessageFormat.format("IOException on load configuration file: {0}", file.getAbsolutePath()), e);
             try {
                 LOGGER.log(Level.INFO, "Providing default configuration: ", e);
                 properties = defaultConfig();
-            } catch (Exception ex) {
+            }
+            catch (Exception ex) {
                 LOGGER.log(Level.WARNING, "Fail getting default/factory configuration", ex);
             }
         }
@@ -383,7 +391,8 @@ public class AppConfig implements AppProperties {
         LOGGER.log(Level.INFO, "Saving configuration to file: {0}", configfile.getAbsolutePath());
         try (OutputStream out = new FileOutputStream(configfile)) {
             properties.store(out, AppLocal.APP_NAME + ". Configuration file.");
-        } catch (IOException ex) {
+        }
+        catch (IOException ex) {
             LOGGER.log(Level.SEVERE, "Fail saving configuration to file: " + configfile.getAbsolutePath(), ex);
         }
     }
@@ -392,218 +401,315 @@ public class AppConfig implements AppProperties {
         this.properties = defaultConfig();
     }
 
+    public DatabaseConfig getPrimary() {
+        if (properties == null) {
+            return null;
+        }
+
+        String name = properties.getProperty(ConfigProperty.DB_NAME.getName());
+        String url = properties.getProperty(ConfigProperty.DB_URL.getName());
+        String user = properties.getProperty(ConfigProperty.DB_USER.getName());
+        String password = properties.getProperty(ConfigProperty.DB_PASSWORD.getName());
+        String decryptPass = decryptPassword(user, password);
+
+        return new DatabaseConfig(name, url, user, decryptPass);
+    }
+
+    @Override
+    public List<DatabaseConfig> getAll() {
+        List<DatabaseConfig> dbs = new ArrayList<>();
+        if (properties == null) {
+            return dbs;
+        }
+
+        // 1. Adiciona a primária primeiro
+        DatabaseConfig primary = getPrimary();
+        if (primary != null) {
+            dbs.add(primary);
+        }
+
+        // 2. Descobre todos os {DB_ID} dinamicamente a partir das propriedades carregadas
+        Set<String> dbIds = new HashSet<>();
+        for (String key : properties.stringPropertyNames()) {
+            // Verifica se a chave cumpre o padrão "db.{id}.name"
+            if (key.startsWith("db.") && key.endsWith(".name") && !key.equals("db.name")) {
+                // Extrai o {DB_ID} (o texto entre o primeiro e o último ponto)
+                String dbId = key.substring(3, key.length() - 5);
+                dbIds.add(dbId);
+            }
+        }
+
+        // 3. Reconstrói os records secundários usando os IDs encontrados
+        for (String dbId : dbIds) {
+            String name = properties.getProperty("db." + dbId + ".name");
+            String url = properties.getProperty("db." + dbId + ".URL");
+            String user = properties.getProperty("db." + dbId + ".user");
+            String password = properties.getProperty("db." + dbId + ".password");
+            
+            String decryptPass = decryptPassword(user, password);
+
+            dbs.add(new DatabaseConfig(name, url, user, decryptPass));
+        }
+
+        return dbs;
+    }
+
+    /**
+     * Migrates secondary database properties from the legacy format to the new
+     * 2026 format. Example conversions: - db1.name -> db.1.name - dbmaria.URL
+     * -> db.maria.URL
+     */
+    private void migrateDBProperties2026() {
+        if (properties == null) {
+            return;
+        }
+
+        // Temporary list to track legacy keys for safe removal after iteration
+        List<String> keysToRemove = new ArrayList<>();
+
+        // List of valid database configuration property suffixes
+        String[] suffixes = {".name", ".URL", ".user", ".password", ".schema", ".options"};
+
+        for (String key : properties.stringPropertyNames()) {
+            // Skip the primary database properties as they already match the correct format
+            if (isPrimaryKey(key)) {
+                continue;
+            }
+
+            // Target legacy keys starting with "db" and ending with standard suffixes
+            if (key.startsWith("db")) {
+                for (String suffix : suffixes) {
+                    if (key.endsWith(suffix)) {
+                        // Extract the legacy database ID (e.g., "1" from "db1.name", "maria" from "dbmaria.name")
+                        String dbId = key.substring(2, key.length() - suffix.length());
+
+                        // If the ID does not start with a dot, it needs migration
+                        if (!dbId.startsWith(".")) {
+                            String value = properties.getProperty(key);
+                            String newKey = "db." + dbId + suffix;
+
+                            // Save the value under the new key structure and queue the old key for deletion
+                            properties.setProperty(newKey, value);
+                            keysToRemove.add(key);
+                        }
+                        break; // Move to the next property once matched
+                    }
+                }
+            }
+        }
+
+        // Clean up legacy keys to prevent duplicate properties
+        for (String oldKey : keysToRemove) {
+            properties.remove(oldKey);
+        }
+    }
+
+    /**
+     * Helper method to identify and protect primary database configuration
+     * keys.
+     */
+    private boolean isPrimaryKey(String key) {
+        return key.equals("db.name") || key.equals("db.URL")
+                || key.equals("db.user") || key.equals("db.password")
+                || key.equals("db.schema") || key.equals("db.options");
+    }
+
     private Properties defaultConfig() {
 
         LOGGER.log(Level.INFO, "Default configuration");
 
         Properties propConfig = new SortedStoreProperties();
 
+        // 1. Load all defaults from the enum
+        for (ConfigProperty prop : ConfigProperty.values()) {
+            propConfig.setProperty(prop.getName(), prop.getDefaultValue());
+        }
+
+        // 2. Overwrite / Populate dynamic runtime values safely using the enum keys
         File baseDirectory = getBaseApplicationDataDirectory();
+        String defaultDBURL = "jdbc:hsqldb:file:" + Paths.get(baseDirectory.getAbsolutePath(), "kriolopos").toString();
+        propConfig.setProperty(ConfigProperty.DB_URL.getName(), defaultDBURL);
 
-        propConfig.setProperty("db.multi", "false");
-        propConfig.setProperty("override.check", "false");
-        propConfig.setProperty("override.pin", "");
+        propConfig.setProperty(ConfigProperty.MACHINE_HOSTNAME.getName(), getLocalHostName());
 
-        propConfig.setProperty("db.driverlib", "");
-        propConfig.setProperty("db.engine", "");
-        propConfig.setProperty("db.driver", "");
-
-// primary DB
-        propConfig.setProperty("db.name", "Main DB");
-        propConfig.setProperty("db.URL", "jdbc:hsqldb:file:" + Paths.get(baseDirectory.getAbsolutePath(), "kriolopos").toString());
-        propConfig.setProperty("db.schema", "kriolopos");
-        propConfig.setProperty("db.options", ";shutdown=true");
-        propConfig.setProperty("db.user", "kriolopos");
-        propConfig.setProperty("db.password", "kriolopos");
-
-// secondary DB        
-        propConfig.setProperty("db1.name", "");
-        propConfig.setProperty("db1.URL", "jdbc:mysql://localhost:3306/");
-        propConfig.setProperty("db1.schema", "kriolopos");
-        propConfig.setProperty("db1.options", "?zeroDateTimeBehavior=convertToNull");
-        propConfig.setProperty("db1.user", "kriolopos");
-        propConfig.setProperty("db1.password", "kriolopos");
-
-        propConfig.setProperty("machine.hostname", getLocalHostName());
-
-        //Localization - Legacy 
+        // Localization - Legacy 
         Locale l = Locale.getDefault();
-        propConfig.setProperty("user.language", l.getLanguage());
-        propConfig.setProperty("user.country", l.getCountry());
-        propConfig.setProperty("user.variant", l.getVariant());
-
-        //Localization - SPI 
-        propConfig.setProperty("localization.configure", "legacy");
-        propConfig.setProperty("localization.locale", "");
-
-        propConfig.setProperty("swing.defaultlaf", "com.formdev.flatlaf.FlatDarkLaf");
-
-        propConfig.setProperty("machine.printer", "screen");
-        propConfig.setProperty("machine.printer.2", "Not defined");
-        propConfig.setProperty("machine.printer.3", "Not defined");
-        propConfig.setProperty("machine.printer.4", "Not defined");
-        propConfig.setProperty("machine.printer.5", "Not defined");
-        propConfig.setProperty("machine.printer.6", "Not defined");
-
-        propConfig.setProperty("machine.display", "screen");
-        propConfig.setProperty("machine.scale", "Not defined");
-        propConfig.setProperty("machine.screenmode", "fullscreen");
-        propConfig.setProperty("machine.ticketsbag", "standard");
-        propConfig.setProperty("machine.scanner", "Not defined");
-        propConfig.setProperty("machine.iButton", "false");
-        propConfig.setProperty("machine.iButtonResponse", "5");
-        propConfig.setProperty("machine.uniqueinstance", "true");
-
-        propConfig.setProperty("payment.gateway", "external");
-        propConfig.setProperty("payment.magcardreader", "Not defined");
-        propConfig.setProperty("payment.testmode", "true");
-        propConfig.setProperty("payment.commerceid", "");
-        propConfig.setProperty("payment.commercepassword", "password");
-
-        propConfig.setProperty("machine.printername", "(Default)");
-        propConfig.setProperty("screen.receipt.columns", "42");
-
-        // Receipt printer paper set to 72mmx200mm
-        propConfig.setProperty("paper.receipt.x", "10");
-        propConfig.setProperty("paper.receipt.y", "10");
-        propConfig.setProperty("paper.receipt.width", "190");
-        propConfig.setProperty("paper.receipt.height", "546");
-        propConfig.setProperty("paper.receipt.mediasizename", "A4");
-
-        // Normal printer paper for A4
-        propConfig.setProperty("paper.standard.x", "72");
-        propConfig.setProperty("paper.standard.y", "72");
-        propConfig.setProperty("paper.standard.width", "451");
-        propConfig.setProperty("paper.standard.height", "698");
-        propConfig.setProperty("paper.standard.mediasizename", "A4");
-
-        propConfig.setProperty("tkt.header1", "KriolOS POS");
-        propConfig.setProperty("tkt.header2", "Open Source Point Of Sale");
-        propConfig.setProperty("tkt.header3", "Copyright (c) 2020-2023 KriolOS");
-        propConfig.setProperty("tkt.header4", "Change header text in Configuration");
-
-        propConfig.setProperty("tkt.footer1", "Change footer text in Configuration");
-        propConfig.setProperty("tkt.footer2", "Thank you for your custom");
-        propConfig.setProperty("tkt.footer3", "Please Call Again");
-
-        propConfig.setProperty("table.showcustomerdetails", "true");
-        propConfig.setProperty("table.customercolour", "#58B000");
-        propConfig.setProperty("table.showwaiterdetails", "true");
-        propConfig.setProperty("table.waitercolour", "#258FB0");
-        propConfig.setProperty("table.tablecolour", "#D62E52");
-        propConfig.setProperty("till.amountattop", "true");
-        propConfig.setProperty("till.hideinfo", "true");
+        propConfig.setProperty(ConfigProperty.USER_LANGUAGE.getName(), l.getLanguage());
+        propConfig.setProperty(ConfigProperty.USER_COUNTRY.getName(), l.getCountry());
+        propConfig.setProperty(ConfigProperty.USER_VARIANT.getName(), l.getVariant());
 
         return propConfig;
-
-    }
-
-    public static void applySystemProperties(AppConfig config) {
-        // Set the look and feel.
-        String lafClass = config.getProperty("swing.defaultlaf");
-        try {
-            if (lafClass != null && !lafClass.isBlank()) {
-                Object laf = Class.forName(lafClass).getDeclaredConstructor().newInstance();
-                if (laf instanceof LookAndFeel) {
-                    UIManager.setLookAndFeel((LookAndFeel) laf);
-                }
-            }
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException | NoSuchMethodException | SecurityException | IllegalArgumentException | InvocationTargetException e) {
-            LOGGER.log(Level.WARNING, "Cannot set Look and Feel: " + lafClass, e);
-        }
-
-        // Localization configuration switch
-        String localizationMode = config.getProperty("localization.configure", "legacy");
-        if ("provider".equalsIgnoreCase(localizationMode)) {
-            applyLocalizationProvider(config);
-        } else {
-            applyLocalizationLegacy(config);
-        }
-    }
-
-    private static void applyLocalizationLegacy(AppConfig config) {
-        
-        LOGGER.log(Level.INFO, "Localization from legacy properties");
-
-        //Set I18n or Language 
-        String langTagLang = config.getProperty("user.language");
-        String langTagCountry = config.getProperty("user.country");
-        String langTagVariant = config.getProperty("user.variant");
-        String langTagScript = config.getProperty("user.script");
-        var localeBuilder = new Locale.Builder();
-
-        if (!isNullOrBlank(langTagVariant)) {
-            localeBuilder.setVariant(langTagVariant);
-        }
-
-        if (!isNullOrBlank(langTagScript)) {
-            localeBuilder.setScript(langTagScript);
-        }
-
-        if (!isNullOrBlank(langTagCountry)) {
-            localeBuilder.setRegion(langTagCountry);
-        }
-
-        if (!isNullOrBlank(langTagLang)) {
-            localeBuilder.setLanguage(langTagLang);
-
-            Locale.setDefault(localeBuilder.build());
-        }
-        
-        LOGGER.log(Level.INFO, "Localization locale default: "+Locale.getDefault().toLanguageTag());
-
-        //Set Format/Pattern for: Number, Date, Currency 
-        Formats.setIntegerPattern(config.getProperty("format.integer"));
-        Formats.setDoublePattern(config.getProperty("format.double"));
-        Formats.setCurrencyPattern(config.getProperty("format.currency"));
-        Formats.setPercentPattern(config.getProperty("format.percent"));
-        Formats.setDatePattern(config.getProperty("format.date"));
-        Formats.setTimePattern(config.getProperty("format.time"));
-        Formats.setDateTimePattern(config.getProperty("format.datetime"));
-    }
-
-    private static void applyLocalizationProvider(AppConfig config) {
-        
-        
-        LOGGER.log(Level.INFO, "Localization from SPI Provider");
-        
-        // Build target locale from "localization.locale" (ex: "pt-CV")
-        Locale targetLocale = parseLocaleTag(config.getProperty("localization.locale"));
-        try {
-            
-            Locale.setDefault(targetLocale);
-
-            LocalizationProvider provider = LocalizationFactory.getInstance().getProvider(targetLocale);
-
-            //Set Format/Pattern for: Number, Date, Currency 
-            Formats.setIntegerFormatter(provider.getIntegerFormatter());
-            Formats.setDoubleFormat(provider.getDoubleFormatter());
-            Formats.setCurrencyFormat(provider.getCurrencyFormatter());
-            Formats.setPercentFormatter(provider.getPercentFormatter());
-            Formats.setDateFormat(provider.getDateFormatter());
-            Formats.setTimeFormatter(provider.getTimeFormatter());
-            Formats.setDateTimeFormatter(provider.getDateTimeFormatter());
-
-            LOGGER.log(Level.INFO, "Localization provider applied: {0} for locale: {1}",
-                    new Object[]{provider.getClass().getSimpleName(), targetLocale.toLanguageTag()});
-        } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "SPI localization failed, falling back to JDK defaults", e);
-        }
     }
 
     /**
-     * Parses a BCP 47 / IETF language tag like "pt-CV" into a Locale. Returns
-     * system default if null/empty.
+     * Performs an isolated, direct connection test against the specified
+     * database configuration.
+     * <p>
+     * <b>Behavior Specification:</b>
+     * <ul>
+     * <li><b>If Connection OK:</b> Completes silently without popup dialogs,
+     * recording an INFO log entry.</li>
+     * <li><b>If Connection Fails:</b> Logs the root cause exception at WARNING
+     * level and throws a {@link BasicException} wrapping the
+     * {@link SQLException} so callers can display an error dialog.</li>
+     * </ul>
+     * </p>
+     *
+     * @param props the application properties
+     * @param dbID the database identifier key, or null for default
+     * @throws BasicException if the database connection fails or is invalid
      */
-    private static Locale parseLocaleTag(String tag) {
-        if (tag == null || tag.isBlank()) {
-            return Locale.getDefault();
+    public static void testConnection(DatabaseConfig dbConfig) throws BasicException {
+
+        LOGGER.log(Level.INFO, "Testing database connection for ({0}): {1}", new Object[]{dbConfig.name(), dbConfig.url()});
+        try (Connection conn = DriverManager.getConnection(dbConfig.url(), dbConfig.username(), dbConfig.password())) {
+            if (conn == null || !conn.isValid(3)) {
+                throw new SQLException("Connection test returned invalid status for URL: " + dbConfig.url());
+            }
+            LOGGER.log(Level.INFO, "Database connection test successful (silent) for ({0})", dbConfig.url());
         }
-        return Locale.forLanguageTag(tag);
+        catch (SQLException ex) {
+            LOGGER.log(Level.WARNING, "Database connection test failed for DB " + dbConfig.url() + ": " + ex.getMessage(), ex);
+            throw new BasicException(AppLocal.getIntString("message.databaseconnectionerror"), ex);
+        }
     }
 
-    private static boolean isNullOrBlank(String text) {
-        return text == null || text.isBlank();
+    public static String choseDB(Component parent, AppProperties props, Object[] dbs) {
+
+        ImageIcon icon = new ImageIcon("/com/openbravo/images/app_logo_48x48");
+        Object chosedDbName = JOptionPane.showInputDialog(
+                parent,
+                AppLocal.getIntString("message.databasechoose"),
+                "Database Selection",
+                JOptionPane.OK_OPTION,
+                icon,
+                dbs,
+                dbs != null && dbs.length > 0 ? dbs[0] : null);
+
+        return (String) chosedDbName;
+    }
+
+    private String decryptPassword(String username, String passEncrypted) {
+        String sDBPassword = passEncrypted;
+        if (username != null && passEncrypted != null && passEncrypted.startsWith("crypt:")) {
+            AltEncrypter cypher = new AltEncrypter("cypherkey" + username);
+            sDBPassword = cypher.decrypt(passEncrypted.substring(6));
+        }
+        
+        return sDBPassword;
+    }
+}
+
+enum ConfigProperty {
+
+    // THEME & INITIAL
+    POS_UI_THEME_ID("pos.ui.theme.id", "system"),
+    LOCATION_CONFIGURE("localization.configure", "legacy"),
+    LOCATION_LOCALE("localization.locale", ""),
+    // CORE OVERRIDES
+    DB_MULTI("db.multi", "false"),
+    OVERRIDE_CHECK("override.check", "false"),
+    OVERRIDE_PIN("override.pin", ""),
+    // DB DRIVERS
+    DB_DRIVERLIB("db.driverlib", ""),
+    DB_ENGINE("db.engine", ""),
+    DB_DRIVER("db.driver", ""),
+    // PRIMARY DB (Dynamic URL)
+    DB_NAME("db.name", "Main DB"),
+    DB_URL("db.URL", ""), // Dynamic
+    DB_SCHEMA("db.schema", "kriolopos"),
+    DB_OPTIONS("db.options", ";shutdown=true"),
+    DB_USER("db.user", "kriolopos"),
+    DB_PASSWORD("db.password", "kriolopos"),
+    // SECONDARY DB        
+    DB1_NAME("db1.name", ""),
+    DB1_URL("db1.URL", "jdbc:mysql://localhost:3306/"),
+    DB1_SCHEMA("db1.schema", "kriolopos"),
+    DB1_OPTIONS("db1.options", "?zeroDateTimeBehavior=convertToNull"),
+    DB1_USER("db1.user", "kriolopos"),
+    DB1_PASSWORD("db1.password", "kriolopos"),
+    // MACHINE INFO (Dynamic Hostname)
+    MACHINE_HOSTNAME("machine.hostname", ""), // Dynamic
+
+    // LOCALIZATION LEGACY (Dynamic Locale)
+    USER_LANGUAGE("user.language", ""), // Dynamic
+    USER_COUNTRY("user.country", ""), // Dynamic
+    USER_VARIANT("user.variant", ""), // Dynamic
+
+    // PRINTERS
+    MACHINE_PRINTER("machine.printer", "screen"),
+    MACHINE_PRINTER_2("machine.printer.2", "Not defined"),
+    MACHINE_PRINTER_3("machine.printer.3", "Not defined"),
+    MACHINE_PRINTER_4("machine.printer.4", "Not defined"),
+    MACHINE_PRINTER_5("machine.printer.5", "Not defined"),
+    MACHINE_PRINTER_6("machine.printer.6", "Not defined"),
+    // MACHINE HARDWARE & BEHAVIOR
+    MACHINE_DISPLAY("machine.display", "screen"),
+    MACHINE_SCALE("machine.scale", "Not defined"),
+    MACHINE_SCREENMODE("machine.screenmode", "fullscreen"),
+    MACHINE_TICKETSBAG("machine.ticketsbag", "standard"),
+    MACHINE_SCANNER("machine.scanner", "Not defined"),
+    MACHINE_IBUTTON("machine.iButton", "false"),
+    MACHINE_IBUTTONRESPONSE("machine.iButtonResponse", "5"),
+    MACHINE_UNIQUEINSTANCE("machine.uniqueinstance", "true"),
+    // PAYMENT
+    PAYMENT_GATEWAY("payment.gateway", "external"),
+    PAYMENT_MAGCARDREADER("payment.magcardreader", "Not defined"),
+    PAYMENT_TESTMODE("payment.testmode", "true"),
+    PAYMENT_COMMERCEID("payment.commerceid", ""),
+    PAYMENT_COMMERCEPASSWORD("payment.commercepassword", "password"),
+    // PRINTER DISPLAY CONFIG
+    MACHINE_PRINTERNAME("machine.printername", "(Default)"),
+    SCREEN_RECEIPT_COLUMNS("screen.receipt.columns", "42"),
+    // RECEIPT PAPER
+    PAPER_RECEIPT_X("paper.receipt.x", "10"),
+    PAPER_RECEIPT_Y("paper.receipt.y", "10"),
+    PAPER_RECEIPT_WIDTH("paper.receipt.width", "190"),
+    PAPER_RECEIPT_HEIGHT("paper.receipt.height", "546"),
+    PAPER_RECEIPT_MEDIASIZENAME("paper.receipt.mediasizename", "A4"),
+    // STANDARD PAPER
+    PAPER_STANDARD_X("paper.standard.x", "72"),
+    PAPER_STANDARD_Y("paper.standard.y", "72"),
+    PAPER_STANDARD_WIDTH("paper.standard.width", "451"),
+    PAPER_STANDARD_HEIGHT("paper.standard.height", "698"),
+    PAPER_STANDARD_MEDIASIZENAME("paper.standard.mediasizename", "A4"),
+    // TICKET HEADERS
+    TKT_HEADER1("tkt.header1", "KriolOS POS"),
+    TKT_HEADER2("tkt.header2", "Open Source Point Of Sale"),
+    TKT_HEADER3("tkt.header3", "Copyright (c) 2020-2023 KriolOS"),
+    TKT_HEADER4("tkt.header4", "Change header text in Configuration"),
+    // TICKET FOOTERS
+    TKT_FOOTER1("tkt.footer1", "Change footer text in Configuration"),
+    TKT_FOOTER2("tkt.footer2", "Thank you for your custom"),
+    TKT_FOOTER3("tkt.footer3", "Please Call Again"),
+    // UI DETAILS
+    TABLE_SHOWCUSTOMERDETAILS("table.showcustomerdetails", "true"),
+    TABLE_CUSTOMERCOLOUR("table.customercolour", "#58B000"),
+    TABLE_SHOWWAITERDETAILS("table.showwaiterdetails", "true"),
+    TABLE_WAITERCOLOUR("table.waitercolour", "#258FB0"),
+    TABLE_TABLECOLOUR("table.tablecolour", "#D62E52"),
+    TILL_AMOUNTATTOP("till.amountattop", "true"),
+    TILL_HIDEINFO("till.hideinfo", "true");
+
+    private final String name;
+    private final String defaultValue;
+
+    ConfigProperty(String name, String defaultValue) {
+        this.name = name;
+        this.defaultValue = defaultValue;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getDefaultValue() {
+        return defaultValue;
+    }
+
+    @Override
+    public String toString() {
+        return this.name;
     }
 }
 

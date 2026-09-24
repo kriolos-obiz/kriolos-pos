@@ -91,17 +91,9 @@ public class JFind extends JDialog {
      * @return
      * @throws BasicException
      */
+    @SuppressWarnings("unchecked")
     public static FindInfo showMessage(Component parent, FindInfo lastFindInfo) throws BasicException {
-         
-        Window window = getWindow(parent);      
-        
-        JFind myMsg;
-        if (window instanceof Frame) { 
-            myMsg = new JFind((Frame) window, true);
-        } else {
-            myMsg = new JFind((Dialog) window, true);
-        }
-        return myMsg.init(lastFindInfo);
+        return JFindPanel.showMessage(parent, lastFindInfo);
     }
     
     /** This method is called from within the constructor to

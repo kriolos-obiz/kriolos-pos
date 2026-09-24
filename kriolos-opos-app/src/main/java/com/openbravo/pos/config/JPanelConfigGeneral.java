@@ -16,23 +16,20 @@
 package com.openbravo.pos.config;
 
 import com.openbravo.data.user.DirtyManager;
-import com.openbravo.pos.core.spi.gui.LafInfo;
-import com.openbravo.pos.core.spi.gui.DefaultLafProvider;
-import com.openbravo.pos.core.spi.gui.FlatlafProvider;
 import com.openbravo.pos.forms.AppConfig;
 import com.openbravo.pos.forms.AppLocal;
+import com.openbravo.pos.forms.AppProperties;
+import com.openbravo.pos.ui.api.POSThemeDefinition;
+import com.openbravo.pos.ui.api.POSThemeManager;
 import java.awt.Component;
-import javax.swing.LookAndFeel;
-import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
-import javax.swing.UIManager.LookAndFeelInfo;
-import javax.swing.UnsupportedLookAndFeelException;
 import com.openbravo.pos.util.FileChooserEvent;
-import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.DefaultListCellRenderer;
+import javax.swing.JList;
 import javax.swing.JOptionPane;
 
 
@@ -63,6 +60,7 @@ public class JPanelConfigGeneral extends javax.swing.JPanel implements PanelConf
         jtxtMachineDepartment.getDocument().addDocumentListener(dirty);
         lblIP_Address.setText(IP.toString());        
         jcboLAF.addActionListener(dirty);
+        jcboLAF.setRenderer(new POSThemeDefinitionRenderer());
         jcboMachineScreenmode.addActionListener(dirty);
         jcboTicketsBag.addActionListener(dirty);
         jchkHideInfo.addActionListener(dirty);  
@@ -77,16 +75,8 @@ public class JPanelConfigGeneral extends javax.swing.JPanel implements PanelConf
 //        jbtnMedia.addActionListener(new FileChooserEvent(jtxtStartupHTML));    // Coming later!          
         
         // Installed skins
-        new DefaultLafProvider()
-                .getLafInfoList()
+        POSThemeManager.getAllAvailableThemes()
                 .forEach(i -> jcboLAF.addItem(i));
-        
-        
-        // FlatLaf - Flat Look and Feel 
-        new FlatlafProvider()
-                .getLafInfoList()
-                .forEach(i -> jcboLAF.addItem(i));
-        
          
 
         jcboLAF.addActionListener((java.awt.event.ActionEvent evt) -> {
@@ -130,12 +120,11 @@ public class JPanelConfigGeneral extends javax.swing.JPanel implements PanelConf
         jtxtMachineHostname.setText(config.getProperty("machine.hostname"));
         jtxtMachineDepartment.setText(config.getProperty("machine.department"));
         
-        String lafclass = config.getProperty("swing.defaultlaf");
+        String themeId = config.getProperty("pos.ui.theme.id");
         jcboLAF.setSelectedItem(null);
-        for (int i = 0; i < jcboLAF.getItemCount(); i++) {
-            LafInfo lafinfo = (LafInfo) jcboLAF.getItemAt(i);
-            if (lafinfo.getClassName().equals(lafclass)) {
-                jcboLAF.setSelectedIndex(i);
+        for (int position = 0; position < jcboLAF.getItemCount(); position++) {
+            if (POSThemeManager.getThemeDefinition(themeId).isPresent()) {
+                jcboLAF.setSelectedIndex(position);
                 break;
             }
         }
@@ -160,10 +149,8 @@ public class JPanelConfigGeneral extends javax.swing.JPanel implements PanelConf
         config.setProperty("machine.hostname", jtxtMachineHostname.getText());
         config.setProperty("machine.department", jtxtMachineDepartment.getText());      
         
-        LafInfo laf = (LafInfo) jcboLAF.getSelectedItem();
-        config.setProperty("swing.defaultlaf", laf == null
-                ? System.getProperty("swing.defaultlaf", "javax.swing.plaf.metal.MetalLookAndFeel")
-                : laf.getClassName());
+        POSThemeDefinition posTheme = (POSThemeDefinition) jcboLAF.getSelectedItem();
+        config.setProperty("pos.ui.theme.id", posTheme.id());
 
         config.setProperty("machine.screenmode", comboValue(jcboMachineScreenmode.getSelectedItem()));
         config.setProperty("machine.ticketsbag", comboValue(jcboTicketsBag.getSelectedItem()));
@@ -183,26 +170,10 @@ public class JPanelConfigGeneral extends javax.swing.JPanel implements PanelConf
 
     private void changeLAF() {
         LOGGER.info("Current LaF: "+UIManager.getLookAndFeel().getClass().getName());
-        final LafInfo laf = (LafInfo) jcboLAF.getSelectedItem();
-        if (laf != null && !laf.getClassName().equals(UIManager.getLookAndFeel().getClass().getName())) {
-            // The selected look and feel is different from the current look and feel.
-            SwingUtilities.invokeLater(() -> {
-                try {
-                    String lafname = laf.getClassName();
-                    Object laf1 = Class.forName(lafname).getDeclaredConstructor().newInstance();
-                    if (laf1 instanceof LookAndFeel) {
-                        UIManager.setLookAndFeel((LookAndFeel) laf1);
-                    }
-                    SwingUtilities.updateComponentTreeUI(JPanelConfigGeneral.this.getTopLevelAncestor());
-                }catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException | NoSuchMethodException | SecurityException | IllegalArgumentException | InvocationTargetException ex) {
-                    LOGGER.log(Level.WARNING, "Cannot set Look and Feel", ex);
-                }
-            });
-        }
-        LOGGER.info("Change LaF: "+UIManager.getLookAndFeel().getClass().getName());
+        POSThemeDefinition theme = (POSThemeDefinition) jcboLAF.getSelectedItem();
+        POSThemeManager.applyTheme(theme.id());
+        
     }
-
-    
     /** This method is called from within the constructor to
      * initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is

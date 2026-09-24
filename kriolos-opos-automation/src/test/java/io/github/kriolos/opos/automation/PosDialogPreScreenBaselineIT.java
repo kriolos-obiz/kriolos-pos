@@ -96,7 +96,7 @@ public class PosDialogPreScreenBaselineIT {
     @Test
     @DisplayName("Pre-Screen MODAL-001a: JMessageDialog Warning Message")
     public void testPreScreen_MODAL001a_MessageDialogWarning() throws Exception {
-        captureAndDismiss("MODAL-001a_message_dialog_warning", () -> {
+        captureAndDismiss("01a_message_dialog_warning_DIALOG", () -> {
             JMessageDialog.showMessage(dummyParent, new MessageInf(MessageInf.SGN_WARNING, "Database lock held by another instance."));
         });
     }
@@ -104,7 +104,7 @@ public class PosDialogPreScreenBaselineIT {
     @Test
     @DisplayName("Pre-Screen MODAL-001b: JMessageDialog Exception with Stack Trace")
     public void testPreScreen_MODAL001b_MessageDialogException() throws Exception {
-        captureAndDismissWithExpand("MODAL-001b_message_dialog_exception", () -> {
+        captureAndDismissWithExpand("01b_message_dialog_exception_DIALOG", () -> {
             Exception rootCause = new java.sql.SQLException("Connection refused: port 9001 blocked by external process");
             BasicException basicEx = new BasicException("Database Connection Failed", rootCause);
             JMessageDialog.showMessage(dummyParent, new MessageInf(MessageInf.SGN_DANGER, "Fatal Database Initialization Error", basicEx));
@@ -112,17 +112,43 @@ public class PosDialogPreScreenBaselineIT {
     }
 
     @Test
+    @DisplayName("Modal Migration 01a: JMessagePanel Warning Message via PosUIModal")
+    public void testModal_001a_MessagePanelWarning() throws Exception {
+        captureAndDismiss("01a_message_dialog_warning_MODAL_FIXED", () -> {
+            com.openbravo.data.gui.JMessagePanel.showMessage(dummyParent, new MessageInf(MessageInf.SGN_WARNING, "Database lock held by another instance."));
+        });
+    }
+
+    @Test
+    @DisplayName("Modal Migration 01b: JMessagePanel Exception with Stack Trace via PosUIModal")
+    public void testModal_001b_MessagePanelException() throws Exception {
+        captureAndDismissWithExpand("01b_message_dialog_exception_MODAL_FIXED", () -> {
+            Exception rootCause = new java.sql.SQLException("Connection refused: port 9001 blocked by external process");
+            BasicException basicEx = new BasicException("Database Connection Failed", rootCause);
+            com.openbravo.data.gui.JMessagePanel.showMessage(dummyParent, new MessageInf(MessageInf.SGN_DANGER, "Fatal Database Initialization Error", basicEx));
+        });
+    }
+
+    @Test
     @DisplayName("Pre-Screen MODAL-002: JEditorTextDialog On-Screen Keypad")
     public void testPreScreen_MODAL002_EditorTextDialog() throws Exception {
-        captureAndDismiss("MODAL-002_editor_text_dialog", () -> {
+        captureAndDismiss("02_editor_text_dialog_DIALOG", () -> {
             JEditorTextDialog.showEditor(dummyParent, "Input Customer Name", "Please enter the customer name:");
+        });
+    }
+
+    @Test
+    @DisplayName("Modal Migration 02: JEditorTextPanel via PosUIModal")
+    public void testModal_002_EditorTextPanel() throws Exception {
+        captureAndDismiss("02_editor_text_dialog_MODAL_FIXED", () -> {
+            com.openbravo.beans.JEditorTextPanel.show(dummyParent, "Input Customer Name", "Please enter the customer name:");
         });
     }
 
     @Test
     @DisplayName("Pre-Screen MODAL-003: JCalendarDialog Date Picker")
     public void testPreScreen_MODAL003_CalendarDialogDate() throws Exception {
-        captureAndDismiss("MODAL-003_calendar_dialog_date", () -> {
+        captureAndDismiss("03_calendar_dialog_date_DIALOG", () -> {
             JCalendarDialog.showCalendar(dummyParent, new Date());
         });
     }
@@ -130,40 +156,88 @@ public class PosDialogPreScreenBaselineIT {
     @Test
     @DisplayName("Pre-Screen MODAL-004: JCalendarDialog Date and Time Picker")
     public void testPreScreen_MODAL004_CalendarDialogTime() throws Exception {
-        captureAndDismiss("MODAL-004_calendar_dialog_time", () -> {
+        captureAndDismiss("04_calendar_dialog_time_DIALOG", () -> {
             JCalendarDialog.showCalendarTime(dummyParent, new Date());
+        });
+    }
+
+    @Test
+    @DisplayName("Modal Migration 03: JCalendarDlgPanel Date Picker via PosUIModal")
+    public void testModal_003_CalendarPanelDate() throws Exception {
+        captureAndDismiss("03_calendar_dialog_date_MODAL_FIXED", () -> {
+            com.openbravo.beans.JCalendarDlgPanel.showCalendar(dummyParent, new Date());
+        });
+    }
+
+    @Test
+    @DisplayName("Modal Migration 04: JCalendarDlgPanel Date and Time Picker via PosUIModal")
+    public void testModal_004_CalendarPanelTime() throws Exception {
+        captureAndDismiss("04_calendar_dialog_time_MODAL_FIXED", () -> {
+            com.openbravo.beans.JCalendarDlgPanel.showCalendarTime(dummyParent, new Date());
         });
     }
 
     @Test
     @DisplayName("Pre-Screen MODAL-005: JIntegerDialog Number Keypad")
     public void testPreScreen_MODAL005_IntegerDialog() throws Exception {
-        captureAndDismiss("MODAL-005_integer_dialog", () -> {
+        captureAndDismiss("05_integer_dialog_DIALOG", () -> {
             JIntegerDialog.showComponent(dummyParent, "Input Quantity", "Enter number of units:");
+        });
+    }
+
+    @Test
+    @DisplayName("Modal Migration 05: JIntegerPanel via PosUIModal")
+    public void testModal_005_IntegerPanel() throws Exception {
+        captureAndDismiss("05_integer_dialog_MODAL_FIXED", () -> {
+            com.openbravo.beans.JIntegerPanel.show(dummyParent, "Input Quantity", "Enter number of units:");
         });
     }
 
     @Test
     @DisplayName("Pre-Screen MODAL-006: JDoubleDialog Price/Currency Keypad")
     public void testPreScreen_MODAL006_DoubleDialog() throws Exception {
-        captureAndDismiss("MODAL-006_double_dialog", () -> {
+        captureAndDismiss("06_double_dialog_DIALOG", () -> {
             JDoubleDialog.showComponent(dummyParent, "Input Custom Price", "Enter unit price:");
+        });
+    }
+
+    @Test
+    @DisplayName("Modal Migration 06: JDoublePanel via PosUIModal")
+    public void testModal_006_DoublePanel() throws Exception {
+        captureAndDismiss("06_double_dialog_MODAL_FIXED", () -> {
+            com.openbravo.beans.JDoublePanel.show(dummyParent, "Input Custom Price", "Enter unit price:");
         });
     }
 
     @Test
     @DisplayName("Pre-Screen MODAL-007: DinerNumber Guests Keypad")
     public void testPreScreen_MODAL007_DinerNumber() throws Exception {
-        captureAndDismiss("MODAL-007_diner_number", () -> {
+        captureAndDismiss("07_diner_number_DIALOG", () -> {
             DinerNumber.showEditNumber(dummyParent, "Select Guest Count", "Number of guests:", null);
+        });
+    }
+
+    @Test
+    @DisplayName("Modal Migration 07: DinerNumberPanel via PosUIModal")
+    public void testModal_007_DinerNumberPanel() throws Exception {
+        captureAndDismiss("07_diner_number_MODAL_FIXED", () -> {
+            com.openbravo.beans.DinerNumberPanel.show(dummyParent, "Select Guest Count", "Number of guests:", null);
         });
     }
 
     @Test
     @DisplayName("Pre-Screen MODAL-008: JPasswordDialog Secret Keypad")
     public void testPreScreen_MODAL008_PasswordDialog() throws Exception {
-        captureAndDismiss("MODAL-008_password_dialog", () -> {
+        captureAndDismiss("08_password_dialog_DIALOG", () -> {
             JPasswordDialog.showEditor(dummyParent, "Enter Manager PIN", "PIN Required for Override:");
+        });
+    }
+
+    @Test
+    @DisplayName("Modal Migration 08: JPasswordPanel via PosUIModal")
+    public void testModal_008_PasswordPanel() throws Exception {
+        captureAndDismiss("08_password_dialog_MODAL_FIXED", () -> {
+            com.openbravo.beans.JPasswordPanel.show(dummyParent, "Enter Manager PIN", "PIN Required for Override:");
         });
     }
 
@@ -183,7 +257,7 @@ public class PosDialogPreScreenBaselineIT {
         };
         FindInfo<Object> findInfo = new FindInfo<>(vectorer, "Coffee", 0, false, FindInfo.MATCH_STARTFIELD);
 
-        captureAndDismiss("MODAL-009_find_dialog", () -> {
+        captureAndDismiss("09_find_dialog_DIALOG", () -> {
             try {
                 JFind.showMessage(null, findInfo);
             } catch (BasicException e) {
@@ -207,9 +281,58 @@ public class PosDialogPreScreenBaselineIT {
             }
         };
 
-        captureAndDismiss("MODAL-010_sort_dialog", () -> {
+        captureAndDismiss("10_sort_dialog_DIALOG", () -> {
             try {
                 JSort.showMessage(null, cc);
+            } catch (BasicException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    @Test
+    @DisplayName("Modal Migration 09: JFindPanel via PosUIModal")
+    public void testModal_009_FindPanel() throws Exception {
+        Vectorer<Object> vectorer = new Vectorer<>() {
+            @Override
+            public String[] getHeaders() {
+                return new String[]{"Product Code", "Product Name", "Category", "Price"};
+            }
+
+            @Override
+            public String[] getValues(Object obj) {
+                return new String[]{"P001", "Coffee", "Beverages", "2.50"};
+            }
+        };
+        FindInfo<Object> findInfo = new FindInfo<>(vectorer, "Coffee", 0, false, FindInfo.MATCH_STARTFIELD);
+
+        captureAndDismiss("09_find_dialog_MODAL_FIXED", () -> {
+            try {
+                com.openbravo.data.gui.JFindPanel.showMessage(null, findInfo);
+            } catch (BasicException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    @Test
+    @DisplayName("Modal Migration 10: JSortPanel via PosUIModal")
+    public void testModal_010_SortPanel() throws Exception {
+        ComparatorCreator<Object> cc = new ComparatorCreator<>() {
+            @Override
+            public String[] getHeaders() {
+                return new String[]{"Customer Name", "Balance Debt", "Created Date"};
+            }
+
+            @Override
+            public Comparator<Object> createComparator(int[] index) {
+                return (o1, o2) -> 0;
+            }
+        };
+
+        captureAndDismiss("10_sort_dialog_MODAL_FIXED", () -> {
+            try {
+                com.openbravo.data.gui.JSortPanel.showMessage(null, cc);
             } catch (BasicException e) {
                 throw new RuntimeException(e);
             }
@@ -378,8 +501,14 @@ public class PosDialogPreScreenBaselineIT {
             Path dest = targetDir.resolve(milestoneName + ".png");
             Files.copy(sourceFile.toPath(), dest, StandardCopyOption.REPLACE_EXISTING);
             LOGGER.log(Level.INFO, "Persisted baseline screenshot to: {0}", dest);
+
+            Path wsDir = Path.of("/home/dev/PDEV/kriolos-obiz/kriolos-pos/modal-screenshots-baseline");
+            if (Files.exists(wsDir)) {
+                Files.copy(sourceFile.toPath(), wsDir.resolve(milestoneName + ".png"), StandardCopyOption.REPLACE_EXISTING);
+                LOGGER.log(Level.INFO, "Copied screenshot to workspace folder: {0}", wsDir.resolve(milestoneName + ".png"));
+            }
         } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "Failed to copy baseline screenshot to artifacts: " + e.getMessage());
+            LOGGER.log(Level.WARNING, "Failed to copy baseline screenshot: " + e.getMessage());
         }
     }
 }

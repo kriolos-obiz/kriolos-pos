@@ -19,9 +19,10 @@ package com.openbravo.pos.forms;
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.gui.MessageInf;
 import com.openbravo.pos.config.JFrmConfig;
+import com.openbravo.pos.forms.AppProperties.DatabaseConfig;
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
@@ -30,10 +31,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultComboBoxModel;
+import javax.swing.DefaultListCellRenderer;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
@@ -50,36 +53,13 @@ public class DatabaseSelector extends JPanel {
     private static final long serialVersionUID = 1L;
 
     public interface DatabaseSelectListener {
-        void onDatabaseSelected(String dbKey, String dbName) throws BasicException;
-    }
-
-    public static class DatabaseItem {
-        private final String key;
-        private final String displayName;
-
-        public DatabaseItem(String key, String displayName) {
-            this.key = key;
-            this.displayName = displayName;
-        }
-
-        public String getKey() {
-            return key;
-        }
-
-        public String getDisplayName() {
-            return displayName;
-        }
-
-        @Override
-        public String toString() {
-            return displayName;
-        }
+        void onDatabaseSelected(DatabaseConfig dbConfig) throws BasicException;
     }
 
     private final AppProperties properties;
     private final List<DatabaseSelectListener> listeners = new ArrayList<>();
 
-    private JComboBox<DatabaseItem> comboDatabases;
+    private JComboBox<DatabaseConfig> comboDatabases;
     private JButton btnSelect;
     private JButton btnConfigure;
     private JLabel lblTitle;
@@ -104,16 +84,17 @@ public class DatabaseSelector extends JPanel {
         controlsPanel.setLayout(new javax.swing.BoxLayout(controlsPanel, javax.swing.BoxLayout.Y_AXIS));
 
         lblTitle = new JLabel();
-        lblTitle.setName("lblDatabaseSelector");
+        lblTitle.setName("kriolos:dbselector:lblDatabaseSelector");
 
         comboDatabases = new JComboBox<>();
-        comboDatabases.setName("comboDatabases");
+        comboDatabases.setName("kriolos:dbselector:comboDatabases");
         comboDatabases.setAlignmentX(java.awt.Component.CENTER_ALIGNMENT);
         comboDatabases.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
         comboDatabases.setPreferredSize(new Dimension(260, 30));
+        comboDatabases.setRenderer(new DatabaseConfigRenderer());
 
         btnSelect = new JButton(AppLocal.getIntString("button.activate"));
-        btnSelect.setName("btnSelectDatabase");
+        btnSelect.setName("kriolos:dbselector:btnSelectDatabase");
         btnSelect.setAlignmentX(java.awt.Component.CENTER_ALIGNMENT);
         btnSelect.setMaximumSize(new Dimension(Integer.MAX_VALUE, 32));
         btnSelect.setPreferredSize(new Dimension(260, 32));
@@ -156,23 +137,12 @@ public class DatabaseSelector extends JPanel {
     }
 
     public void loadDatabases() {
-        List<String> rawDbs = AppViewConnection.findAllDB(properties);
-        DefaultComboBoxModel<DatabaseItem> model = new DefaultComboBoxModel<>();
+        List<DatabaseConfig> rawDbs = properties.getAll();
+        DefaultComboBoxModel<DatabaseConfig> model = new DefaultComboBoxModel<>();
 
         if (rawDbs != null) {
-            for (String entry : rawDbs) {
-                // entry format: db.name=Main DB or db1.name=DBSecond
-                String[] parts = entry.split("=", 2);
-                String prefix = "db";
-                String name = entry;
-                if (parts.length >= 2) {
-                    name = parts[1];
-                    String[] keyParts = parts[0].split("[.]", 2);
-                    if (keyParts.length >= 1) {
-                        prefix = keyParts[0];
-                    }
-                }
-                model.addElement(new DatabaseItem(prefix, name));
+            for (DatabaseConfig entry : rawDbs) {
+                model.addElement(entry);
             }
         }
 
@@ -201,27 +171,23 @@ public class DatabaseSelector extends JPanel {
         listeners.remove(listener);
     }
 
-    public DatabaseItem getSelectedItem() {
-        return (DatabaseItem) comboDatabases.getSelectedItem();
+    public DatabaseConfig getSelectedItem() {
+        return (DatabaseConfig) comboDatabases.getSelectedItem();
     }
 
-    public String getSelectedDbKey() {
-        DatabaseItem item = getSelectedItem();
-        return item != null ? item.getKey() : AppViewConnection.getDefaultDB();
-    }
 
     public String getSelectedDbName() {
-        DatabaseItem item = getSelectedItem();
-        return item != null ? item.getDisplayName() : AppLocal.getIntString("label.defaultdatabase");
+        DatabaseConfig item = getSelectedItem();
+        return item != null ? item.name(): AppLocal.getIntString("label.defaultdatabase");
     }
 
-    public void setSelectedDbKey(String dbKey) {
-        if (dbKey == null) {
+    public void setSelectedDbKey(DatabaseConfig dbConfig) {
+        if (dbConfig == null) {
             return;
         }
         for (int i = 0; i < comboDatabases.getItemCount(); i++) {
-            DatabaseItem item = comboDatabases.getItemAt(i);
-            if (dbKey.equalsIgnoreCase(item.getKey())) {
+            DatabaseConfig item = comboDatabases.getItemAt(i);
+            if (dbConfig == item) {
                 comboDatabases.setSelectedIndex(i);
                 break;
             }
@@ -234,20 +200,20 @@ public class DatabaseSelector extends JPanel {
 
     public void autoSelectIfSingle() {
         if (comboDatabases.getItemCount() == 1) {
-            LOGGER.log(Level.INFO, "Single database configured, auto-activating: {0}", getSelectedDbKey());
+            LOGGER.log(Level.INFO, "Single database configured, auto-activating: {0}", getSelectedItem().name());
             notifySelection();
         }
     }
 
     private void notifySelection() {
-        DatabaseItem item = getSelectedItem();
+        DatabaseConfig item = getSelectedItem();
         if (item != null) {
-            LOGGER.log(Level.INFO, "Database selected from selector: {0} ({1})", new Object[]{item.getDisplayName(), item.getKey()});
+            LOGGER.log(Level.INFO, "Database selected from selector: {0} ({1})", new Object[]{item.name(), item.url()});
             for (DatabaseSelectListener listener : new ArrayList<>(listeners)) {
                 try {
-                    listener.onDatabaseSelected(item.getKey(), item.getDisplayName());
+                    listener.onDatabaseSelected(item);
                 } catch (BasicException ex) {
-                    LOGGER.log(Level.WARNING, "Error activating database: " + item.getKey(), ex);
+                    LOGGER.log(Level.WARNING, "Error activating database: " + item.name(), ex);
                     MessageInf msg = new MessageInf(MessageInf.SGN_WARNING,
                             AppLocal.getIntString("message.databaseconnectionerror"), ex);
                     msg.show(this);
@@ -276,7 +242,7 @@ public class DatabaseSelector extends JPanel {
         });
     }
 
-    public JComboBox<DatabaseItem> getComboDatabases() {
+    public JComboBox<DatabaseConfig> getComboDatabases() {
         return comboDatabases;
     }
 
@@ -286,5 +252,23 @@ public class DatabaseSelector extends JPanel {
 
     public JButton getBtnConfigure() {
         return btnConfigure;
+    }
+}
+
+
+class DatabaseConfigRenderer extends DefaultListCellRenderer {
+    @Override
+    public Component getListCellRendererComponent(JList<?> list, Object value, int index, 
+                                                  boolean isSelected, boolean cellHasFocus) {
+        
+        // Permite que o Swing trate o background, cores e seleção automaticamente
+        super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+        
+        if (value instanceof DatabaseConfig db) {
+            String label = db.name() != null ? db.name() : db.url();
+            setText(label); 
+        }
+        
+        return this;
     }
 }

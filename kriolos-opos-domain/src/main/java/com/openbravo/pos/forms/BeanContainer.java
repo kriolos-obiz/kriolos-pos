@@ -16,12 +16,6 @@
  */
 package com.openbravo.pos.forms;
 
-import com.openbravo.pos.forms.AppView;
-import com.openbravo.pos.forms.BeanFactory;
-import com.openbravo.pos.forms.BeanFactoryApp;
-import com.openbravo.pos.forms.BeanFactoryException;
-import com.openbravo.pos.forms.BeanFactoryObj;
-import com.openbravo.pos.forms.BeanFactoryScript;
 import java.util.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;

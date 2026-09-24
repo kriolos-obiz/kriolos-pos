@@ -93,17 +93,9 @@ public class JSort extends JDialog {
      * @return
      * @throws BasicException
      */
+    @SuppressWarnings("unchecked")
     public static Comparator showMessage(Component parent, ComparatorCreator cc) throws BasicException {
-         
-        Window window = getWindow(parent);      
-        
-        JSort myMsg;
-        if (window instanceof Frame) { 
-            myMsg = new JSort((Frame) window, true);
-        } else {
-            myMsg = new JSort((Dialog) window, true);
-        }
-        return myMsg.init(cc);
+        return JSortPanel.showMessage(parent, cc);
     }
     
     /** This method is called from within the constructor to

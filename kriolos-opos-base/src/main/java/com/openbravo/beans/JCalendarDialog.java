@@ -65,7 +65,7 @@ public class JCalendarDialog extends JDialog {
      * @return
      */
     public static Date showCalendarTimeHours(Component parent, Date date) {
-        return internalCalendarTime(parent, date == null ? DateUtils.getToday() : date, true);
+        return JCalendarDlgPanel.showCalendarTimeHours(parent, date);
     }
 
     /**
@@ -75,7 +75,7 @@ public class JCalendarDialog extends JDialog {
      * @return
      */
     public static Date showCalendarTime(Component parent, Date date) {
-        return internalCalendarTime(parent, date == null ? DateUtils.getTodayMinutes() : date, true);
+        return JCalendarDlgPanel.showCalendarTime(parent, date);
     }
 
     /**
@@ -85,45 +85,11 @@ public class JCalendarDialog extends JDialog {
      * @return
      */
     public static Date showCalendar(Component parent, Date date) {
-        return internalCalendarTime(parent, date == null ? DateUtils.getTodayMinutes() : date, false);
+        return JCalendarDlgPanel.showCalendar(parent, date);
     }
 
     private static Date internalCalendarTime(Component parent, Date date, boolean bTimePanel) {
-
-        Window window = getWindow(parent);
-
-        JCalendarDialog myMsg;
-        if (window instanceof Frame) {
-            myMsg = new JCalendarDialog((Frame) window, true);
-        } else {
-            myMsg = new JCalendarDialog((Dialog) window, true);
-        }
-
-        myMsg.initComponents();
-
-        Date d = date;
-        int dialogwidth = 400;
-
-        myMsg.myCalendar = new JCalendarPanel(d);
-        myMsg.myCalendar.addPropertyChangeListener("Date", new JPanelCalendarChange(myMsg));
-        myMsg.jPanelGrid.add(myMsg.myCalendar);
-
-        if (bTimePanel) {
-            myMsg.myTime = new JTimePanel(d);
-            myMsg.myTime.addPropertyChangeListener("Date", new JPanelTimeChange(myMsg));
-            myMsg.jPanelGrid.add(myMsg.myTime);
-            dialogwidth += 400;
-        }
-
-        myMsg.getRootPane().setDefaultButton(myMsg.jcmdOK);
-
-        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        myMsg.setBounds((screenSize.width - dialogwidth) / 2, (screenSize.height - 359) / 2, dialogwidth, 359);
-
-        //myMsg.show();
-        myMsg.m_date = null;
-        myMsg.setVisible(true);
-        return myMsg.m_date;
+        return JCalendarDlgPanel.show(parent, date, bTimePanel);
     }
 
     private static class JPanelTimeChange implements PropertyChangeListener {

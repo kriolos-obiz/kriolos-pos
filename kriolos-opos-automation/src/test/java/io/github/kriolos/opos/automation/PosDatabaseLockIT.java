@@ -3,9 +3,10 @@ package io.github.kriolos.opos.automation;
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.gui.JMessageDialog;
 import com.openbravo.data.gui.MessageInf;
+import com.openbravo.pos.forms.AppConfig;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppProperties;
-import com.openbravo.pos.forms.AppViewConnection;
+import com.openbravo.pos.forms.AppProperties.DatabaseConfig;
 import org.assertj.swing.core.BasicRobot;
 import org.assertj.swing.core.GenericTypeMatcher;
 import org.assertj.swing.core.Robot;
@@ -26,11 +27,13 @@ import java.awt.Window;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import org.openide.util.Exceptions;
 
 /**
  * Automated UI Robot Integration Test for verifying the isolated database connection test:
@@ -65,14 +68,12 @@ public class PosDatabaseLockIT {
     public void testConnectionSuccessIsSilentWithLogging() throws Exception {
         LOGGER.log(Level.INFO, "Testing valid connection test: must be silent with logging and no popup dialog...");
 
-        TestAppProperties props = new TestAppProperties();
-        props.setProperty("db.driver", "org.hsqldb.jdbcDriver");
-        props.setProperty("db.url", "jdbc:hsqldb:mem:silent_test_db");
-        props.setProperty("db.user", "sa");
-        props.setProperty("db.password", "");
+        //DRIVER: "org.hsqldb.jdbcDriver"
+        
+        DatabaseConfig dbconfig = new AppProperties.DatabaseConfig("TEDT DB", "jdbc:hsqldb:mem:silent_test_db", "sa", "");
 
         // Connection test must complete normally without throwing exception
-        AppViewConnection.testConnection(props, "db");
+        AppConfig.testConnection(dbconfig);
 
         // Verify that NO dialog is visible/opened (silent execution)
         for (Window w : Window.getWindows()) {
@@ -90,16 +91,12 @@ public class PosDatabaseLockIT {
     public void testConnectionFailureLogsExceptionAndShowsNonBlackDialog() throws Exception {
         LOGGER.log(Level.INFO, "Testing failed connection test: logs exception and shows JMessageDialog...");
 
-        TestAppProperties props = new TestAppProperties();
-        props.setProperty("db.driver", "org.hsqldb.jdbcDriver");
-        props.setProperty("db.url", "jdbc:hsqldb:file:/nonexistent_protected_dir/pos_locked_db;ifexists=true");
-        props.setProperty("db.user", "sa");
-        props.setProperty("db.password", "");
+        DatabaseConfig dbconfig = new AppProperties.DatabaseConfig("TEDT DB", "jdbc:hsqldb:file:/nonexistent_protected_dir/pos_locked_db;ifexists=true", "sa", "");
 
         Thread dialogThread = new Thread(() -> {
+            LOGGER.log(Level.INFO, "Executing connection test against unavailable database...");
             try {
-                LOGGER.log(Level.INFO, "Executing connection test against unavailable database...");
-                AppViewConnection.testConnection(props, "db");
+                AppConfig.testConnection(dbconfig);
             } catch (BasicException ex) {
                 LOGGER.log(Level.WARNING, "Caught expected connection test failure: " + ex.getMessage(), ex);
                 MessageInf msg = new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.databaseconnectionerror"), ex);
@@ -268,6 +265,16 @@ public class PosDatabaseLockIT {
         @Override
         public String getProperty(String sKey, String defaultValue) {
             return properties.getOrDefault(sKey, defaultValue);
+        }
+
+        @Override
+        public List<DatabaseConfig> getAll() {
+             return null;
+        }
+
+        @Override
+        public DatabaseConfig getPrimary() {
+            return null;
         }
     }
 }

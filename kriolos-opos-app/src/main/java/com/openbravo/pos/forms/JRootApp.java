@@ -22,6 +22,7 @@ import com.openbravo.format.Formats;
 import com.openbravo.pos.cash.CashManagementService;
 import com.openbravo.pos.cash.CashManagementServiceImpl;
 import com.openbravo.pos.cash.CashRegister;
+import com.openbravo.pos.forms.AppProperties.DatabaseConfig;
 import com.openbravo.pos.printer.DeviceTicket;
 import com.openbravo.pos.printer.TicketParser;
 import com.openbravo.pos.printer.TicketPrinterException;
@@ -101,19 +102,6 @@ public class JRootApp extends JPanel implements AppView {
 
         appTitleLabel.setText(customTile);
         appTitleLabel.repaint();
-
-        /*Timer show Date Hour:min:seg
-        javax.swing.Timer clockTimer = new javax.swing.Timer(1000, new ActionListener() {
-
-            @Override
-            public void actionPerformed(ActionEvent evt) {
-                String m_clock = getLineTimer();
-                String m_date = getLineDate();
-                jLabel2.setText("  " + m_date + " " + m_clock);
-            }
-        });
-
-        clockTimer.start();*/
     }
 
     private String getHostPropertyId() {
@@ -121,6 +109,9 @@ public class JRootApp extends JPanel implements AppView {
     }
 
     private void setInventoryLocation() {
+        if(hostSavedProperties == null){
+            return;
+        }
         inventoryLocation = hostSavedProperties.getProperty(HOST_PROP_KEY_LOCATION);
         if (inventoryLocation == null) {
             inventoryLocation = "0";
@@ -169,7 +160,7 @@ public class JRootApp extends JPanel implements AppView {
             }
         }
         catch (BasicException e) {
-            MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE,
+            MessageInf msg = new MessageInf(MessageInf.SGN_DANGER,
                     AppLocal.getIntString("message.cannotclosecash"), e);
             msg.show(this);
             return true;
@@ -183,15 +174,15 @@ public class JRootApp extends JPanel implements AppView {
 
         Instant machineTimestamp = Instant.now();
         String sContent = ""
-                + "timestamp: "+ machineTimestamp 
-                + ", appId: " + AppLocal.APP_ID 
-                + ", appName: " + AppLocal.APP_NAME 
-                + ", appVersion: " + AppLocal.APP_VERSION 
-                + ", appDir: "+ sUserPath 
-                + ", host: "+ appProperties.getHost() 
-                + ", hostCash: "+ getActiveCashIndex()
-                + ", hostCashSeq: "+ getActiveCashSequence()
-                + ", hostCashStart: "+ getActiveCashDateStart()
+                + "timestamp: " + machineTimestamp
+                + ", appId: " + AppLocal.APP_ID
+                + ", appName: " + AppLocal.APP_NAME
+                + ", appVersion: " + AppLocal.APP_VERSION
+                + ", appDir: " + sUserPath
+                + ", host: " + appProperties.getHost()
+                + ", hostCash: " + getActiveCashIndex()
+                + ", hostCashSeq: " + getActiveCashSequence()
+                + ", hostCashStart: " + getActiveCashDateStart()
                 + "\n";
 
         try {
@@ -406,72 +397,82 @@ public class JRootApp extends JPanel implements AppView {
             });
             contentContainerPanel.add(mAuthPanel, "login");
             if (mAuthPanel.getDatabaseSelector() != null) {
-                mAuthPanel.getDatabaseSelector().autoSelectIfSingle();
+//                mAuthPanel.getDatabaseSelector().autoSelectIfSingle();
             }
         }
         showView("login");
     }
 
     public void switchDatabase() throws BasicException {
-        String dbKey = (mAuthPanel != null && mAuthPanel.getDatabaseSelector() != null)
-                ? mAuthPanel.getDatabaseSelector().getSelectedDbKey()
+        DatabaseConfig dbConfig = (mAuthPanel != null && mAuthPanel.getDatabaseSelector() != null)
+                ? mAuthPanel.getDatabaseSelector().getSelectedItem()
                 : null;
+        
+        
+        if(dbConfig == null){
+            LOGGER.log(Level.INFO, "Not Databaseselected database");
+            return;
+        }
 
         try {
             waitCursorBegin();
-            LOGGER.log(Level.INFO, "Switching database: {0}", dbKey);
+            LOGGER.log(Level.INFO, "Switching database: {0} {1}", new Object[]{dbConfig.name(), dbConfig.url()});
 
             if (session != null) {
                 try {
                     session.close();
-                } catch (SQLException ex) {
+                }
+                catch (SQLException ex) {
                     LOGGER.log(Level.WARNING, "Error closing previous session: ", ex);
                 }
             }
 
             // Perform isolated database connection test first (silent if OK, logs & throws if failed)
-            AppViewConnection.testConnection(appProperties, dbKey);
-
-            session = AppViewConnection.createSession(appProperties, dbKey);
+            AppConfig.testConnection(dbConfig);
 
             LOGGER.log(Level.INFO, "DB Migration execution Starting");
             try {
+                session = new Session(dbConfig.url(), dbConfig.username(), dbConfig.password());
+
                 com.openbravo.pos.data.DBMigrator.execDBMigration(session);
-                LOGGER.log(Level.INFO, "Database verification or migration done successfully");
-            } catch (BasicException ex) {
-                throw new BasicException("Database verification fail", ex);
+                
+                LOGGER.log(Level.INFO, "DB Migration execution done successfully");
+
+                dlogicSystem = (DataLogicSystem) getBean("com.openbravo.pos.forms.DataLogicSystem");
+                dlogicSystem.init(session);
+
+                cashManagementService = new CashManagementServiceImpl(session);
+
+                hostSavedProperties = dlogicSystem.getResourceAsProperties(getHostPropertyId());
+
+                if (checkActiveCash()) {
+                    LOGGER.log(Level.WARNING, "Fail on verify ActiveCash");
+                    throw new BasicException("Fail on verify ActiveCash");
+                }
+
+                setInventoryLocation();
+                setTitlePanel();
+                setStatusBarPanel();
+
+                if (deviceTicket == null) {
+                    initPeripheral();
+                    logStartup();
+                } else {
+                    ticketParser = new TicketParser(getDeviceTicket(), dlogicSystem);
+                }
+
+                if (mAuthPanel != null) {
+                    mAuthPanel.updateDataLogicSystem(dlogicSystem);
+                }
+
+                LOGGER.log(Level.INFO, "Successfully completed switch to database");
+            }
+            catch (BasicException | BeanFactoryException | SQLException ex) {
+                throw new BasicException("Fail on switch database", ex);
             }
 
-            dlogicSystem = (DataLogicSystem) getBean("com.openbravo.pos.forms.DataLogicSystem");
-            dlogicSystem.init(session);
-
-            cashManagementService = new CashManagementServiceImpl(session);
-
-            hostSavedProperties = dlogicSystem.getResourceAsProperties(getHostPropertyId());
-
-            if (checkActiveCash()) {
-                LOGGER.log(Level.WARNING, "Fail on verify ActiveCash");
-                throw new BasicException("Fail on verify ActiveCash");
-            }
-
-            setInventoryLocation();
-            setTitlePanel();
-            setStatusBarPanel();
-
-            if (deviceTicket == null) {
-                initPeripheral();
-                logStartup();
-            } else {
-                ticketParser = new TicketParser(getDeviceTicket(), dlogicSystem);
-            }
-
-            if (mAuthPanel != null) {
-                mAuthPanel.updateDataLogicSystem(dlogicSystem);
-            }
-
-            LOGGER.log(Level.INFO, "Successfully completed switch to database");
-
-        } finally {
+        }
+        finally {
             waitCursorEnd();
         }
     }

@@ -48,7 +48,6 @@ public class StartPOS {
                 : null;
         AppConfig config = (configFile != null) ? AppConfig.getInstance(configFile) : AppConfig.getInstance();
         config.load();
-        AppConfig.applySystemProperties(config);
 
         SwingUtilities.invokeLater(new Runnable() {
 

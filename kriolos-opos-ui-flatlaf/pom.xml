@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.github.kriolos.opos</groupId>
+        <artifactId>kriolos-opos-parent</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+    <artifactId>kriolos-opos-ui-flatlaf</artifactId>
+    <name>Kriolos.POS.UI.FlatLaf</name>
+    <packaging>jar</packaging>
+    <properties>
+        <exec.mainClass>io.github.kriolos.opos.ui.flatlaf.KriolosOposUiFlatlaf</exec.mainClass>
+        
+        <flatlaf.version>2.6</flatlaf.version>
+    </properties>
+    
+    <dependencies>
+        <!-- Dependency to the SPI artifact -->
+        <dependency>
+            <groupId>io.github.kriolos.opos</groupId>
+            <artifactId>kriolos-opos-ui-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <!-- Concrete Engine Dependency -->
+        <!-- flatlaf - Swing LaF -->
+        <dependency>
+            <groupId>com.formdev</groupId>
+            <artifactId>flatlaf</artifactId>
+            <version>${flatlaf.version}</version>
+            <scope>compile</scope> <!-- NBM:PROVIDED -->
+        </dependency>
+        <!-- Flat Look and Feel addon for SwingX -->
+        <dependency>
+            <groupId>com.formdev</groupId>
+            <artifactId>flatlaf-swingx</artifactId>
+            <version>${flatlaf.version}</version>
+            <scope>runtime</scope> 
+        </dependency>
+        <dependency> 
+            <groupId>com.formdev</groupId> 
+            <artifactId>flatlaf-intellij-themes</artifactId> 
+            <version>${flatlaf.version}</version>
+            <scope>runtime</scope> 
+        </dependency>
+    </dependencies>
+</project>

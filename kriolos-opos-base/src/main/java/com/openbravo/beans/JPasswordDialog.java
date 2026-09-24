@@ -64,25 +64,7 @@ public class JPasswordDialog extends JEditorTextDialog{
      * to prevent Wayland floating decoupling.
      */
     public static String showEditor(Component parent, String title, String message, Icon icon) {
-
-        Window window = getWindow(parent);
-        JPasswordDialog dialog;
-
-        if (window instanceof Frame) {
-            dialog = new JPasswordDialog((Frame) window, true);
-        } else if (window instanceof Dialog) {
-            dialog = new JPasswordDialog((Dialog) window, true);
-        } else {
-            // Fallback: build without a parent but force focus configurations
-            dialog = new JPasswordDialog((Frame) null, true);
-        }
-
-        // Explicitly enforce modality and hint to the window manager
-        // that this cannot exist independently of its ancestor hierarchy.
-        dialog.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
-
-        // Calls the shared parent method which contains the pack() and positioning logic
-        return showDialog(dialog, title, message, icon);
+        return JPasswordPanel.show(parent, title, message, icon);
     }
 
     public static String changePassword(Component parent) {

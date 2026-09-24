@@ -126,20 +126,10 @@ public class JEditorTextDialog extends javax.swing.JDialog {
     }
 
     /**
-     * Factory pattern method to instantiate, position, and present the dialog box safely.
+     * Factory pattern method delegating to {@link JEditorTextPanel} and {@link com.openbravo.data.gui.modal.PosUIModal}.
      */
     public static String showEditor(Component parent, String title, String message, Icon icon) {
-        
-        Window window = getWindow(parent);      
-        
-        JEditorTextDialog dialog;
-        if (window instanceof Frame) { 
-            dialog = new JEditorTextDialog((Frame) window, true);
-        } else {
-            dialog = new JEditorTextDialog((Dialog) window, true);
-        }
-        
-        return showDialog(dialog, title, message, icon);
+        return JEditorTextPanel.show(parent, title, message, icon);
     }
 
     /**

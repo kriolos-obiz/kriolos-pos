@@ -17,7 +17,7 @@
 
 module kriolos.opos.base {
     requires java.base;
-    requires java.desktop;
+    requires transitive java.desktop;
     requires java.sql;
     requires java.sql.rowset;
     requires java.logging;
@@ -25,6 +25,7 @@ module kriolos.opos.base {
     exports com.openbravo.basic;
     exports com.openbravo.beans; 
     exports com.openbravo.data.gui; 
+    exports com.openbravo.data.gui.modal; 
     exports com.openbravo.data.loader; 
     exports com.openbravo.data.model; 
     exports com.openbravo.data.user; 

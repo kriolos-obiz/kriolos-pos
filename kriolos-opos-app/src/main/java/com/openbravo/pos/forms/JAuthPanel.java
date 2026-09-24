@@ -20,6 +20,7 @@ import com.openbravo.basic.BasicException;
 import com.openbravo.beans.JFlowPanel;
 import com.openbravo.beans.JPasswordDialog;
 import com.openbravo.data.gui.MessageInf;
+import com.openbravo.pos.forms.AppProperties.DatabaseConfig;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.GridBagLayout;
@@ -38,17 +39,18 @@ public class JAuthPanel extends javax.swing.JPanel {
     private static final long serialVersionUID = 1L;
 
     private StringBuilder inputtext;
-    private AppView m_app;
+    private AppView appView;
     private DataLogicSystem m_dlSystem;
     private final AuthListener authListener;
     private DatabaseSelector databaseSelector;
+    private JLabel selectDBLabel = new JLabel("Please Select DB");
 
     public JAuthPanel(AppView app, DataLogicSystem dlSystem, AppProperties props, AuthListener authcListener) {
-        this.m_app = app;
+        this.appView = app;
         this.authListener = authcListener;
         this.m_dlSystem = dlSystem;
         this.databaseSelector = new DatabaseSelector(props);
-        
+
         initComponents();
         initPanel();
     }
@@ -62,23 +64,29 @@ public class JAuthPanel extends javax.swing.JPanel {
     }
 
     private void initPanel() {
+        
+        selectDBLabel.getSize().setSize(selectDBLabel.getSize().width, selectDBLabel.getSize().height * 1.20);
+        
         if (databaseSelector != null) {
             leftPanel.remove(leftHeaderPanel);
             JPanel headerContainer = new JPanel(new BorderLayout());
             headerContainer.add(leftHeaderPanel, BorderLayout.NORTH);
             headerContainer.add(databaseSelector, BorderLayout.CENTER);
+            headerContainer.add(selectDBLabel, BorderLayout.SOUTH);
             leftPanel.add(headerContainer, BorderLayout.NORTH);
 
             databaseSelector.addDatabaseSelectListener(new DatabaseSelector.DatabaseSelectListener() {
                 @Override
-                public void onDatabaseSelected(String dbKey, String dbName) throws BasicException {
-                    if (m_app != null) {
-                        m_app.switchDatabase();
+                public void onDatabaseSelected(DatabaseConfig conf) throws BasicException {
+                    selectDBLabel.setText(conf.name());
+                    showEmptyUserList();
+                    if (appView != null) {
+                        appView.switchDatabase();
                     }
                 }
             });
         }
-       
+
         usersLisScrollPane.getVerticalScrollBar().setPreferredSize(new Dimension(30, 30));
         showListPeople();
 
@@ -109,26 +117,36 @@ public class JAuthPanel extends javax.swing.JPanel {
         repaint();
     }
 
+    private void showEmptyUserList() {
+
+        JPanel emptyPanel = new JPanel(new GridBagLayout());
+        emptyPanel.setOpaque(false);
+
+        java.net.URL imgURL = getClass().getResource("/com/openbravo/images/database.png");
+        Icon dbIcon = (imgURL != null) ? new ImageIcon(imgURL) : null;
+
+        JLabel lblPrompt = new JLabel(
+                AppLocal.getIntString("message.databasenotselected"),
+                dbIcon,
+                SwingConstants.CENTER);
+        lblPrompt.setName("lblNoDatabaseSelected");
+        lblPrompt.setVerticalTextPosition(SwingConstants.BOTTOM);
+        lblPrompt.setHorizontalTextPosition(SwingConstants.CENTER);
+        lblPrompt.setIconTextGap(12);
+
+        emptyPanel.add(lblPrompt);
+        usersLisScrollPane.getViewport().setView(emptyPanel);
+        return;
+
+    }
+
     private void showListPeople() {
+        
+        LOGGER.log(Level.INFO, "Updating user list Section");
 
         if (m_dlSystem == null) {
-            JPanel emptyPanel = new JPanel(new GridBagLayout());
-            emptyPanel.setOpaque(false);
-
-            java.net.URL imgURL = getClass().getResource("/com/openbravo/images/database.png");
-            Icon dbIcon = (imgURL != null) ? new ImageIcon(imgURL) : null;
-
-            JLabel lblPrompt = new JLabel(
-                    AppLocal.getIntString("message.databasenotselected"),
-                    dbIcon,
-                    SwingConstants.CENTER);
-            lblPrompt.setName("lblNoDatabaseSelected");
-            lblPrompt.setVerticalTextPosition(SwingConstants.BOTTOM);
-            lblPrompt.setHorizontalTextPosition(SwingConstants.CENTER);
-            lblPrompt.setIconTextGap(12);
-
-            emptyPanel.add(lblPrompt);
-            usersLisScrollPane.getViewport().setView(emptyPanel);
+            usersLisScrollPane.getViewport().setView(null);
+            showEmptyUserList();
             return;
         }
 
@@ -140,11 +158,11 @@ public class JAuthPanel extends javax.swing.JPanel {
             jPeople.applyComponentOrientation(getComponentOrientation());
 
             java.util.List<AppUser> peoples = m_dlSystem.listPeopleVisible();
-            
-            LOGGER.log(Level.INFO, "Number of Peoples found is: "+peoples.size());
+
+            LOGGER.log(Level.INFO, "Number of Peoples found is: " + peoples.size());
 
             for (AppUser user : peoples) {
-                
+
                 JButton btn = new JButton(new AppUserAction(user));
                 btn.applyComponentOrientation(getComponentOrientation());
                 btn.setFocusPainted(false);
@@ -161,7 +179,8 @@ public class JAuthPanel extends javax.swing.JPanel {
 
             usersLisScrollPane.getViewport().setView(jPeople);
 
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             LOGGER.log(Level.WARNING, "Exception on listPeople: ", ex);
         }
     }
@@ -173,7 +192,8 @@ public class JAuthPanel extends javax.swing.JPanel {
             if (m_dlSystem != null) {
                 try {
                     user = m_dlSystem.findPeopleByCard(inputtext.toString());
-                } catch (BasicException ex) {
+                }
+                catch (BasicException ex) {
                     LOGGER.log(Level.WARNING, "Exception on findPeopleByCard: ", ex);
                 }
             }
@@ -193,8 +213,6 @@ public class JAuthPanel extends javax.swing.JPanel {
     }
 
     public void showPanel() {
-
-        
     }
 
     class AppUserAction extends AbstractAction {
@@ -240,13 +258,15 @@ public class JAuthPanel extends javax.swing.JPanel {
                         }
                     }
                 }
-            } catch (Exception ex) {
+            }
+            catch (Exception ex) {
                 LOGGER.log(Level.WARNING, "Exception on LOGIN: ", ex);
             }
         }
     }
-    
+
     public interface AuthListener {
+
         public void onSucess(AppUser user);
     }
 

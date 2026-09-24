@@ -17,6 +17,7 @@
 package com.openbravo.pos.forms;
 
 import java.io.File;
+import java.util.List;
 
 /**
  *
@@ -47,7 +48,14 @@ public interface AppProperties {
     /**
      * Read the property from the key pair
      * @param sKey key pair value
+     * @param defaultValue defaultValue
      * @return key pair property
      */
     public String getProperty(String sKey, String defaultValue);
+    
+    public List<DatabaseConfig> getAll();
+    
+    public DatabaseConfig getPrimary();
+    
+    public static record DatabaseConfig(String name, String url, String username, String password) {}
 }

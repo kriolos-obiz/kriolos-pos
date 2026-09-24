@@ -36,7 +36,7 @@ public class DataLogicInventory extends BeanFactoryDataSingle {
             WHERE LOCATION = ? 
             GROUP BY PRODUCT
         ) S ON P.ID = S.PRODUCT 
-//        ORDER BY P.NAME
+        ORDER BY P.NAME
         """;
 
     public static final String SQL_STOCKLEVEL_INSERT = "INSERT INTO stocklevel (ID, LOCATION, PRODUCT, STOCKSECURITY, STOCKMAXIMUM) VALUES (?, ?, ?, ?, ?)";

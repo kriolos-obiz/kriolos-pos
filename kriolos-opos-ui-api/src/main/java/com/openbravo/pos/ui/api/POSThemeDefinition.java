@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 KriolOS
+ * Copyright (C) 2026 KriolOS
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,14 +14,20 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.openbravo.pos.core.spi.gui;
+package com.openbravo.pos.ui.api;
 
-import java.util.List;
 /**
- *
- * @author poolborges
+ * Immutable metadata representing a discovered UI theme.
+ * 
+ * @param id   The unique identification token used for lookups (e.g., "spectrum-dark").
+ * @param name The human-readable label shown in the POS backoffice/settings panel.
+ * @param mode Informational mode tag (LIGHT or DARK) for the system context layout.
  */
-public interface LafProvider {
+public record POSThemeDefinition(String id, String name, ThemeMode mode) {
     
-    public List<LafInfo> getLafInfoList();
+    public POSThemeDefinition {
+        if (id == null || name == null || mode == null) {
+            throw new IllegalArgumentException("Theme definition metadata tokens cannot be null.");
+        }
+    }
 }

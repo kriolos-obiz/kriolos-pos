@@ -53,20 +53,7 @@ public class JIntegerDialog extends JNumberDialog<Integer> {
         return showComponent(parent, title, message, null);
     }
     public static Integer showComponent(Component parent, String title, String message, Icon icon) {
-        
-        Window window = SwingUtilities.windowForComponent(parent);
-        
-        JIntegerDialog entryDialog;
-        if (window instanceof Frame) { 
-            entryDialog = new JIntegerDialog((Frame) window, true);
-        } else {
-            entryDialog = new JIntegerDialog((Dialog) window, true);
-        }
-        
-        entryDialog.setTitle(title, message, icon);
-        entryDialog.setVisible(true);
-        
-        return entryDialog.getValue();
+        return JIntegerPanel.show(parent, title, message, icon);
     }
 
 }

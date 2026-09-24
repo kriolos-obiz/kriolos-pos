@@ -85,91 +85,20 @@ public class JMessageDialog extends javax.swing.JDialog {
      * @param inf
      */
     public static void showMessage(Component parent, MessageInf inf) {
-
-        createMessageDialog(parent, inf, false);
+        JMessagePanel.showMessage(parent, inf);
     }
 
     public static int showConfirmDialog(Component parent, MessageInf inf) {
-        return createMessageDialog(parent, inf, true);
+        return JMessagePanel.showConfirmDialog(parent, inf);
     }
 
-    /**
-     * Constructs, initializes, lays out, and displays the modal {@link JMessageDialog}.
-     *
-     * @param parent the parent component used to anchor and center the dialog
-     * @param inf the message metadata and payload model (icon, signal code, text, cause)
-     * @param showConfirm {@code true} to display the Cancel button for confirmation mode,
-     *                    {@code false} for informational/alert mode
-     * @return the chosen option index (0 for OK, -1 for Cancel or close)
-     */
     private static int createMessageDialog(Component parent, MessageInf inf, boolean showConfirm) {
-        Window window = getWindow(parent);
-        JMessageDialog myMsg;
-        if (window instanceof Frame) {
-            myMsg = new JMessageDialog((Frame) window, true);
+        if (showConfirm) {
+            return JMessagePanel.showConfirmDialog(parent, inf);
         } else {
-            myMsg = new JMessageDialog((Dialog) window, true);
+            JMessagePanel.showMessage(parent, inf);
+            return 0;
         }
-
-        myMsg.initComponents();
-        if (parent != null) {
-            myMsg.applyComponentOrientation(parent.getComponentOrientation());
-        }
-        myMsg.jscrException.setVisible(false);
-        myMsg.getRootPane().setDefaultButton(myMsg.jcmdOK);
-
-        myMsg.jlblIcon.setIcon(inf.getSignalWordIcon());
-        myMsg.jlblIcon.setText(inf.getCode() + " " + inf.getErrorCodeMsg());
-        myMsg.jlblMessage.setText(inf.getMessage());
-
-        myMsg.jcmdCancel.setEnabled(showConfirm);
-        myMsg.jcmdCancel.setVisible(showConfirm);
-
-        // Capturamos el texto de la excepcion...
-        if (inf.getCause() == null) {
-            myMsg.jtxtException.setText(null);
-        } else {
-            StringBuilder sb = new StringBuilder();
-
-            if (inf.getCause() instanceof Throwable) {
-                Throwable t = (Throwable) inf.getCause();
-                while (t != null) {
-                    sb.append(t.getClass().getName());
-                    sb.append(": \n");
-                    sb.append(t.getMessage());
-                    sb.append("\n\n");
-                    t = t.getCause();
-                }
-            } else if (inf.getCause() instanceof Throwable[]) {
-                Throwable[] m_aExceptions = (Throwable[]) inf.getCause();
-                for (int i = 0; i < m_aExceptions.length; i++) {
-                    sb.append(m_aExceptions[i].getClass().getName());
-                    sb.append(": \n");
-                    sb.append(m_aExceptions[i].getMessage());
-                    sb.append("\n\n");
-                }
-            } else if (inf.getCause() instanceof Object[]) {
-                Object[] m_aObjects = (Object[]) inf.getCause();
-                for (int i = 0; i < m_aObjects.length; i++) {
-                    sb.append(m_aObjects[i].toString());
-                    sb.append("\n\n");
-                }
-            } else if (inf.getCause() instanceof String) {
-                sb.append(inf.getCause().toString());
-            } else {
-                sb.append(inf.getCause().getClass().getName());
-                sb.append(": \n");
-                sb.append(inf.getCause().toString());
-            }
-            myMsg.jtxtException.setText(sb.toString());
-        }
-        myMsg.jtxtException.setCaretPosition(0);
-
-        // Prepare dialog layout and surface validation prior to mapping
-        myMsg.prepareAndValidateDialog(window);
-
-        myMsg.setVisible(true);
-        return myMsg.getOptionChosed();
     }
 
     /**
@@ -296,7 +225,7 @@ public class JMessageDialog extends javax.swing.JDialog {
         getContentPane().add(jPanel3, java.awt.BorderLayout.SOUTH);
 
         setSize(new java.awt.Dimension(482, 345));
-        //REMOVED SET LOCATION RELATIVE TO
+        setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 
     private void jcmdMoreActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jcmdMoreActionPerformed
