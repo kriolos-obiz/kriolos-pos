@@ -53,9 +53,7 @@ public class SystemSettings {
     }
 
     public static void applyPosTheme(String themeId) {
-        if(POSThemeManager.getThemeDefinition(themeId).isPresent()){
-            POSThemeManager.applyTheme(themeId);
-        }
+        POSThemeManager.applyTheme(themeId);
     }
 
     /**

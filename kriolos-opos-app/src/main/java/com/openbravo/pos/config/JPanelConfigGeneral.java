@@ -122,10 +122,13 @@ public class JPanelConfigGeneral extends javax.swing.JPanel implements PanelConf
         
         String themeId = config.getProperty("pos.ui.theme.id");
         jcboLAF.setSelectedItem(null);
-        for (int position = 0; position < jcboLAF.getItemCount(); position++) {
-            if (POSThemeManager.getThemeDefinition(themeId).isPresent()) {
-                jcboLAF.setSelectedIndex(position);
-                break;
+        if (themeId != null) {
+            for (int position = 0; position < jcboLAF.getItemCount(); position++) {
+                POSThemeDefinition item = (POSThemeDefinition) jcboLAF.getItemAt(position);
+                if (item != null && item.id().equalsIgnoreCase(themeId)) {
+                    jcboLAF.setSelectedIndex(position);
+                    break;
+                }
             }
         }
 
@@ -134,7 +137,6 @@ public class JPanelConfigGeneral extends javax.swing.JPanel implements PanelConf
         jchkHideInfo.setSelected(Boolean.parseBoolean(config.getProperty("till.hideinfo")));        
         jtxtStartupLogo.setText(config.getProperty("start.logo"));
         jtxtStartupText.setText(config.getProperty("start.text")); 
-        jtxtStartupLogo.setText(config.getProperty("start.logo"));
         jtxtStartupHTML.setText(config.getProperty("start.html"));
         dirty.setDirty(false);
     }
@@ -150,7 +152,9 @@ public class JPanelConfigGeneral extends javax.swing.JPanel implements PanelConf
         config.setProperty("machine.department", jtxtMachineDepartment.getText());      
         
         POSThemeDefinition posTheme = (POSThemeDefinition) jcboLAF.getSelectedItem();
-        config.setProperty("pos.ui.theme.id", posTheme.id());
+        if (posTheme != null) {
+            config.setProperty("pos.ui.theme.id", posTheme.id());
+        }
 
         config.setProperty("machine.screenmode", comboValue(jcboMachineScreenmode.getSelectedItem()));
         config.setProperty("machine.ticketsbag", comboValue(jcboTicketsBag.getSelectedItem()));
