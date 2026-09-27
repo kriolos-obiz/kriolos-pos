@@ -60,7 +60,7 @@
 
           <Layout class="org.netbeans.modules.form.compat2.layouts.support.JScrollPaneSupportLayout"/>
           <SubComponents>
-            <Component class="com.openbravo.pos.forms.JCopyRightPanel" name="jCopyRightPanel1">
+            <Component class="com.openbravo.pos.forms.CopyrightPanel" name="jCopyRightPanel1">
             </Component>
           </SubComponents>
         </Container>

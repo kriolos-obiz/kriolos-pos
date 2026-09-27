@@ -38,7 +38,7 @@
         </Constraint>
       </Constraints>
     </Component>
-    <Component class="com.openbravo.pos.forms.JCopyRightPanel" name="jCopyRightPanel1">
+    <Component class="com.openbravo.pos.forms.CopyrightPanel" name="jCopyRightPanel1">
       <Constraints>
         <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout" value="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout$BorderConstraintsDescription">
           <BorderConstraints direction="Center"/>

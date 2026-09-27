@@ -268,7 +268,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                     </execution>
                 </executions>
                 <configuration>
-                    <mainClass>com.openbravo.pos.forms.StartPOS</mainClass>
+                    <mainClass>com.openbravo.pos.forms.BootstrapPOS</mainClass>
                     <!--
                    ### awt.useSystemAAFontSettings
                        on: active antialiasing default.
@@ -309,7 +309,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                         <manifest>
                             <addClasspath>true</addClasspath>
                             <classpathPrefix>lib/</classpathPrefix>
-                            <mainClass>com.openbravo.pos.forms.StartPOS</mainClass>
+                            <mainClass>com.openbravo.pos.forms.BootstrapPOS</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
@@ -339,12 +339,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     <profiles>
         
         <profile>
-            <id>run-StartPOS</id>
+            <id>run-BootstrapPOS</id>
             <activation>
                 <activeByDefault>true</activeByDefault>
             </activation>
             <properties>
-                <exec.mainClass>com.openbravo.pos.forms.StartPOS</exec.mainClass>
+                <exec.mainClass>com.openbravo.pos.forms.BootstrapPOS</exec.mainClass>
+            </properties>
+        </profile>
+        <profile>
+            <id>run-StartPOS</id>
+            <properties>
+                <exec.mainClass>com.openbravo.pos.forms.BootstrapPOS</exec.mainClass>
             </properties>
         </profile>
         <profile>
@@ -410,7 +416,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                             </execution>
                         </executions>
                         <configuration>
-                            <mainClass>com.openbravo.pos.forms.StartPOS</mainClass>
+                            <mainClass>com.openbravo.pos.forms.BootstrapPOS</mainClass>
                             <!--
                            ### awt.useSystemAAFontSettings
                                on: active antialiasing default.
