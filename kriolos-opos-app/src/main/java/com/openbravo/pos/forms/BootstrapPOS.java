@@ -56,7 +56,7 @@ public class BootstrapPOS {
             @Override
             public void run() {
 
-                final RootFrame rootFrame = new RootFrame(config);
+                final WindowShell rootFrame = new WindowShell(config);
 
                 //CHECK SINGLE INSTANCE RMI
                 if (!checkSingletonInstance(rootFrame, config)) {
@@ -68,7 +68,7 @@ public class BootstrapPOS {
         });
     }
 
-    static boolean checkSingletonInstance(RootFrame rootFrame, AppConfig config) {
+    static boolean checkSingletonInstance(WindowShell rootFrame, AppConfig config) {
         if ("true".equals(config.getProperty("machine.uniqueinstance"))) {
 
             try {

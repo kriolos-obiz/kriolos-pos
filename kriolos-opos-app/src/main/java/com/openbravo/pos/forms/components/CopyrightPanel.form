@@ -47,7 +47,7 @@
         </Property>
         <Property name="horizontalAlignment" type="int" value="2"/>
         <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-          <ResourceString bundle="com/openbravo/pos/forms/Bundle.properties" key="JCopyRightPanel.copyRightLabel.text" replaceFormat="org.openide.util.NbBundle.getMessage({sourceFileName}.class, &quot;{key}&quot;)"/>
+          <ResourceString bundle="pos_messages.properties" key="JCopyRightPanel.copyRightLabel.text" replaceFormat="AppLocal.getIntString(&quot;{key}&quot;)"/>
         </Property>
         <Property name="verticalAlignment" type="int" value="1"/>
         <Property name="alignmentX" type="float" value="0.5"/>

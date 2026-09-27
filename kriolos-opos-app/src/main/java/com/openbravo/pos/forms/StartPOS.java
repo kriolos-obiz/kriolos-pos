@@ -35,7 +35,7 @@ public class StartPOS {
         BootstrapPOS.main(args);
     }
 
-    static boolean checkSingletonInstance(JRootFrame rootFrame, AppConfig config) {
+    static boolean checkSingletonInstance(WindowShell rootFrame, AppConfig config) {
         return BootstrapPOS.checkSingletonInstance(rootFrame, config);
     }
 }

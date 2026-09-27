@@ -22,6 +22,7 @@ import com.openbravo.data.gui.MessageInf;
 import com.openbravo.pos.domain.navigation.MenuHistoryEngine;
 import com.openbravo.pos.domain.navigation.NavigationResult;
 import com.openbravo.pos.domain.navigation.ScreenRoute;
+import com.openbravo.pos.forms.components.ErrorPanel;
 import java.awt.CardLayout;
 import java.awt.Dimension;
 import java.util.Set;
@@ -33,12 +34,12 @@ import javax.swing.*;
  *
  * @author adrianromero
  */
-public class PrincipalAppPanel extends JPanel implements AppUserView {
+public class WordspacePanel extends JPanel implements AppUserView {
 
-    private static final Logger LOGGER = Logger.getLogger(PrincipalAppPanel.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(WordspacePanel.class.getName());
     private static final long serialVersionUID = 1L;
 
-    private final RootAppPanel appRootPanel;
+    private final ApplicationShell appRootPanel;
     private final AppUser appCurrentUser;
     private final DataLogicSystem dataLogicSystem;
     private final JLabel notificatorLabel;
@@ -59,7 +60,7 @@ public class PrincipalAppPanel extends JPanel implements AppUserView {
      * @param appview
      * @param appuser
      */
-    public PrincipalAppPanel(RootAppPanel appview, AppUser appuser) {
+    public WordspacePanel(ApplicationShell appview, AppUser appuser) {
 
         appRootPanel = appview;
         appCurrentUser = appuser;
@@ -291,7 +292,7 @@ public class PrincipalAppPanel extends JPanel implements AppUserView {
                     viewPanel = (JPanelView) appRootPanel.getBean(sTaskClass);
                 } catch (BeanFactoryException e) {
                     LOGGER.log(Level.SEVERE, "Exception on get a JPanelView Bean for class: " + sTaskClass, e);
-                    viewPanel = new NullPanel(appRootPanel, e);
+                    viewPanel = new ErrorPanel(appRootPanel, e);
                 }
             }
             rootMenu.getViewManager().getCreatedViews().put(sTaskClass, viewPanel);
@@ -381,18 +382,18 @@ public class PrincipalAppPanel extends JPanel implements AppUserView {
                 try {
                     MessageInf m = myProcess.execute();
                     if (m != null) {
-                        JMessagePanel.showMessage(PrincipalAppPanel.this, m);
+                        JMessagePanel.showMessage(WordspacePanel.this, m);
                     }
                 } catch (BasicException eb) {
-                    JMessagePanel.showMessage(PrincipalAppPanel.this, new MessageInf(eb));
+                    JMessagePanel.showMessage(WordspacePanel.this, new MessageInf(eb));
                 }
             } catch (BeanFactoryException e) {
-                JMessagePanel.showMessage(PrincipalAppPanel.this,
+                JMessagePanel.showMessage(WordspacePanel.this,
                         new MessageInf(MessageInf.SGN_WARNING,
                                 AppLocal.getIntString("label.LoadError"), e));
             }
         } else {
-            JMessagePanel.showMessage(PrincipalAppPanel.this,
+            JMessagePanel.showMessage(WordspacePanel.this,
                     new MessageInf(MessageInf.SGN_WARNING,
                             AppLocal.getIntString("message.notpermissions")));
         }

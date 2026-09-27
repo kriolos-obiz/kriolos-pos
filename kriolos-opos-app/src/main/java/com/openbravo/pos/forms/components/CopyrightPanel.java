@@ -14,10 +14,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.openbravo.pos.forms;
+package com.openbravo.pos.forms.components;
+
+import com.openbravo.pos.forms.AppLocal;
 
 /**
- * Copyright display panel.
+ * Copyright display panel component.
  *
  * @author poolborges
  */
@@ -68,7 +70,7 @@ public class CopyrightPanel extends javax.swing.JPanel {
 
         copyRightLabel.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
         copyRightLabel.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-        org.openide.awt.Mnemonics.setLocalizedText(copyRightLabel, org.openide.util.NbBundle.getMessage(CopyrightPanel.class, "JCopyRightPanel.copyRightLabel.text")); // NOI18N
+        org.openide.awt.Mnemonics.setLocalizedText(copyRightLabel, AppLocal.getIntString("JCopyRightPanel.copyRightLabel.text")); // NOI18N
         copyRightLabel.setVerticalAlignment(javax.swing.SwingConstants.TOP);
         copyRightLabel.setAlignmentX(0.5F);
         copyRightLabel.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);

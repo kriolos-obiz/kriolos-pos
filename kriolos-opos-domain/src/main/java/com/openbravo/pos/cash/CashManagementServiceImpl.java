@@ -48,10 +48,8 @@ public class CashManagementServiceImpl implements CashManagementService {
             Datas.STRING}))
                 .exec(new Object[]{dateEnd, noSales, host, money});
 
-        // Note: The logic for creating the NEXT cash sequence is typically handled by
-        // the AppView/JRootApp
-        // after this method returns, or could be encapsulated here if we pass more
-        // context.
+        // Note: The logic for creating the NEXT cash sequence is typically handled by the AppView
+        // after this method returns, or could be encapsulated here if we pass more context.
         // For now, we replicate the specific UPDATE logic from JPanelCloseMoney.
     }
 

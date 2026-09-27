@@ -13,18 +13,21 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-package com.openbravo.pos.forms;
+package com.openbravo.pos.forms.components;
 
 import com.openbravo.basic.BasicException;
+import com.openbravo.pos.forms.AppLocal;
+import com.openbravo.pos.forms.AppView;
+import com.openbravo.pos.forms.JPanelView;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 
 /**
- * Empty / error fallback panel used when a view fails to initialize.
+ * Empty / error fallback panel component used when a view fails to initialize.
  *
  * @author adrianromero
  */
-public class NullPanel extends JPanel implements JPanelView {
+public class ErrorPanel extends JPanel implements JPanelView {
 
     private static final long serialVersionUID = 1L;
 
@@ -34,7 +37,7 @@ public class NullPanel extends JPanel implements JPanelView {
      * @param oApp
      * @param o
      */
-    public NullPanel(AppView oApp, Object o) {
+    public ErrorPanel(AppView oApp, Object o) {
 
         initComponents();
         if (o != null) {

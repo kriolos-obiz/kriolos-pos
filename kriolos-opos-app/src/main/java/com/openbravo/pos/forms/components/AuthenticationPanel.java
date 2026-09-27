@@ -14,13 +14,19 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.openbravo.pos.forms;
+package com.openbravo.pos.forms.components;
 
 import com.openbravo.basic.BasicException;
 import com.openbravo.beans.JFlowPanel;
 import com.openbravo.beans.JPasswordPanel;
 import com.openbravo.data.gui.MessageInf;
+import com.openbravo.pos.forms.AppConfig;
+import com.openbravo.pos.forms.AppLocal;
+import com.openbravo.pos.forms.AppProperties;
 import com.openbravo.pos.forms.AppProperties.DatabaseConfig;
+import com.openbravo.pos.forms.AppUser;
+import com.openbravo.pos.forms.AppView;
+import com.openbravo.pos.forms.DataLogicSystem;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.GridBagLayout;
@@ -34,9 +40,9 @@ import javax.swing.*;
  *
  * @author poolborges
  */
-public class AuthPanel extends javax.swing.JPanel {
+public class AuthenticationPanel extends javax.swing.JPanel {
 
-    private static final Logger LOGGER = Logger.getLogger(AuthPanel.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(AuthenticationPanel.class.getName());
     private static final long serialVersionUID = 1L;
 
     private StringBuilder inputtext;
@@ -46,7 +52,7 @@ public class AuthPanel extends javax.swing.JPanel {
     private DatabaseSelectorPanel databaseSelector;
     private JLabel selectDBLabel = new JLabel("Please Select DB");
 
-    public AuthPanel(AppView app, DataLogicSystem dlSystem, AppProperties props, AuthListener authcListener) {
+    public AuthenticationPanel(AppView app, DataLogicSystem dlSystem, AppProperties props, AuthListener authcListener) {
         this.appView = app;
         this.authListener = authcListener;
         this.m_dlSystem = dlSystem;
@@ -56,11 +62,11 @@ public class AuthPanel extends javax.swing.JPanel {
         initPanel();
     }
 
-    public AuthPanel(DataLogicSystem dlSystem, AppProperties props, AuthListener authcListener) {
+    public AuthenticationPanel(DataLogicSystem dlSystem, AppProperties props, AuthListener authcListener) {
         this(null, dlSystem, props, authcListener);
     }
 
-    public AuthPanel(DataLogicSystem dlSystem, AuthListener authcListener) {
+    public AuthenticationPanel(DataLogicSystem dlSystem, AuthListener authcListener) {
         this(null, dlSystem, AppConfig.getInstance(), authcListener);
     }
 
@@ -209,8 +215,7 @@ public class AuthPanel extends javax.swing.JPanel {
                     LOGGER.log(Level.INFO, "Login Success without password");
                     authListener.onSucess(m_actionuser);
                 } else {
-                    String sPassword = JPasswordPanel.show(
-                            SwingUtilities.getWindowAncestor(AuthPanel.this),
+                    String sPassword = JPasswordPanel.show(SwingUtilities.getWindowAncestor(AuthenticationPanel.this),
                             AppLocal.getIntString("label.Password"),
                             m_actionuser.getName(),
                             m_actionuser.getIcon());
@@ -223,7 +228,7 @@ public class AuthPanel extends javax.swing.JPanel {
                             LOGGER.log(Level.INFO, "Login failed");
                             MessageInf msg = new MessageInf(MessageInf.SGN_WARNING,
                                     AppLocal.getIntString("message.BadPassword"));
-                            msg.show(AuthPanel.this);
+                            msg.show(AuthenticationPanel.this);
                         }
                     }
                 }
@@ -249,13 +254,12 @@ public class AuthPanel extends javax.swing.JPanel {
     private void initComponents() {
 
         mainPanel = new javax.swing.JPanel();
-        m_vendorImageLabel = new javax.swing.JLabel();
+        vendorImageLabel = new javax.swing.JLabel();
         mainScrollPanel = new javax.swing.JScrollPane();
-        copyrightPanel1 = new com.openbravo.pos.forms.CopyrightPanel();
         filler2 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 0), new java.awt.Dimension(0, 10), new java.awt.Dimension(32767, 0));
         leftPanel = new javax.swing.JPanel();
         leftHeaderPanel = new javax.swing.JPanel();
-        jLabel1 = new javax.swing.JLabel();
+        headerLabel = new javax.swing.JLabel();
         usersLisScrollPane = new javax.swing.JScrollPane();
         leftFooterPanel = new javax.swing.JPanel();
         m_txtKeys = new javax.swing.JTextField();
@@ -264,16 +268,14 @@ public class AuthPanel extends javax.swing.JPanel {
 
         mainPanel.setLayout(new java.awt.BorderLayout());
 
-        m_vendorImageLabel.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-        m_vendorImageLabel.setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/openbravo/images/logo_100×100.png"))); // NOI18N
-        org.openide.awt.Mnemonics.setLocalizedText(m_vendorImageLabel, org.openide.util.NbBundle.getMessage(AuthPanel.class, "JAuthPanel.m_vendorImageLabel.text")); // NOI18N
-        m_vendorImageLabel.setToolTipText(org.openide.util.NbBundle.getMessage(AuthPanel.class, "JAuthPanel.m_vendorImageLabel.toolTipText")); // NOI18N
-        m_vendorImageLabel.setHorizontalTextPosition(javax.swing.SwingConstants.LEFT);
-        m_vendorImageLabel.setName("m_vendorImageLabel"); // NOI18N
-        mainPanel.add(m_vendorImageLabel, java.awt.BorderLayout.NORTH);
-        m_vendorImageLabel.getAccessibleContext().setAccessibleName(org.openide.util.NbBundle.getMessage(AuthPanel.class, "JAuthPanel.m_vendorImageLabel.AccessibleContext.accessibleName")); // NOI18N
-
-        mainScrollPanel.setViewportView(copyrightPanel1);
+        vendorImageLabel.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        vendorImageLabel.setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/openbravo/images/logo_100×100.png"))); // NOI18N
+        org.openide.awt.Mnemonics.setLocalizedText(vendorImageLabel, AppLocal.getIntString("JAuthPanel.m_vendorImageLabel.text")); // NOI18N
+        vendorImageLabel.setToolTipText(AppLocal.getIntString("JAuthPanel.m_vendorImageLabel.toolTipText")); // NOI18N
+        vendorImageLabel.setHorizontalTextPosition(javax.swing.SwingConstants.LEFT);
+        vendorImageLabel.setName("vendorImageLabel"); // NOI18N
+        mainPanel.add(vendorImageLabel, java.awt.BorderLayout.NORTH);
+        vendorImageLabel.getAccessibleContext().setAccessibleName("");
 
         mainPanel.add(mainScrollPanel, java.awt.BorderLayout.CENTER);
         mainPanel.add(filler2, java.awt.BorderLayout.SOUTH);
@@ -288,11 +290,11 @@ public class AuthPanel extends javax.swing.JPanel {
         leftHeaderPanel.setPreferredSize(new java.awt.Dimension(300, 40));
         leftHeaderPanel.setLayout(new java.awt.BorderLayout());
 
-        jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        org.openide.awt.Mnemonics.setLocalizedText(jLabel1, org.openide.util.NbBundle.getMessage(AuthPanel.class, "JAuthPanel.m_LoginLabel.text")); // NOI18N
-        jLabel1.setName("m_LoginLabel"); // NOI18N
-        leftHeaderPanel.add(jLabel1, java.awt.BorderLayout.CENTER);
-        jLabel1.getAccessibleContext().setAccessibleName(org.openide.util.NbBundle.getMessage(AuthPanel.class, "JAuthPanel.m_LoginLabel.AccessibleContext.accessibleName")); // NOI18N
+        headerLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        org.openide.awt.Mnemonics.setLocalizedText(headerLabel, AppLocal.getIntString("JAuthPanel.m_LoginLabel.text")); // NOI18N
+        headerLabel.setName("m_LoginLabel"); // NOI18N
+        leftHeaderPanel.add(headerLabel, java.awt.BorderLayout.CENTER);
+        headerLabel.getAccessibleContext().setAccessibleName(AppLocal.getIntString("AuthenticationPanel.headerLabel.AccessibleContext.accessibleName")); // NOI18N
 
         leftPanel.add(leftHeaderPanel, java.awt.BorderLayout.NORTH);
 
@@ -337,16 +339,15 @@ public class AuthPanel extends javax.swing.JPanel {
     }//GEN-LAST:event_m_txtKeysKeyTyped
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private com.openbravo.pos.forms.CopyrightPanel copyrightPanel1;
     private javax.swing.Box.Filler filler2;
-    private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel headerLabel;
     private javax.swing.JPanel leftFooterPanel;
     private javax.swing.JPanel leftHeaderPanel;
     private javax.swing.JPanel leftPanel;
     private javax.swing.JTextField m_txtKeys;
-    private javax.swing.JLabel m_vendorImageLabel;
     private javax.swing.JPanel mainPanel;
     private javax.swing.JScrollPane mainScrollPanel;
     private javax.swing.JScrollPane usersLisScrollPane;
+    private javax.swing.JLabel vendorImageLabel;
     // End of variables declaration//GEN-END:variables
 }

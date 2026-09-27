@@ -14,11 +14,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.openbravo.pos.forms;
+package com.openbravo.pos.forms.components;
 
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.gui.MessageInf;
 import com.openbravo.pos.config.JFrmConfig;
+import com.openbravo.pos.forms.AppLocal;
+import com.openbravo.pos.forms.AppProperties;
 import com.openbravo.pos.forms.AppProperties.DatabaseConfig;
 import java.awt.BorderLayout;
 import java.awt.Component;
@@ -273,20 +275,15 @@ public class DatabaseSelectorPanel extends JPanel {
     }
 }
 
-
 class DatabaseConfigRenderer extends DefaultListCellRenderer {
     @Override
     public Component getListCellRendererComponent(JList<?> list, Object value, int index, 
                                                   boolean isSelected, boolean cellHasFocus) {
-        
-        // Permite que o Swing trate o background, cores e seleção automaticamente
         super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-        
         if (value instanceof DatabaseConfig db) {
             String label = db.name() != null ? db.name() : db.url();
             setText(label); 
         }
-        
         return this;
     }
 }

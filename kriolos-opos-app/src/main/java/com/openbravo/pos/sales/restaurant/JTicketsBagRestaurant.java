@@ -27,7 +27,7 @@ import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.forms.DataLogicSales;
 import com.openbravo.pos.forms.DataLogicSystem;
-import com.openbravo.pos.forms.JRootApp;
+import com.openbravo.pos.forms.ApplicationShell;
 import com.openbravo.pos.printer.TicketParser;
 import com.openbravo.pos.printer.TicketPrinterException;
 import com.openbravo.pos.scripting.ScriptEngine;
@@ -296,7 +296,7 @@ public class JTicketsBagRestaurant extends javax.swing.JPanel {
             if (autoLogoffRestaurant != null && autoLogoffRestaurant.equals("true")) {
                 ticketsBagRestaurantMap.newTicket();
             } else {
-                ((JRootApp) appView).closeAppView();
+                ((ApplicationShell) appView).closeAppView();
             }
         }
     }//GEN-LAST:event_j_btnKitchenActionPerformed

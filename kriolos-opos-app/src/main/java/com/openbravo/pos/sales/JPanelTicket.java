@@ -1661,7 +1661,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                             if (isRestaurantMode() && isAutoLogoutRestaurant()) {
                                 deactivate();
                             } else {
-                                ((JRootApp) m_App).closeAppView();
+                                ((ApplicationShell) m_App).closeAppView();
                             }
                         }
 
@@ -3163,13 +3163,13 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
             if (isRestaurantMode()) {
                 deactivate();
                 if (isAutoLogoutRestaurant()) {
-                    ((JRootApp) m_App).closeAppView();
+                    ((ApplicationShell) m_App).closeAppView();
                 } else {
                     setActiveTicket(null, null);
                 }
             } else {
                 deactivate();
-                ((JRootApp) m_App).closeAppView();
+                ((ApplicationShell) m_App).closeAppView();
             }
         }
     }

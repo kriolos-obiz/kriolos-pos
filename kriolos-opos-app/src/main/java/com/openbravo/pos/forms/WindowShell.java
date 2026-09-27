@@ -1,5 +1,5 @@
 //    KriolOS POS
-//    Copyright (c) 2019-2023 KriolOS
+//    Copyright (c) 2019-2026 KriolOS
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -18,37 +18,50 @@ package com.openbravo.pos.forms;
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.gui.JMessagePanel;
 import com.openbravo.data.gui.MessageInf;
-
-import java.awt.*;
-import java.io.IOException;
-import java.rmi.RemoteException;
-import javax.imageio.ImageIO;
-import java.awt.event.FocusEvent;
-import java.awt.event.FocusListener;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.swing.JOptionPane;
-
 import com.openbravo.pos.config.JPanelConfiguration;
 import com.openbravo.pos.instance.AppMessage;
 import com.openbravo.pos.util.OSValidator;
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.Frame;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
+import java.awt.Toolkit;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.io.IOException;
+import java.rmi.RemoteException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.imageio.ImageIO;
+import javax.swing.JOptionPane;
 
 /**
- * @author adrianromero
+ * WindowShell represents the top-level operating system desktop window container.
+ *
+ * <p>In the Application Shell Pattern, WindowShell manages the outer window lifecycle,
+ * fullscreen/kiosk modes, window decorations, OS taskbar branding, and the root layered pane.</p>
  */
-public class RootFrame extends javax.swing.JFrame implements AppMessage {
+public class WindowShell extends javax.swing.JFrame implements AppMessage {
 
-    private static final Logger LOGGER = Logger.getLogger(RootFrame.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(WindowShell.class.getName());
     private static final long serialVersionUID = 1L;
 
-    private final SplashScreenPanel splashScreen = new SplashScreenPanel();
-    private final RootAppPanel m_rootapp;
+    private final ApplicationShell m_rootapp;
     private final AppProperties m_props;
 
-    public RootFrame(AppProperties props) {
+    public WindowShell(AppProperties props) {
         initComponents();
         m_props = props;
-        m_rootapp = new RootAppPanel(m_props);
+        m_rootapp = new ApplicationShell(m_props);
+    }
+
+    public ApplicationShell getApplicationShell() {
+        return m_rootapp;
+    }
+
+    public ApplicationShell getRootAppPanel() {
+        return m_rootapp;
     }
 
     public void initFrame() {
@@ -58,7 +71,7 @@ public class RootFrame extends javax.swing.JFrame implements AppMessage {
 
         try {
             // 1. Load the frame icon (Classic Swing window decoration)
-            java.awt.Image appIcon = ImageIO.read(RootFrame.class.getResourceAsStream(image));
+            java.awt.Image appIcon = ImageIO.read(WindowShell.class.getResourceAsStream(image));
             this.setIconImage(appIcon);
 
             // 2. Set the OS Taskbar icon (Modern cross-platform support)
@@ -74,20 +87,15 @@ public class RootFrame extends javax.swing.JFrame implements AppMessage {
             LOGGER.log(Level.WARNING, "Security exception encountered accessing the Taskbar.", e);
         }
 
-        //SHOW SPLASH
-        getContentPane().add(splashScreen, BorderLayout.CENTER);
-
-        //LOAD APP PANEL
+        // LOAD APP PANEL
         try {
             m_rootapp.initApp();
-            getContentPane().remove(splashScreen);
 
             getContentPane().add(m_rootapp, BorderLayout.CENTER);
             sendInitEnvent();
 
         } catch (BasicException ex) {
-            //LOAD CONFIG PANEL
-
+            // LOAD CONFIG PANEL
             int opionRes = JMessagePanel.showConfirmDialog(this,
                     new MessageInf(MessageInf.SGN_DANGER,
                             "<html>Application fail to start<br>Do you want to open the configuration panel?", ex));
@@ -100,7 +108,6 @@ public class RootFrame extends javax.swing.JFrame implements AppMessage {
                     System.exit(0);
                 });
 
-                getContentPane().remove(splashScreen);
                 getContentPane().add(config, BorderLayout.CENTER);
 
                 setVisible(true);
@@ -132,13 +139,13 @@ public class RootFrame extends javax.swing.JFrame implements AppMessage {
 
     private void modeWindowMaximized() {
         setExtendedState(MAXIMIZED_BOTH);
-        setLocationRelativeTo(null); //center
+        setLocationRelativeTo(null); // center
         setVisible(true);
     }
 
     private void modeWindow() {
         pack();
-        setLocationRelativeTo(null); //center
+        setLocationRelativeTo(null); // center
         setVisible(true);
     }
 
@@ -178,16 +185,6 @@ public class RootFrame extends javax.swing.JFrame implements AppMessage {
     }
 
     private void sendInitEnvent() {
-        /**
-         * String scriptId = "application.started"; try { ScriptEngine
-         * scriptEngine =
-         * ScriptFactory.getScriptEngine(ScriptFactory.BEANSHELL);
-         *
-         * String script = ; scriptEngine.put("device", m_props.getHost());
-         * scriptEngine.eval(script); } catch (BeanFactoryException |
-         * ScriptException e) { LOGGER.log(Level.WARNING, "Exception on
-         * executing scriptId: " + scriptId, e); }
-         */
     }
 
     /**
@@ -209,18 +206,17 @@ public class RootFrame extends javax.swing.JFrame implements AppMessage {
                 // 3. Request focus safely
                 requestFocus();
 
-                // 4. Hack for modern OS to force focus bypass (Brings window on top)
+                // 4. Bypass focus on modern OS
                 try {
                     boolean alwaysOnTopState = isAlwaysOnTop();
                     setAlwaysOnTop(true);
-                    setAlwaysOnTop(alwaysOnTopState); // Reverts to original state immediately
+                    setAlwaysOnTop(alwaysOnTopState);
                 } catch (SecurityException e) {
                     LOGGER.log(Level.CONFIG, "Bypass always-on-top focus failed due to OS security.", e);
                 }
             }
         });
     }
-
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -243,15 +239,11 @@ public class RootFrame extends javax.swing.JFrame implements AppMessage {
     }// </editor-fold>//GEN-END:initComponents
 
     private void formWindowClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosing
-
         m_rootapp.tryToClose();
-
     }//GEN-LAST:event_formWindowClosing
 
     private void formWindowClosed(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosed
-
         System.exit(0);
-
     }//GEN-LAST:event_formWindowClosed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

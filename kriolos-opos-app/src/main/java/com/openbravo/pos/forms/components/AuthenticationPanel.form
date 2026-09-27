@@ -25,25 +25,23 @@
 
       <Layout class="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout"/>
       <SubComponents>
-        <Component class="javax.swing.JLabel" name="m_vendorImageLabel">
+        <Component class="javax.swing.JLabel" name="vendorImageLabel">
           <Properties>
             <Property name="horizontalAlignment" type="int" value="2"/>
             <Property name="icon" type="javax.swing.Icon" editor="org.netbeans.modules.form.editors2.IconEditor">
               <Image iconType="3" name="/com/openbravo/images/logo_100&#xd7;100.png"/>
             </Property>
             <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-              <ResourceString bundle="com/openbravo/pos/forms/Bundle.properties" key="JAuthPanel.m_vendorImageLabel.text" replaceFormat="org.openide.util.NbBundle.getMessage({sourceFileName}.class, &quot;{key}&quot;)"/>
+              <ResourceString bundle="pos_messages.properties" key="JAuthPanel.m_vendorImageLabel.text" replaceFormat="AppLocal.getIntString(&quot;{key}&quot;)"/>
             </Property>
             <Property name="toolTipText" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-              <ResourceString bundle="com/openbravo/pos/forms/Bundle.properties" key="JAuthPanel.m_vendorImageLabel.toolTipText" replaceFormat="org.openide.util.NbBundle.getMessage({sourceFileName}.class, &quot;{key}&quot;)"/>
+              <ResourceString bundle="com/openbravo/pos/forms/Bundle.properties" key="JAuthPanel.m_vendorImageLabel.toolTipText" replaceFormat="AppLocal.getIntString(&quot;{key}&quot;)"/>
             </Property>
             <Property name="horizontalTextPosition" type="int" value="2"/>
-            <Property name="name" type="java.lang.String" value="m_vendorImageLabel" noResource="true"/>
+            <Property name="name" type="java.lang.String" value="vendorImageLabel" noResource="true"/>
           </Properties>
           <AccessibilityProperties>
-            <Property name="AccessibleContext.accessibleName" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-              <ResourceString bundle="com/openbravo/pos/forms/Bundle.properties" key="JAuthPanel.m_vendorImageLabel.AccessibleContext.accessibleName" replaceFormat="org.openide.util.NbBundle.getMessage({sourceFileName}.class, &quot;{key}&quot;)"/>
-            </Property>
+            <Property name="AccessibleContext.accessibleName" type="java.lang.String" value=""/>
           </AccessibilityProperties>
           <Constraints>
             <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout" value="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout$BorderConstraintsDescription">
@@ -59,10 +57,6 @@
           </Constraints>
 
           <Layout class="org.netbeans.modules.form.compat2.layouts.support.JScrollPaneSupportLayout"/>
-          <SubComponents>
-            <Component class="com.openbravo.pos.forms.CopyrightPanel" name="jCopyRightPanel1">
-            </Component>
-          </SubComponents>
         </Container>
         <Component class="javax.swing.Box$Filler" name="filler2">
           <Properties>
@@ -116,17 +110,17 @@
 
           <Layout class="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout"/>
           <SubComponents>
-            <Component class="javax.swing.JLabel" name="jLabel1">
+            <Component class="javax.swing.JLabel" name="headerLabel">
               <Properties>
                 <Property name="horizontalAlignment" type="int" value="0"/>
                 <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-                  <ResourceString bundle="com/openbravo/pos/forms/Bundle.properties" key="JAuthPanel.m_LoginLabel.text" replaceFormat="org.openide.util.NbBundle.getMessage({sourceFileName}.class, &quot;{key}&quot;)"/>
+                  <ResourceString bundle="pos_messages.properties" key="JAuthPanel.m_LoginLabel.text" replaceFormat="AppLocal.getIntString(&quot;{key}&quot;)"/>
                 </Property>
                 <Property name="name" type="java.lang.String" value="m_LoginLabel" noResource="true"/>
               </Properties>
               <AccessibilityProperties>
                 <Property name="AccessibleContext.accessibleName" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-                  <ResourceString bundle="com/openbravo/pos/forms/Bundle.properties" key="JAuthPanel.m_LoginLabel.AccessibleContext.accessibleName" replaceFormat="org.openide.util.NbBundle.getMessage({sourceFileName}.class, &quot;{key}&quot;)"/>
+                  <ResourceString bundle="com/openbravo/pos/forms/components/Bundle.properties" key="AuthenticationPanel.headerLabel.AccessibleContext.accessibleName" replaceFormat="AppLocal.getIntString(&quot;{key}&quot;)"/>
                 </Property>
               </AccessibilityProperties>
               <Constraints>

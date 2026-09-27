@@ -15,6 +15,7 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>
 package com.openbravo.pos.forms;
 
+import com.openbravo.pos.forms.components.AuthenticationPanel;
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.gui.MessageInf;
 import com.openbravo.data.loader.Session;
@@ -50,9 +51,9 @@ import java.time.Instant;
  *
  * @author adrianromero
  */
-public class RootAppPanel extends JPanel implements AppView {
+public class ApplicationShell extends JPanel implements AppView {
 
-    private static final Logger LOGGER = Logger.getLogger(RootAppPanel.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(ApplicationShell.class.getName());
     private static final long serialVersionUID = 1L;
 
     private final AppProperties appProperties;
@@ -69,8 +70,8 @@ public class RootAppPanel extends JPanel implements AppView {
     private DeviceTicket deviceTicket;
     private TicketParser ticketParser;
 
-    private PrincipalAppPanel principalApp = null;
-    private AuthPanel mAuthPanel = null;
+    private WordspacePanel principalApp = null;
+    private AuthenticationPanel mAuthPanel = null;
 
     private static final String HOST_PROP_KEY_ACTIVECASH = "activecash";
     private static final String HOST_PROP_KEY_LOCATION = "location";
@@ -83,7 +84,7 @@ public class RootAppPanel extends JPanel implements AppView {
         return Formats.DATE.formatValue(new Date());
     }
 
-    public RootAppPanel(AppProperties props) {
+    public ApplicationShell(AppProperties props) {
         initComponents();
 
         appProperties = props;
@@ -324,7 +325,7 @@ public class RootAppPanel extends JPanel implements AppView {
         LOGGER.log(Level.WARNING, "INFO :: showMainAppPanel");
         if (closeAppView()) {
 
-            principalApp = new PrincipalAppPanel(this, user);
+            principalApp = new WordspacePanel(this, user);
 
             statusBarSecondPanel.add(principalApp.getNotificator());
             statusBarSecondPanel.revalidate();
@@ -389,7 +390,7 @@ public class RootAppPanel extends JPanel implements AppView {
     private void showLoginPanel() {
         LOGGER.log(Level.WARNING, "INFO :: showLoginPanel");
         if (mAuthPanel == null) {
-            mAuthPanel = new AuthPanel(this, dlogicSystem, appProperties, new AuthPanel.AuthListener() {
+            mAuthPanel = new AuthenticationPanel(this, dlogicSystem, appProperties, new AuthenticationPanel.AuthListener() {
                 @Override
                 public void onSucess(AppUser user) {
                     openAppView(user);
