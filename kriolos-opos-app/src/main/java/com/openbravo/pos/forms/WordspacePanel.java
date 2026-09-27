@@ -106,6 +106,7 @@ public class WordspacePanel extends JPanel implements AppUserView {
      * <p>Called immediately after {@code initComponents()} in the constructor.</p>
      */
     private void initDomainAdapters() {
+        setName("kriolos:workspace:panel");
 
         // --- Back button ---
         btnNavBack = new JButton();

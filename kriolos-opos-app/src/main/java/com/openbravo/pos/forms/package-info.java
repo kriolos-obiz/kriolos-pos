@@ -50,8 +50,7 @@
  * <h2>Auxiliary Components</h2>
  * <p>Reusable sub-panels and leaf views are organized under {@link com.openbravo.pos.forms.components}:</p>
  * <ul>
- *   <li>{@link com.openbravo.pos.forms.components.AuthenticationPanel}: Operator authentication and database activation view.</li>
- *   <li>{@link com.openbravo.pos.forms.components.DatabaseSelectorPanel}: Interactive panel for selecting and activating configured databases.</li>
+ *   <li>{@link com.openbravo.pos.forms.components.AuthenticationPanel}: Integrated operator authentication and database selection view.</li>
  *   <li>{@link com.openbravo.pos.forms.components.CopyrightPanel}: Legal attribution and copyright branding view.</li>
  *   <li>{@link com.openbravo.pos.forms.components.ErrorPanel}: Fallback placeholder view rendered when view bean creation fails.</li>
  * </ul>

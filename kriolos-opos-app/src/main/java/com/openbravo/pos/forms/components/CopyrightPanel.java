@@ -33,6 +33,8 @@ public class CopyrightPanel extends javax.swing.JPanel {
      */
     public CopyrightPanel() {
         initComponents();
+        setName("kriolos:copyright:panel");
+        copyRightLabel.setName("kriolos:copyright:lbl-content");
         
         copyRightLabel.setText("<html><center>"
                 + "<h1>KriolOS POS</h1>"

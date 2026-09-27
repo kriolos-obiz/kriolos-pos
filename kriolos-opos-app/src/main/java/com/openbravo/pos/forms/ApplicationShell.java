@@ -86,7 +86,7 @@ public class ApplicationShell extends JPanel implements AppView {
 
     public ApplicationShell(AppProperties props) {
         initComponents();
-
+        setName("kriolos:app:shell");
         appProperties = props;
     }
 
@@ -388,7 +388,7 @@ public class ApplicationShell extends JPanel implements AppView {
     }
 
     private void showLoginPanel() {
-        LOGGER.log(Level.WARNING, "INFO :: showLoginPanel");
+        LOGGER.log(Level.INFO, "Showing Authentication Panel");
         if (mAuthPanel == null) {
             mAuthPanel = new AuthenticationPanel(this, dlogicSystem, appProperties, new AuthenticationPanel.AuthListener() {
                 @Override
@@ -397,60 +397,67 @@ public class ApplicationShell extends JPanel implements AppView {
                 }
             });
             contentContainerPanel.add(mAuthPanel, "login");
-            if (mAuthPanel.getDatabaseSelector() != null) {
-//                mAuthPanel.getDatabaseSelector().autoSelectIfSingle();
+
+            // Auto-activate initial default database if not yet connected
+            if (dlogicSystem == null && mAuthPanel.getSelectedDatabase() != null) {
+                SwingUtilities.invokeLater(() -> mAuthPanel.activateSelectedDatabase());
             }
         }
         showView("login");
     }
 
-    public void switchDatabase() throws BasicException {
-        DatabaseConfig dbConfig = (mAuthPanel != null && mAuthPanel.getDatabaseSelector() != null)
-                ? mAuthPanel.getDatabaseSelector().getSelectedItem()
-                : null;
-        
-        
-        if(dbConfig == null){
-            LOGGER.log(Level.INFO, "Not Databaseselected database");
+    /**
+     * Activates a database asynchronously using a background SwingWorker, reporting
+     * real-time progress steps and completing on the Event Dispatch Thread.
+     *
+     * @param dbConfig The target database configuration to connect to.
+     * @param callback Optional callback for real-time progress, success, and error notifications.
+     */
+    public void activateDatabase(DatabaseConfig dbConfig, DatabaseActivationCallback callback) {
+        if (dbConfig == null) {
+            if (callback != null) {
+                callback.onError(new IllegalArgumentException("DatabaseConfig cannot be null"));
+            }
             return;
         }
 
-        try {
-            waitCursorBegin();
-            LOGGER.log(Level.INFO, "Switching database: {0} {1}", new Object[]{dbConfig.name(), dbConfig.url()});
+        LOGGER.log(Level.INFO, "Starting asynchronous database activation for: {0} ({1})",
+                new Object[]{dbConfig.name(), dbConfig.url()});
+        waitCursorBegin();
 
-            if (session != null) {
-                try {
-                    session.close();
+        javax.swing.SwingWorker<DataLogicSystem, String> worker = new javax.swing.SwingWorker<>() {
+            @Override
+            protected DataLogicSystem doInBackground() throws Exception {
+                publish("A verificar parâmetros da base de dados...");
+                AppConfig.testConnection(dbConfig);
+
+                publish("A ligar à base de dados...");
+                if (session != null) {
+                    try {
+                        session.close();
+                    } catch (SQLException ex) {
+                        LOGGER.log(Level.WARNING, "Error closing previous session: ", ex);
+                    }
                 }
-                catch (SQLException ex) {
-                    LOGGER.log(Level.WARNING, "Error closing previous session: ", ex);
-                }
-            }
+                Session newSession = new Session(dbConfig.url(), dbConfig.username(), dbConfig.password());
 
-            // Perform isolated database connection test first (silent if OK, logs & throws if failed)
-            AppConfig.testConnection(dbConfig);
+                publish("A executar migrações de dados...");
+                com.openbravo.pos.data.DBMigrator.execDBMigration(newSession);
 
-            LOGGER.log(Level.INFO, "DB Migration execution Starting");
-            try {
-                session = new Session(dbConfig.url(), dbConfig.username(), dbConfig.password());
-
-                com.openbravo.pos.data.DBMigrator.execDBMigration(session);
-                
-                LOGGER.log(Level.INFO, "DB Migration execution done successfully");
-
-                dlogicSystem = (DataLogicSystem) getBean("com.openbravo.pos.forms.DataLogicSystem");
-                dlogicSystem.init(session);
+                publish("A inicializar serviços do sistema...");
+                session = newSession;
+                DataLogicSystem newDl = (DataLogicSystem) getBean("com.openbravo.pos.forms.DataLogicSystem");
+                newDl.init(session);
+                dlogicSystem = newDl;
 
                 cashManagementService = new CashManagementServiceImpl(session);
-
                 hostSavedProperties = dlogicSystem.getResourceAsProperties(getHostPropertyId());
 
                 if (checkActiveCash()) {
-                    LOGGER.log(Level.WARNING, "Fail on verify ActiveCash");
-                    throw new BasicException("Fail on verify ActiveCash");
+                    throw new BasicException("Falha ao verificar ActiveCash");
                 }
 
+                publish("A configurar interface e periféricos...");
                 setInventoryLocation();
                 setTitlePanel();
                 setStatusBarPanel();
@@ -462,19 +469,48 @@ public class ApplicationShell extends JPanel implements AppView {
                     ticketParser = new TicketParser(getDeviceTicket(), dlogicSystem);
                 }
 
-                if (mAuthPanel != null) {
-                    mAuthPanel.updateDataLogicSystem(dlogicSystem);
+                return dlogicSystem;
+            }
+
+            @Override
+            protected void process(List<String> chunks) {
+                if (chunks != null && !chunks.isEmpty() && callback != null) {
+                    callback.onProgress(chunks.get(chunks.size() - 1));
                 }
-
-                LOGGER.log(Level.INFO, "Successfully completed switch to database");
-            }
-            catch (BasicException | BeanFactoryException | SQLException ex) {
-                throw new BasicException("Fail on switch database", ex);
             }
 
-        }
-        finally {
-            waitCursorEnd();
+            @Override
+            protected void done() {
+                try {
+                    DataLogicSystem dl = get();
+                    LOGGER.log(Level.INFO, "Successfully completed activation of database: {0}", dbConfig.name());
+                    if (callback != null) {
+                        callback.onSuccess(dbConfig, dl);
+                    }
+                } catch (Exception ex) {
+                    Throwable cause = (ex instanceof java.util.concurrent.ExecutionException && ex.getCause() != null)
+                            ? ex.getCause()
+                            : ex;
+                    LOGGER.log(Level.WARNING, "Error activating database: " + dbConfig.name(), cause);
+                    if (callback != null) {
+                        callback.onError(cause);
+                    }
+                } finally {
+                    waitCursorEnd();
+                }
+            }
+        };
+
+        worker.execute();
+    }
+
+    @Override
+    public void switchDatabase() throws BasicException {
+        DatabaseConfig dbConfig = (mAuthPanel != null) ? mAuthPanel.getSelectedDatabase() : null;
+        if (dbConfig != null) {
+            activateDatabase(dbConfig, null);
+        } else {
+            LOGGER.log(Level.INFO, "No database selected to switch");
         }
     }
 

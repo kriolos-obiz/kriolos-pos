@@ -5,9 +5,9 @@
 /**
  * Auxiliary, modular UI components and panels for the KriolOS POS desktop forms architecture.
  *
- * <p>Contains reusable leaf components used across the application shells:
+ * <p>Contains reusable view components used across the application shells:
  * <ul>
- *   <li>{@link com.openbravo.pos.forms.components.DatabaseSelectorPanel}: Interactive database instance selector.</li>
+ *   <li>{@link com.openbravo.pos.forms.components.AuthenticationPanel}: Integrated operator authentication and database selection view.</li>
  *   <li>{@link com.openbravo.pos.forms.components.CopyrightPanel}: Legal attribution and copyright notice view.</li>
  *   <li>{@link com.openbravo.pos.forms.components.ErrorPanel}: Fallback placeholder view rendered when view bean creation fails.</li>
  * </ul>

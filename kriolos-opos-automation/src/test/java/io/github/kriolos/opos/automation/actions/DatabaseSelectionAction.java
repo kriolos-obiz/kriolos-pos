@@ -107,12 +107,12 @@ public class DatabaseSelectionAction {
     }
 
     /**
-     * Selects and activates a database using the in-frame DatabaseSelector panel.
+     * Selects and activates a database using the integrated AuthenticationPanel database selector.
      */
     public boolean selectDatabaseInPanel(Frame mainFrame, String targetDbName) {
-        LOGGER.log(Level.INFO, "Checking for in-frame DatabaseSelector...");
+        LOGGER.log(Level.INFO, "Checking for integrated DatabaseSelector in AuthenticationPanel...");
         try {
-            JComboBox<?> combo = robot.finder().findByName(mainFrame, "comboDatabases", JComboBox.class);
+            JComboBox<?> combo = findComponentByName(mainFrame, "kriolos:auth:combo-databases", "comboDatabases", JComboBox.class);
             if (combo != null && combo.getItemCount() > 0) {
                 int selectedIdx = 0;
                 if (targetDbName != null && !targetDbName.isBlank()) {
@@ -126,25 +126,77 @@ public class DatabaseSelectionAction {
                 }
                 final int idxToSet = selectedIdx;
                 org.assertj.swing.edt.GuiActionRunner.execute(() -> combo.setSelectedIndex(idxToSet));
-                LOGGER.log(Level.INFO, "In-frame selector set to [{0}]: {1}", new Object[]{idxToSet, combo.getItemAt(idxToSet)});
+                LOGGER.log(Level.INFO, "Database selector set to [{0}]: {1}", new Object[]{idxToSet, combo.getItemAt(idxToSet)});
 
                 pace(500);
 
                 screenshotHelper.captureComponent(mainFrame, "00_database_empty_state");
 
-                JButton btnSelect = robot.finder().findByName(mainFrame, "btnSelectDatabase", JButton.class);
+                JButton btnSelect = findComponentByName(mainFrame, "kriolos:auth:btn-select-database", "btnSelectDatabase", JButton.class);
                 if (btnSelect != null) {
                     javax.swing.SwingUtilities.invokeLater(btnSelect::doClick);
                     LOGGER.log(Level.INFO, "Clicked 'Ativar' button in DatabaseSelector.");
+
+                    // Wait for non-blocking asynchronous connection / migration to complete
+                    long deadline = System.currentTimeMillis() + 10000;
+                    while (System.currentTimeMillis() < deadline) {
+                        try {
+                            javax.swing.JProgressBar pb = findComponentByName(mainFrame, "kriolos:auth:progress-bar", "progressBar", javax.swing.JProgressBar.class);
+                            if (pb == null || !pb.isVisible()) {
+                                break;
+                            }
+                        } catch (Exception ignored) {
+                        }
+                        sleep(150);
+                    }
+
                     screenshotHelper.captureComponent(mainFrame, "00_database_selector_switched");
                     pace(1000);
                     return true;
                 }
             }
         } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "DatabaseSelector panel not found or error: {0}", e.getMessage());
+            LOGGER.log(Level.WARNING, "DatabaseSelector controls not found or error: {0}", e.getMessage());
         }
         return false;
+    }
+
+    /**
+     * Retrieves the text of the active database status badge.
+     */
+    public String getActiveDatabaseBadgeText(Frame mainFrame) {
+        try {
+            javax.swing.JLabel badge = findComponentByName(mainFrame, "kriolos:auth:active-database-badge", "lblActiveDatabaseBadge", javax.swing.JLabel.class);
+            return badge != null ? badge.getText() : null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /**
+     * Retrieves the current status / progress message text.
+     */
+    public String getStatusMessage(Frame mainFrame) {
+        try {
+            javax.swing.JLabel status = findComponentByName(mainFrame, "kriolos:auth:status-label", "statusLabel", javax.swing.JLabel.class);
+            return status != null ? status.getText() : null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private <T extends java.awt.Component> T findComponentByName(Frame root, String urnName, String legacyName, Class<T> type) {
+        try {
+            return robot.finder().findByName(root, urnName, type);
+        } catch (Exception e1) {
+            if (legacyName != null) {
+                try {
+                    return robot.finder().findByName(root, legacyName, type);
+                } catch (Exception ignored) {
+                }
+            }
+            return null;
+        }
     }
 
     private DialogFixture findDialog(long timeoutMs) {

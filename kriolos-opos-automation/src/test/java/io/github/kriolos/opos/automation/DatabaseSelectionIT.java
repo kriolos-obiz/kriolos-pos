@@ -38,6 +38,8 @@ public class DatabaseSelectionIT extends BasePosRobotIT {
         // Test in-frame DatabaseSelector panel on login view
         boolean panelHandled = dbSelection.selectDatabaseInPanel(mainWindow.getTargetFrame(), TARGET_DB);
         LOGGER.log(Level.INFO, "In-frame DatabaseSelector handled: {0}", panelHandled);
+        String activeBadge = dbSelection.getActiveDatabaseBadgeText(mainWindow.getTargetFrame());
+        LOGGER.log(Level.INFO, "Active Database Badge: {0}", activeBadge);
 
         screenshotHelper.captureComponent(mainWindow.getTargetFrame(), "01_db_selection_verified");
         LOGGER.log(Level.INFO, "Database selection test use case completed successfully.");

@@ -40,6 +40,8 @@ public class ErrorPanel extends JPanel implements JPanelView {
     public ErrorPanel(AppView oApp, Object o) {
 
         initComponents();
+        setName("kriolos:error:panel");
+        jtxtException.setName("kriolos:error:txt-exception");
         if (o != null) {
             if (o instanceof Exception) {
                 jtxtException.setText(((Exception) o).getLocalizedMessage());

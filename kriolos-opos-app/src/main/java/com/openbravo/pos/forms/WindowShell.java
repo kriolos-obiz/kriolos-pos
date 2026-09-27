@@ -52,6 +52,7 @@ public class WindowShell extends javax.swing.JFrame implements AppMessage {
 
     public WindowShell(AppProperties props) {
         initComponents();
+        setName("kriolos:window:shell");
         m_props = props;
         m_rootapp = new ApplicationShell(m_props);
     }

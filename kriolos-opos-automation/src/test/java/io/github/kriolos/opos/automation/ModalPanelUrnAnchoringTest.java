@@ -132,4 +132,22 @@ class ModalPanelUrnAnchoringTest {
         assertNotNull(findByName(panel, "kriolos:message:btn-cancel"));
         assertNotNull(findByName(panel, "kriolos:message:btn-more"));
     }
+
+    @Test
+    @DisplayName("Rule 7.2: AuthenticationPanel exposes valid kriolos:auth:* URNs")
+    void testAuthenticationPanelUrnAnchoring() {
+        com.openbravo.pos.forms.components.AuthenticationPanel panel =
+                new com.openbravo.pos.forms.components.AuthenticationPanel(null, null, null, null);
+        assertEquals("kriolos:auth:panel", panel.getName());
+        assertNotNull(findByName(panel, "kriolos:auth:active-database-badge"));
+        assertNotNull(findByName(panel, "kriolos:auth:combo-databases"));
+        assertNotNull(findByName(panel, "kriolos:auth:btn-select-database"));
+        assertNotNull(findByName(panel, "kriolos:auth:btn-configure-database"));
+        assertNotNull(findByName(panel, "kriolos:auth:progress-bar"));
+        assertNotNull(findByName(panel, "kriolos:auth:status-label"));
+        assertNotNull(findByName(panel, "kriolos:auth:lbl-login-header"));
+        assertNotNull(findByName(panel, "kriolos:auth:lbl-vendor-image"));
+        assertNotNull(findByName(panel, "kriolos:auth:scroll-users"));
+        assertNotNull(findByName(panel, "kriolos:auth:txt-barcode-keys"));
+    }
 }

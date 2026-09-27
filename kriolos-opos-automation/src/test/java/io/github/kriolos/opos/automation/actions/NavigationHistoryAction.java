@@ -13,8 +13,8 @@ import java.util.logging.Logger;
  *
  * <p>Locates buttons by their {@code .setName()} anchors (URN format):
  * <ul>
- *   <li>{@code "kriolos:navigation:back"}    — the Back button in JPrincipalApp</li>
- *   <li>{@code "kriolos:navigation:forward"} — the Forward button in JPrincipalApp</li>
+ *   <li>{@code "kriolos:navigation:back"}    — the Back button in WordspacePanel</li>
+ *   <li>{@code "kriolos:navigation:forward"} — the Forward button in WordspacePanel</li>
  *   <li>{@code "kriolos:navigation:title"}   — the content title label</li>
  * </ul>
  * </p>

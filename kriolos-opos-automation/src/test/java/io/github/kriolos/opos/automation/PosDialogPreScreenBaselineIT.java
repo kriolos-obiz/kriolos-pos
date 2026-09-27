@@ -8,9 +8,9 @@ import com.openbravo.beans.JEditorTextPanel;
 import com.openbravo.beans.JIntegerPanel;
 import com.openbravo.beans.JPasswordPanel;
 import com.openbravo.data.gui.FindInfo;
-import com.openbravo.data.gui.JFind;
+import com.openbravo.data.gui.JFindPanel;
 import com.openbravo.data.gui.JMessagePanel;
-import com.openbravo.data.gui.JSort;
+import com.openbravo.data.gui.JSortPanel;
 import com.openbravo.data.gui.MessageInf;
 import com.openbravo.data.loader.ComparatorCreator;
 import com.openbravo.data.loader.Vectorer;
@@ -259,7 +259,7 @@ public class PosDialogPreScreenBaselineIT {
 
         captureAndDismiss("09_find_dialog_DIALOG", () -> {
             try {
-                JFind.showMessage(null, findInfo);
+                JFindPanel.showMessage(null, findInfo);
             } catch (BasicException e) {
                 throw new RuntimeException(e);
             }
@@ -283,7 +283,7 @@ public class PosDialogPreScreenBaselineIT {
 
         captureAndDismiss("10_sort_dialog_DIALOG", () -> {
             try {
-                JSort.showMessage(null, cc);
+                JSortPanel.showMessage(null, cc);
             } catch (BasicException e) {
                 throw new RuntimeException(e);
             }
