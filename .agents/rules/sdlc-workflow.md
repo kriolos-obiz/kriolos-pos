@@ -1,53 +1,128 @@
-# KriolOS POS Development & SDLC Rules
+# KriolOS POS Development & Agile SDLC Rules (Java Swing Specialized)
 
-## 1. Component Identification Specification (URNs)
-- **Mandatory Prefix**: All Swing components with a name (`setName(...)`) MUST start with `kriolos:`.
-- **Format**: `kriolos:<domain>:<component-id>`
-- **Examples**:
-  - `kriolos:navigation:back`
-  - `kriolos:navigation:forward`
-  - `kriolos:navigation:title`
-  - `kriolos:navigation:buttons-panel`
+## 1. Architectural & Engineering Philosophy
+- **Agile Model & Single-Piece Flow**: Development proceeds in small, atomic, independently verifiable increments. No stacked feature branches.
+- **Hexagonal Architecture (Ports & Adapters)**: Pure domain logic resides in `kriolos-opos-domain` and MUST have zero dependencies on `javax.swing.*`, `java.awt.*`, or `java.sql.*`. Swing classes act strictly as driving adapters.
+- **Java Swing Desktop Specialization**: Desktop UI development requires strict Event Dispatch Thread (EDT) discipline, NetBeans GUI Builder preservation, headless CI/CD execution capability, and component testability via Rule 7.2 URN anchors.
 
-## 2. Swing UI & Lifecycle Guidelines
-- **NetBeans Protected Blocks**: NEVER edit `// GEN-BEGIN:initComponents` or `// GEN-END:initComponents` manually.
-- **Generated Event Handlers Delegation Rule**: Inside generated event handler methods (`//GEN-FIRST:event_...`), MUST ALWAYS call a single private method with clear naming. All implementation logic belongs inside that dedicated private method, never inline inside the generated handler block.
-- **Javadoc on Private & Handler Methods**: Always document extracted private methods and helper methods with comprehensive Javadoc detailing their purpose, design rationale, parameters, UI state transitions, and platform-specific constraints (e.g. Wayland framebuffer validation, window hierarchy resolution).
-- **View Transitions**: When activating views (e.g. CardLayout), always invoke `viewPanel.activate()` to ensure data loaders and subcomponents synchronize properly.
-- **Global Title Panel**: Do not hide navigation or header panels based on empty titles; keep them permanently accessible unless explicitly configured otherwise.
+---
 
-## 3. UI Automation & Integration Testing (`kriolos-opos-automation`)
-- **Autonomous Execution**: All tests must be 100% autonomous. NEVER expect manual user clicks during test runs.
-- **Modal Dialog Handling**:
-  - Modal dialogs (e.g., `JOptionPane`, `JMessageDialog`, warning dialogs) must be handled by dedicated Action Drivers using `invokeLater(button::doClick)` or `dispose()`.
-  - Always run dialog triggers on a background thread when testing modal dialogs directly, allowing the AssertJ-Swing robot to find, screenshot, and dismiss them.
-- **Multi-Instance Isolation**:
-  - `machine.uniqueinstance` defaults to `false` in `BasePosRobotIT` so automation runs never conflict with background instances (e.g. IDE/NetBeans).
-  - Single-instance behavior is explicitly tested in `PosInstanceManagerIT` using `InstanceManagerAction`.
-- **Exit Action Protection**:
-  - Use `StartPOS.setExitAction(Runnable)` during tests to intercept `System.exit` without killing the test runner JVM.
+## 2. The 6 Mandatory Agile SDLC Phases
 
-## 4. Agile Trunk-Based Integration & Atomic PRs (Rule 14.3)
-- **CRITICAL CONSTRAINT - NEVER COMMIT OR PUSH DIRECTLY TO MAIN**:
-  - Direct commits and direct pushes to `main` (or `master`) are STRICTLY FORBIDDEN.
-  - All changes, fixes, and documentation must originate from a dedicated feature or bugfix branch (`feature/<name>` or `fix/<name>`).
-  - Merging into `main` must ALWAYS happen via a reviewed GitHub Pull Request.
-- **Never Stack Branches**: Complete one feature atomically.
-- **Standard Flow**:
-  1. Develop and verify locally on `feature/<feature-name>`.
-  2. Push branch to remote: `git push -u origin feature/<feature-name>`.
-  3. Create Pull Request and Merge into `main` on GitHub.
-  4. Switch back to main and pull latest: `git checkout main && git pull origin main`.
-  5. Create a fresh branch from updated main for the next task: `git checkout -b feature/<next-feature>`.
+Every feature, refactoring, or bugfix increment MUST follow these six sequential phases:
 
-## 5. Bug Tracking
-- Any platform-specific or deferred bugs (such as Wayland black dialog rendering `BUG-001`) must be documented in `docs/modules/guide-devel/pages/troubleshooting-known-issues.adoc` before moving to the next task.
+```
+[Phase 1: Discovery & Story Refinement]
+       ↓
+[Phase 2: Architectural Contract & Port Design]
+       ↓
+[Phase 3: Test-First Harness & Automation (TDD/ATDD)]
+       ↓
+[Phase 4: Component Implementation & NetBeans Safe Wiring]
+       ↓
+[Phase 5: Automated Verification & Visual Quality Gates]
+       ↓
+[Phase 6: Agile Trunk Integration & Retrospective]
+```
 
-## 6. Java Version Compatibility & CI/CD Matrix
-- **Minimum JDK Baseline**: The minimum supported and compiled Java version is **JDK 17** (`<maven.compiler.release>17</maven.compiler.release>`).
-- **CI/CD Matrix**: GitHub Actions verifies across both the **Minimum (JDK 17)** and the **Latest available JDK** (e.g. JDK 26).
-- **Local Dev Trap Avoidance**:
-  - Dev machines often run newer JDKs (e.g. JDK 21, JDK 25).
-  - **NEVER** use language features, classes, or APIs introduced after Java 17 (e.g. `SequencedCollection`, string enhancements, post-17 pattern matching).
-  - Code must strictly compile against Java 17 bytecode and API specifications (`--release 17`).
-  - Before pushing to PR, verify that all added or modified code complies with JDK 17 to prevent CI/CD build failures.
+### Phase 1: Discovery & Story Refinement (Backlog Grooming)
+1. **User Story & Acceptance Criteria**: Express requirements in Gherkin syntax (`Given-When-Then`) with a clear Definition of Done (DoD).
+2. **Swing Component & State Audit**:
+   - Identify all touched Swing containers (`WindowShell`, `ApplicationShell`, `WordspacePanel`, `AuthenticationPanel`, or dialogs).
+   - Map couplings to legacy singletons (`AppView`, `AppUserView`, `DataLogicSystem`).
+3. **EDT & Latency Risk Assessment**:
+   - Classify all operations:
+     - **Fast / In-Memory**: Safe to run on EDT (e.g., card layout switching, simple form validation).
+     - **I/O / Database / Network / Hardware**: STRICTLY FORBIDDEN on EDT. Must be planned as asynchronous background operations.
+4. **Modal Dialog Strategy**:
+   - Identify any legacy blocking `JDialog` or `JOptionPane` calls.
+   - Plan migration to non-blocking panel-first overlays (`PosUIModal` / `InFrameOverlayModalStrategy`) to prevent EDT freezes and support 100% headless automation.
+
+### Phase 2: Architectural Contract & Port Design
+1. **Pure Domain Model**:
+   - Formulate domain records, value objects, and domain services in `kriolos-opos-domain` using Java 17 features.
+   - Domain code MUST NOT import `javax.swing.*`, `java.awt.*`, `com.openbravo.pos.forms.*`, or `java.sql.*`.
+2. **Ports & Callbacks**:
+   - Define Driving Ports (invoked by Swing UI) and Driven Ports (implemented by persistence/hardware).
+   - Design asynchronous callback contracts (e.g. `DatabaseActivationCallback`) for long-running operations.
+3. **Rule 7.2 URN Anchoring Schema**:
+   - Define the component identification mapping table following `kriolos:<domain>:<component-or-action>`.
+   - Refer to [.agents/rules/urn-convention.md](file:///home/dev/PDEV/kriolos-obiz/kriolos-pos/.agents/rules/urn-convention.md) for naming specifications.
+4. **Asynchronous Busy-State Specification**:
+   - Design visual state transitions during background execution: disable action triggers, show indeterminate `JProgressBar`, and update status message labels.
+
+### Phase 3: Test-First Harness & Automation Setup (TDD / ATDD)
+1. **Domain Unit Tests First**:
+   - Write JUnit 5 tests covering happy paths, boundary conditions, null guards, and `BigDecimal` rounding scales.
+2. **URN Anchoring Verification**:
+   - Add unit tests in `kriolos-opos-automation` (e.g. `ModalPanelUrnAnchoringTest`) to assert all interactive components expose their Rule 7.2 URNs via `.getName()`.
+3. **AssertJ-Swing Action Drivers**:
+   - Create or update reusable action drivers in `kriolos-opos-automation/actions/` (e.g. `DatabaseSelectionAction`, `LoginAction`, `MainWindowAction`) to interact with components via URNs.
+4. **Test Isolation Safeguards**:
+   - Set `machine.uniqueinstance=false` in test configurations to avoid port collisions with IDE or running instances.
+   - Trap `System.exit()` during tests using `StartPOS.setExitAction(Runnable)` to prevent killing the test JVM.
+   - Ensure compatibility with virtual display framebuffers (`xvfb`) and in-memory 2D double buffering.
+
+### Phase 4: Component Implementation & GUI Builder Integrity (Swing Development)
+1. **NetBeans Protected Block Protocol (Strict)**:
+   - **NEVER** edit code inside `// GEN-BEGIN:initComponents` or `// GEN-END:initComponents` manually.
+   - Visual and layout modifications MUST be made via NetBeans `.form` files.
+2. **Generated Event Handler Delegation Rule**:
+   - Handlers generated by NetBeans (`// GEN-FIRST:event_...`) MUST ONLY delegate to a dedicated private method (e.g., `btnActivateActionPerformed` -> `activateSelectedDatabase()`).
+   - Document all extracted private methods with comprehensive Javadoc detailing purpose, thread safety, and UI state transitions.
+3. **Domain Adapter Wiring (`initDomainAdapters()` / `initPanel()`)**:
+   - Programmatically set Rule 7.2 `.setName(...)` URN anchors immediately after `initComponents()`.
+   - Wire domain listeners, action presenters, and data models.
+4. **EDT Concurrency & Asynchronous Execution**:
+   - Offload all database, filesystem, network, and hardware I/O to background threads using `SwingWorker<T, V>` or asynchronous executors.
+   - UI mutations MUST ALWAYS be dispatched back to the EDT via `SwingUtilities.invokeLater()` or `SwingWorker.done()`.
+5. **Real-Time Asynchronous User Feedback**:
+   - Whenever an asynchronous operation starts, immediately reflect the busy state in the UI (show indeterminate progress bar, disable duplicate buttons, show status message).
+
+### Phase 5: Automated Verification & Visual Quality Gates (CI/CD Matrix)
+1. **JDK 17 Baseline Verification**:
+   - Code must compile strictly against Java 17 bytecode specifications (`<maven.compiler.release>17</maven.compiler.release>`).
+   - **NEVER** use language features, classes, or APIs introduced after Java 17 (e.g. `SequencedCollection`, post-17 string methods).
+2. **Continuous Multi-Tier Build Verification**:
+   - Domain unit tests: `mvn test -pl kriolos-opos-domain`
+   - Swing application build: `mvn test-compile -pl kriolos-opos-app`
+   - Automation test compilation: `mvn clean test-compile -f kriolos-opos-automation/pom.xml`
+   - URN & regression tests: `mvn test -f kriolos-opos-automation/pom.xml -Dtest=ModalPanelUrnAnchoringTest`
+3. **Framebuffer & Visual Rendering Assertion**:
+   - Automated robot tests must assert non-black dialog/panel rendering (>50% non-black pixels) on Linux/Wayland graphics environments.
+
+### Phase 6: Agile Trunk-Based Integration, Atomic PR & Retrospective
+1. **Atomic Branch & Single-Piece Flow**:
+   - All work happens on a dedicated branch (`feature/<name>` or `fix/<name>`) branched from clean `main`.
+   - **CRITICAL**: Never commit or push directly to `main` (or `master`).
+   - **CRITICAL**: Never stack feature branches. Complete, merge, and pull before starting the next branch.
+2. **Professional Conventional Commit**:
+   - Format: `<type>(<scope>): <short summary>`
+   - Types: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`.
+   - Include detailed bullet points covering rationale, modified components, URNs, and test results.
+3. **Pull Request & CI Validation**:
+   - Push feature branch to remote: `git push -u origin feature/<name>`.
+   - Open Pull Request on GitHub and ensure all CI matrix checks pass.
+4. **Clean Main Synchronization**:
+   - After PR merge on remote:
+     ```shell
+     git checkout main
+     git pull origin main
+     git checkout -b feature/<next-feature>
+     ```
+5. **Retrospective & Defect Tracking**:
+   - Document any platform-specific quirks (e.g. Wayland compositor frame drops, X11 focus traps) in `docs/modules/guide-devel/pages/troubleshooting-known-issues.adoc`.
+
+---
+
+## 3. Java Swing Desktop Developer Checklist (Do's & Don'ts)
+
+| Category | DO | DO NOT |
+| :--- | :--- | :--- |
+| **Threading (EDT)** | Run I/O, database, and network queries in `SwingWorker` or background thread; update UI via `SwingUtilities.invokeLater()`. | Never run database queries, reports, or socket calls directly on the Event Dispatch Thread (freezes GUI). |
+| **GUI Builder** | Modify GUI layout in NetBeans `.form`; wire domain adapters and URNs in `initDomainAdapters()`. | Never hand-edit `// GEN-BEGIN:initComponents` to `// GEN-END:initComponents` blocks. |
+| **Event Handlers** | Delegate from generated handler (`event_...`) to a clean private method with Javadoc. | Never write inline business or persistence logic directly inside generated handler blocks. |
+| **Component URNs** | Set `setName("kriolos:<domain>:<component-or-action>")` following Rule 7.2 outside GEN blocks. | Never leave interactive components without names, and never use camelCase or random names. |
+| **Modal Dialogs** | Use non-blocking panel-first overlays (`PosUIModal`) for dialogs and user prompts. | Never use modal `JDialog` or `JOptionPane.showInputDialog` that block test runner threads. |
+| **Java Baseline** | Maintain strict Java 17 API compatibility (`--release 17`). | Never use APIs from Java 21+ (e.g. `SequencedCollection`, virtual threads syntax). |
+| **Git & PRs** | Develop on `feature/<name>`, submit atomic PR, merge to `main`, pull `main` before next branch. | Never commit directly to `main`, and never stack unmerged feature branches. |
