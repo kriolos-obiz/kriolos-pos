@@ -50,7 +50,9 @@ public class JPanelTicketEdits extends JPanelTicket {
     @Override
     public void activate() throws BasicException {      
         super.activate();
-        m_catandlines.loadCatalog();
+        if (m_catandlines != null) {
+            m_catandlines.loadCatalog();
+        }
     }
 
     public void reLoadCatalog(){      

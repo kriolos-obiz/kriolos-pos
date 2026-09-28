@@ -114,6 +114,8 @@ public abstract class JTicketsBag extends JPanel {
                 return new JTicketsBagShared(app, panelticket);
             case SaleLayout.RESTAURANT:
                 return new JTicketsBagRestaurantMap(app, panelticket);
+            case SaleLayout.MODERN_ONE:
+                return new com.openbravo.pos.sales.modern.one.ModernOne(app, panelticket);
             case SaleLayout.SIMPLE:
             default:
                 return new JTicketsBagSimple(app, panelticket);

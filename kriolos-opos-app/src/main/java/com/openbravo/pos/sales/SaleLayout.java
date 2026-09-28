@@ -27,8 +27,9 @@ public class SaleLayout {
     public static final String SIMPLE = "simple";
     public static final String STANDARD = "standard";
     public static final String RESTAURANT = "restaurant";
+    public static final String MODERN_ONE = "modern_one";
     
-    private static final List<String> ALL = List.of(SIMPLE, STANDARD, RESTAURANT);
+    private static final List<String> ALL = List.of(SIMPLE, STANDARD, RESTAURANT, MODERN_ONE);
     
     public static List<String> getAll(){
         return ALL;

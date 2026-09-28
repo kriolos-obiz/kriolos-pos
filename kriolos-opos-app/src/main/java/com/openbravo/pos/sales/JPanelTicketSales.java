@@ -37,7 +37,14 @@ public class JPanelTicketSales extends JPanelTicket {
 
     public JPanelTicketSales(AppView app) {
         super(app);
-        getTicketlines().addListSelectionListener(new CatalogSelectionListener());
+        if (!isModernMode()) {
+            getTicketlines().addListSelectionListener(new CatalogSelectionListener());
+        }
+    }
+
+    @Override
+    protected boolean isModernMode() {
+        return SaleLayout.MODERN_ONE.equals(getTicketBagMode());
     }
 
     @Override
@@ -51,6 +58,9 @@ public class JPanelTicketSales extends JPanelTicket {
      */
     @Override
     protected Component getSouthComponent() {
+        if (isModernMode()) {
+            return new javax.swing.JPanel();
+        }
         LOGGER.log(System.Logger.Level.DEBUG,"JPanelTicketSales :: getSouthComponent");
         m_cat = new JCatalog(getAppView());
         m_cat.addActionListener(new CatalogListener());
@@ -59,6 +69,9 @@ public class JPanelTicketSales extends JPanelTicket {
 
     @Override
     protected void resetSouthComponent() {
+        if (isModernMode() || m_cat == null) {
+            return;
+        }
         m_cat.showCatalogPanel(null);
     }
 
@@ -75,6 +88,9 @@ public class JPanelTicketSales extends JPanelTicket {
     }
 
     public void reLoadCatalog() {
+        if (isModernMode() || m_cat == null) {
+            return;
+        }
         try {
             m_cat.loadCatalog();
         } catch (BasicException ex) {

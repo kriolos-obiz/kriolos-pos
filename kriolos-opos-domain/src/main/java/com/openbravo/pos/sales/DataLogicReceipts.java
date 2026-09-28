@@ -225,7 +225,7 @@ public class DataLogicReceipts extends BeanFactoryDataSingle {
                 pstmt.setString(1, id);
                 pstmt.setString(2, ticket.getName());
                 pstmt.setBinaryStream(3, bais);
-                pstmt.setString(4, ticket.getUser().getId());
+                pstmt.setString(4, ticket.getUser() != null ? ticket.getUser().getId() : null);
                 pstmt.setInt(5, pickupid);
                 rowsAffected = pstmt.executeUpdate();
 
@@ -274,7 +274,7 @@ public class DataLogicReceipts extends BeanFactoryDataSingle {
 
             pstmt.setString(1, ticket.getName());
             pstmt.setBinaryStream(2, bais);
-            pstmt.setString(3, ticket.getUser().getId());
+            pstmt.setString(3, ticket.getUser() != null ? ticket.getUser().getId() : null);
             pstmt.setInt(4, pickupid);
             pstmt.setString(5, id);
             pstmt.executeUpdate();
