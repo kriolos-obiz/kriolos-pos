@@ -14,7 +14,7 @@ toc::[]
 
 === What It Does
 
-* **Automated Application Boot**: Programmatically launches `StartPOS.main()` within an isolated test harness.
+* **Automated Application Boot**: Programmatically launches `BootstrapPOS.main()` within an isolated test harness.
 * **UI Robot Interaction**:
 ** Discovers and clicks operator/user login buttons (e.g. `Administrator`).
 ** Enters credentials / submits authentication.
@@ -208,7 +208,7 @@ After test execution, all recordings and milestone snapshots are saved under `ta
 | Full video recording of the Swing session (H.264 / 25 fps).
 
 | `.../screenshots/*_01_app_started.png`
-| Snapshot taken immediately after `StartPOS` initializes and displays `WindowShell`.
+| Snapshot taken immediately after `BootstrapPOS` initializes and displays `WindowShell`.
 
 | `.../screenshots/*_02_user_logged_in.png`
 | Snapshot after clicking operator button and completing authentication.

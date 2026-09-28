@@ -1,6 +1,6 @@
 package io.github.kriolos.opos.automation;
 
-import com.openbravo.pos.forms.StartPOS;
+import com.openbravo.pos.forms.BootstrapPOS;
 import io.github.kriolos.opos.automation.actions.DatabaseSelectionAction;
 import io.github.kriolos.opos.automation.actions.InstanceManagerAction;
 import io.github.kriolos.opos.automation.actions.LoginAction;
@@ -24,7 +24,7 @@ import java.util.logging.Logger;
  *
  * <p>Provides:
  * <ul>
- *   <li>Application lifecycle management (launching StartPOS on a background thread)</li>
+ *   <li>Application lifecycle management (launching BootstrapPOS on a background thread)</li>
  *   <li>AssertJ-Swing Robot initialization and cleanup</li>
  *   <li>Wayland-safe in-memory screenshot and video recording management</li>
  *   <li>Configurable execution pacing (Human observational vs Robot fast mode)</li>
@@ -109,15 +109,15 @@ public abstract class BasePosRobotIT {
     }
 
     /**
-     * Launches StartPOS in a background thread.
+     * Launches BootstrapPOS in a background thread.
      */
     protected void launchApplication() {
         LOGGER.log(Level.INFO, "[BasePosRobotIT] Launching KriolOS POS Application...");
         Thread posThread = new Thread(() -> {
             try {
-                StartPOS.main(new String[]{});
+                BootstrapPOS.main(new String[]{});
             } catch (Throwable t) {
-                LOGGER.log(Level.SEVERE, "[BasePosRobotIT] Exception in StartPOS: " + t.getMessage(), t);
+                LOGGER.log(Level.SEVERE, "[BasePosRobotIT] Exception in BootstrapPOS: " + t.getMessage(), t);
             }
         }, "PosAppThread");
         posThread.setDaemon(true);

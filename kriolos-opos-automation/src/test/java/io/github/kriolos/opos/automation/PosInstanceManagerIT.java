@@ -3,7 +3,7 @@ package io.github.kriolos.opos.automation;
 import com.openbravo.pos.forms.AppConfig;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.WindowShell;
-import com.openbravo.pos.forms.StartPOS;
+import com.openbravo.pos.forms.BootstrapPOS;
 import com.openbravo.pos.instance.InstanceManager;
 import io.github.kriolos.opos.automation.actions.InstanceManagerAction;
 import org.assertj.swing.core.BasicRobot;
@@ -38,7 +38,7 @@ public class PosInstanceManagerIT {
     @BeforeEach
     public void setUp() {
         // Prevent System.exit(0) during tests
-        StartPOS.setExitAction(() -> {});
+        BootstrapPOS.setExitAction(() -> {});
         robot = BasicRobot.robotWithCurrentAwtHierarchy();
         screenshotHelper = new ScreenshotHelper("pos_instance_manager_run");
         instanceManagerAction = new InstanceManagerAction(robot, screenshotHelper, true);
@@ -181,7 +181,7 @@ public class PosInstanceManagerIT {
 
     private boolean invokeCheckSingletonInstance(WindowShell frame, AppConfig config) {
         try {
-            java.lang.reflect.Method m = StartPOS.class.getDeclaredMethod("checkSingletonInstance", WindowShell.class, AppConfig.class);
+            java.lang.reflect.Method m = BootstrapPOS.class.getDeclaredMethod("checkSingletonInstance", WindowShell.class, AppConfig.class);
             m.setAccessible(true);
             return (boolean) m.invoke(null, frame, config);
         } catch (Exception e) {
@@ -190,7 +190,7 @@ public class PosInstanceManagerIT {
     }
 
     private void setStartPosExitAction(Runnable action) {
-        StartPOS.setExitAction(action);
+        BootstrapPOS.setExitAction(action);
     }
 
     private void resetAppConfigSingleton() {
