@@ -116,6 +116,7 @@ public class AuthenticationPanel extends javax.swing.JPanel {
         initComponents();
         initIntegratedDbSelector();
         initPanel();
+        
     }
 
     public AuthenticationPanel(DataLogicSystem dlSystem, AppProperties props, AuthListener authcListener) {
@@ -408,6 +409,9 @@ public class AuthenticationPanel extends javax.swing.JPanel {
         usersLisScrollPane.setName("kriolos:auth:scroll-users");
         m_txtKeys.setName("kriolos:auth:txt-barcode-keys");
 
+        mainScrollPanel.setName("kriolos:auth:scroll-main");
+        mainScrollPanel.setViewportView(new CopyrightPanel());
+        mainScrollPanel.setBorder(BorderFactory.createEmptyBorder());
         usersLisScrollPane.getVerticalScrollBar().setPreferredSize(new Dimension(30, 30));
         showListPeople();
 
