@@ -44,7 +44,8 @@ public class JPanelTicketSales extends JPanelTicket {
 
     @Override
     protected boolean isModernMode() {
-        return SaleLayout.MODERN_ONE.equals(getTicketBagMode());
+        String mode = getTicketBagMode();
+        return SaleLayout.MODERN_ONE.equals(mode) || SaleLayout.MODERN_TWO.equals(mode);
     }
 
     @Override
