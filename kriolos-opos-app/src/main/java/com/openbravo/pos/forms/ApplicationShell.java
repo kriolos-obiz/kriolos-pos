@@ -267,7 +267,13 @@ public class ApplicationShell extends JPanel implements AppView {
 
     @Override
     public Object getBean(String beanfactory) throws BeanFactoryException {
-        return BeanContainer.geBean(beanfactory, this);
+        return BeanContainer.getBean(beanfactory, this);
+    }
+    
+    
+    @Override
+    public <T> T getBean(Class<T> beanClass) throws BeanFactoryException {
+        return BeanContainer.getBean(beanClass, this);
     }
 
     @Override
@@ -637,4 +643,5 @@ public class ApplicationShell extends JPanel implements AppView {
     private javax.swing.JPanel statusBarSecondPanel;
     private javax.swing.JPanel topPanel;
     // End of variables declaration//GEN-END:variables
+
 }

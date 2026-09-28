@@ -19,6 +19,7 @@ import com.openbravo.data.user.DirtyManager;
 import com.openbravo.pos.forms.AppConfig;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppProperties;
+import com.openbravo.pos.sales.SaleLayout;
 import com.openbravo.pos.ui.api.POSThemeDefinition;
 import com.openbravo.pos.ui.api.POSThemeManager;
 import java.awt.Component;
@@ -85,10 +86,9 @@ public class JPanelConfigGeneral extends javax.swing.JPanel implements PanelConf
 
         jcboMachineScreenmode.addItem("window");
         jcboMachineScreenmode.addItem("fullscreen");
-
-        jcboTicketsBag.addItem("simple");
-        jcboTicketsBag.addItem("standard");
-        jcboTicketsBag.addItem("restaurant");
+        
+        
+        SaleLayout.getAll().forEach(jcboTicketsBag::addItem);
         
     }
 

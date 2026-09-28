@@ -1,0 +1,209 @@
+//    KriolOS POS
+//    Copyright (c) 2019-2026 KriolOS
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+package com.openbravo.pos.sales.shared;
+
+import com.openbravo.basic.BasicException;
+import com.openbravo.data.gui.modal.PosUIModal;
+import com.openbravo.pos.forms.AppLocal;
+import com.openbravo.pos.sales.DataLogicReceipts;
+import com.openbravo.pos.sales.SharedTicketInfo;
+import com.openbravo.pos.ticket.TicketInfo;
+import java.awt.BorderLayout;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.GridLayout;
+import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.BorderFactory;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+
+public class JTicketsBagSharedPanel extends JPanel {
+
+    private static final long serialVersionUID = 1L;
+    private static final Logger LOGGER = Logger.getLogger(JTicketsBagSharedPanel.class.getName());
+
+    private String m_sDialogTicket;
+    private PosUIModal modalContext;
+
+    public JTicketsBagSharedPanel() {
+        initComponents();
+        initDomainAdapters();
+        jScrollPane1.getVerticalScrollBar().setPreferredSize(new Dimension(35, 35));
+        jScrollPane1.getHorizontalScrollBar().setPreferredSize(new Dimension(25, 25));
+    }
+
+    private void initDomainAdapters() {
+        setName("kriolos:sales:tickets-bag-shared-panel");
+        m_jButtonCancel.setName("kriolos:sales:btn-cancel");
+    }
+
+    public void setModalContext(PosUIModal modalContext) {
+        this.modalContext = modalContext;
+    }
+
+    public String getSelectedTicketId() {
+        return m_sDialogTicket;
+    }
+
+    public void loadTickets(List<SharedTicketInfo> atickets, DataLogicReceipts dlReceipts) {
+        m_sDialogTicket = null;
+        m_jtickets.removeAll();
+
+        for (SharedTicketInfo aticket : atickets) {
+            String label = aticket.getName() + " : " + aticket.getUserName();
+            try {
+                TicketInfo ticket2 = dlReceipts.getSharedTicket(aticket.getId());
+                if (ticket2 != null) {
+                    label += " : " + ticket2.printTotal();
+                } else {
+                    LOGGER.log(Level.SEVERE, "Cannot recover TicketInfo for ticket Id: " + aticket.getId());
+                }
+            } catch (BasicException ex) {
+                label += "!!!!!";
+                LOGGER.log(Level.SEVERE, "Exception recovering TicketInfo for ticket Id: " + aticket.getId(), ex);
+            }
+
+            m_jtickets.add(new JButtonTicket(aticket, label));
+        }
+
+        revalidate();
+        repaint();
+    }
+
+    public static String show(Component parent, List<SharedTicketInfo> atickets, DataLogicReceipts dlReceipts) {
+        if (atickets == null || atickets.isEmpty()) {
+            JOptionPane.showMessageDialog(parent,
+                    AppLocal.getIntString("message.nosharedtickets"),
+                    AppLocal.getIntString("message.sharedtickettitle"),
+                    JOptionPane.OK_OPTION);
+            return null;
+        }
+
+        JTicketsBagSharedPanel panel = new JTicketsBagSharedPanel();
+        panel.loadTickets(atickets, dlReceipts);
+        PosUIModal modal = PosUIModal.create(parent, panel)
+                .setTitle(AppLocal.getIntString("caption.tickets"))
+                .setModal(true)
+                .setResizable(false);
+        panel.setModalContext(modal);
+        modal.show();
+        return panel.getSelectedTicketId();
+    }
+
+    private class JButtonTicket extends JButton {
+
+        private final SharedTicketInfo m_Ticket;
+
+        public JButtonTicket(SharedTicketInfo ticket, String label) {
+            super();
+            this.m_Ticket = ticket;
+            setFocusPainted(false);
+            setFocusable(false);
+            setRequestFocusEnabled(false);
+            setMargin(new Insets(8, 14, 8, 14));
+            setFont(new Font("Arial", Font.PLAIN, 14));
+            addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent evt) {
+                    m_sDialogTicket = m_Ticket.getId();
+                    if (modalContext != null) {
+                        modalContext.setResult(m_sDialogTicket);
+                        modalContext.close();
+                    }
+                }
+            });
+            setText(label);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
+    private void initComponents() {
+
+        jPanel1 = new JPanel();
+        jScrollPane1 = new JScrollPane();
+        jPanel2 = new JPanel();
+        m_jtickets = new JPanel();
+        jPanel3 = new JPanel();
+        jPanel4 = new JPanel();
+        m_jButtonCancel = new JButton();
+
+        setLayout(new BorderLayout());
+
+        jPanel1.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        jPanel1.setLayout(new BorderLayout());
+
+        jPanel2.setFont(new Font("Arial", 0, 14)); // NOI18N
+        jPanel2.setLayout(new BorderLayout());
+
+        m_jtickets.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        m_jtickets.setLayout(new GridLayout(0, 1, 5, 5));
+        jPanel2.add(m_jtickets, BorderLayout.NORTH);
+
+        jScrollPane1.setViewportView(jPanel2);
+
+        jPanel1.add(jScrollPane1, BorderLayout.CENTER);
+
+        add(jPanel1, BorderLayout.CENTER);
+
+        jPanel3.setLayout(new FlowLayout(FlowLayout.RIGHT));
+        jPanel3.add(jPanel4);
+
+        m_jButtonCancel.setFont(new Font("Arial", 0, 12)); // NOI18N
+        m_jButtonCancel.setIcon(new ImageIcon(getClass().getResource("/com/openbravo/images/cancel.png"))); // NOI18N
+        m_jButtonCancel.setText(AppLocal.getIntString("button.close")); // NOI18N
+        m_jButtonCancel.setFocusPainted(false);
+        m_jButtonCancel.setFocusable(false);
+        m_jButtonCancel.setMargin(new Insets(8, 8, 8, 8));
+        m_jButtonCancel.setPreferredSize(new Dimension(100, 45));
+        m_jButtonCancel.setRequestFocusEnabled(false);
+        m_jButtonCancel.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                m_jButtonCancelActionPerformed(evt);
+            }
+        });
+        jPanel3.add(m_jButtonCancel);
+
+        add(jPanel3, BorderLayout.SOUTH);
+    }// </editor-fold>//GEN-END:initComponents
+
+    private void m_jButtonCancelActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_m_jButtonCancelActionPerformed
+        if (modalContext != null) {
+            modalContext.close();
+        }
+    }//GEN-LAST:event_m_jButtonCancelActionPerformed
+
+    // Variables declaration - do not modify//GEN-BEGIN:variables
+    private JPanel jPanel1;
+    private JPanel jPanel2;
+    private JPanel jPanel3;
+    private JPanel jPanel4;
+    private JScrollPane jScrollPane1;
+    private JButton m_jButtonCancel;
+    private JPanel m_jtickets;
+    // End of variables declaration//GEN-END:variables
+}

@@ -110,11 +110,11 @@ public abstract class JTicketsBag extends JPanel {
      */
     public static JTicketsBag createTicketsBag(String sName, AppView app, TicketsEditor panelticket) {
         switch (sName) {
-            case "standard":
+            case SaleLayout.STANDARD:
                 return new JTicketsBagShared(app, panelticket);
-            case "restaurant":
+            case SaleLayout.RESTAURANT:
                 return new JTicketsBagRestaurantMap(app, panelticket);
-            case "simple":
+            case SaleLayout.SIMPLE:
             default:
                 return new JTicketsBagSimple(app, panelticket);
             

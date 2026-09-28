@@ -42,6 +42,7 @@ public interface AppView {
      * @throws BeanFactoryException
      */
     public Object getBean(String beanfactory) throws BeanFactoryException;
+    public <T> T getBean(Class<T> beanClass) throws BeanFactoryException;
      
     /*ActiveCash*/
     public void setActiveCash(String value, int iSeq, Date dStart, Date dEnd);

@@ -251,7 +251,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     }
 
     private boolean isRestaurantMode() {
-        return "restaurant".equals(getTicketsbag());
+        return SaleLayout.RESTAURANT.equals(getTicketsbag());
     }
 
     private boolean isAutoLogoutRestaurant() {
