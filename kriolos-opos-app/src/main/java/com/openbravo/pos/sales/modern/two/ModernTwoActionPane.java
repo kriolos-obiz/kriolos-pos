@@ -17,12 +17,15 @@
 package com.openbravo.pos.sales.modern.two;
 
 import com.openbravo.pos.customers.CustomerInfoExt;
+import com.openbravo.pos.forms.AppLocal;
+import com.openbravo.pos.ui.components.ButtonSize;
+import com.openbravo.pos.ui.components.POSButtonFactory;
+import com.openbravo.pos.ui.components.UnicodeIcon;
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.ComponentOrientation;
 import java.awt.Dimension;
-import java.awt.Font;
 import java.awt.GridLayout;
+import java.awt.event.KeyEvent;
 import java.util.Locale;
 import java.util.function.Consumer;
 import javax.swing.BorderFactory;
@@ -80,9 +83,11 @@ public class ModernTwoActionPane extends JPanel {
         setLayout(new GridLayout(2, 1, 0, 6));
         setOpaque(false);
         setBorder(BorderFactory.createEmptyBorder(6, 2, 4, 2));
-        setPreferredSize(new Dimension(0, 88));
-        setMinimumSize(new Dimension(0, 84));
+        setPreferredSize(new Dimension(0, 114));
+        setMinimumSize(new Dimension(0, 108));
         setName("kriolos:sales:modern-two:action-pane");
+
+        final ButtonSize touchSize = ButtonSize.EXTRA_LARGE;
 
         // ====================================================
         // ROW 1: Customer & Parked (Left) + Cash Operations (Right)
@@ -94,25 +99,30 @@ public class ModernTwoActionPane extends JPanel {
         JPanel customerGroup = new JPanel(new BorderLayout(6, 0));
         customerGroup.setOpaque(false);
 
-        customerButton = new JButton("Cliente: Consumidor Final");
-        customerButton.setFocusPainted(false);
-        customerButton.setFont(customerButton.getFont().deriveFont(Font.PLAIN, 12f));
-        customerButton.setPreferredSize(new Dimension(210, 38));
-        customerButton.putClientProperty("FlatLaf.style", "arc: 8;");
-        customerButton.addActionListener(e -> {
-            if (onCustomerClicked != null) onCustomerClicked.run();
-        });
+        customerButton = POSButtonFactory.createActionButton(
+                AppLocal.getIntString("label.customer") + ": " + AppLocal.getIntString("label.guest"),
+                UnicodeIcon.CUSTOMER,
+                touchSize,
+                KeyEvent.VK_C,
+                AppLocal.getIntString("label.customer"),
+                e -> {
+                    if (onCustomerClicked != null) onCustomerClicked.run();
+                }
+        );
+        customerButton.setPreferredSize(new Dimension(240, touchSize.getHeight()));
         customerGroup.add(customerButton, BorderLayout.CENTER);
 
-        parkedOrdersButton = new JButton("0");
-        parkedOrdersButton.setFocusPainted(false);
-        parkedOrdersButton.setFont(parkedOrdersButton.getFont().deriveFont(Font.BOLD, 12f));
-        parkedOrdersButton.setToolTipText("Contas suspensas");
-        parkedOrdersButton.setPreferredSize(new Dimension(46, 38));
-        parkedOrdersButton.putClientProperty("FlatLaf.style", "arc: 8;");
-        parkedOrdersButton.addActionListener(e -> {
-            if (onParkedOrdersClicked != null) onParkedOrdersClicked.run();
-        });
+        parkedOrdersButton = POSButtonFactory.createActionButton(
+                "0",
+                UnicodeIcon.PARKED,
+                touchSize,
+                KeyEvent.VK_U,
+                AppLocal.getIntString("button.parked.tooltip"),
+                e -> {
+                    if (onParkedOrdersClicked != null) onParkedOrdersClicked.run();
+                }
+        );
+        parkedOrdersButton.setPreferredSize(new Dimension(65, touchSize.getHeight()));
         customerGroup.add(parkedOrdersButton, BorderLayout.LINE_END);
         row1.add(customerGroup, BorderLayout.LINE_START);
 
@@ -120,18 +130,41 @@ public class ModernTwoActionPane extends JPanel {
         JPanel cashActions = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.TRAILING, 6, 0));
         cashActions.setOpaque(false);
 
-        btnCashIn = createActionButton("Entrada/Refor\u00e7o (F3)", 155, e -> {
-            if (onCashInClicked != null) onCashInClicked.run();
-        });
-        btnCashOut = createActionButton("Sa\u00edda/Retirada (F4)", 145, e -> {
-            if (onCashOutClicked != null) onCashOutClicked.run();
-        });
-        btnCloseCash = createActionButton("Fechar Caixa", 115, e -> {
-            if (onCloseCashClicked != null) onCloseCashClicked.run();
-        });
-        btnCloseCash.setBackground(new Color(239, 68, 68)); // Red #ef4444
-        btnCloseCash.setForeground(Color.WHITE);
-        btnCloseCash.setOpaque(true);
+        btnCashIn = POSButtonFactory.createActionButton(
+                AppLocal.getIntString("button.cashin"),
+                UnicodeIcon.CASH_IN,
+                touchSize,
+                KeyEvent.VK_E,
+                AppLocal.getIntString("button.cashin.tooltip"),
+                e -> {
+                    if (onCashInClicked != null) onCashInClicked.run();
+                }
+        );
+        btnCashIn.setPreferredSize(new Dimension(175, touchSize.getHeight()));
+
+        btnCashOut = POSButtonFactory.createActionButton(
+                AppLocal.getIntString("button.cashout"),
+                UnicodeIcon.CASH_OUT,
+                touchSize,
+                KeyEvent.VK_S,
+                AppLocal.getIntString("button.cashout.tooltip"),
+                e -> {
+                    if (onCashOutClicked != null) onCashOutClicked.run();
+                }
+        );
+        btnCashOut.setPreferredSize(new Dimension(175, touchSize.getHeight()));
+
+        btnCloseCash = POSButtonFactory.createDangerButton(
+                AppLocal.getIntString("button.closecash"),
+                UnicodeIcon.CLOSE_CASH,
+                touchSize,
+                KeyEvent.VK_F,
+                AppLocal.getIntString("button.closecash"),
+                e -> {
+                    if (onCloseCashClicked != null) onCloseCashClicked.run();
+                }
+        );
+        btnCloseCash.setPreferredSize(new Dimension(145, touchSize.getHeight()));
 
         cashActions.add(btnCashIn);
         cashActions.add(btnCashOut);
@@ -150,18 +183,53 @@ public class ModernTwoActionPane extends JPanel {
         JPanel lineActions = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEADING, 6, 0));
         lineActions.setOpaque(false);
 
-        btnQtyMinus = createActionButton("-1", 52, e -> {
-            if (onQtyAdjusted != null) onQtyAdjusted.accept(-1.0);
-        });
-        btnQtyPlus = createActionButton("+1", 52, e -> {
-            if (onQtyAdjusted != null) onQtyAdjusted.accept(1.0);
-        });
-        btnEditLine = createActionButton("Editar", 90, e -> {
-            if (onEditLineClicked != null) onEditLineClicked.run();
-        });
-        btnDeleteLine = createActionButton("Remover", 95, e -> {
-            if (onDeleteLineClicked != null) onDeleteLineClicked.run();
-        });
+        btnQtyMinus = POSButtonFactory.createActionButton(
+                "-1",
+                UnicodeIcon.MINUS,
+                touchSize,
+                KeyEvent.VK_MINUS,
+                AppLocal.getIntString("button.qtyminus.tooltip"),
+                e -> {
+                    if (onQtyAdjusted != null) onQtyAdjusted.accept(-1.0);
+                }
+        );
+        btnQtyMinus.setPreferredSize(new Dimension(68, touchSize.getHeight()));
+
+        btnQtyPlus = POSButtonFactory.createActionButton(
+                "+1",
+                UnicodeIcon.PLUS,
+                touchSize,
+                KeyEvent.VK_PLUS,
+                AppLocal.getIntString("button.qtyplus.tooltip"),
+                e -> {
+                    if (onQtyAdjusted != null) onQtyAdjusted.accept(1.0);
+                }
+        );
+        btnQtyPlus.setPreferredSize(new Dimension(68, touchSize.getHeight()));
+
+        btnEditLine = POSButtonFactory.createActionButton(
+                AppLocal.getIntString("button.edit"),
+                UnicodeIcon.EDIT,
+                touchSize,
+                KeyEvent.VK_D,
+                AppLocal.getIntString("button.editline.tooltip"),
+                e -> {
+                    if (onEditLineClicked != null) onEditLineClicked.run();
+                }
+        );
+        btnEditLine.setPreferredSize(new Dimension(105, touchSize.getHeight()));
+
+        btnDeleteLine = POSButtonFactory.createDangerButton(
+                AppLocal.getIntString("button.delete"),
+                UnicodeIcon.DELETE,
+                touchSize,
+                KeyEvent.VK_R,
+                AppLocal.getIntString("button.deleteline.tooltip"),
+                e -> {
+                    if (onDeleteLineClicked != null) onDeleteLineClicked.run();
+                }
+        );
+        btnDeleteLine.setPreferredSize(new Dimension(115, touchSize.getHeight()));
 
         lineActions.add(btnQtyMinus);
         lineActions.add(btnQtyPlus);
@@ -173,15 +241,41 @@ public class ModernTwoActionPane extends JPanel {
         JPanel orderActions = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.TRAILING, 6, 0));
         orderActions.setOpaque(false);
 
-        btnClear = createActionButton("Limpar", 95, e -> {
-            if (onClearClicked != null) onClearClicked.run();
-        });
-        btnHold = createActionButton("Suspender", 105, e -> {
-            if (onHoldClicked != null) onHoldClicked.run();
-        });
-        btnDiscount = createActionButton("Desconto", 100, e -> {
-            if (onDiscountClicked != null) onDiscountClicked.run();
-        });
+        btnClear = POSButtonFactory.createActionButton(
+                AppLocal.getIntString("button.clean"),
+                UnicodeIcon.CLEAR,
+                touchSize,
+                KeyEvent.VK_L,
+                AppLocal.getIntString("button.clear.tooltip"),
+                e -> {
+                    if (onClearClicked != null) onClearClicked.run();
+                }
+        );
+        btnClear.setPreferredSize(new Dimension(110, touchSize.getHeight()));
+
+        btnHold = POSButtonFactory.createActionButton(
+                AppLocal.getIntString("button.hold"),
+                UnicodeIcon.HOLD,
+                touchSize,
+                KeyEvent.VK_H,
+                AppLocal.getIntString("button.hold.tooltip"),
+                e -> {
+                    if (onHoldClicked != null) onHoldClicked.run();
+                }
+        );
+        btnHold.setPreferredSize(new Dimension(125, touchSize.getHeight()));
+
+        btnDiscount = POSButtonFactory.createActionButton(
+                AppLocal.getIntString("button.discount"),
+                UnicodeIcon.DISCOUNT,
+                touchSize,
+                KeyEvent.VK_T,
+                AppLocal.getIntString("button.discount.tooltip"),
+                e -> {
+                    if (onDiscountClicked != null) onDiscountClicked.run();
+                }
+        );
+        btnDiscount.setPreferredSize(new Dimension(120, touchSize.getHeight()));
 
         orderActions.add(btnClear);
         orderActions.add(btnHold);
@@ -193,29 +287,19 @@ public class ModernTwoActionPane extends JPanel {
         applyComponentOrientation(ComponentOrientation.getOrientation(Locale.getDefault()));
     }
 
-    private JButton createActionButton(String text, int width, java.awt.event.ActionListener al) {
-        JButton btn = new JButton(text);
-        btn.setFont(btn.getFont().deriveFont(Font.BOLD, 12f));
-        btn.setFocusPainted(false);
-        btn.setPreferredSize(new Dimension(width, 38));
-        btn.putClientProperty("FlatLaf.style", "arc: 8;");
-        btn.addActionListener(al);
-        return btn;
-    }
-
     public void setCustomer(CustomerInfoExt customer) {
         if (customer != null) {
-            customerButton.setText("Cliente: " + customer.getName());
+            customerButton.setText(POSButtonFactory.formatButtonText(AppLocal.getIntString("label.customer") + ": " + customer.getName(), UnicodeIcon.CUSTOMER));
             customerButton.putClientProperty("FlatLaf.styleClass", "accent");
         } else {
-            customerButton.setText("Cliente: Consumidor Final");
+            customerButton.setText(POSButtonFactory.formatButtonText(AppLocal.getIntString("label.customer") + ": " + AppLocal.getIntString("label.guest"), UnicodeIcon.CUSTOMER));
             customerButton.putClientProperty("FlatLaf.styleClass", null);
         }
         customerButton.repaint();
     }
 
     public void setParkedCount(int count) {
-        parkedOrdersButton.setText(String.valueOf(count));
+        parkedOrdersButton.setText(UnicodeIcon.PARKED.getCode() + "  " + count);
         if (count > 0) {
             parkedOrdersButton.putClientProperty("FlatLaf.styleClass", "accent");
         } else {

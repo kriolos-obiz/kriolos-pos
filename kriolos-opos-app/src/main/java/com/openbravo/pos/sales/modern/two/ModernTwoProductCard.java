@@ -53,10 +53,9 @@ public class ModernTwoProductCard extends JButton {
         setFocusPainted(false);
         setMargin(new Insets(8, 8, 8, 8));
 
-        // Rectangular card styling with subtle rounded corners (not oval pill)
+        // Rectangular card styling
         putClientProperty("JButton.buttonType", null);
         putClientProperty("JComponent.roundRect", false);
-        putClientProperty("FlatLaf.style", "arc: 8;");
         
         java.awt.Color borderCol = UIManager.getColor("Component.borderColor");
         if (borderCol == null) {

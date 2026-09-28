@@ -20,6 +20,10 @@ import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.pim.CategoryInfo;
 import com.openbravo.pos.sales.modern.WrapLayout;
 import com.openbravo.pos.ticket.ProductInfoExt;
+import com.openbravo.pos.ui.components.ButtonSize;
+import com.openbravo.pos.ui.components.POSButtonFactory;
+import com.openbravo.pos.ui.components.UnicodeIcon;
+
 import java.awt.BorderLayout;
 import java.awt.ComponentOrientation;
 import java.awt.Dimension;
@@ -48,9 +52,10 @@ import javax.swing.event.DocumentListener;
  * <p>
  * Features:
  * <ul>
- *   <li>Prominent Global Search & Barcode scanner field at {@code PAGE_START}.</li>
- *   <li>Horizontal touch-friendly Category filter bar.</li>
- *   <li>Responsive fluid product card grid utilizing {@link WrapLayout}.</li>
+ * <li>Prominent Global Search & Barcode scanner field at
+ * {@code PAGE_START}.</li>
+ * <li>Horizontal touch-friendly Category filter bar.</li>
+ * <li>Responsive fluid product card grid utilizing {@link WrapLayout}.</li>
  * </ul>
  *
  * @author KriolOS Team
@@ -88,7 +93,7 @@ public class ModernTwoCatalogPane extends JPanel {
         searchContainer.setOpaque(false);
         searchContainer.setBorder(BorderFactory.createEmptyBorder(0, 0, 6, 0));
 
-        JLabel lblIcon = new JLabel("🔍");
+        JLabel lblIcon = new JLabel(UnicodeIcon.SEARCH.getCode());
         lblIcon.setFont(new Font("Segoe UI", Font.PLAIN, 16));
         lblIcon.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 4));
 
@@ -97,19 +102,23 @@ public class ModernTwoCatalogPane extends JPanel {
         searchField.setFont(searchField.getFont().deriveFont(14f));
         searchField.setMargin(new Insets(4, 10, 4, 10));
         searchField.setName("kriolos:sales:modern-two:search");
-        searchField.putClientProperty("JTextField.placeholderText", "Pesquisar produto ou ler c\u00f3digo de barras...");
+        searchField.putClientProperty("JTextField.placeholderText",
+                "Pesquisar produto ou ler c\u00f3digo de barras...");
         searchField.putClientProperty("JTextField.showClearButton", true);
-        searchField.putClientProperty("FlatLaf.style", "arc: 8;");
+        searchField.putClientProperty("JComponent.roundRect", true);
 
-        JButton btnClear = new JButton("Limpar");
-        btnClear.setFont(btnClear.getFont().deriveFont(Font.BOLD, 12f));
-        btnClear.setFocusPainted(false);
-        btnClear.setPreferredSize(new Dimension(80, 42));
-        btnClear.putClientProperty("FlatLaf.style", "arc: 8;");
-        btnClear.addActionListener(e -> {
-            searchField.setText("");
-            searchField.requestFocus();
-        });
+        JButton btnClear = POSButtonFactory.createActionButton(
+                AppLocal.getIntString("button.clean"),
+                UnicodeIcon.CLEAR,
+                ButtonSize.LARGE,
+                0,
+                AppLocal.getIntString("button.clear.tooltip"),
+                e -> {
+                    searchField.setText("");
+                    searchField.requestFocus();
+                }
+        );
+        btnClear.setPreferredSize(new Dimension(100, 42));
 
         searchContainer.add(lblIcon, BorderLayout.LINE_START);
         searchContainer.add(searchField, BorderLayout.CENTER);
@@ -118,11 +127,19 @@ public class ModernTwoCatalogPane extends JPanel {
         // Filter on text input
         searchField.getDocument().addDocumentListener(new DocumentListener() {
             @Override
-            public void insertUpdate(DocumentEvent e) { filter(); }
+            public void insertUpdate(DocumentEvent e) {
+                filter();
+            }
+
             @Override
-            public void removeUpdate(DocumentEvent e) { filter(); }
+            public void removeUpdate(DocumentEvent e) {
+                filter();
+            }
+
             @Override
-            public void changedUpdate(DocumentEvent e) { filter(); }
+            public void changedUpdate(DocumentEvent e) {
+                filter();
+            }
 
             private void filter() {
                 currentSearchFilter = searchField.getText().trim().toLowerCase(Locale.ROOT);
@@ -218,7 +235,8 @@ public class ModernTwoCatalogPane extends JPanel {
                         String name = p.getName() != null ? p.getName().toLowerCase(Locale.ROOT) : "";
                         String ref = p.getReference() != null ? p.getReference().toLowerCase(Locale.ROOT) : "";
                         String code = p.getCode() != null ? p.getCode().toLowerCase(Locale.ROOT) : "";
-                        return name.contains(currentSearchFilter) || ref.contains(currentSearchFilter) || code.contains(currentSearchFilter);
+                        return name.contains(currentSearchFilter) || ref.contains(currentSearchFilter)
+                                || code.contains(currentSearchFilter);
                     }
                     return true;
                 })
@@ -244,5 +262,9 @@ public class ModernTwoCatalogPane extends JPanel {
 
     public void clearSearch() {
         searchField.setText("");
+    }
+
+    public void selectCategory(String categoryId) {
+        categoryBar.selectCategory(categoryId);
     }
 }

@@ -229,14 +229,6 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     private void initComponentFromChild() {
         m_ticketsbag = getJTicketsBag();
 
-        if (isModernMode()) {
-            removeAll();
-            setLayout(new BorderLayout());
-            add(m_ticketsbag.getNullComponent(), BorderLayout.CENTER);
-            revalidate();
-            return;
-        }
-
         // Set Configuration>General>Tickets toolbar simple : standard : restaurant
         // option
         m_jPanelBag.add(m_ticketsbag.getBagComponent(), BorderLayout.LINE_START);
@@ -258,12 +250,8 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         return getAppProperty("machine.ticketsbag");
     }
 
-    protected boolean isModernMode() {
-        return false;
-    }
-
     private boolean isRestaurantMode() {
-        return SaleLayout.RESTAURANT.equals(getTicketsbag());
+        return com.openbravo.pos.ui.api.sales.SaleLayoutManager.isRestaurant(getTicketsbag());
     }
 
     private boolean isAutoLogoutRestaurant() {
@@ -325,13 +313,6 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     public void activate() throws BasicException {
 
         LOGGER.log(System.Logger.Level.INFO, "JPanelTicket.activate");
-
-        if (isModernMode()) {
-            if (m_ticketsbag != null) {
-                m_ticketsbag.activate();
-            }
-            return;
-        }
 
         Action logoutAction = new LogoutAction();
         if (isAutoLogout()) {
@@ -408,9 +389,6 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     @Override
     public boolean deactivate() {
         LOGGER.log(System.Logger.Level.DEBUG, "JPanelTicket.deactivate");
-        if (isModernMode()) {
-            return m_ticketsbag != null ? m_ticketsbag.deactivate() : true;
-        }
 
         if (inactivityListener != null) {
             inactivityListener.stop();
@@ -493,10 +471,6 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     }
 
     private void refreshTicket() {
-
-        if (isModernMode()) {
-            return;
-        }
 
         CardLayout cl = (CardLayout) (getLayout());
 
@@ -1682,7 +1656,9 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                         setActiveTicket(null, null);
                         refreshTicket();
                         // Delete will create a empty ticket
-                        m_ticketsbag.deleteTicket();
+                        if (m_ticketsbag != null) {
+                            m_ticketsbag.deleteTicket();
+                        }
 
                         if (isAutoLogout()) {
                             if (isRestaurantMode() && isAutoLogoutRestaurant()) {

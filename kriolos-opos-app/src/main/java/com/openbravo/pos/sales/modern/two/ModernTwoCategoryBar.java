@@ -205,10 +205,9 @@ public class ModernTwoCategoryBar extends JPanel {
         button.setMaximumSize(fixedDim);
         button.setAlignmentY(Component.CENTER_ALIGNMENT);
 
-        button.putClientProperty("JButton.buttonType", null);
-        button.putClientProperty("JComponent.roundRect", false);
-        button.putClientProperty("FlatLaf.style", "arc: 8;");
-        button.setName("kriolos:sales:modern-two:cat:" + (category != null ? category.getID() : "all"));
+        button.putClientProperty("JButton.buttonType", "roundRect");
+        button.putClientProperty("category", category);
+        button.setName("kriolos:sales:modern-two:category:" + (category != null ? category.getID() : "all"));
 
         button.addChangeListener(e -> {
             if (button.isSelected()) {
@@ -227,5 +226,26 @@ public class ModernTwoCategoryBar extends JPanel {
         });
 
         return button;
+    }
+
+    public void selectCategory(String categoryId) {
+        for (JToggleButton btn : categoryButtons) {
+            CategoryInfo cat = (CategoryInfo) btn.getClientProperty("category");
+            if (categoryId == null && cat == null) {
+                btn.setSelected(true);
+                btn.scrollRectToVisible(new Rectangle(0, 0, btn.getWidth(), btn.getHeight()));
+                if (onCategorySelected != null) {
+                    onCategorySelected.accept(null);
+                }
+                break;
+            } else if (categoryId != null && cat != null && categoryId.equals(cat.getID())) {
+                btn.setSelected(true);
+                btn.scrollRectToVisible(new Rectangle(0, 0, btn.getWidth(), btn.getHeight()));
+                if (onCategorySelected != null) {
+                    onCategorySelected.accept(cat);
+                }
+                break;
+            }
+        }
     }
 }

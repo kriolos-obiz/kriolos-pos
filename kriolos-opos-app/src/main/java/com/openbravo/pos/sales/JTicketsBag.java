@@ -109,19 +109,10 @@ public abstract class JTicketsBag extends JPanel {
      * @return
      */
     public static JTicketsBag createTicketsBag(String sName, AppView app, TicketsEditor panelticket) {
-        switch (sName) {
-            case SaleLayout.STANDARD:
-                return new JTicketsBagShared(app, panelticket);
-            case SaleLayout.RESTAURANT:
-                return new JTicketsBagRestaurantMap(app, panelticket);
-            case SaleLayout.MODERN_ONE:
-                return new com.openbravo.pos.sales.modern.one.ModernOne(app, panelticket);
-            case SaleLayout.MODERN_TWO:
-                return new com.openbravo.pos.sales.modern.two.ModernTwoSalesLayout(app, panelticket);
-            case SaleLayout.SIMPLE:
-            default:
-                return new JTicketsBagSimple(app, panelticket);
-            
+        JComponent comp = com.openbravo.pos.ui.api.sales.SaleLayoutManager.createLayout(sName, app, panelticket);
+        if (comp instanceof JTicketsBag bag) {
+            return bag;
         }
+        return new JTicketsBagSimple(app, panelticket);
     }   
 }

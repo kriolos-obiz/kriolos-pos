@@ -36,7 +36,6 @@ import com.openbravo.pos.pim.DataLogicPIM;
 import com.openbravo.pos.printer.TicketParser;
 import com.openbravo.pos.sales.DataLogicReceipts;
 import com.openbravo.pos.sales.JProductLineEditPanel;
-import com.openbravo.pos.sales.JTicketsBag;
 import com.openbravo.pos.sales.SalesService;
 import com.openbravo.pos.sales.SalesServiceImpl;
 import com.openbravo.pos.sales.SharedTicketInfo;
@@ -89,7 +88,7 @@ import javax.swing.UIManager;
  *
  * @author KriolOS Team
  */
-public class ModernTwoSalesLayout extends JTicketsBag implements JPanelView, TicketsEditor {
+public class ModernTwoSalesLayout extends JPanel implements JPanelView, TicketsEditor {
 
     private static final long serialVersionUID = 1L;
     private static final Logger LOGGER = Logger.getLogger(ModernTwoSalesLayout.class.getName());
@@ -120,7 +119,6 @@ public class ModernTwoSalesLayout extends JTicketsBag implements JPanelView, Tic
     private CustomerInfoExt activeCustomer;
 
     public ModernTwoSalesLayout(AppView app, TicketsEditor panelticket) {
-        super(app, panelticket);
         this.app = app;
         this.panelticket = panelticket;
         setName("kriolos:sales:modern-two:panel");
@@ -135,11 +133,11 @@ public class ModernTwoSalesLayout extends JTicketsBag implements JPanelView, Tic
 
     private void initDataLogics() {
         if (app != null) {
-            this.dlReceipts = (DataLogicReceipts) app.getBean("com.openbravo.pos.sales.DataLogicReceipts");
-            this.dlPim = (DataLogicPIM) app.getBean("com.openbravo.pos.pim.DataLogicPIM");
-            this.dlSales = (DataLogicSales) app.getBean("com.openbravo.pos.forms.DataLogicSales");
-            this.dlCustomers = (DataLogicCustomers) app.getBean("com.openbravo.pos.customers.DataLogicCustomers");
-            this.dlSystem = (DataLogicSystem) app.getBean("com.openbravo.pos.forms.DataLogicSystem");
+            this.dlReceipts = app.getBean(DataLogicReceipts.class);
+            this.dlPim = app.getBean(DataLogicPIM.class);
+            this.dlSales = app.getBean(DataLogicSales.class);
+            this.dlCustomers = app.getBean(DataLogicCustomers.class);
+            this.dlSystem = app.getBean(DataLogicSystem.class);
 
             if (dlSales != null) {
                 try {
@@ -299,7 +297,6 @@ public class ModernTwoSalesLayout extends JTicketsBag implements JPanelView, Tic
         return activeTicket;
     }
 
-    @Override
     public void deleteTicket() {
         if (dlSales != null && app != null && app.getAppUserView() != null && app.getAppUserView().getUser() != null) {
             dlSales.addTicketDeleted(app.getAppUserView().getUser().getName());
@@ -314,19 +311,6 @@ public class ModernTwoSalesLayout extends JTicketsBag implements JPanelView, Tic
 
     @Override
     public JComponent getComponent() {
-        return this;
-    }
-
-    @Override
-    protected JComponent getBagComponent() {
-        JPanel empty = new JPanel();
-        empty.setOpaque(false);
-        empty.setPreferredSize(new Dimension(0, 0));
-        return empty;
-    }
-
-    @Override
-    protected JComponent getNullComponent() {
         return this;
     }
 

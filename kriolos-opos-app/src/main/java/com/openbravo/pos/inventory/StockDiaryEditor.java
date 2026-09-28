@@ -114,7 +114,7 @@ public final class StockDiaryEditor extends javax.swing.JPanel implements Editor
 
         m_jreason.setModel(m_ReasonModel);
 
-        m_cat = new JCatalog(app);
+        m_cat = (CatalogSelector) com.openbravo.pos.ui.api.catalog.CatalogManager.createDefaultCatalog(app);
         m_cat.addActionListener(new CatalogListener());
 
         catcontainer.add(m_cat.getComponent(), BorderLayout.CENTER);        

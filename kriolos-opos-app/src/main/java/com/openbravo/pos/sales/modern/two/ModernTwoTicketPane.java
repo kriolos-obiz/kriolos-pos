@@ -21,6 +21,9 @@ import com.openbravo.pos.customers.CustomerInfoExt;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.ticket.TicketInfo;
 import com.openbravo.pos.ticket.TicketLineInfo;
+import com.openbravo.pos.ui.components.ButtonSize;
+import com.openbravo.pos.ui.components.POSButtonFactory;
+import com.openbravo.pos.ui.components.UnicodeIcon;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.ComponentOrientation;
@@ -28,6 +31,7 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.Insets;
+import java.awt.event.KeyEvent;
 import java.util.List;
 import java.util.Locale;
 import java.util.function.Consumer;
@@ -91,7 +95,7 @@ public class ModernTwoTicketPane extends JPanel {
         // ----------------------------------------------------
         // 1. TOP HEADER: Ticket Title
         // ----------------------------------------------------
-        headerTitleLabel = new JLabel("Pedido");
+        headerTitleLabel = new JLabel(AppLocal.getIntString("label.Ticketsbag"));
         headerTitleLabel.setFont(headerTitleLabel.getFont().deriveFont(Font.BOLD, 16f));
         headerTitleLabel.setBorder(BorderFactory.createEmptyBorder(2, 4, 6, 4));
         add(headerTitleLabel, BorderLayout.PAGE_START);
@@ -129,22 +133,22 @@ public class ModernTwoTicketPane extends JPanel {
         totalsPanel.setOpaque(false);
         totalsPanel.setBorder(BorderFactory.createEmptyBorder(6, 4, 6, 4));
 
-        JLabel subtotalTitle = new JLabel("Subtotal:");
+        JLabel subtotalTitle = new JLabel(AppLocal.getIntString("label.subtotalcash") + ":");
         subtotalTitle.setFont(subtotalTitle.getFont().deriveFont(Font.PLAIN, 12f));
         subtotalLabel = new JLabel("0.00", SwingConstants.TRAILING);
         subtotalLabel.setFont(subtotalLabel.getFont().deriveFont(Font.PLAIN, 12f));
 
-        JLabel taxTitle = new JLabel("IVA (15%):");
+        JLabel taxTitle = new JLabel(AppLocal.getIntString("label.taxcash") + ":");
         taxTitle.setFont(taxTitle.getFont().deriveFont(Font.PLAIN, 12f));
         taxLabel = new JLabel("0.00", SwingConstants.TRAILING);
         taxLabel.setFont(taxLabel.getFont().deriveFont(Font.PLAIN, 12f));
 
-        JLabel discountTitle = new JLabel("Desconto:");
+        JLabel discountTitle = new JLabel(AppLocal.getIntString("label.discount") + ":");
         discountTitle.setFont(discountTitle.getFont().deriveFont(Font.PLAIN, 12f));
         discountLabel = new JLabel("0.00", SwingConstants.TRAILING);
         discountLabel.setFont(discountLabel.getFont().deriveFont(Font.PLAIN, 12f));
 
-        JLabel grandTotalTitle = new JLabel("TOTAL:");
+        JLabel grandTotalTitle = new JLabel(AppLocal.getIntString("label.totalcash") + ":");
         grandTotalTitle.setFont(grandTotalTitle.getFont().deriveFont(Font.BOLD, 16f));
         grandTotalTitle.setForeground(new Color(22, 163, 74)); // #16a34a
         grandTotalLabel = new JLabel("0.00", SwingConstants.TRAILING);
@@ -162,19 +166,19 @@ public class ModernTwoTicketPane extends JPanel {
         bottomContainer.add(totalsPanel, BorderLayout.PAGE_START);
 
         // Massive Pay Button (Image 1 style)
-        btnPay = new JButton("PAGAR (F12)");
-        btnPay.setPreferredSize(new Dimension(0, 52));
-        btnPay.setMinimumSize(new Dimension(0, 52));
-        btnPay.setFont(btnPay.getFont().deriveFont(Font.BOLD, 16f));
-        btnPay.setFocusPainted(false);
-        btnPay.setBackground(new Color(22, 163, 74)); // Green #16a34a
-        btnPay.setForeground(Color.WHITE);
-        btnPay.setOpaque(true);
-        btnPay.putClientProperty("FlatLaf.style", "arc: 8;");
+        btnPay = POSButtonFactory.createSuccessButton(
+                AppLocal.getIntString("button.pay") + " (F12)",
+                UnicodeIcon.PAY,
+                ButtonSize.MASSIVE,
+                KeyEvent.VK_P,
+                AppLocal.getIntString("button.pay.tooltip"),
+                e -> {
+                    if (onPayClicked != null) onPayClicked.run();
+                }
+        );
+        btnPay.setPreferredSize(new Dimension(0, ButtonSize.MASSIVE.getHeight()));
+        btnPay.setMinimumSize(new Dimension(0, ButtonSize.MASSIVE.getHeight()));
         btnPay.setName("kriolos:sales:modern-two:btn-pay");
-        btnPay.addActionListener(e -> {
-            if (onPayClicked != null) onPayClicked.run();
-        });
         bottomContainer.add(btnPay, BorderLayout.PAGE_END);
 
         add(bottomContainer, BorderLayout.PAGE_END);

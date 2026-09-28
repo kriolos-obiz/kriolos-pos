@@ -20,6 +20,8 @@ import com.openbravo.pos.forms.AppConfig;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppProperties;
 import com.openbravo.pos.sales.SaleLayout;
+import com.openbravo.pos.ui.api.sales.SaleLayoutDefinition;
+import com.openbravo.pos.ui.api.sales.SaleLayoutManager;
 import com.openbravo.pos.ui.api.POSThemeDefinition;
 import com.openbravo.pos.ui.api.POSThemeManager;
 import java.awt.Component;
@@ -64,6 +66,7 @@ public class JPanelConfigGeneral extends javax.swing.JPanel implements PanelConf
         jcboLAF.setRenderer(new POSThemeDefinitionRenderer());
         jcboMachineScreenmode.addActionListener(dirty);
         jcboTicketsBag.addActionListener(dirty);
+        jcboTicketsBag.setRenderer(new SaleLayoutDefinitionRenderer());
         jchkHideInfo.addActionListener(dirty);  
         jtxtStartupText.getDocument().addDocumentListener(dirty);
         jbtnText.addActionListener(new FileChooserEvent(jtxtStartupText));                
@@ -88,7 +91,7 @@ public class JPanelConfigGeneral extends javax.swing.JPanel implements PanelConf
         jcboMachineScreenmode.addItem("fullscreen");
         
         
-        SaleLayout.getAll().forEach(jcboTicketsBag::addItem);
+        SaleLayoutManager.getAllAvailableLayouts().forEach(jcboTicketsBag::addItem);
         
     }
 
@@ -133,7 +136,22 @@ public class JPanelConfigGeneral extends javax.swing.JPanel implements PanelConf
         }
 
         jcboMachineScreenmode.setSelectedItem(config.getProperty("machine.screenmode"));
-        jcboTicketsBag.setSelectedItem(config.getProperty("machine.ticketsbag"));
+        
+        String layoutId = config.getProperty("machine.ticketsbag");
+        jcboTicketsBag.setSelectedItem(null);
+        if (layoutId != null) {
+            for (int position = 0; position < jcboTicketsBag.getItemCount(); position++) {
+                Object item = jcboTicketsBag.getItemAt(position);
+                if (item instanceof SaleLayoutDefinition def && def.id().equalsIgnoreCase(layoutId)) {
+                    jcboTicketsBag.setSelectedIndex(position);
+                    break;
+                } else if (item instanceof String s && s.equalsIgnoreCase(layoutId)) {
+                    jcboTicketsBag.setSelectedIndex(position);
+                    break;
+                }
+            }
+        }
+        
         jchkHideInfo.setSelected(Boolean.parseBoolean(config.getProperty("till.hideinfo")));        
         jtxtStartupLogo.setText(config.getProperty("start.logo"));
         jtxtStartupText.setText(config.getProperty("start.text")); 
@@ -157,7 +175,13 @@ public class JPanelConfigGeneral extends javax.swing.JPanel implements PanelConf
         }
 
         config.setProperty("machine.screenmode", comboValue(jcboMachineScreenmode.getSelectedItem()));
-        config.setProperty("machine.ticketsbag", comboValue(jcboTicketsBag.getSelectedItem()));
+        
+        Object selectedLayout = jcboTicketsBag.getSelectedItem();
+        String layoutVal = (selectedLayout instanceof SaleLayoutDefinition def)
+                ? def.id()
+                : comboValue(selectedLayout);
+        config.setProperty("machine.ticketsbag", layoutVal);
+        
         config.setProperty("till.hideinfo", Boolean.toString(jchkHideInfo.isSelected()));         
         config.setProperty("start.logo", jtxtStartupLogo.getText());
         config.setProperty("start.text", jtxtStartupText.getText());

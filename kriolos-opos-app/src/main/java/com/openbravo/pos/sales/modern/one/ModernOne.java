@@ -17,7 +17,6 @@
 package com.openbravo.pos.sales.modern.one;
 
 import com.openbravo.basic.BasicException;
-import com.openbravo.data.gui.MessageInf;
 import com.openbravo.data.gui.modal.PosUIModal;
 import com.openbravo.pos.customers.CustomerInfoExt;
 import com.openbravo.pos.customers.DataLogicCustomers;
@@ -43,14 +42,12 @@ import com.openbravo.pos.sales.TicketsEditor;
 import com.openbravo.pos.ticket.ProductInfoExt;
 import com.openbravo.pos.ticket.TaxInfo;
 import com.openbravo.pos.ticket.TicketInfo;
-import com.openbravo.pos.ticket.UserInfo;
 import com.openbravo.pos.ticket.TicketLineInfo;
 import java.awt.BorderLayout;
 import java.awt.ComponentOrientation;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
@@ -59,20 +56,19 @@ import javax.swing.JPanel;
 import javax.swing.JSplitPane;
 import javax.swing.UIManager;
 
-import com.openbravo.pos.sales.JTicketsBag;
 import com.openbravo.pos.sales.SharedTicketInfo;
 import com.openbravo.pos.sales.shared.JTicketsBagSharedPanel;
 
 /**
  * ModernOne: 4th Sales Screen Layout for KriolOS POS.
  * <p>
- * Pristine, modern dual-pane touch interface extending {@link JTicketsBag}
+ * Pristine, modern dual-pane touch interface
  * to plug seamlessly into the sales layout configuration flow.
  * </p>
  *
  * @author KriolOS Team
  */
-public class ModernOne extends JTicketsBag implements JPanelView, TicketsEditor {
+public class ModernOne extends JPanel implements JPanelView, TicketsEditor {
 
     private static final long serialVersionUID = 1L;
     private static final Logger LOGGER = Logger.getLogger(ModernOne.class.getName());
@@ -101,7 +97,6 @@ public class ModernOne extends JTicketsBag implements JPanelView, TicketsEditor 
     private CustomerInfoExt activeCustomer;
 
     public ModernOne(AppView app, TicketsEditor panelticket) {
-        super(app, panelticket);
         this.app = app;
         setName("kriolos:sales:modern:panel");
         initDomainServices();
@@ -112,30 +107,16 @@ public class ModernOne extends JTicketsBag implements JPanelView, TicketsEditor 
         this(app, null);
     }
 
-    @Override
     public void deleteTicket() {
         clearCurrentTicket();
     }
 
-    @Override
-    protected JComponent getBagComponent() {
-        JPanel empty = new JPanel();
-        empty.setOpaque(false);
-        empty.setPreferredSize(new java.awt.Dimension(0, 0));
-        return empty;
-    }
-
-    @Override
-    protected JComponent getNullComponent() {
-        return this;
-    }
-
     private void initDomainServices() {
-        dlSales = (DataLogicSales) app.getBean("com.openbravo.pos.forms.DataLogicSales");
-        dlPim = (DataLogicPIM) app.getBean("com.openbravo.pos.pim.DataLogicPIM");
-        dlSystem = (DataLogicSystem) app.getBean("com.openbravo.pos.forms.DataLogicSystem");
-        dlReceipts = (DataLogicReceipts) app.getBean("com.openbravo.pos.sales.DataLogicReceipts");
-        dlCustomers = (DataLogicCustomers) app.getBean("com.openbravo.pos.customers.DataLogicCustomers");
+        dlSales = app.getBean(DataLogicSales.class);
+        dlPim = app.getBean(DataLogicPIM.class);
+        dlSystem = app.getBean(DataLogicSystem.class);
+        dlReceipts = app.getBean(DataLogicReceipts.class);
+        dlCustomers = app.getBean(DataLogicCustomers.class);
 
         paymentService = new PaymentServiceImpl();
         ticketParser = new TicketParser(app.getDeviceTicket(), dlSystem);

@@ -21,6 +21,9 @@ import com.openbravo.pos.customers.CustomerInfoExt;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.ticket.TicketInfo;
 import com.openbravo.pos.ticket.TicketLineInfo;
+import com.openbravo.pos.ui.components.ButtonSize;
+import com.openbravo.pos.ui.components.POSButtonFactory;
+import com.openbravo.pos.ui.components.UnicodeIcon;
 import java.awt.BorderLayout;
 import java.awt.ComponentOrientation;
 import java.awt.Cursor;
@@ -29,6 +32,7 @@ import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.Insets;
+import java.awt.event.KeyEvent;
 import java.util.Locale;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -45,7 +49,8 @@ import javax.swing.UIManager;
 /**
  * Modern touch-friendly Ticket Pane positioned on the side (using LINE_START).
  * Encapsulates the flat, borderless line items JTable (>= 50px row height),
- * real-time financial totals, customer selection pill, and the massive Pay button at PAGE_END.
+ * real-time financial totals, customer selection pill, and the massive Pay
+ * button at PAGE_END.
  *
  * @author KriolOS Team
  */
@@ -96,61 +101,49 @@ public class ModernTicketPane extends JPanel {
         setName("kriolos:sales:modern:ticket-pane");
 
         // ----------------------------------------------------
-        // 1. TOP HEADER: Ticket ID, Customer Pill, Clear Button
+        // 1. TOP HEADER: Ticket ID + Parked Pill (Row 1) & Full-width Customer Bar (Row 2)
         // ----------------------------------------------------
-        JPanel headerPanel = new JPanel(new BorderLayout(8, 0));
-        headerPanel.setOpaque(false);
+        JPanel headerContainer = new JPanel(new BorderLayout(0, 6));
+        headerContainer.setOpaque(false);
+
+        JPanel titleRow = new JPanel(new BorderLayout(8, 0));
+        titleRow.setOpaque(false);
 
         ticketHeaderLabel = new JLabel("Order #1");
         ticketHeaderLabel.setFont(ticketHeaderLabel.getFont().deriveFont(Font.BOLD, 16f));
         ticketHeaderLabel.setHorizontalAlignment(SwingConstants.LEADING);
-        headerPanel.add(ticketHeaderLabel, BorderLayout.CENTER);
+        titleRow.add(ticketHeaderLabel, BorderLayout.CENTER);
 
-        JPanel headerActions = new JPanel(new FlowLayout(FlowLayout.TRAILING, 4, 0));
-        headerActions.setOpaque(false);
-
-        customerButton = new JButton(AppLocal.getIntString("label.customer"));
-        customerButton.setFocusPainted(false);
-        customerButton.setMargin(new Insets(4, 10, 4, 10));
-        customerButton.putClientProperty("JButton.buttonType", "roundRect");
-        customerButton.setName("kriolos:sales:modern:customer-btn");
-        customerButton.addActionListener(e -> {
-            if (onCustomerClicked != null) onCustomerClicked.run();
-        });
-        headerActions.add(customerButton);
-
-        holdButton = new JButton("Hold");
-        holdButton.setFocusPainted(false);
-        holdButton.setMargin(new Insets(4, 10, 4, 10));
-        holdButton.putClientProperty("JButton.buttonType", "roundRect");
-        holdButton.setName("kriolos:sales:modern:hold-btn");
-        holdButton.addActionListener(e -> {
-            if (onHoldClicked != null) onHoldClicked.run();
-        });
-        headerActions.add(holdButton);
-
-        parkedListButton = new JButton("Orders");
-        parkedListButton.setFocusPainted(false);
-        parkedListButton.setMargin(new Insets(4, 10, 4, 10));
-        parkedListButton.putClientProperty("JButton.buttonType", "roundRect");
+        parkedListButton = POSButtonFactory.createActionButton(
+                AppLocal.getIntString("button.parked"),
+                UnicodeIcon.ORDERS,
+                ButtonSize.MEDIUM,
+                KeyEvent.VK_O,
+                AppLocal.getIntString("button.parked.tooltip"),
+                e -> {
+                    if (onParkedListClicked != null)
+                        onParkedListClicked.run();
+                });
         parkedListButton.setName("kriolos:sales:modern:parked-btn");
-        parkedListButton.addActionListener(e -> {
-            if (onParkedListClicked != null) onParkedListClicked.run();
-        });
-        headerActions.add(parkedListButton);
+        titleRow.add(parkedListButton, BorderLayout.LINE_END);
+        headerContainer.add(titleRow, BorderLayout.PAGE_START);
 
-        clearTicketButton = new JButton("Clear");
-        clearTicketButton.setFocusPainted(false);
-        clearTicketButton.setMargin(new Insets(4, 10, 4, 10));
-        clearTicketButton.putClientProperty("JButton.buttonType", "roundRect");
-        clearTicketButton.setName("kriolos:sales:modern:clear-btn");
-        clearTicketButton.addActionListener(e -> {
-            if (onClearTicketClicked != null) onClearTicketClicked.run();
-        });
-        headerActions.add(clearTicketButton);
+        customerButton = POSButtonFactory.createActionButton(
+                AppLocal.getIntString("label.customer") + ": " + AppLocal.getIntString("label.guest"),
+                UnicodeIcon.CUSTOMER,
+                ButtonSize.LARGE,
+                KeyEvent.VK_C,
+                AppLocal.getIntString("label.customer"),
+                e -> {
+                    if (onCustomerClicked != null)
+                        onCustomerClicked.run();
+                });
+        customerButton.setPreferredSize(new Dimension(Integer.MAX_VALUE, ButtonSize.LARGE.getHeight()));
+        customerButton.setMaximumSize(new Dimension(Integer.MAX_VALUE, ButtonSize.LARGE.getHeight()));
+        customerButton.setName("kriolos:sales:modern:customer-btn");
+        headerContainer.add(customerButton, BorderLayout.PAGE_END);
 
-        headerPanel.add(headerActions, BorderLayout.LINE_END);
-        add(headerPanel, BorderLayout.PAGE_START);
+        add(headerContainer, BorderLayout.PAGE_START);
 
         // ----------------------------------------------------
         // 2. CENTER: Flat, Borderless Line Items Table (>= 50px)
@@ -190,47 +183,110 @@ public class ModernTicketPane extends JPanel {
         footerPanel.setOpaque(false);
         footerPanel.setBorder(BorderFactory.createEmptyBorder(6, 0, 0, 0));
 
-        // Line Item Quick Controls (-1 / +1 / Edit / Delete) spanning full width
-        JPanel lineActionsBar = new JPanel(new GridLayout(1, 4, 8, 0));
+        // Line Item Controls (-1 / +1 / Edit / Delete) spanning full width
+        JPanel lineActionsBar = new JPanel(new GridLayout(1, 4, 6, 0));
         lineActionsBar.setOpaque(false);
-        lineActionsBar.setMaximumSize(new Dimension(Integer.MAX_VALUE, 44));
-        lineActionsBar.setPreferredSize(new Dimension(0, 44));
+        lineActionsBar.setMaximumSize(new Dimension(Integer.MAX_VALUE, ButtonSize.LARGE.getHeight()));
+        lineActionsBar.setPreferredSize(new Dimension(0, ButtonSize.LARGE.getHeight()));
 
-        btnQtyMinus = createToolButton("-1", "kriolos:sales:modern:btn-minus");
-        btnQtyMinus.addActionListener(e -> {
-            if (onQtyAdjusted != null) onQtyAdjusted.accept(-1.0);
-        });
+        btnQtyMinus = POSButtonFactory.createActionButton(
+                "-1",
+                UnicodeIcon.MINUS,
+                ButtonSize.LARGE,
+                KeyEvent.VK_MINUS,
+                AppLocal.getIntString("button.qtyminus.tooltip"),
+                e -> {
+                    if (onQtyAdjusted != null)
+                        onQtyAdjusted.accept(-1.0);
+                });
+        btnQtyMinus.setName("kriolos:sales:modern:btn-minus");
 
-        btnQtyPlus = createToolButton("+1", "kriolos:sales:modern:btn-plus");
-        btnQtyPlus.addActionListener(e -> {
-            if (onQtyAdjusted != null) onQtyAdjusted.accept(1.0);
-        });
+        btnQtyPlus = POSButtonFactory.createActionButton(
+                "+1",
+                UnicodeIcon.PLUS,
+                ButtonSize.LARGE,
+                KeyEvent.VK_PLUS,
+                AppLocal.getIntString("button.qtyplus.tooltip"),
+                e -> {
+                    if (onQtyAdjusted != null)
+                        onQtyAdjusted.accept(1.0);
+                });
+        btnQtyPlus.setName("kriolos:sales:modern:btn-plus");
 
-        btnEditLine = createToolButton(AppLocal.getIntString("button.edit"), "kriolos:sales:modern:btn-edit-line");
-        btnEditLine.addActionListener(e -> {
-            if (onEditLineClicked != null) onEditLineClicked.run();
-        });
+        btnEditLine = POSButtonFactory.createActionButton(
+                AppLocal.getIntString("button.edit"),
+                UnicodeIcon.EDIT,
+                ButtonSize.LARGE,
+                KeyEvent.VK_D,
+                AppLocal.getIntString("button.editline.tooltip"),
+                e -> {
+                    if (onEditLineClicked != null)
+                        onEditLineClicked.run();
+                });
+        btnEditLine.setName("kriolos:sales:modern:btn-edit-line");
 
-        btnDeleteLine = createToolButton(AppLocal.getIntString("button.delete"), "kriolos:sales:modern:btn-delete-line");
-        btnDeleteLine.addActionListener(e -> {
-            if (onDeleteLineClicked != null) onDeleteLineClicked.run();
-        });
+        btnDeleteLine = POSButtonFactory.createDangerButton(
+                AppLocal.getIntString("button.delete"),
+                UnicodeIcon.DELETE,
+                ButtonSize.LARGE,
+                KeyEvent.VK_R,
+                AppLocal.getIntString("button.deleteline.tooltip"),
+                e -> {
+                    if (onDeleteLineClicked != null)
+                        onDeleteLineClicked.run();
+                });
+        btnDeleteLine.setName("kriolos:sales:modern:btn-delete-line");
 
         lineActionsBar.add(btnQtyMinus);
         lineActionsBar.add(btnQtyPlus);
         lineActionsBar.add(btnEditLine);
         lineActionsBar.add(btnDeleteLine);
         footerPanel.add(lineActionsBar);
-        footerPanel.add(Box.createVerticalStrut(10));
+        footerPanel.add(Box.createVerticalStrut(6));
+
+        // Order Action Controls (Clear / Hold) spanning full width
+        JPanel orderActionsBar = new JPanel(new GridLayout(1, 2, 8, 0));
+        orderActionsBar.setOpaque(false);
+        orderActionsBar.setMaximumSize(new Dimension(Integer.MAX_VALUE, ButtonSize.LARGE.getHeight()));
+        orderActionsBar.setPreferredSize(new Dimension(0, ButtonSize.LARGE.getHeight()));
+
+        clearTicketButton = POSButtonFactory.createActionButton(
+                AppLocal.getIntString("button.clean"),
+                UnicodeIcon.CLEAR,
+                ButtonSize.LARGE,
+                KeyEvent.VK_L,
+                AppLocal.getIntString("button.clear.tooltip"),
+                e -> {
+                    if (onClearTicketClicked != null)
+                        onClearTicketClicked.run();
+                });
+        clearTicketButton.setName("kriolos:sales:modern:clear-btn");
+
+        holdButton = POSButtonFactory.createActionButton(
+                AppLocal.getIntString("button.hold"),
+                UnicodeIcon.HOLD,
+                ButtonSize.LARGE,
+                KeyEvent.VK_H,
+                AppLocal.getIntString("button.hold.tooltip"),
+                e -> {
+                    if (onHoldClicked != null)
+                        onHoldClicked.run();
+                });
+        holdButton.setName("kriolos:sales:modern:hold-btn");
+
+        orderActionsBar.add(clearTicketButton);
+        orderActionsBar.add(holdButton);
+        footerPanel.add(orderActionsBar);
+        footerPanel.add(Box.createVerticalStrut(8));
 
         // Financial Summary Box
         JPanel summaryCard = new JPanel(new GridLayout(3, 2, 8, 4));
         summaryCard.setOpaque(false);
         summaryCard.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(1, 0, 1, 0, UIManager.getColor("Separator.foreground") != null 
-                        ? UIManager.getColor("Separator.foreground") : UIManager.getColor("Panel.background")),
-                BorderFactory.createEmptyBorder(8, 4, 8, 4)
-        ));
+                BorderFactory.createMatteBorder(1, 0, 1, 0, UIManager.getColor("Separator.foreground") != null
+                        ? UIManager.getColor("Separator.foreground")
+                        : UIManager.getColor("Panel.background")),
+                BorderFactory.createEmptyBorder(8, 4, 8, 4)));
 
         JLabel subtotalLabel = new JLabel(AppLocal.getIntString("label.subtotalcash"));
         subtotalLabel.setHorizontalAlignment(SwingConstants.LEADING);
@@ -257,56 +313,47 @@ public class ModernTicketPane extends JPanel {
         summaryCard.add(totalValueLabel);
 
         footerPanel.add(summaryCard);
-        footerPanel.add(Box.createVerticalStrut(10));
+        footerPanel.add(Box.createVerticalStrut(8));
 
-        // Massive Pay Button (full width, minimum 54px height)
-        btnPay = new JButton(AppLocal.getIntString("button.pay") + "  " + Formats.CURRENCY.formatValue(0.0));
-        btnPay.setFont(btnPay.getFont().deriveFont(Font.BOLD, 18f));
-        btnPay.setPreferredSize(new Dimension(Integer.MAX_VALUE, 56));
-        btnPay.setMaximumSize(new Dimension(Integer.MAX_VALUE, 56));
-        btnPay.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        btnPay.setFocusPainted(false);
+        // Massive Pay Button (full width, 56px height)
+        btnPay = POSButtonFactory.createSuccessButton(
+                AppLocal.getIntString("button.pay") + "  " + Formats.CURRENCY.formatValue(0.0),
+                UnicodeIcon.PAY,
+                ButtonSize.MASSIVE,
+                KeyEvent.VK_P,
+                AppLocal.getIntString("button.pay.tooltip"),
+                e -> {
+                    if (onPayClicked != null)
+                        onPayClicked.run();
+                });
+        btnPay.setPreferredSize(new Dimension(Integer.MAX_VALUE, ButtonSize.MASSIVE.getHeight()));
+        btnPay.setMaximumSize(new Dimension(Integer.MAX_VALUE, ButtonSize.MASSIVE.getHeight()));
         btnPay.setName("kriolos:sales:modern:btn-pay");
-
-        // FlatLaf accent pill styling
-        btnPay.putClientProperty("JButton.buttonType", "roundRect");
-        btnPay.putClientProperty("JComponent.roundRect", true);
-        btnPay.putClientProperty("FlatLaf.styleClass", "accent");
-
-        btnPay.addActionListener(e -> {
-            if (onPayClicked != null) onPayClicked.run();
-        });
 
         footerPanel.add(btnPay);
         add(footerPanel, BorderLayout.PAGE_END);
 
         // Apply RTL/LTR orientation dynamically
         applyComponentOrientation(ComponentOrientation.getOrientation(Locale.getDefault()));
-        headerPanel.applyComponentOrientation(ComponentOrientation.getOrientation(Locale.getDefault()));
-        headerActions.applyComponentOrientation(ComponentOrientation.getOrientation(Locale.getDefault()));
+        headerContainer.applyComponentOrientation(ComponentOrientation.getOrientation(Locale.getDefault()));
+        titleRow.applyComponentOrientation(ComponentOrientation.getOrientation(Locale.getDefault()));
         summaryCard.applyComponentOrientation(ComponentOrientation.getOrientation(Locale.getDefault()));
         lineActionsBar.applyComponentOrientation(ComponentOrientation.getOrientation(Locale.getDefault()));
-    }
-
-    private JButton createToolButton(String text, String name) {
-        JButton btn = new JButton(text);
-        btn.setFont(btn.getFont().deriveFont(Font.BOLD, 12f));
-        btn.setFocusPainted(false);
-        btn.setMargin(new Insets(6, 12, 6, 12));
-        btn.putClientProperty("JButton.buttonType", "roundRect");
-        btn.setName(name);
-        return btn;
+        orderActionsBar.applyComponentOrientation(ComponentOrientation.getOrientation(Locale.getDefault()));
     }
 
     public void updateTicketDisplay(TicketInfo ticket, CustomerInfoExt customer) {
         if (ticket == null) {
             tableModel.clear();
-            ticketHeaderLabel.setText("New Order");
+            ticketHeaderLabel.setText(AppLocal.getIntString("button.newticket"));
             subtotalValueLabel.setText(Formats.CURRENCY.formatValue(0.0));
             taxValueLabel.setText(Formats.CURRENCY.formatValue(0.0));
             totalValueLabel.setText(Formats.CURRENCY.formatValue(0.0));
-            btnPay.setText(AppLocal.getIntString("button.pay") + "  " + Formats.CURRENCY.formatValue(0.0));
-            customerButton.setText(AppLocal.getIntString("label.customer"));
+            btnPay.setText(POSButtonFactory.formatButtonText(
+                    AppLocal.getIntString("button.pay") + "  " + Formats.CURRENCY.formatValue(0.0), UnicodeIcon.PAY));
+            customerButton.setText(
+                    POSButtonFactory.formatButtonText(AppLocal.getIntString("label.customer") + ": " + AppLocal.getIntString("label.guest"), UnicodeIcon.CUSTOMER));
+            customerButton.putClientProperty("FlatLaf.styleClass", null);
             btnPay.setEnabled(false);
             holdButton.setEnabled(false);
             clearTicketButton.setEnabled(false);
@@ -314,16 +361,21 @@ public class ModernTicketPane extends JPanel {
         }
 
         // Header & Customer Info
-        String ticketName = (ticket.getName() != null && !ticket.getName().isBlank()) 
-                ? ticket.getName() : "Order #" + ticket.getPickupId();
+        String ticketName = (ticket.getName() != null && !ticket.getName().isBlank())
+                ? ticket.getName()
+                : AppLocal.getIntString("button.newticket") + " #" + ticket.getPickupId();
         ticketHeaderLabel.setText(ticketName);
 
         if (customer != null && customer.getName() != null) {
-            customerButton.setText(customer.getName());
+            customerButton.setText(POSButtonFactory.formatButtonText(AppLocal.getIntString("label.customer") + ": " + customer.getName(), UnicodeIcon.CUSTOMER));
+            customerButton.putClientProperty("FlatLaf.styleClass", "accent");
         } else if (ticket.getCustomer() != null && ticket.getCustomer().getName() != null) {
-            customerButton.setText(ticket.getCustomer().getName());
+            customerButton.setText(POSButtonFactory.formatButtonText(AppLocal.getIntString("label.customer") + ": " + ticket.getCustomer().getName(), UnicodeIcon.CUSTOMER));
+            customerButton.putClientProperty("FlatLaf.styleClass", "accent");
         } else {
-            customerButton.setText(AppLocal.getIntString("label.customer"));
+            customerButton.setText(
+                    POSButtonFactory.formatButtonText(AppLocal.getIntString("label.customer") + ": " + AppLocal.getIntString("label.guest"), UnicodeIcon.CUSTOMER));
+            customerButton.putClientProperty("FlatLaf.styleClass", null);
         }
 
         // Lines in table
@@ -338,7 +390,8 @@ public class ModernTicketPane extends JPanel {
         taxValueLabel.setText(Formats.CURRENCY.formatValue(taxes));
         totalValueLabel.setText(Formats.CURRENCY.formatValue(total));
 
-        btnPay.setText(AppLocal.getIntString("button.pay") + "  " + Formats.CURRENCY.formatValue(total));
+        btnPay.setText(POSButtonFactory.formatButtonText(
+                AppLocal.getIntString("button.pay") + "  " + Formats.CURRENCY.formatValue(total), UnicodeIcon.PAY));
         btnPay.setEnabled(ticket.getLinesCount() > 0 && total >= 0.0);
         holdButton.setEnabled(ticket.getLinesCount() > 0);
         clearTicketButton.setEnabled(ticket.getLinesCount() > 0);
@@ -363,15 +416,47 @@ public class ModernTicketPane extends JPanel {
     }
 
     // Callbacks setters
-    public void setOnPayClicked(Runnable r) { this.onPayClicked = r; }
-    public void setOnCustomerClicked(Runnable r) { this.onCustomerClicked = r; }
-    public void setOnClearTicketClicked(Runnable r) { this.onClearTicketClicked = r; }
-    public void setOnHoldClicked(Runnable r) { this.onHoldClicked = r; }
-    public void setOnParkedListClicked(Runnable r) { this.onParkedListClicked = r; }
-    public void setParkedCount(int count) {
-        parkedListButton.setText(count > 0 ? "Orders (" + count + ")" : "Orders");
+    public void setOnPayClicked(Runnable r) {
+        this.onPayClicked = r;
     }
-    public void setOnQtyAdjusted(java.util.function.Consumer<Double> c) { this.onQtyAdjusted = c; }
-    public void setOnDeleteLineClicked(Runnable r) { this.onDeleteLineClicked = r; }
-    public void setOnEditLineClicked(Runnable r) { this.onEditLineClicked = r; }
+
+    public void setOnCustomerClicked(Runnable r) {
+        this.onCustomerClicked = r;
+    }
+
+    public void setOnClearTicketClicked(Runnable r) {
+        this.onClearTicketClicked = r;
+    }
+
+    public void setOnHoldClicked(Runnable r) {
+        this.onHoldClicked = r;
+    }
+
+    public void setOnParkedListClicked(Runnable r) {
+        this.onParkedListClicked = r;
+    }
+
+    public void setParkedCount(int count) {
+        parkedListButton.setText(count > 0 
+                ? UnicodeIcon.ORDERS.getCode() + " " + AppLocal.getIntString("button.parked") + " (" + count + ")" 
+                : UnicodeIcon.ORDERS.getCode() + " " + AppLocal.getIntString("button.parked"));
+        if (count > 0) {
+            parkedListButton.putClientProperty("FlatLaf.styleClass", "accent");
+        } else {
+            parkedListButton.putClientProperty("FlatLaf.styleClass", null);
+        }
+        parkedListButton.repaint();
+    }
+
+    public void setOnQtyAdjusted(java.util.function.Consumer<Double> c) {
+        this.onQtyAdjusted = c;
+    }
+
+    public void setOnDeleteLineClicked(Runnable r) {
+        this.onDeleteLineClicked = r;
+    }
+
+    public void setOnEditLineClicked(Runnable r) {
+        this.onEditLineClicked = r;
+    }
 }

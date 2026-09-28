@@ -60,13 +60,16 @@ public class JPanelTicketEdits extends JPanelTicket {
 
     public void showCatalog() {
         getTicketButtons().setVisible(true);
-        m_catandlines.showCatalog();
+        if (m_catandlines != null) {
+            m_catandlines.showCatalog();
+        }
     }
-    
 
     public void showRefundLines(List<TicketLineInfo> aRefundLines) {
         getTicketButtons().setVisible(false);
-        m_catandlines.showRefundLines(aRefundLines);
+        if (m_catandlines != null) {
+            m_catandlines.showRefundLines(aRefundLines);
+        }
     }
 
     @Override

@@ -1,5 +1,5 @@
 //    KriolOS POS
-//    Copyright (c) 2019-2023 KriolOS
+//    Copyright (c) 2019-2026 KriolOS
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -16,120 +16,148 @@
 package com.openbravo.pos.sales;
 
 import com.openbravo.basic.BasicException;
-import com.openbravo.pos.catalog.CatalogSelector;
-import com.openbravo.pos.catalog.JCatalog;
+import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
-import com.openbravo.pos.ticket.ProductInfoExt;
-import java.awt.Component;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
+import com.openbravo.pos.forms.JPanelView;
+import com.openbravo.pos.ui.api.sales.SaleLayoutManager;
+import java.awt.BorderLayout;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JComponent;
+import javax.swing.JPanel;
 
 /**
+ * Top-level Sales View Bean for KriolOS POS.
+ * <p>
+ * Implements {@link JPanelView} and acts as a dynamic router and host:
+ * <ul>
+ *   <li>Routes to {@link JPanelTicketSalesClassic} for legacy layouts (simple, standard, restaurant).</li>
+ *   <li>Routes to Modern layouts (e.g. ModernOne, ModernTwo) via SPI {@link SaleLayoutManager}.</li>
+ * </ul>
+ * This completely decouples legacy {@link JTicketsBag} and {@link JPanelTicket} from Modern touch interfaces.
  *
- * @author JG uniCenta
+ * @author JG uniCenta, KriolOS Team
  */
-public class JPanelTicketSales extends JPanelTicket {
+public class JPanelTicketSales extends JPanel implements JPanelView {
 
     private static final long serialVersionUID = 1L;
-    private CatalogSelector m_cat;
+    private static final Logger LOGGER = Logger.getLogger(JPanelTicketSales.class.getName());
+
+    private final AppView app;
+    private JPanelView currentView;
+    private String activeLayoutMode;
 
     public JPanelTicketSales(AppView app) {
-        super(app);
-        if (!isModernMode()) {
-            getTicketlines().addListSelectionListener(new CatalogSelectionListener());
+        this.app = app;
+        setLayout(new BorderLayout());
+        resolveAndInstallLayout();
+    }
+
+    private void resolveAndInstallLayout() {
+        String layoutMode = app.getProperties().getProperty("machine.ticketsbag");
+        if (layoutMode == null || layoutMode.isBlank()) {
+            layoutMode = "standard";
         }
+
+        // Avoid re-creating if layout mode hasn't changed
+        if (currentView != null && layoutMode.equalsIgnoreCase(activeLayoutMode)) {
+            return;
+        }
+
+        // Deactivate and clean previous view if active
+        if (currentView != null) {
+            try {
+                currentView.deactivate();
+            } catch (Exception ex) {
+                LOGGER.log(Level.WARNING, "Error deactivating previous sales layout view", ex);
+            }
+            removeAll();
+        }
+
+        activeLayoutMode = layoutMode;
+
+        if (SaleLayoutManager.isFullView(layoutMode)) {
+            LOGGER.log(Level.INFO, "Installing Modern Sales Layout: {0}", layoutMode);
+            JComponent modernComp = SaleLayoutManager.createLayout(layoutMode, app, null);
+            if (modernComp instanceof JPanelView modernView) {
+                currentView = modernView;
+            } else {
+                currentView = new ModernViewAdapter(modernComp);
+            }
+        } else {
+            LOGGER.log(Level.INFO, "Installing Classic Sales Layout: {0}", layoutMode);
+            currentView = new JPanelTicketSalesClassic(app);
+        }
+
+        add(currentView.getComponent(), BorderLayout.CENTER);
+        revalidate();
+        repaint();
     }
 
     @Override
-    protected boolean isModernMode() {
-        String mode = getTicketBagMode();
-        return SaleLayout.MODERN_ONE.equals(mode) || SaleLayout.MODERN_TWO.equals(mode);
+    public JComponent getComponent() {
+        return this;
     }
 
     @Override
     public String getTitle() {
-        return "";
-    }
-
-    /**
-     * 
-     * @return 
-     */
-    @Override
-    protected Component getSouthComponent() {
-        if (isModernMode()) {
-            return new javax.swing.JPanel();
+        if (currentView != null) {
+            String title = currentView.getTitle();
+            if (title != null && !title.isBlank()) {
+                return title;
+            }
         }
-        LOGGER.log(System.Logger.Level.DEBUG,"JPanelTicketSales :: getSouthComponent");
-        m_cat = new JCatalog(getAppView());
-        m_cat.addActionListener(new CatalogListener());
-        return m_cat.getComponent();
-    }
-
-    @Override
-    protected void resetSouthComponent() {
-        if (isModernMode() || m_cat == null) {
-            return;
-        }
-        m_cat.showCatalogPanel(null);
-    }
-
-    @Override
-    protected JTicketsBag getJTicketsBag() {
-        return JTicketsBag.createTicketsBag(getTicketBagMode(), getAppView(), this);
+        return AppLocal.getIntString("Menu.Ticket");
     }
 
     @Override
     public void activate() throws BasicException {
-        super.activate();
-        reLoadCatalog();
-        LOGGER.log(System.Logger.Level.DEBUG,"JPanelTicketSales activate");
-    }
-
-    public void reLoadCatalog() {
-        if (isModernMode() || m_cat == null) {
-            return;
-        }
-        try {
-            m_cat.loadCatalog();
-        } catch (BasicException ex) {
-            LOGGER.log(System.Logger.Level.ERROR, "Exception on : ", ex);
+        // Re-check in case user updated configuration in Settings
+        resolveAndInstallLayout();
+        if (currentView != null) {
+            currentView.activate();
         }
     }
 
-    private class CatalogListener implements ActionListener {
+    @Override
+    public boolean deactivate() {
+        if (currentView != null) {
+            return currentView.deactivate();
+        }
+        return true;
+    }
+
+    public JPanelView getCurrentView() {
+        return currentView;
+    }
+
+    /**
+     * Fallback adapter in case a custom full-view layout does not directly implement JPanelView.
+     */
+    private static class ModernViewAdapter implements JPanelView {
+        private final JComponent component;
+
+        public ModernViewAdapter(JComponent component) {
+            this.component = component;
+        }
 
         @Override
-        public void actionPerformed(ActionEvent e) {
-            buttonTransition((ProductInfoExt) e.getSource());
+        public JComponent getComponent() {
+            return component;
         }
-    }
-
-    private class CatalogSelectionListener implements ListSelectionListener {
 
         @Override
-        public void valueChanged(ListSelectionEvent e) {
+        public String getTitle() {
+            return "";
+        }
 
-            if (!e.getValueIsAdjusting()) {
-                int i = getTicketlines().getSelectedIndex();
+        @Override
+        public void activate() throws BasicException {
+        }
 
-                if (i >= 0) {
-                    // Look for the first non auxiliar product.
-                    while (i >= 0 && getActiveTicket().getLine(i).isProductCom()) {
-                        i--;
-                    }
-
-                    // Show the accurate catalog panel...
-                    if (i >= 0) {
-                        m_cat.showCatalogPanel(getActiveTicket().getLine(i).getProductID());
-                    } else {
-                        m_cat.showCatalogPanel(null);
-                    }
-                }
-            }
+        @Override
+        public boolean deactivate() {
+            return true;
         }
     }
-
 }

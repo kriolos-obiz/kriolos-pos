@@ -16,24 +16,12 @@
  */
 package com.openbravo.pos.sales;
 
-import java.util.List;
-
 /**
+ * Legacy forwarder for Sales Layout constants.
  *
- * @author dev
+ * @deprecated Use {@link com.openbravo.pos.ui.api.sales.SaleLayout} directly.
+ * @author KriolOS Team
  */
-public class SaleLayout {
-    
-    public static final String SIMPLE = "simple";
-    public static final String STANDARD = "standard";
-    public static final String RESTAURANT = "restaurant";
-    public static final String MODERN_ONE = "modern_one";
-    public static final String MODERN_TWO = "modern_two";
-    
-    private static final List<String> ALL = List.of(SIMPLE, STANDARD, RESTAURANT, MODERN_ONE, MODERN_TWO);
-    
-    public static List<String> getAll(){
-        return ALL;
-    }
-    
+@Deprecated
+public class SaleLayout extends com.openbravo.pos.ui.api.sales.SaleLayout {
 }

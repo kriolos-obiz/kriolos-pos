@@ -20,7 +20,8 @@ package com.openbravo.pos.ui.components;
 public enum ButtonSize {
     MEDIUM(32, 12, 14),
     LARGE(40, 14, 15),
-    EXTRA_LARGE(48, 16, 16); // Ideal for Touch / POS
+    EXTRA_LARGE(48, 16, 16), // Ideal for Touch / POS
+    MASSIVE(56, 20, 18);     // Massive hero/checkout CTA
 
     // Campos alterados para private para respeitar o encapsulamento
     private final int height;
