@@ -1,19 +1,3 @@
-//    KriolOS POS
-//    Copyright (c) 2019-2026 KriolOS
-//
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
-//
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//    GNU General Public License for more details.
-//
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package com.openbravo.pos.sales.shared;
 
 import com.openbravo.basic.BasicException;
@@ -21,44 +5,41 @@ import com.openbravo.data.gui.modal.PosUIModal;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.sales.DataLogicReceipts;
 import com.openbravo.pos.sales.SharedTicketInfo;
-import com.openbravo.pos.ticket.TicketInfo;
+
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.Insets;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.io.Serial;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.UIManager;
 
 public class JTicketsBagSharedPanel extends JPanel {
 
+    @Serial
     private static final long serialVersionUID = 1L;
     private static final Logger LOGGER = Logger.getLogger(JTicketsBagSharedPanel.class.getName());
 
-    private String m_sDialogTicket;
+    private String selectedTicketId;
     private PosUIModal modalContext;
+    private JPanel ticketsPanel;
 
     public JTicketsBagSharedPanel() {
-        initComponents();
-        initDomainAdapters();
-        jScrollPane1.getVerticalScrollBar().setPreferredSize(new Dimension(35, 35));
-        jScrollPane1.getHorizontalScrollBar().setPreferredSize(new Dimension(25, 25));
-    }
-
-    private void initDomainAdapters() {
         setName("kriolos:sales:tickets-bag-shared-panel");
-        m_jButtonCancel.setName("kriolos:sales:btn-cancel");
+        initComponents();
     }
 
     public void setModalContext(PosUIModal modalContext) {
@@ -66,144 +47,187 @@ public class JTicketsBagSharedPanel extends JPanel {
     }
 
     public String getSelectedTicketId() {
-        return m_sDialogTicket;
+        return selectedTicketId;
     }
 
-    public void loadTickets(List<SharedTicketInfo> atickets, DataLogicReceipts dlReceipts) {
-        m_sDialogTicket = null;
-        m_jtickets.removeAll();
+    public void loadTickets(List<SharedTicketInfo> tickets, DataLogicReceipts dlReceipts) {
+        selectedTicketId = null;
+        ticketsPanel.removeAll();
 
-        for (SharedTicketInfo aticket : atickets) {
-            String label = aticket.getName() + " : " + aticket.getUserName();
+        for (var ticketInfo : tickets) {
+            var ticketName = ticketInfo.getName();
+            var userName = ticketInfo.getUserName();
+            var totalText = "---";
+            var ticketDate = "";
+
             try {
-                TicketInfo ticket2 = dlReceipts.getSharedTicket(aticket.getId());
-                if (ticket2 != null) {
-                    label += " : " + ticket2.printTotal();
+                var ticket = dlReceipts.getSharedTicket(ticketInfo.getId());
+                if (ticket != null) {
+                    totalText = ticket.printTotal();
+                    ticketDate = ticket.printDate(); // Correctly assigning the date here
                 } else {
-                    LOGGER.log(Level.SEVERE, "Cannot recover TicketInfo for ticket Id: " + aticket.getId());
+                    LOGGER.log(Level.SEVERE, "Cannot recover TicketInfo for ticket Id: {0}", ticketInfo.getId());
                 }
             } catch (BasicException ex) {
-                label += "!!!!!";
-                LOGGER.log(Level.SEVERE, "Exception recovering TicketInfo for ticket Id: " + aticket.getId(), ex);
+                totalText = "Error";
+                LOGGER.log(Level.SEVERE, "Exception recovering TicketInfo for ticket Id: " + ticketInfo.getId(), ex);
             }
 
-            m_jtickets.add(new JButtonTicket(aticket, label));
+            ticketsPanel.add(new JButtonTicket(ticketInfo, ticketName, userName, totalText, ticketDate));
         }
 
         revalidate();
         repaint();
     }
 
-    public static String show(Component parent, List<SharedTicketInfo> atickets, DataLogicReceipts dlReceipts) {
-        if (atickets == null || atickets.isEmpty()) {
+    public static String show(Component parent, List<SharedTicketInfo> tickets, DataLogicReceipts dlReceipts) {
+        if (tickets == null || tickets.isEmpty()) {
             JOptionPane.showMessageDialog(parent,
                     AppLocal.getIntString("message.nosharedtickets"),
                     AppLocal.getIntString("message.sharedtickettitle"),
-                    JOptionPane.OK_OPTION);
+                    JOptionPane.INFORMATION_MESSAGE);
             return null;
         }
 
-        JTicketsBagSharedPanel panel = new JTicketsBagSharedPanel();
-        panel.loadTickets(atickets, dlReceipts);
-        PosUIModal modal = PosUIModal.create(parent, panel)
+        var panel = new JTicketsBagSharedPanel();
+        panel.loadTickets(tickets, dlReceipts);
+        panel.setPreferredSize(new Dimension(500, 600));
+
+        var modal = PosUIModal.create(parent, panel)
                 .setTitle(AppLocal.getIntString("caption.tickets"))
                 .setModal(true)
                 .setResizable(false);
+                
         panel.setModalContext(modal);
         modal.show();
+        
         return panel.getSelectedTicketId();
     }
 
     private class JButtonTicket extends JButton {
 
-        private final SharedTicketInfo m_Ticket;
+        @Serial
+        private static final long serialVersionUID = 1L;
 
-        public JButtonTicket(SharedTicketInfo ticket, String label) {
+        public JButtonTicket(SharedTicketInfo ticketInfo, String ticketName, String userName, String totalText, String ticketDate) {
             super();
-            this.m_Ticket = ticket;
+            
+            setName("kriolos:sales:btn-ticket-" + ticketInfo.getId());
             setFocusPainted(false);
-            setFocusable(false);
-            setRequestFocusEnabled(false);
-            setMargin(new Insets(8, 14, 8, 14));
-            setFont(new Font("Arial", Font.PLAIN, 14));
-            addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent evt) {
-                    m_sDialogTicket = m_Ticket.getId();
-                    if (modalContext != null) {
-                        modalContext.setResult(m_sDialogTicket);
-                        modalContext.close();
-                    }
+            setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+            setLayout(new BorderLayout());
+
+            var content = new JPanel(new BorderLayout(10, 5));
+            content.setOpaque(false);
+            content.setBorder(BorderFactory.createEmptyBorder(12, 15, 12, 15));
+
+            // Top Section: Name (Left) and Total (Right)
+            var topPanel = new JPanel(new BorderLayout());
+            topPanel.setOpaque(false);
+            
+            var nameLabel = new JLabel(ticketName);
+            nameLabel.setFont(new Font(Font.DIALOG, Font.BOLD, 18));
+            
+            var totalLabel = new JLabel(totalText);
+            totalLabel.setFont(new Font(Font.DIALOG, Font.BOLD, 20));
+            
+            topPanel.add(nameLabel, BorderLayout.WEST);
+            topPanel.add(totalLabel, BorderLayout.EAST);
+            
+            // Bottom Section: User (Left) and Date (Right)
+            var bottomPanel = new JPanel(new BorderLayout());
+            bottomPanel.setOpaque(false);
+
+            var userLabel = new JLabel(userName);
+            userLabel.setFont(new Font(Font.DIALOG, Font.PLAIN, 14));
+
+            var dateLabel = new JLabel(ticketDate);
+            dateLabel.setFont(new Font(Font.DIALOG, Font.PLAIN, 14));
+            
+            // Apply muted color to both user and date labels for hierarchy
+            var mutedColor = UIManager.getColor("Label.disabledForeground");
+            if (mutedColor == null) {
+                mutedColor = UIManager.getColor("textInactiveText"); 
+            }
+            if (mutedColor != null) {
+                userLabel.setForeground(mutedColor);
+                dateLabel.setForeground(mutedColor);
+            }
+
+            bottomPanel.add(userLabel, BorderLayout.WEST);
+            bottomPanel.add(dateLabel, BorderLayout.EAST);
+
+            content.add(topPanel, BorderLayout.NORTH);
+            content.add(bottomPanel, BorderLayout.SOUTH);
+
+            add(content, BorderLayout.CENTER);
+
+            addActionListener(e -> {
+                selectedTicketId = ticketInfo.getId();
+                if (modalContext != null) {
+                    modalContext.setResult(selectedTicketId);
+                    modalContext.close();
                 }
             });
-            setText(label);
         }
     }
 
-    @SuppressWarnings("unchecked")
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
-
-        jPanel1 = new JPanel();
-        jScrollPane1 = new JScrollPane();
-        jPanel2 = new JPanel();
-        m_jtickets = new JPanel();
-        jPanel3 = new JPanel();
-        jPanel4 = new JPanel();
-        m_jButtonCancel = new JButton();
+        var mainPanel = new JPanel();
+        var scrollPane = new JScrollPane();
+        var listContainerPanel = new JPanel();
+        var footerPanel = new JPanel();
+        var footerRightPanel = new JPanel();
+        var btnCancel = new JButton();
+        
+        ticketsPanel = new JPanel();
 
         setLayout(new BorderLayout());
 
-        jPanel1.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-        jPanel1.setLayout(new BorderLayout());
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        mainPanel.setLayout(new BorderLayout());
 
-        jPanel2.setFont(new Font("Arial", 0, 14)); // NOI18N
-        jPanel2.setLayout(new BorderLayout());
+        listContainerPanel.setLayout(new BorderLayout());
 
-        m_jtickets.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-        m_jtickets.setLayout(new GridLayout(0, 1, 5, 5));
-        jPanel2.add(m_jtickets, BorderLayout.NORTH);
+        ticketsPanel.setName("kriolos:sales:tickets-list");
+        ticketsPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        ticketsPanel.setLayout(new GridLayout(0, 1, 0, 12));
+        listContainerPanel.add(ticketsPanel, BorderLayout.NORTH);
 
-        jScrollPane1.setViewportView(jPanel2);
+        scrollPane.setName("kriolos:sales:tickets-scrollpane");
+        scrollPane.setViewportView(listContainerPanel);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        scrollPane.getVerticalScrollBar().setPreferredSize(new Dimension(35, 35));
+        scrollPane.getHorizontalScrollBar().setPreferredSize(new Dimension(35, 35));
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
 
-        jPanel1.add(jScrollPane1, BorderLayout.CENTER);
+        mainPanel.add(scrollPane, BorderLayout.CENTER);
+        add(mainPanel, BorderLayout.CENTER);
 
-        add(jPanel1, BorderLayout.CENTER);
+        footerPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
+        footerPanel.add(footerRightPanel);
 
-        jPanel3.setLayout(new FlowLayout(FlowLayout.RIGHT));
-        jPanel3.add(jPanel4);
-
-        m_jButtonCancel.setFont(new Font("Arial", 0, 12)); // NOI18N
-        m_jButtonCancel.setIcon(new ImageIcon(getClass().getResource("/com/openbravo/images/cancel.png"))); // NOI18N
-        m_jButtonCancel.setText(AppLocal.getIntString("button.close")); // NOI18N
-        m_jButtonCancel.setFocusPainted(false);
-        m_jButtonCancel.setFocusable(false);
-        m_jButtonCancel.setMargin(new Insets(8, 8, 8, 8));
-        m_jButtonCancel.setPreferredSize(new Dimension(100, 45));
-        m_jButtonCancel.setRequestFocusEnabled(false);
-        m_jButtonCancel.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                m_jButtonCancelActionPerformed(evt);
+        btnCancel.setName("kriolos:sales:btn-cancel");
+        btnCancel.setFont(new Font(Font.DIALOG, Font.BOLD, 14));
+        
+        var cancelIconUrl = getClass().getResource("/com/openbravo/images/cancel.png");
+        if (cancelIconUrl != null) {
+            btnCancel.setIcon(new ImageIcon(cancelIconUrl));
+        }
+        
+        btnCancel.setText(AppLocal.getIntString("button.close"));
+        btnCancel.setFocusPainted(false);
+        btnCancel.setMargin(new Insets(8, 16, 8, 16));
+        btnCancel.setPreferredSize(new Dimension(130, 50));
+        
+        btnCancel.addActionListener(e -> {
+            if (modalContext != null) {
+                modalContext.close();
             }
         });
-        jPanel3.add(m_jButtonCancel);
-
-        add(jPanel3, BorderLayout.SOUTH);
-    }// </editor-fold>//GEN-END:initComponents
-
-    private void m_jButtonCancelActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_m_jButtonCancelActionPerformed
-        if (modalContext != null) {
-            modalContext.close();
-        }
-    }//GEN-LAST:event_m_jButtonCancelActionPerformed
-
-    // Variables declaration - do not modify//GEN-BEGIN:variables
-    private JPanel jPanel1;
-    private JPanel jPanel2;
-    private JPanel jPanel3;
-    private JPanel jPanel4;
-    private JScrollPane jScrollPane1;
-    private JButton m_jButtonCancel;
-    private JPanel m_jtickets;
-    // End of variables declaration//GEN-END:variables
+        
+        footerPanel.add(btnCancel);
+        add(footerPanel, BorderLayout.SOUTH);
+    }
 }
