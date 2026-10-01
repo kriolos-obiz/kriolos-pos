@@ -473,13 +473,19 @@ public class ModernOne extends JPanel implements JPanelView, TicketsEditor {
                 return;
             }
             try {
-                String id = ticket.getId();
+                
+                String ticketUniqueId = ticket.getId();
                 int pickupId = ticket.getPickupId();
-                try {
-                    dlReceipts.insertSharedTicket(id, ticket, pickupId);
-                } catch (Exception ex) {
-                    dlReceipts.updateSharedTicket(id, ticket, pickupId);
+                
+                LOGGER.log(Level.INFO, "Save shared ticket: "+ticketUniqueId);
+                
+                TicketInfo foundTicket = dlReceipts.getSharedTicket(ticketUniqueId);
+                if(foundTicket == null){
+                    dlReceipts.insertSharedTicket(ticketUniqueId, ticket, pickupId);
+                }else {
+                    dlReceipts.updateSharedTicket(ticketUniqueId, ticket, pickupId);
                 }
+                
             } catch (Exception e) {
                 LOGGER.log(Level.WARNING, "Failed to save or update shared ticket", e);
             }

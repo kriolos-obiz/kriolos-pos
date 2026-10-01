@@ -12,7 +12,7 @@
 //    GNU General Public License for more details.
 //
 //    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//    along with this program.  If not, see <http://gnu.org>.
 
 package com.openbravo.pos.sales.modern.one;
 
@@ -24,15 +24,13 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Image;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
-import javax.swing.UIManager;
+import javax.swing.SwingUtilities;
 
 /**
  * Touch-optimized modern product card for the catalog grid in {@link ModernOne}.
@@ -59,6 +57,7 @@ public class ModernProductCard extends JButton {
         setLayout(new BorderLayout(4, 4));
         setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         setFocusPainted(false);
+        setFocusable(false);
         setContentAreaFilled(true);
         setOpaque(true);
 
@@ -103,6 +102,16 @@ public class ModernProductCard extends JButton {
         if (listener != null) {
             addActionListener(listener);
         }
+
+        // FIX: Force focus out of this card immediately after it is clicked!
+        // This prevents the ENTER key from repeating this item click and frees it for global Numpad bindings.
+        addActionListener(e -> {
+            java.awt.Component parentWindow = SwingUtilities.getWindowAncestor(this);
+            if (parentWindow != null) {
+                // Return focus to the main window container (JFrame or JDialog)
+                parentWindow.requestFocusInWindow();
+            }
+        });
     }
 
     public ProductInfoExt getProduct() {

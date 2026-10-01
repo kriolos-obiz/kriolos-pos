@@ -23,6 +23,10 @@ public enum ButtonSize {
     EXTRA_LARGE(48, 16, 16), // Ideal for Touch / POS
     MASSIVE(56, 20, 18);     // Massive hero/checkout CTA
 
+    public static final int DEFAULT_HEIGHT = 40;    
+    public static final int DEFAULT_PADDING = 14;
+    public static final int DEFAULT_FONT_SIZE = 16;
+
     // Campos alterados para private para respeitar o encapsulamento
     private final int height;
     private final int paddingX;

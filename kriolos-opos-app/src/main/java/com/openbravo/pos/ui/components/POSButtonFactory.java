@@ -17,6 +17,7 @@
 package com.openbravo.pos.ui.components;
 
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -25,6 +26,7 @@ import java.awt.event.KeyEvent;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 
 public class POSButtonFactory {
@@ -35,18 +37,19 @@ public class POSButtonFactory {
     public static final Color WARNING_COLOR = new Color(245, 158, 11); // Amber #f59e0b
 
     /**
-     * Creates a JButton configured for POS with native LTR/RTL support without FlatLaf.
-     * 
+     * Creates a JButton configured for POS with native LTR/RTL support without
+     * FlatLaf.
+     *
      * @param size The desired size variant (Medium, Large, Extra_Large).
      * @return A customized native JButton.
      */
     public static JButton createButton(ButtonSize size) {
         JButton btn = new JButton();
-        
+
         // 1. Logical Alignment: [Icon TEXT ......] compatible with LTR/RTL
         btn.applyComponentOrientation(btn.getComponentOrientation());
-        btn.setHorizontalTextPosition(SwingConstants.TRAILING); 
-        btn.setHorizontalAlignment(SwingConstants.LEADING);     
+        btn.setHorizontalTextPosition(SwingConstants.TRAILING);
+        btn.setHorizontalAlignment(SwingConstants.LEADING);
 
         // 2. Native Swing Sizing: Define height using minimum and preferred structures
         // We use a generic width of 100 as a baseline; layouts like JFlowPanel will respect the height
@@ -56,10 +59,10 @@ public class POSButtonFactory {
 
         // 3. Native Padding: Generous margins for touch-ready interactions using EmptyBorder
         btn.setBorder(BorderFactory.createCompoundBorder(
-            btn.getBorder(), 
-            new EmptyBorder(0, size.getPaddingX(), 0, size.getPaddingX())
+                btn.getBorder(),
+                new EmptyBorder(0, size.getPaddingX(), 0, size.getPaddingX())
         ));
-        
+
         // 4. Native Spacing: Scaled gap between Icon and Text
         btn.setIconTextGap(size.getFontSize() / 4);
 
@@ -74,12 +77,16 @@ public class POSButtonFactory {
             btn.setFont(new Font(currentFont.getName(), Font.BOLD, size.getFontSize()));
         }
 
+        // Focus-Clearing Hook: Defends the global Numpad Enter mapping from theft
+        btn.addActionListener(e -> clearFocus(btn));
+
         return btn;
     }
 
     /**
-     * Creates an ergonomic, touch-friendly POS action button with font-based vector icon,
-     * accessible keyboard mnemonic, descriptive tooltip, and FlatLaf styling.
+     * Creates an ergonomic, touch-friendly POS action button with font-based
+     * vector icon, accessible keyboard mnemonic, descriptive tooltip, and
+     * FlatLaf styling.
      *
      * @param text Button label text
      * @param fontIcon Font-based icon glyph (Unicode) or null
@@ -100,33 +107,37 @@ public class POSButtonFactory {
         JButton btn = new JButton();
         btn.setText(formatButtonText(text, fontIcon));
 
-        // Logical alignment & orientation
+        // Logical Alignment: [Icon TEXT ......] compatible with LTR/RTL
         btn.applyComponentOrientation(btn.getComponentOrientation());
         btn.setHorizontalAlignment(SwingConstants.CENTER);
         btn.setHorizontalTextPosition(SwingConstants.TRAILING);
         btn.setVerticalTextPosition(SwingConstants.CENTER);
 
-        // Native sizing (height derived from ButtonSize)
-        int h = size != null ? size.getHeight() : ButtonSize.EXTRA_LARGE.getHeight();
+        // Native Swing Sizing: Define height using minimum and preferred structures
+        int h = size != null ? size.getHeight() : ButtonSize.DEFAULT_HEIGHT;
         Dimension baseSize = new Dimension(100, h);
         btn.setPreferredSize(baseSize);
         btn.setMinimumSize(baseSize);
 
-        // Touch padding
-        int padX = size != null ? size.getPaddingX() : 16;
+        // Native Padding: Generous margins for touch-ready interactions using EmptyBorder
+        int padX = size != null ? size.getPaddingX() : ButtonSize.DEFAULT_PADDING;
         btn.setBorder(BorderFactory.createCompoundBorder(
-            btn.getBorder(),
-            new EmptyBorder(0, padX, 0, padX)
+                btn.getBorder(),
+                new EmptyBorder(0, padX, 0, padX)
         ));
 
-        // Typography scaling
-        int fontSize = size != null ? size.getFontSize() : 15;
+        int fontSize = size != null ? size.getFontSize() : ButtonSize.DEFAULT_FONT_SIZE;
+
+        // Native Spacing: Scaled gap between Icon and Text
+        btn.setIconTextGap(fontSize / 4);
+
+        // Native Typography Scaling
         Font currentFont = btn.getFont();
         if (currentFont != null) {
             btn.setFont(new Font(currentFont.getName(), Font.BOLD, fontSize));
         }
 
-        // Touch settings
+        // Touch Accessibility Settings
         btn.setFocusPainted(false);
         btn.setFocusable(false);
         btn.setRequestFocusEnabled(false);
@@ -141,6 +152,9 @@ public class POSButtonFactory {
         if (listener != null) {
             btn.addActionListener(listener);
         }
+
+        // Focus-Clearing Hook: Defends the global Numpad Enter mapping from theft
+        btn.addActionListener(e -> clearFocus(btn));
 
         return btn;
     }
@@ -188,6 +202,21 @@ public class POSButtonFactory {
             ActionListener listener) {
         return createActionButton(text, icon, size, mnemonic, null, listener);
     }
+    
+    public static JButton createActionButton(
+            String text,
+            ButtonSize size,
+            int mnemonic,
+            ActionListener listener) {
+        return createActionButton(text, "", size, mnemonic, null, listener);
+    }
+    
+    public static JButton createActionButton(
+            String text,
+            ButtonSize size,
+            ActionListener listener) {
+        return createActionButton(text, "", size, 0, null, listener);
+    }
 
     /**
      * Creates a success / positive Call-To-Action button (e.g. Pay, Checkout).
@@ -218,7 +247,8 @@ public class POSButtonFactory {
     }
 
     /**
-     * Creates a danger / destructive action button (e.g. Close Cash, Delete Line).
+     * Creates a danger / destructive action button (e.g. Close Cash, Delete
+     * Line).
      */
     public static JButton createDangerButton(
             String text,
@@ -286,6 +316,9 @@ public class POSButtonFactory {
         return formatButtonText(text, icon != null ? icon.getCode() : null);
     }
 
+    // ====================================================================
+    // PRIVATE HELPER METHODS
+    // ====================================================================
     private static void setupMnemonicAndTooltip(JButton btn, int mnemonic, String tooltip, String text) {
         if (mnemonic > 0) {
             btn.setMnemonic(mnemonic);
@@ -300,6 +333,16 @@ public class POSButtonFactory {
         } else if (keyText != null) {
             String base = (text != null && !text.isBlank()) ? text.trim() : "Ação";
             btn.setToolTipText(base + " (Alt+" + keyText + ")");
+        }
+    }
+
+    /**
+     * Safely returns focus back to the primary window ancestor.
+     */
+    private static void clearFocus(JButton button) {
+        Component window = SwingUtilities.getWindowAncestor(button);
+        if (window != null) {
+            window.requestFocusInWindow();
         }
     }
 }

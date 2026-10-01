@@ -301,7 +301,7 @@ public class AuthenticationPanel extends javax.swing.JPanel {
             lblActiveDatabaseBadge.setToolTipText(activeDbConfig.url());
             btnSelectDatabase.setText("Reconectar");
             btnSelectDatabase.setEnabled(true);
-            lblStatus.setText("● Base de dados pronta");
+            lblStatus.setText("● Base de dados selecionada com sucesso");
         } else {
             if (activeDbConfig != null) {
                 lblActiveDatabaseBadge.setText("🟡 Ativa: " + activeDbConfig.name());

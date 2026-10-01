@@ -43,22 +43,33 @@ public class BootstrapPOS {
 
     public static void main(final String args[]) {
 
-        File configFile = (args != null && args.length > 0 && args[0] != null && !args[0].isBlank())
-                ? new File(args[0])
-                : null;
+        File configFile = null;
+
+        // 1. Try to get the configuration path from the system property -Dpos.config.file=
+        String sysPropConfig = System.getProperty("pos.config.file");
+
+        if (sysPropConfig != null && !sysPropConfig.isBlank()) {
+            configFile = new File(sysPropConfig);
+        } // 2. Fallback: If the system property is missing, check the traditional command-line arguments
+        else if (args != null && args.length > 0 && args[0] != null && !args[0].isBlank()) {
+            // Extra safety check: Ignore arguments that start with '-' (e.g. leaked JVM flags like -agentlib)
+            if (!args[0].startsWith("-")) {
+                configFile = new File(args[0]);
+            }
+        }
+
+        // 3. Load the corresponding configuration instance
         AppConfig config = (configFile != null) ? AppConfig.getInstance(configFile) : AppConfig.getInstance();
         config.load();
-        
+
         SystemSettings.applySystemProperties(config);
 
         SwingUtilities.invokeLater(new Runnable() {
-
             @Override
             public void run() {
-
                 final WindowShell rootFrame = new WindowShell(config);
 
-                //CHECK SINGLE INSTANCE RMI
+                // CHECK SINGLE INSTANCE RMI
                 if (!checkSingletonInstance(rootFrame, config)) {
                     return;
                 }
@@ -86,7 +97,8 @@ public class BootstrapPOS {
                 exitAction.run();
                 return false;
 
-            } catch (RemoteException | NotBoundException e) {
+            }
+            catch (RemoteException | NotBoundException e) {
                 // Exception caught means no prior instance exists. Safe to proceed.
                 LOGGER.log(Level.INFO, "No previous instance found. Registering this instance...");
             }
@@ -97,7 +109,8 @@ public class BootstrapPOS {
                 instanceManager.registerInstance();
                 LOGGER.log(Level.INFO, "Application instance registered successfully via RMI.");
 
-            } catch (RemoteException | AlreadyBoundException e) {
+            }
+            catch (RemoteException | AlreadyBoundException e) {
                 String msg = "Cannot start the application. Cannot register a single instance";
                 LOGGER.log(Level.WARNING, msg, e);
                 JOptionPane.showMessageDialog(rootFrame,

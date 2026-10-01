@@ -88,6 +88,7 @@ public class ApplicationShell extends JPanel implements AppView {
         initComponents();
         setName("kriolos:app:shell");
         appProperties = props;
+        remove(topPanel); //Occupie spaces
     }
 
     public void initApp() throws BasicException {
@@ -570,10 +571,12 @@ public class ApplicationShell extends JPanel implements AppView {
         appTitleLabel.setFont(new java.awt.Font("Arial", 1, 16)); // NOI18N
         appTitleLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         appTitleLabel.setText("Point of Sales (POS)");
+        appTitleLabel.setEnabled(false);
         topPanel.add(appTitleLabel, java.awt.BorderLayout.CENTER);
 
         appPowerByLabel.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
         appPowerByLabel.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 5, 0, 5));
+        appPowerByLabel.setEnabled(false);
         appPowerByLabel.setHorizontalTextPosition(javax.swing.SwingConstants.RIGHT);
         appPowerByLabel.setMaximumSize(new java.awt.Dimension(180, 34));
         appPowerByLabel.setPreferredSize(new java.awt.Dimension(180, 34));
@@ -581,6 +584,7 @@ public class ApplicationShell extends JPanel implements AppView {
 
         appTopLabel.setFont(new java.awt.Font("Arial", 1, 16)); // NOI18N
         appTopLabel.setForeground(new java.awt.Color(102, 102, 102));
+        appTopLabel.setEnabled(false);
         appTopLabel.setPreferredSize(new java.awt.Dimension(180, 34));
         topPanel.add(appTopLabel, java.awt.BorderLayout.LINE_START);
 
