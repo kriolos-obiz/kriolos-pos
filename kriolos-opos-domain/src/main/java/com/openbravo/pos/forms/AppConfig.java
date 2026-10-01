@@ -527,8 +527,10 @@ public class AppConfig implements AppProperties {
 
         // 2. Overwrite / Populate dynamic runtime values safely using the enum keys
         File baseDirectory = getBaseApplicationDataDirectory();
-        String defaultDBURL = "jdbc:hsqldb:file:" + Paths.get(baseDirectory.getAbsolutePath(), "kriolopos").toString();
+        String defaultDBURL = "jdbc:hsqldb:file:" + Paths.get(baseDirectory.getAbsolutePath(), "kriolopos.hsqldb").toString();
+        String defaultDBURL1 = "jdbc:sqlite:file:" + Paths.get(baseDirectory.getAbsolutePath(), "kriolopos.db").toString();
         propConfig.setProperty(ConfigProperty.DB_URL.getName(), defaultDBURL);
+        propConfig.setProperty(ConfigProperty.DB1_URL.getName(), defaultDBURL1);
 
         propConfig.setProperty(ConfigProperty.MACHINE_HOSTNAME.getName(), getLocalHostName());
 
@@ -607,7 +609,7 @@ enum ConfigProperty {
     LOCATION_CONFIGURE("localization.configure", "legacy"),
     LOCATION_LOCALE("localization.locale", ""),
     // CORE OVERRIDES
-    DB_MULTI("db.multi", "false"),
+    DB_MULTI("db.multi", "true"),
     OVERRIDE_CHECK("override.check", "false"),
     OVERRIDE_PIN("override.pin", ""),
     // DB DRIVERS
@@ -615,19 +617,27 @@ enum ConfigProperty {
     DB_ENGINE("db.engine", ""),
     DB_DRIVER("db.driver", ""),
     // PRIMARY DB (Dynamic URL)
-    DB_NAME("db.name", "Main DB"),
-    DB_URL("db.URL", ""), // Dynamic
+    DB_NAME("db.name", "DB 0 ()"),
+    DB_URL("db.URL", "jdbc:hsqldb:file:.local/share/kriolos/kriolopos;sql.syntax_mys=true"), // Dynamic
     DB_SCHEMA("db.schema", "kriolopos"),
     DB_OPTIONS("db.options", ";shutdown=true"),
     DB_USER("db.user", "kriolopos"),
     DB_PASSWORD("db.password", "kriolopos"),
     // SECONDARY DB        
-    DB1_NAME("db1.name", ""),
-    DB1_URL("db1.URL", "jdbc:mysql://localhost:3306/"),
-    DB1_SCHEMA("db1.schema", "kriolopos"),
-    DB1_OPTIONS("db1.options", "?zeroDateTimeBehavior=convertToNull"),
-    DB1_USER("db1.user", "kriolopos"),
-    DB1_PASSWORD("db1.password", "kriolopos"),
+    DB1_NAME("db.1.name", "DB 1 (Sqlite)"),
+    DB1_URL("db.1.URL", "jdbc:sqlite:.local/share/kriolos/kriolopos.db"),
+    DB1_SCHEMA("db.1.schema", "kriolopos"),
+    DB1_OPTIONS("db.1.options", ""),
+    DB1_USER("db.1.user", "kriolopos"),
+    DB1_PASSWORD("db.1.password", "kriolopos"),
+    // SECONDARY DB        
+    DB2_NAME("db.2.name", "DB 3 (MariaDB)"),
+    DB2_URL("db.2.URL", "jdbc:mariadb:localhost:3306/kriolospos?characterEncoding=utf8"),
+    DB3_SCHEMA("db.2.schema", "kriolopos"),
+    DB2_OPTIONS("db.2.options", "?zeroDateTimeBehavior=convertToNull"),
+    DB2_USER("db.2.user", "kriolopos"),
+    DB2_PASSWORD("db.2.password", "kriolopos"),
+    
     // MACHINE INFO (Dynamic Hostname)
     MACHINE_HOSTNAME("machine.hostname", ""), // Dynamic
 
