@@ -72,7 +72,7 @@ machine.scale=caspdii:
 |
 |
 
-|===
+|====
 
 ----
 write(new byte[]{0x57, 0X0D}); //DEC (87, 13) ASCII ()

@@ -29,7 +29,7 @@ jobs:
 
       # Build docs, classes, jars, and cross-platform packages, excluding jpackage module
       - name: Build Docs and App Package with Maven
-        run: mvn package -Pgen-doc,release -pl !kriolos-opos-jpackage -DskipTests -B --file pom.xml
+        run: mvn package -Pgen-doc,asciidoctor,release -pl !kriolos-opos-jpackage -DskipTests -B --file pom.xml
 
       # Share the compiled state (target folders and jars) with subsequent matrix jobs
       - name: Upload Compiled Workspace Artifacts
@@ -56,9 +56,7 @@ jobs:
             LICENSE*
             CHANGELOG*
             kriolos-opos-app/target/kriolos-opos-app-*.zip
-            docs/guide-comercial/target/generated-docs/pdf/kriolos-pos-*.pdf
-            docs/guide-devel/target/generated-docs/pdf/kriolos-pos-*.pdf
-            docs/guide-user/target/generated-docs/pdf/kriolos-pos-*.pdf
+            docs/target/generated-docs/pdf/*.pdf
 
   # 2. Matrix Job: Runs in parallel for each OS to build the OS-specific application binaries using the cached build
   build-binaries:
