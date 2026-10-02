@@ -6,7 +6,7 @@ TODO write overview here
 === Data Loader
 
 .Data Loader Class Diagram
-[plantuml]
+[plantuml, kriolos-pos-modeling-overview-001, svg]
 ----
 @startuml
 
@@ -58,7 +58,7 @@ SerializerRead <-- SerializerReadBasic
 === Ticket Panel
 
 .TicketPanel Class
-[plantuml]
+[plantuml, kriolos-pos-modeling-overview-002, svg]
 ----
 @startuml
 

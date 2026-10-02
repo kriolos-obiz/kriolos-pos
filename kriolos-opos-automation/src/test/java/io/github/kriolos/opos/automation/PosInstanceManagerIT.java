@@ -2,8 +2,8 @@ package io.github.kriolos.opos.automation;
 
 import com.openbravo.pos.forms.AppConfig;
 import com.openbravo.pos.forms.AppLocal;
-import com.openbravo.pos.forms.JRootFrame;
-import com.openbravo.pos.forms.StartPOS;
+import com.openbravo.pos.forms.WindowShell;
+import com.openbravo.pos.forms.BootstrapPOS;
 import com.openbravo.pos.instance.InstanceManager;
 import io.github.kriolos.opos.automation.actions.InstanceManagerAction;
 import org.assertj.swing.core.BasicRobot;
@@ -38,7 +38,7 @@ public class PosInstanceManagerIT {
     @BeforeEach
     public void setUp() {
         // Prevent System.exit(0) during tests
-        StartPOS.setExitAction(() -> {});
+        BootstrapPOS.setExitAction(() -> {});
         robot = BasicRobot.robotWithCurrentAwtHierarchy();
         screenshotHelper = new ScreenshotHelper("pos_instance_manager_run");
         instanceManagerAction = new InstanceManagerAction(robot, screenshotHelper, true);
@@ -54,7 +54,7 @@ public class PosInstanceManagerIT {
         System.clearProperty("machine.uniqueinstance");
     }
 
-    private static void sanitizeFrame(JRootFrame frame) {
+    private static void sanitizeFrame(WindowShell frame) {
         if (frame != null) {
             for (java.awt.event.WindowListener wl : frame.getWindowListeners()) {
                 frame.removeWindowListener(wl);
@@ -110,7 +110,7 @@ public class PosInstanceManagerIT {
         AtomicBoolean exitInvoked = new AtomicBoolean(false);
         setStartPosExitAction(() -> exitInvoked.set(true));
 
-        JRootFrame dummyFrame = new JRootFrame(config);
+        WindowShell dummyFrame = new WindowShell(config);
         sanitizeFrame(dummyFrame);
 
         // When machine.uniqueinstance is false, checkSingletonInstance must return true immediately
@@ -140,7 +140,7 @@ public class PosInstanceManagerIT {
 
         if (!rmiActive) {
             LOGGER.log(Level.INFO, "No existing instance on port 3005. Registering test instance first...");
-            JRootFrame rootFrame = new JRootFrame(config);
+            WindowShell rootFrame = new WindowShell(config);
             sanitizeFrame(rootFrame);
             try {
                 InstanceManager manager = new InstanceManager(rootFrame, config);
@@ -154,7 +154,7 @@ public class PosInstanceManagerIT {
         AtomicBoolean exitInvoked = new AtomicBoolean(false);
         setStartPosExitAction(() -> exitInvoked.set(true));
 
-        JRootFrame secondFrame = new JRootFrame(config);
+        WindowShell secondFrame = new WindowShell(config);
         sanitizeFrame(secondFrame);
 
         // Run check on background thread so modal dialog does not block test thread
@@ -179,9 +179,9 @@ public class PosInstanceManagerIT {
         LOGGER.log(Level.INFO, "Duplicate instance action test completed successfully.");
     }
 
-    private boolean invokeCheckSingletonInstance(JRootFrame frame, AppConfig config) {
+    private boolean invokeCheckSingletonInstance(WindowShell frame, AppConfig config) {
         try {
-            java.lang.reflect.Method m = StartPOS.class.getDeclaredMethod("checkSingletonInstance", JRootFrame.class, AppConfig.class);
+            java.lang.reflect.Method m = BootstrapPOS.class.getDeclaredMethod("checkSingletonInstance", WindowShell.class, AppConfig.class);
             m.setAccessible(true);
             return (boolean) m.invoke(null, frame, config);
         } catch (Exception e) {
@@ -190,7 +190,7 @@ public class PosInstanceManagerIT {
     }
 
     private void setStartPosExitAction(Runnable action) {
-        StartPOS.setExitAction(action);
+        BootstrapPOS.setExitAction(action);
     }
 
     private void resetAppConfigSingleton() {

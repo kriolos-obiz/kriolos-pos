@@ -109,7 +109,7 @@ public class MessageInf {
      * @param parent
      */
     public void show(Component parent) {
-        JMessageDialog.showMessage(parent, this);
+        JMessagePanel.showMessage(parent, this);
     }
     
     public static void showDialog(Component parent, int infCode, String infMessage, Object infObject){
@@ -133,6 +133,10 @@ public class MessageInf {
      * @return
      */
     public int getSignalWord() {
+        return m_infCode & 0xFF000000;
+    }
+    
+    public int getMessageCode() {
         return m_infCode & 0xFF000000;
     }
 

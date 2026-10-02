@@ -7,7 +7,7 @@ import com.openbravo.pos.printer.DeviceTicket;
  * PD-LE8 represent a Pole Display LED8 Device 
  *  First Line: NdNdNdNdNdNdNdN (ex: "8.8.8.8.8.8.8.8" for 8 DIGIT) 
  *  Second Line: Fixed Status/Icon/Word (Unit Price, Total Amount, Tendered, Change)
- * @author psb
+ * @author poolborges
  */
 public class DeviceDisplayPDLED8 extends DeviceDisplaySerial {
     

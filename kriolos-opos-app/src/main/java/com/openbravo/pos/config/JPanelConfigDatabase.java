@@ -16,7 +16,7 @@
 
 package com.openbravo.pos.config;
 
-import com.openbravo.data.gui.JMessageDialog;
+import com.openbravo.data.gui.JMessagePanel;
 import com.openbravo.data.gui.MessageInf;
 import com.openbravo.data.loader.Session;
 import com.openbravo.data.user.DirtyManager;
@@ -564,15 +564,15 @@ public class JPanelConfigDatabase extends javax.swing.JPanel implements PanelCon
                         "Connection Test", JOptionPane.INFORMATION_MESSAGE);
               
             } else {
-                JMessageDialog.showMessage(this, 
+                JMessagePanel.showMessage(this, 
                         new MessageInf(MessageInf.SGN_WARNING, "Connection Error"));
             }
         } catch (SQLException e) {
-            JMessageDialog.showMessage(this, 
+            JMessagePanel.showMessage(this, 
                     new MessageInf(MessageInf.SGN_WARNING, 
                             AppLocal.getIntString("message.databaseconnectionerror"), e));            
         } catch (HeadlessException e) {
-            JMessageDialog.showMessage(this, 
+            JMessagePanel.showMessage(this, 
                     new MessageInf(MessageInf.SGN_WARNING, "Unknown exception", e));
         }
     }//GEN-LAST:event_jButtonTestActionPerformed
@@ -593,15 +593,15 @@ public class JPanelConfigDatabase extends javax.swing.JPanel implements PanelCon
                         AppLocal.getIntString("message.databasesuccess"), 
                         "Connection Test", JOptionPane.INFORMATION_MESSAGE);
             } else {
-                JMessageDialog.showMessage(this, 
+                JMessagePanel.showMessage(this, 
                         new MessageInf(MessageInf.SGN_WARNING, "Connection Error"));
             }
         } catch (SQLException e) {
-            JMessageDialog.showMessage(this, 
+            JMessagePanel.showMessage(this, 
                     new MessageInf(MessageInf.SGN_WARNING, 
                             AppLocal.getIntString("message.databaseconnectionerror"), e));
         } catch (HeadlessException e) {
-            JMessageDialog.showMessage(this, 
+            JMessagePanel.showMessage(this, 
                     new MessageInf(MessageInf.SGN_WARNING, "Unknown exception", e));
         }
     }//GEN-LAST:event_jButtonTest1ActionPerformed

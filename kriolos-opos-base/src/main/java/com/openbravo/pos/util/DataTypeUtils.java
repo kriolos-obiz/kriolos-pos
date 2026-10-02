@@ -18,7 +18,7 @@ package com.openbravo.pos.util;
 
 /**
  *
- * @author psb
+ * @author poolborges
  */
 public interface DataTypeUtils {
     

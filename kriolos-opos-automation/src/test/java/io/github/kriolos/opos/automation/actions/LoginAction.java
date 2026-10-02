@@ -41,11 +41,11 @@ public class LoginAction {
         clickUserButton(window, targetOperator);
         handlePasswordDialogIfPresent(password);
 
-        // Wait for authenticated panel to activate JPrincipalApp
+        // Wait for authenticated panel to activate WordspacePanel
         long deadline = System.currentTimeMillis() + 6000;
         while (System.currentTimeMillis() < deadline) {
             try {
-                com.openbravo.pos.forms.JPrincipalApp principal = robot.finder().findByType(window.target(), com.openbravo.pos.forms.JPrincipalApp.class);
+                com.openbravo.pos.forms.WordspacePanel principal = robot.finder().findByType(window.target(), com.openbravo.pos.forms.WordspacePanel.class);
                 if (principal != null && principal.isShowing()) {
                     break;
                 }

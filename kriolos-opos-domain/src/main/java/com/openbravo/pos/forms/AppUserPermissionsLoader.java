@@ -21,7 +21,7 @@ import org.xml.sax.helpers.DefaultHandler;
 
 /**
  *
- * @author psb
+ * @author poolborges
  */
 public class AppUserPermissionsLoader {
     

@@ -1,5 +1,5 @@
 //    KriolOS POS
-//    Copyright (c) 2019-2023 KriolOS
+//    Copyright (c) 2019-2026 KriolOS
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -17,48 +17,16 @@
 package com.openbravo.pos.catalog;
 
 import com.openbravo.basic.BasicException;
-import java.awt.Component;
-import java.awt.event.ActionListener;
 
 /**
+ * Legacy catalog selector interface.
  *
- * @author adrianromero
+ * @deprecated Use {@link com.openbravo.pos.ui.api.catalog.CatalogSelector} from the {@code ui-api} module instead.
+ * @author adrianromero, KriolOS Team
  */
-public interface CatalogSelector {
-    
-    /**
-     *
-     * @throws BasicException
-     */
-    public void loadCatalog() throws BasicException;
+@Deprecated(since = "1.0.0", forRemoval = false)
+public interface CatalogSelector extends com.openbravo.pos.ui.api.catalog.CatalogSelector {
 
-    /**
-     *
-     * @param id
-     */
-    public void showCatalogPanel(String id);
-
-    /**
-     *
-     * @param value
-     */
-    public void setComponentEnabled(boolean value);
-
-    /**
-     *
-     * @return
-     */
-    public Component getComponent();
-    
-    /**
-     *
-     * @param l
-     */
-    public void addActionListener(ActionListener l);  
-
-    /**
-     *
-     * @param l
-     */
-    public void removeActionListener(ActionListener l);    
+    @Override
+    void loadCatalog() throws BasicException;
 }

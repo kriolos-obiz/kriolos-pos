@@ -41,6 +41,37 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             <jpda.listen>true</jpda.listen>
         </properties>
     </action>
+    
+    <action>
+        <actionName>CUSTOM-run-Hotswap</actionName>
+        <displayName>run-Hotswap</displayName>
+        <goals>
+            <goal>exec:exec</goal>
+        </goals>
+        <activatedProfiles>
+            <activatedProfile>run-Hotswap</activatedProfile>
+        </activatedProfiles>
+    </action>
+    
+    <action>
+        <actionName>CUSTOM-run-Hotswap</actionName>
+        <displayName>run-Hotswap (Debug &amp; HotSwap)</displayName>
+        <goals>
+            <goal>exec:exec</goal>
+        </goals>
+        <activatedProfiles>
+            <activatedProfile>run-Hotswap</activatedProfile>
+        </activatedProfiles>
+        <properties>
+            <!-- Diz ao NetBeans para abrir o painel do debugger e aguardar a ligação socket -->
+            <jpda.listen>true</jpda.listen>
+            
+            <!-- REMOVIDO o maven.ext.class.path. Mantemos apenas a flag JDWP pura que o Java 25 entende -->
+            <exec.vmArgs>-agentlib:jdwp=transport=dt_socket,server=n,address=${jpda.address}</exec.vmArgs>
+        </properties>
+    </action>
+
+
     <action>
         <actionName>CUSTOM-run-StartPOS</actionName>
         <displayName>run-StartPOS</displayName>
@@ -77,13 +108,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         </goals>
     </action>
     <action>
-            <actionName>CUSTOM-Distribuition</actionName>
-            <displayName>Distribuition</displayName>
-            <goals>
-                <goal>package</goal>
-            </goals>
-            <activatedProfiles>
-                <activatedProfile>distribuition</activatedProfile>
-            </activatedProfiles>
-        </action>
+        <actionName>CUSTOM-Distribuition</actionName>
+        <displayName>Distribuition</displayName>
+        <goals>
+            <goal>package</goal>
+        </goals>
+        <activatedProfiles>
+            <activatedProfile>distribuition</activatedProfile>
+        </activatedProfiles>
+    </action>
 </actions>

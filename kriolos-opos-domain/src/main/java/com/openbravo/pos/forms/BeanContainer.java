@@ -16,17 +16,12 @@
  */
 package com.openbravo.pos.forms;
 
-import com.openbravo.pos.forms.AppView;
-import com.openbravo.pos.forms.BeanFactory;
-import com.openbravo.pos.forms.BeanFactoryApp;
-import com.openbravo.pos.forms.BeanFactoryException;
-import com.openbravo.pos.forms.BeanFactoryObj;
-import com.openbravo.pos.forms.BeanFactoryScript;
 import java.util.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 /**
  *
  * @author poolborges
@@ -45,7 +40,6 @@ public class BeanContainer {
     }
 
     static {
-
         m_oldclasses.put("com.openbravo.pos.reports.JReportCustomers", "/com/openbravo/reports/customers.bs");
         m_oldclasses.put("com.openbravo.pos.reports.JReportCustomersB", "/com/openbravo/reports/customersb.bs");
         m_oldclasses.put("com.openbravo.pos.reports.JReportClosedPos", "/com/openbravo/reports/closedpos.bs");
@@ -62,10 +56,16 @@ public class BeanContainer {
         m_oldclasses.put("com.openbravo.pos.reports.JReportCatalog", "/com/openbravo/reports/productscatalog.bs");
 
         m_oldclasses.put("com.openbravo.pos.panels.JPanelTax", "com.openbravo.pos.inventory.TaxPanel");
-
     }
 
-    public static Object geBean(String beanfactory, AppView appView) {
+    /**
+     * Resolves and retrieves a bean by its String factory key name.
+     * 
+     * @param beanfactory The name of the class or the script path acting as the key.
+     * @param appView     The Application View context.
+     * @return The instantiated bean instance.
+     */
+    public static Object getBean(String beanfactory, AppView appView) {
 
         beanfactory = mapNewClass(beanfactory);
         BeanFactory bf = m_aBeanFactories.get(beanfactory);
@@ -76,20 +76,21 @@ public class BeanContainer {
                 bf = new BeanFactoryScript(beanfactory);
             } else {
                 try {
-                    Class bfclass = Class.forName(beanfactory);
+                    Class<?> bfclass = Class.forName(beanfactory);
 
                     if (BeanFactory.class.isAssignableFrom(bfclass)) {
                         bf = (BeanFactory) bfclass.getDeclaredConstructor().newInstance();
                     } else {
-                        Constructor constMyView = bfclass.getConstructor(new Class[]{AppView.class});
+                        Constructor<?> constMyView = bfclass.getConstructor(new Class[]{AppView.class});
                         Object bean = constMyView.newInstance(new Object[]{appView});
                         bf = new BeanFactoryObj(bean);
                     }
 
                 } catch (ClassNotFoundException | InstantiationException
+
                         | IllegalAccessException | NoSuchMethodException
                         | SecurityException | IllegalArgumentException | InvocationTargetException e) {
-                    LOGGER.log(Level.WARNING, "Cannot found Bean: " + beanfactory, e);
+                    LOGGER.log(Level.WARNING, "Cannot find Bean: " + beanfactory, e);
                     throw new BeanFactoryException(e);
                 }
             }
@@ -101,6 +102,42 @@ public class BeanContainer {
             }
         }
         return bf.getBean();
+    }
 
+    /**
+     * Retrieves a bean by its String factory key and handles casting automatically.
+     * 
+     * @param <T>         The expected type of the Bean.
+     * @param beanfactory The name of the class or script path acting as the key.
+     * @param beanClass   The expected class type to cast the bean to.
+     * @param appView     The Application View context.
+     * @return The type-safe bean instance, or null if a casting error occurs.
+     */
+    public static <T> T getBean(String beanfactory, Class<T> beanClass, AppView appView) {
+        Object bean = getBean(beanfactory, appView);
+        if (bean == null) {
+            return null;
+        }
+        try {
+            return beanClass.cast(bean);
+        } catch (ClassCastException e) {
+            LOGGER.log(Level.SEVERE, "Bean resolved from key '" + beanfactory + "' is not of type " + beanClass.getName(), e);
+            return null;
+        }
+    }
+
+    /**
+     * Retrieves a bean cleanly using only its Class literal.
+     * 
+     * @param <T>       The expected type of the Bean.
+     * @param beanClass The class type serving as the resolution key.
+     * @param appView   The Application View context.
+     * @return The type-safe bean instance, or null if the class is null or casting fails.
+     */
+    public static <T> T getBean(Class<T> beanClass, AppView appView) {
+        if (beanClass == null) {
+            return null;
+        }
+        return getBean(beanClass.getName(), beanClass, appView);
     }
 }

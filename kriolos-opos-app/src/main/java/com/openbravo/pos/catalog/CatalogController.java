@@ -34,7 +34,7 @@ import org.openide.util.Exceptions;
 
 /**
  *
- * @author psb
+ * @author poolborges
  */
 public class CatalogController {
     

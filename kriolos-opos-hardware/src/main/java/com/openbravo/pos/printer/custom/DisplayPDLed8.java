@@ -27,7 +27,7 @@ import java.util.logging.Logger;
 
 /**
  *
- * @author psb
+ * @author poolborges
  */
 public class DisplayPDLed8 {
     

@@ -237,7 +237,7 @@ public class JNavigator extends javax.swing.JPanel implements BrowseListener, St
     
     private void jbtnSortActionPerformed(java.awt.event.ActionEvent evt) {                                         
         try {
-            Comparator c = JSort.showMessage(this, m_cc);
+            Comparator c = JSortPanel.showMessage(this, m_cc);
             if (c != null) {
                 m_bd.sort(c);
             }
@@ -250,7 +250,7 @@ public class JNavigator extends javax.swing.JPanel implements BrowseListener, St
     private void jbtnFindActionPerformed(java.awt.event.ActionEvent evt) {                                         
         
         try {
-            FindInfo newFindInfo = JFind.showMessage(this, m_LastFindInfo);
+            FindInfo newFindInfo = JFindPanel.showMessage(this, m_LastFindInfo);
             if (newFindInfo != null) {
                 m_LastFindInfo = newFindInfo;
                 

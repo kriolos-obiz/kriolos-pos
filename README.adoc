@@ -21,6 +21,10 @@ ifdef::env-github[]
 :repo-base-url: https://github.com/kriolos-obiz/kriolos-pos/
 endif::[]
 
+ifndef::env-github[]
+:imagesdir: docs/src/main/images
+endif::[]
+
 [[doc]]
 = Kriol Open Source Point Of Sales
 :author: Copyright (c) KriolOS Team.
@@ -183,4 +187,5 @@ java -Dawt.toolkit.name=WLToolkit -Dsun.java2d.vulkan=True -jar SwingSet2.jar
 
 == Screenshots 
 
-image::kriolos-opos-screenshot.gif[]
+image::kriolos-opos-screenshot-2026.gif[KriolOS POS Application Showcase]
+

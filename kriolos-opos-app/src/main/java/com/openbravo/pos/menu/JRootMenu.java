@@ -15,7 +15,7 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package com.openbravo.pos.menu;
 
-import com.openbravo.data.gui.JMessageDialog;
+import com.openbravo.data.gui.JMessagePanel;
 import com.openbravo.data.gui.MessageInf;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppUser;
@@ -266,12 +266,12 @@ public class JRootMenu {
         public void actionPerformed(ActionEvent evt) {
 
             try {
-                JMessageDialog.showMessage(parent,
+                JMessagePanel.showMessage(parent,
                         new MessageInf(MessageInf.SGN_WARNING,
                                 AppLocal.getIntString("message.cannotchangepassword")));
                 /*TODO 
                 AppUser m_appuser = appview.getUser();
-                String sNewPassword = JPasswordDialog.changePassword(parent, m_appuser.getPassword());
+                String sNewPassword = JPasswordPanel.changePassword(parent, m_appuser.getPassword());
  
                 if (sNewPassword != null) {
                     DataLogicSystem m_dlSystem = (DataLogicSystem) appview.getBean("com.openbravo.pos.forms.DataLogicSystem");
@@ -281,7 +281,7 @@ public class JRootMenu {
 */
             }
             catch (Exception ex) {
-                JMessageDialog.showMessage(parent,
+                JMessagePanel.showMessage(parent,
                         new MessageInf(MessageInf.SGN_WARNING,
                                 AppLocal.getIntString("message.cannotchangepassword"), ex));
             }

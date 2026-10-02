@@ -39,7 +39,7 @@ import java.util.List;
 import java.util.UUID;
 import javax.swing.JOptionPane;
 import javax.swing.table.AbstractTableModel;
-import com.openbravo.beans.JCalendarDialog;
+import com.openbravo.beans.JCalendarDlgPanel;
 import java.awt.Font;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
@@ -1535,7 +1535,7 @@ public final class CustomersView extends com.openbravo.pos.panels.ValidationPane
         } catch (BasicException e) {
             date = null;
         }
-        date = JCalendarDialog.showCalendarTime(this, date);
+        date = JCalendarDlgPanel.showCalendarTime(this, date);
         if (date != null) {
             m_jdate.setText(Formats.TIMESTAMP.formatValue(date));
         }

@@ -80,8 +80,8 @@ public class JCatalog extends JPanel implements ListSelectionListener, CatalogSe
         categoriesScrollPane.getVerticalScrollBar().setPreferredSize(new Dimension(35, 35));
         
         
-        DataLogicSales dataLogicSales = (DataLogicSales) app.getBean("com.openbravo.pos.forms.DataLogicSales");
-        DataLogicPIM dataLogicPIM = (DataLogicPIM) app.getBean("com.openbravo.pos.pim.DataLogicPIM");
+        DataLogicSales dataLogicSales = app.getBean(DataLogicSales.class);
+        DataLogicPIM dataLogicPIM = app.getBean(DataLogicPIM.class);
 
         controller = new CatalogController(dataLogicSales, dataLogicPIM);
     }

@@ -16,14 +16,13 @@
  */
 package com.openbravo.pos.printer.printer;
 
-import com.openbravo.data.gui.JMessageDialog;
+import com.openbravo.data.gui.JMessagePanel;
 import com.openbravo.data.gui.MessageInf;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.printer.DevicePrinter;
 import com.openbravo.pos.printer.ticket.BasicTicket;
 import com.openbravo.pos.printer.ticket.BasicTicketForPrinter;
 import com.openbravo.pos.util.ReportUtils;
-import com.openbravo.pos.util.SelectPrinter;
 import java.awt.Component;
 import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
@@ -264,7 +263,7 @@ public class DevicePrinterPrinter implements DevicePrinter {
 
         } catch (PrintException ex) {
             logger.log(Level.WARNING, "Exception printing with printer: "+this.printerName, ex);
-            JMessageDialog.showMessage(parent, new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.printererror"), ex));
+            JMessagePanel.showMessage(parent, new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.printererror"), ex));
         }
 
         //ticket is not needed any more

@@ -27,7 +27,7 @@ import com.openbravo.pos.panels.JProductFinder;
 import java.awt.Component;
 import com.openbravo.basic.BasicException;
 import com.openbravo.beans.DateUtils;
-import com.openbravo.beans.JCalendarDialog;
+import com.openbravo.beans.JCalendarDlgPanel;
 import com.openbravo.data.gui.ComboBoxValModel;
 import com.openbravo.data.gui.MessageInf;
 import com.openbravo.data.loader.SentenceList;
@@ -114,7 +114,7 @@ public final class StockDiaryEditor extends javax.swing.JPanel implements Editor
 
         m_jreason.setModel(m_ReasonModel);
 
-        m_cat = new JCatalog(app);
+        m_cat = (CatalogSelector) com.openbravo.pos.ui.api.catalog.CatalogManager.createDefaultCatalog(app);
         m_cat.addActionListener(new CatalogListener());
 
         catcontainer.add(m_cat.getComponent(), BorderLayout.CENTER);        
@@ -915,7 +915,7 @@ public final class StockDiaryEditor extends javax.swing.JPanel implements Editor
         } catch (BasicException e) {
             date = null;
         }        
-        date = JCalendarDialog.showCalendarTime(this, date);
+        date = JCalendarDlgPanel.showCalendarTime(this, date);
         if (date != null) {
             m_jdate.setText(Formats.TIMESTAMP.formatValue(date));
         }

@@ -1,7 +1,7 @@
 = KriolOS POS Documentation
 :description: Welcome to the official documentation for KriolOS POS.
 
-image::kriolos-opos-screenshot.gif[KriolOS POS,align="center"]
+image::kriolos-opos-screenshot-2026.gif[KriolOS POS,align="center"]
 
 Welcome to the **KriolOS POS** documentation portal. 
 

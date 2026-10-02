@@ -21,7 +21,7 @@ import com.openbravo.pos.forms.DataLogicSystem;
 import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.basic.BasicException;
-import com.openbravo.beans.JPasswordDialog;
+import com.openbravo.beans.JPasswordPanel;
 import com.openbravo.data.gui.ComboBoxValModel;
 import com.openbravo.data.gui.ListKeyed;
 import com.openbravo.data.gui.MessageInf;
@@ -227,10 +227,10 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     }
 
     private void initComponentFromChild() {
+        m_ticketsbag = getJTicketsBag();
 
         // Set Configuration>General>Tickets toolbar simple : standard : restaurant
         // option
-        m_ticketsbag = getJTicketsBag();
         m_jPanelBag.add(m_ticketsbag.getBagComponent(), BorderLayout.LINE_START);
         add(m_ticketsbag.getNullComponent(), "null");
 
@@ -251,7 +251,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     }
 
     private boolean isRestaurantMode() {
-        return "restaurant".equals(getTicketsbag());
+        return com.openbravo.pos.ui.api.sales.SaleLayoutManager.isRestaurant(getTicketsbag());
     }
 
     private boolean isAutoLogoutRestaurant() {
@@ -389,6 +389,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     @Override
     public boolean deactivate() {
         LOGGER.log(System.Logger.Level.DEBUG, "JPanelTicket.deactivate");
+
         if (inactivityListener != null) {
             inactivityListener.stop();
         }
@@ -548,7 +549,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
 
             if (getAppProperty("override.check").equals("true")) {
                 String pin = getAppProperty("override.pin");
-                String iValue = JPasswordDialog.showEditor(this, AppLocal.getIntString("title.override.enterpin"));
+                String iValue = JPasswordPanel.show(this, AppLocal.getIntString("title.override.enterpin"));
 
                 if (iValue != null && iValue.equals(pin)) {
                     pinOK = true;
@@ -1655,13 +1656,15 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                         setActiveTicket(null, null);
                         refreshTicket();
                         // Delete will create a empty ticket
-                        m_ticketsbag.deleteTicket();
+                        if (m_ticketsbag != null) {
+                            m_ticketsbag.deleteTicket();
+                        }
 
                         if (isAutoLogout()) {
                             if (isRestaurantMode() && isAutoLogoutRestaurant()) {
                                 deactivate();
                             } else {
-                                ((JRootApp) m_App).closeAppView();
+                                ((ApplicationShell) m_App).closeAppView();
                             }
                         }
 
@@ -3163,13 +3166,13 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
             if (isRestaurantMode()) {
                 deactivate();
                 if (isAutoLogoutRestaurant()) {
-                    ((JRootApp) m_App).closeAppView();
+                    ((ApplicationShell) m_App).closeAppView();
                 } else {
                     setActiveTicket(null, null);
                 }
             } else {
                 deactivate();
-                ((JRootApp) m_App).closeAppView();
+                ((ApplicationShell) m_App).closeAppView();
             }
         }
     }

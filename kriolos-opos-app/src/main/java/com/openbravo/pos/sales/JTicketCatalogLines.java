@@ -45,17 +45,15 @@ public class JTicketCatalogLines extends javax.swing.JPanel {
             int width, 
             int height) {
         
-        DataLogicSystem dlSystem = null;
-        DataLogicSales dlSales = null;
-        dlSystem = (DataLogicSystem) app.getBean("com.openbravo.pos.forms.DataLogicSystem");
-        dlSales = (DataLogicSales) app.getBean("com.openbravo.pos.forms.DataLogicSales");
+        DataLogicSystem dlSystem = app.getBean(DataLogicSystem.class);
+        DataLogicSales dlSales = app.getBean(DataLogicSales.class);
         
         initComponents();
         
         m_reflines = new JRefundLines(dlSystem, jTicketEdit);        
         add(m_reflines, "reflines");
         
-        m_catalog = new JCatalog(app);
+        m_catalog = (CatalogSelector) com.openbravo.pos.ui.api.catalog.CatalogManager.createDefaultCatalog(app);
         m_catalog.getComponent().setPreferredSize(new Dimension(0, 245));
         // m_catalog.addActionListener(new CatalogListener());        
         add(m_catalog.getComponent(), "catalog");

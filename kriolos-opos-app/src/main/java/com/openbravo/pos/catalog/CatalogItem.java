@@ -20,7 +20,7 @@ import java.awt.Image;
 
 /**
  *
- * @author psb
+ * @author poolborges
  */
 public class CatalogItem {
     private String text; 

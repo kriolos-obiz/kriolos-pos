@@ -23,7 +23,7 @@ import java.util.logging.Logger;
  * High-performance, memory-efficient thread-safe circular byte buffer.
  * Replaces object-heavy LinkedList implementation to eliminate Garbage Collection pressure.
  * 
- * @author psb
+ * @author poolborges
  */
 public class PrinterBuffer {
 

@@ -24,7 +24,7 @@ import org.xml.sax.SAXNotSupportedException;
 
 /**
  *
- * @author psb
+ * @author poolborges
  */
 public class SAXParserUtils {
 

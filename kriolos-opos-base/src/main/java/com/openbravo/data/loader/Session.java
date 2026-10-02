@@ -48,7 +48,7 @@ public final class Session {
      * @throws java.sql.SQLException
      */
     public Session(String url, String user, String password) throws SQLException {
-        LOGGER.log(Level.INFO, "DB Session construct from url,username,password: " + url);
+        LOGGER.log(Level.INFO, "DB Session construct from username:" + user + "; URL: "+url);
         this.datasource = null;
         fakeDS = new FakeDataSouce(url, user, password);
 

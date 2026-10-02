@@ -1,55 +1,434 @@
 [[ui-guidelines]]
-== UI Guidelines
+= UI/UX Architecture Guidelines: KriolOS POS
+:toc: left
+:toclevels: 3
+:sectnums:
+:source-highlighter: rouge
 
+== System Overview
 
+*KriolOS POS* is a native desktop application built using *Java Swing*, specifically engineered
+for Point of Sale (POS) terminals equipped with touch-screens.
 
+The primary focus of this design ecosystem is **high-speed operation**, **minimal eye strain for
+cashiers**, and **absolute tap precision** without requiring physical mice or keyboard peripherals
+during standard checkout workflows.
 
-=== References
+== Design System Strategy (Swing + Touch)
 
+To avoid the obsolete, dated look of native Swing, this project adopts the tactile concepts of
+*Google Material Design* and the rigid scale rules of *Adobe Spectrum*, implemented seamlessly
+via the *FlatLaf* library.
 
-Human Interface guidelines
+[IMPORTANT]
+====
+* FlatLaf is **never applied per component or class**. Any FlatLaf improvement is applied
+  **globally** via `UIManager` at application startup — never inline.
+* The project's SPI mechanism keeps components *dependency-free*. At the component level
+  everything is pure Swing (`javax.swing.*` / `java.awt.*`). FlatLaf is a runtime concern,
+  not a compile-time dependency of individual UI classes.
+====
 
-* https://en.wikipedia.org/wiki/Human_interface_guidelines
+[cols="1,2,2", options="header"]
+|===
+|Approach |Benefit to KriolOS POS |Implementation in Java Swing
 
-Desktop Platforms
+|*Touch-First Philosophy*
+|Enlarged interaction spaces for fingers, eliminating mistaps and typos in fast-paced
+retail or hospitality environments.
+|Global configuration of margins, paddings, and font sizes using FlatLaf's `UIManager`.
 
-* Netbeans Platform
-* Eclipse Platform
-* Intellij Platform 
+|*Adobe Spectrum Scaling*
+|Ensures visual components grow proportionally if the terminal uses high-density (High-DPI)
+modern display panels.
+|Automatic utilisation of FlatLaf's built-in scaling engine alongside dynamic layout managers.
+|===
 
-=== Eclipse Platform 
+== Critical UX Rules (Implementation-Enforced)
 
+These rules are not aspirational — they are enforced via automation, code review, and
+integration tests.
 
-Docs 
+=== Rule 7.1 — Root Panel Padding Integrity
 
-* User Interface Guidelines
-** https://wiki.eclipse.org/User_Interface_Guidelines
-* Platform UI 
-** https://wiki.eclipse.org/Platform_UI
-* Eclipse User Interface Guidelines
-** https://www.eclipse.org/articles/Article-UI-Guidelines/Index.html
+[IMPORTANT]
+====
+Every modal panel managed by `PosUIModal` **must** apply a root-level
+`EmptyBorder(8, 8, 8, 8)` as the first statement in `initDomainAdapters()`.
+This prevents any inner component from touching the modal container edges.
+====
 
-Misc Links
+[source,java]
+----
+// Always the FIRST call in initDomainAdapters():
+setBorder(new EmptyBorder(8, 8, 8, 8));
+----
 
-* https://eclipse.dev/eclipse/platform-ui/
-* https://www.researchgate.net/figure/Eclipse-Platform-user-interface_fig1_234794560
+Rationale: Without this guard, FlatLaf rounded-corner dialogs show components bleeding
+to the edge of the glass pane, which is visually unacceptable on touch POS screens.
+Changes to this rule must be documented in this file.
 
-=== Netbeans Platform
+=== Rule 7.2 — URN Component Anchoring (setName)
 
+[IMPORTANT]
+====
+All interactive components within modal panels **must** receive a `setName()` call
+using the KriolOS URN format. This is mandatory in `initDomainAdapters()`.
+====
 
+URN format: `kriolos:<domain>:<component-id>`
 
-Misc Links 
+[source,java]
+----
+// Examples
+setName("kriolos:alert:warning-panel");
+btnConfirm.setName("kriolos:alert:btn-confirm");
+txtBody.setName("kriolos:alert:txt-body");
+----
 
-* https://www.researchgate.net/figure/Eclipse-Platform-user-interface_fig1_234794560
-* https://netbeans.apache.org/tutorials/67/nbm-quick-start.html
+Rationale: URN anchoring enables automated UI testing (`ModalPanelUrnAnchoringTest`),
+future WebDriver bindings, and accessibility tooling without relying on fragile component
+traversal indices.
 
+=== Rule 7.3 — No Root Fixed Size on Modal Panels
 
-=== Intellij Platform
+[IMPORTANT]
+====
+Modal panels managed by `PosUIModal` **must NOT** call `setPreferredSize()`,
+`setMinimumSize()`, or `setMaximumSize()` on the root `JPanel` (`this`).
+====
 
+[source,java]
+----
+// WRONG — fragile, clips content whenever padding/border changes
+setPreferredSize(new java.awt.Dimension(330, 430));
 
-Docs 
+// CORRECT — let PosUIModal.pack() compute from children
+// Root size intentionally omitted: PosUIModal calls pack() which computes
+// natural size from children. Fixed root sizes are fragile against padding changes.
+----
 
-*  IntelliJ Platform UI Guidelines
-** https://jetbrains.design/intellij
-* Plugins 
-** https://plugins.jetbrains.com/docs/intellij/user-interface-components.html
+Rationale: `PosUIModal` calls `dialog.pack()` after adding the panel. `pack()` computes
+the dialog size recursively from all children. A hardcoded root size short-circuits this
+computation and causes content to clip whenever the surrounding context changes
+(border, padding, LAF, font scale). Sub-components retain their own preferred sizes
+for predictable touch targets — only the root panel is left free.
+
+Panels corrected under this rule (2026-09-23):
+
+* `JEditorTextPanel` — removed `setMinimumSize(350, 450)` + `setPreferredSize(350, 450)`
+* `JNumberPanel` — removed `setPreferredSize(330, 430)`
+* `DinerNumberPanel` — removed `setPreferredSize(330, 420)`
+* `JMessagePanel` — removed `setMaximumSize`, `setMinimumSize`, `setPreferredSize`
+
+=== Rule 7.4 — LAF-Agnostic Custom-Painted Components
+
+KriolOS POS supports runtime LAF switching (Metal -> FlatLaf Light -> FlatLaf Dark and
+any future LAF). Custom-painted components **must** survive `UIManager.setLookAndFeel()`
++ `SwingUtilities.updateComponentTreeUI()` without visual regression.
+
+[IMPORTANT]
+====
+Every class that overrides `paintComponent` and relies on `setOpaque(false)`,
+`setContentAreaFilled(false)`, `setBorderPainted(false)`, or `setFocusPainted(false)`
+**must** also override `updateUI()` to reapply those settings after the LAF's
+`installUI()` resets them.
+====
+
+[source,java]
+----
+// Pattern for any JPanel subclass with custom painting:
+@Override
+public void updateUI() {
+    super.updateUI();   // LAF installs its delegate — may reset opaque to true
+    setOpaque(false);   // Re-enforce our transparent background
+}
+
+// Pattern for any JButton subclass with custom painting:
+@Override
+public void updateUI() {
+    super.updateUI();           // LAF resets contentAreaFilled, borderPainted etc.
+    applyLafNeutralDefaults();  // We override what the LAF reset
+}
+
+private void applyLafNeutralDefaults() {
+    setFocusPainted(false);
+    setBorderPainted(false);
+    setContentAreaFilled(false);
+    setOpaque(false);
+}
+----
+
+What each LAF's `installUI()` resets (and must be re-enforced):
+
+[cols="1,2,2", options="header"]
+|===
+|Component type |Properties reset by LAF |Fix
+
+|`JPanel` subclass
+|`opaque = true`
+|`updateUI()` -> `setOpaque(false)`
+
+|`JComponent` subclass (icon etc.)
+|`opaque = true`
+|`updateUI()` -> `setOpaque(false)`
+
+|`JTextArea` / `JTextField`
+|`opaque = true`, LAF border replaces custom border
+|Anonymous subclass `updateUI()` -> `setOpaque(false)` + re-apply margin/border
+
+|`JButton` subclass
+|`contentAreaFilled`, `borderPainted`, `focusPainted`, `opaque` — all reset
+|`updateUI()` -> `applyLafNeutralDefaults()`
+|===
+
+`paintComponent` call order in custom-painted components:
+
+[source,java]
+----
+@Override
+protected void paintComponent(Graphics g) {
+    // Step 1: LAF delegate runs first (no-op for opaque=false, honours Swing contract)
+    super.paintComponent(g);
+
+    // Step 2: Our custom painting goes ON TOP — always wins regardless of LAF
+    Graphics2D g2 = (Graphics2D) g.create();
+    // ... custom card / icon painting ...
+    g2.dispose();
+    // Children are painted by Swing's paintChildren() — NOT by super.paintComponent()
+}
+----
+
+=== Rule 7.5 — Semantic Alert Colors Are LAF-Independent
+
+Warning / error / success semantic colors **must not** adapt to the active LAF theme
+(dark or light). A cashier must be able to scan-recognise an alert panel in under 200ms
+regardless of which LAF is active.
+
+[source,java]
+----
+// Adobe Spectrum "Notice/Warning" tokens — hardcoded, never LAF-derived
+private static final Color CLR_BG     = new Color(0xFF, 0xF8, 0xEE); // warm cream-amber
+private static final Color CLR_ACCENT = new Color(0xCB, 0x6F, 0x10); // deep amber
+private static final Color CLR_TITLE  = new Color(0x33, 0x1E, 0x00); // near-black brown
+----
+
+Rationale: Adobe Spectrum, Material Design, and Apple HIG all maintain semantic warning
+amber in dark mode. A warning panel that turns neutral grey in dark mode loses its
+semantic signal — which is a safety regression for cashiers.
+
+== Critical Tap Targets (Hitboxes)
+
+* *Golden Rule:* No interactive element (button, checkbox, list item) should ever be
+  smaller than *48 x 48 pixels*.
+* For rapid-access product and category tiles, minimum recommended height is *80 px*.
+* For modal action buttons (OK, Cancel, Confirm): minimum *56 px* height
+  (Adobe Spectrum touch scale standard).
+
+[source,java]
+----
+// Enforced via getPreferredSize() override — not via setPreferredSize() on root:
+@Override
+public Dimension getPreferredSize() {
+    Dimension d = super.getPreferredSize();
+    d.width  = Math.max(d.width + 32, BTN_MIN_W); // horizontal label padding
+    d.height = Math.max(d.height, 56);             // Spectrum touch minimum
+    return d;
+}
+----
+
+== Font Safety Rules
+
+[IMPORTANT]
+====
+**Never** use platform-specific font names (`"Segoe UI"`, `"Helvetica"`, `"Arial"`)
+in component code. Use only **logical font names** which are guaranteed to map
+correctly across Linux (POS terminals), Windows, and macOS JREs.
+====
+
+[source,java]
+----
+// WRONG — breaks on Linux POS distros without the font installed
+new Font("Segoe UI", Font.PLAIN, 14)
+
+// CORRECT — maps to the best available sans-serif on every platform
+new Font(Font.SANS_SERIF, Font.PLAIN, 14)
+new Font(Font.DIALOG,     Font.PLAIN, 14)
+----
+
+FlatLaf global font scaling is configured once at startup via `UIManager` (see
+<<_global_touch_upscaling_via_flatlaf_configuration>>), not per component.
+
+== Icon and Graphic Rules
+
+[IMPORTANT]
+====
+Do **not** use character emojis for icons. They render as blank squares
+on minimalist POS Linux distros that do not include emoji font packages.
+====
+
+All icons must be drawn via `Graphics2D` with antialiasing enabled:
+
+[source,java]
+----
+Graphics2D g2 = (Graphics2D) g.create();
+g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,   RenderingHints.VALUE_ANTIALIAS_ON);
+g2.setRenderingHint(RenderingHints.KEY_RENDERING,      RenderingHints.VALUE_RENDER_QUALITY);
+g2.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
+// ... vector drawing via Path2D, Line2D, RoundRectangle2D ...
+g2.dispose();
+----
+
+Reference implementation: `PosWarningPanel.WarningIcon` — rounded-corner equilateral
+triangle with white exclamation mark, drawn entirely via `Path2D` bezier arcs.
+
+== Reference Component: PosWarningPanel
+
+`com.openbravo.beans.PosWarningPanel` is the canonical reference implementation for all
+Rules 7.1-7.5. When implementing a new custom-painted panel, use it as the template.
+
+[cols="1,3", options="header"]
+|===
+|Feature |Implementation
+
+|Adobe Spectrum amber tokens
+|`CLR_BG`, `CLR_ACCENT`, `CLR_TITLE`, `CLR_BODY` — hardcoded, LAF-independent
+
+|Root padding
+|`EmptyBorder(PAD_V, PAD_H + ACCENT_W + 8, PAD_V, PAD_H)` — no root fixed size
+
+|LAF agnosticism
+|`updateUI()` on panel, icon, button; JTextArea as anonymous subclass
+
+|Touch button minimum
+|`BTN_H = 56 px` enforced via `getPreferredSize()` override
+
+|Fonts
+|`Font.SANS_SERIF` / `Font.DIALOG` only
+
+|Icons
+|`WarningIcon` — pure `Graphics2D` / `Path2D` vector, no emoji, no raster
+
+|URN names
+|`kriolos:alert:warning-panel`, `kriolos:alert:btn-confirm`, etc.
+
+|Dark / Light LAF
+|Amber card colours are semantic — intentionally preserved across all LAFs
+|===
+
+== Decoupling Scanner Keyboard Focus
+
+* *The Problem:* If a cashier taps the screen to modify a quantity, traditional text
+  fields lose focus. This breaks background hardware barcode scanning.
+* *The Solution:* KriolOS POS captures scanner inputs globally via a `KeyEventDispatcher`
+  or directly through dedicated Serial/USB COM ports. The cashier must be able to tap
+  anything on the screen without halting active barcode scanning.
+
+== Eliminating Traditional Scrollbars
+
+Default native `JScrollPane` bars are paper-thin and impossible to drag reliably with
+a finger. Replace classic scrollbars with large Up/Down arrow buttons flanking panels,
+or implement smooth kinetic touch-drag listeners (see
+<<_kinetic_touch_drag_scrolling_swipe_to_scroll>>).
+
+== Layout Structure with MigLayout
+
+The main dashboard interface implements an industry-standard split layout:
+
+1. *Left Column (35%):* Checkout Panel — active receipt list, live totals, primary actions.
+2. *Right Column (65%):* Responsive matrix grid of product and category quick-buttons.
+
+[source,java]
+----
+setLayout(new MigLayout("fill, insets 10", "[35%!][grow, fill]", "[grow, fill]"));
+add(createReceiptPanel(),     "cell 0 0");
+add(createProductGridPanel(), "cell 1 0");
+----
+
+== Contingency Keyboard Shortcuts (Key Bindings)
+
+Use Swing `InputMap` / `ActionMap` on `JComponent.WHEN_IN_FOCUSED_WINDOW` — not
+`KeyListener`, which fails when focus moves.
+
+[cols="1,2,2", options="header"]
+|===
+|Action |Shortcut |Behaviour
+
+|Pay / Checkout       |`F10`       |Triggers payment processing modal instantly.
+|Void Transaction     |`ESC`       |Prompts manager authentication to clear basket.
+|Search / Item Entry  |`F1`        |Forces focus to universal product search bar.
+|Print Last Receipt   |`Ctrl + P`  |Re-sends last transaction to thermal printer.
+|===
+
+UX Best Practice: Always append the hotkey to the button label text: `PAY NOW (F10)`,
+`VOID (ESC)`. Minimum *14pt bold* for hint text.
+
+== Product Category Navigation Layout
+
+Use a `ButtonGroup` of `JToggleButton` tiles (minimum height *70 px*) instead of native
+`JTabbedPane` (too narrow for touch). Row 0 fixed at 70 px; Row 1 fills remaining space.
+
+Selected category tab must pop visually (brand accent colour). Non-selected tabs are flat.
+Use `ItemListener` on each toggle to rebuild the product grid content dynamically.
+
+== Touch-Screen Numerical Keypad (Numpad) Overlay
+
+Use a modal `JDialog` numpad instead of inline text fields for quantity / price entry.
+
+* Grid: 3x4 matrix (`7-8-9 / 4-5-6 / 1-2-3 / 0-CLEAR-ENTER`)
+* Minimum button size: 75 x 75 px
+* Display field font: >= 28pt bold
+* CLEAR: soft red (`new Color(239, 83, 80)`)
+* ENTER: operational green (`new Color(102, 187, 106)`)
+* Validation errors: flash `displayField` background red for 200 ms via `javax.swing.Timer`
+
+== Kinetic Touch-Drag Scrolling (Swipe-to-Scroll)
+
+Wrap any long-content `JScrollPane` with `TouchScrollGlassPane`. Listens for
+`mousePressed` (anchor), `mouseDragged` (delta -> `viewport.setViewPosition()`),
+`mouseReleased` (reset). Hide native scrollbars with `setPreferredSize(new Dimension(0, 0))`.
+
+Provide a visual indicator of hidden content — let the last item row clip halfway off
+the container bottom edge.
+
+== Global Touch-Upscaling via FlatLaf Configuration
+
+Applied **once at startup** via `UIManager` — never per component.
+
+[source,java]
+----
+private static void configureGlobalTouchSettings() {
+    UIManager.put("defaultFont",              new Font(Font.SANS_SERIF, Font.PLAIN, 16));
+    UIManager.put("Button.font",              new Font(Font.SANS_SERIF, Font.BOLD,  16));
+    UIManager.put("ToggleButton.font",        new Font(Font.SANS_SERIF, Font.BOLD,  16));
+    UIManager.put("Button.margin",            new Insets(12, 24, 12, 24));
+    UIManager.put("ToggleButton.margin",      new Insets(12, 24, 12, 24));
+    UIManager.put("Button.minimumHeight",     48);
+    UIManager.put("ToggleButton.minimumHeight", 48);
+    UIManager.put("CheckBox.iconSize",        24);
+    UIManager.put("RadioButton.iconSize",     24);
+    UIManager.put("TextField.margin",         new Insets(8, 12, 8, 12));
+    UIManager.put("TextField.minimumHeight",  45);
+    UIManager.put("ScrollBar.width",          26);
+    UIManager.put("ScrollBar.thumbArc",       12);
+    UIManager.put("Button.arc",               8);
+    UIManager.put("Component.arc",            8);
+}
+----
+
+== References
+
+=== Design Systems
+* https://spectrum.adobe.com/page/alert-banner/[Adobe Spectrum — Alert Banner]
+* https://m3.material.io/components/dialogs/overview[Material Design 3 — Dialogs]
+* https://developer.apple.com/design/human-interface-guidelines/[Apple HIG]
+
+=== Java / Swing
+* https://www.formdev.com/flatlaf/[FlatLaf documentation]
+* https://www.formdev.com/flatlaf/customizing/[FlatLaf UIManager properties]
+* https://docs.oracle.com/en/java/javase/21/docs/api/java.desktop/javax/swing/package-summary.html[Java 21 Swing API]
+
+=== Human Interface Guidelines
+* https://en.wikipedia.org/wiki/Human_interface_guidelines[Wikipedia — HIG]
+* https://wiki.eclipse.org/User_Interface_Guidelines[Eclipse UI Guidelines]
+* https://jetbrains.design/intellij[IntelliJ Platform UI Guidelines]

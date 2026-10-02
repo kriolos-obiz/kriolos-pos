@@ -16,23 +16,23 @@
 package com.openbravo.pos.config;
 
 import com.openbravo.data.user.DirtyManager;
-import com.openbravo.pos.core.spi.gui.LafInfo;
-import com.openbravo.pos.core.spi.gui.DefaultLafProvider;
-import com.openbravo.pos.core.spi.gui.FlatlafProvider;
 import com.openbravo.pos.forms.AppConfig;
 import com.openbravo.pos.forms.AppLocal;
+import com.openbravo.pos.forms.AppProperties;
+import com.openbravo.pos.sales.SaleLayout;
+import com.openbravo.pos.ui.api.sales.SaleLayoutDefinition;
+import com.openbravo.pos.ui.api.sales.SaleLayoutManager;
+import com.openbravo.pos.ui.api.POSThemeDefinition;
+import com.openbravo.pos.ui.api.POSThemeManager;
 import java.awt.Component;
-import javax.swing.LookAndFeel;
-import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
-import javax.swing.UIManager.LookAndFeelInfo;
-import javax.swing.UnsupportedLookAndFeelException;
 import com.openbravo.pos.util.FileChooserEvent;
-import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.DefaultListCellRenderer;
+import javax.swing.JList;
 import javax.swing.JOptionPane;
 
 
@@ -63,8 +63,10 @@ public class JPanelConfigGeneral extends javax.swing.JPanel implements PanelConf
         jtxtMachineDepartment.getDocument().addDocumentListener(dirty);
         lblIP_Address.setText(IP.toString());        
         jcboLAF.addActionListener(dirty);
+        jcboLAF.setRenderer(new POSThemeDefinitionRenderer());
         jcboMachineScreenmode.addActionListener(dirty);
         jcboTicketsBag.addActionListener(dirty);
+        jcboTicketsBag.setRenderer(new SaleLayoutDefinitionRenderer());
         jchkHideInfo.addActionListener(dirty);  
         jtxtStartupText.getDocument().addDocumentListener(dirty);
         jbtnText.addActionListener(new FileChooserEvent(jtxtStartupText));                
@@ -77,16 +79,8 @@ public class JPanelConfigGeneral extends javax.swing.JPanel implements PanelConf
 //        jbtnMedia.addActionListener(new FileChooserEvent(jtxtStartupHTML));    // Coming later!          
         
         // Installed skins
-        new DefaultLafProvider()
-                .getLafInfoList()
+        POSThemeManager.getAllAvailableThemes()
                 .forEach(i -> jcboLAF.addItem(i));
-        
-        
-        // FlatLaf - Flat Look and Feel 
-        new FlatlafProvider()
-                .getLafInfoList()
-                .forEach(i -> jcboLAF.addItem(i));
-        
          
 
         jcboLAF.addActionListener((java.awt.event.ActionEvent evt) -> {
@@ -95,10 +89,9 @@ public class JPanelConfigGeneral extends javax.swing.JPanel implements PanelConf
 
         jcboMachineScreenmode.addItem("window");
         jcboMachineScreenmode.addItem("fullscreen");
-
-        jcboTicketsBag.addItem("simple");
-        jcboTicketsBag.addItem("standard");
-        jcboTicketsBag.addItem("restaurant");
+        
+        
+        SaleLayoutManager.getAllAvailableLayouts().forEach(jcboTicketsBag::addItem);
         
     }
 
@@ -130,22 +123,38 @@ public class JPanelConfigGeneral extends javax.swing.JPanel implements PanelConf
         jtxtMachineHostname.setText(config.getProperty("machine.hostname"));
         jtxtMachineDepartment.setText(config.getProperty("machine.department"));
         
-        String lafclass = config.getProperty("swing.defaultlaf");
+        String themeId = config.getProperty("pos.ui.theme.id");
         jcboLAF.setSelectedItem(null);
-        for (int i = 0; i < jcboLAF.getItemCount(); i++) {
-            LafInfo lafinfo = (LafInfo) jcboLAF.getItemAt(i);
-            if (lafinfo.getClassName().equals(lafclass)) {
-                jcboLAF.setSelectedIndex(i);
-                break;
+        if (themeId != null) {
+            for (int position = 0; position < jcboLAF.getItemCount(); position++) {
+                POSThemeDefinition item = (POSThemeDefinition) jcboLAF.getItemAt(position);
+                if (item != null && item.id().equalsIgnoreCase(themeId)) {
+                    jcboLAF.setSelectedIndex(position);
+                    break;
+                }
             }
         }
 
         jcboMachineScreenmode.setSelectedItem(config.getProperty("machine.screenmode"));
-        jcboTicketsBag.setSelectedItem(config.getProperty("machine.ticketsbag"));
+        
+        String layoutId = config.getProperty("machine.ticketsbag");
+        jcboTicketsBag.setSelectedItem(null);
+        if (layoutId != null) {
+            for (int position = 0; position < jcboTicketsBag.getItemCount(); position++) {
+                Object item = jcboTicketsBag.getItemAt(position);
+                if (item instanceof SaleLayoutDefinition def && def.id().equalsIgnoreCase(layoutId)) {
+                    jcboTicketsBag.setSelectedIndex(position);
+                    break;
+                } else if (item instanceof String s && s.equalsIgnoreCase(layoutId)) {
+                    jcboTicketsBag.setSelectedIndex(position);
+                    break;
+                }
+            }
+        }
+        
         jchkHideInfo.setSelected(Boolean.parseBoolean(config.getProperty("till.hideinfo")));        
         jtxtStartupLogo.setText(config.getProperty("start.logo"));
         jtxtStartupText.setText(config.getProperty("start.text")); 
-        jtxtStartupLogo.setText(config.getProperty("start.logo"));
         jtxtStartupHTML.setText(config.getProperty("start.html"));
         dirty.setDirty(false);
     }
@@ -160,13 +169,19 @@ public class JPanelConfigGeneral extends javax.swing.JPanel implements PanelConf
         config.setProperty("machine.hostname", jtxtMachineHostname.getText());
         config.setProperty("machine.department", jtxtMachineDepartment.getText());      
         
-        LafInfo laf = (LafInfo) jcboLAF.getSelectedItem();
-        config.setProperty("swing.defaultlaf", laf == null
-                ? System.getProperty("swing.defaultlaf", "javax.swing.plaf.metal.MetalLookAndFeel")
-                : laf.getClassName());
+        POSThemeDefinition posTheme = (POSThemeDefinition) jcboLAF.getSelectedItem();
+        if (posTheme != null) {
+            config.setProperty("pos.ui.theme.id", posTheme.id());
+        }
 
         config.setProperty("machine.screenmode", comboValue(jcboMachineScreenmode.getSelectedItem()));
-        config.setProperty("machine.ticketsbag", comboValue(jcboTicketsBag.getSelectedItem()));
+        
+        Object selectedLayout = jcboTicketsBag.getSelectedItem();
+        String layoutVal = (selectedLayout instanceof SaleLayoutDefinition def)
+                ? def.id()
+                : comboValue(selectedLayout);
+        config.setProperty("machine.ticketsbag", layoutVal);
+        
         config.setProperty("till.hideinfo", Boolean.toString(jchkHideInfo.isSelected()));         
         config.setProperty("start.logo", jtxtStartupLogo.getText());
         config.setProperty("start.text", jtxtStartupText.getText());
@@ -183,26 +198,10 @@ public class JPanelConfigGeneral extends javax.swing.JPanel implements PanelConf
 
     private void changeLAF() {
         LOGGER.info("Current LaF: "+UIManager.getLookAndFeel().getClass().getName());
-        final LafInfo laf = (LafInfo) jcboLAF.getSelectedItem();
-        if (laf != null && !laf.getClassName().equals(UIManager.getLookAndFeel().getClass().getName())) {
-            // The selected look and feel is different from the current look and feel.
-            SwingUtilities.invokeLater(() -> {
-                try {
-                    String lafname = laf.getClassName();
-                    Object laf1 = Class.forName(lafname).getDeclaredConstructor().newInstance();
-                    if (laf1 instanceof LookAndFeel) {
-                        UIManager.setLookAndFeel((LookAndFeel) laf1);
-                    }
-                    SwingUtilities.updateComponentTreeUI(JPanelConfigGeneral.this.getTopLevelAncestor());
-                }catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException | NoSuchMethodException | SecurityException | IllegalArgumentException | InvocationTargetException ex) {
-                    LOGGER.log(Level.WARNING, "Cannot set Look and Feel", ex);
-                }
-            });
-        }
-        LOGGER.info("Change LaF: "+UIManager.getLookAndFeel().getClass().getName());
+        POSThemeDefinition theme = (POSThemeDefinition) jcboLAF.getSelectedItem();
+        POSThemeManager.applyTheme(theme.id());
+        
     }
-
-    
     /** This method is called from within the constructor to
      * initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is

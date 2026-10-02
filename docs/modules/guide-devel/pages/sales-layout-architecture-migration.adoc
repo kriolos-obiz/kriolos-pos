@@ -1,0 +1,507 @@
+= Sales View Architecture Migration: Classical vs. Modern SPI Architecture
+:navtitle: Sales Layout Architecture Migration
+:keywords: sales, layout, architecture, spi, jpanelticket, modern, flexlayout, extensibility
+
+This document details the architectural evolution of the KriolOS POS Sales View, contrasting the legacy **Classical Architecture** (`JPanelTicket` monolith) with the **Modern SPI Architecture**, and establishing the decoupling roadmap for dynamic runtime layout discovery.
+
+---
+
+== 1. Executive Summary & Motivation
+
+The POS Sales View is the most mission-critical interface in KriolOS POS. Historically, the entire sales screen was anchored to a monolithic 3,300-line class, `JPanelTicket`, which combined business transaction logic, NetBeans `.form` visual components, a fixed numeric keypad, and an embedded legacy product catalog (`JCatalog`).
+
+As new touch-optimized, responsive interfaces were developed (such as **Modern One** and **Modern Two**), integrating them into the existing framework created severe architectural friction:
+* Subclasses were forced to inherit the entire legacy UI, only to discard it at runtime using `removeAll()`.
+* Leaky abstraction conditionals like `if (isModernMode())` proliferated across multiple base classes.
+* Adding a new sales layout required modifying hardcoded classes in at least five separate locations.
+
+This migration resolves these limitations by:
+1. **Decoupling the Classical Architecture**: Isolating `JPanelTicket` and `JCatalog` to legacy layouts only.
+2. **Establishing the Modern Architecture**: Treating full-screen, self-contained layouts as first-class citizens.
+3. **Introducing Java SPI Extensibility**: Implementing a Service Provider Interface pattern (identical to `POSThemeManager`) allowing runtime layout discovery and safe fallback handling.
+
+---
+
+== 2. Classical Architecture (Arquitetura Clássica)
+
+=== 2.1 Classical Component Structure
+
+In the original architecture inherited from Openbravo POS / uniCenta, `JPanelTicket` served as both the base controller and the concrete Swing container for all sales operations:
+
+[source]
+----
++-------------------------------------------------------------------+
+|                           JPanelTicket                            |
+|  (Extends JPanel, implements JPanelView, TicketsEditor)           |
+|                                                                   |
+|  +-------------------------------------------------------------+  |
+|  | m_jPanelBag (BorderLayout.LINE_START)                       |  |
+|  | -> JTicketsBag.getBagComponent() [Tabs Toolbar / Floor Map] |  |
+|  +-------------------------------------------------------------+  |
+|                                                                   |
+|  +--------------------------------+ +--------------------------+  |
+|  | CardLayout ("ticket" / "null") | | Fixed Keypad & Actions   |  |
+|  | - Table Ticket Lines           | | - m_jNumberKeys          |  |
+|  | - Tax & Total Labels           | | - Scale / Barcode input  |  |
+|  +--------------------------------+ +--------------------------+  |
+|                                                                   |
+|  +-------------------------------------------------------------+  |
+|  | m_jPanelCatalog (BorderLayout.CENTER of bottom panel)       |  |
+|  | -> getSouthComponent() [Instantiates JCatalog]              |  |
+|  +-------------------------------------------------------------+  |
++-------------------------------------------------------------------+
+----
+
+=== 2.2 Classical Layout Variants (`JTicketsBag`)
+
+Under the Classical Architecture, layout variants only swapped the top toolbar or table selector, while the rest of `JPanelTicket` remained static:
+
+[cols="1,2,3",options="header"]
+|===
+| Layout Mode | Implementation Class | Role in Classical Architecture
+| `simple`
+| `JTicketsBagSimple`
+| Single-ticket mode; displays a minimal toolbar in `m_jPanelBag`.
+| `standard`
+| `JTicketsBagShared`
+| Multi-ticket tabbed workflow; renders tab buttons (`1`, `2`, `3`...) in `m_jPanelBag`.
+| `restaurant`
+| `JTicketsBagRestaurantMap`
+| Floor map workflow; switches CardLayout to `"null"` to display table floor layout when no ticket is active.
+|===
+
+=== 2.3 Architectural Flaws of the Classical Pattern
+
+1. **Monolithic God Class**: `JPanelTicket.java` exceeds 3,300 lines of mixed concerns: database persistence, hardware printing, dialog management, keyboard event routing, and visual layout.
+2. **Forced GUI Construction & Destruction**: When non-classical layouts were instantiated, `JPanelTicket.initComponents()` still built the entire NetBeans visual form, only for `initComponentFromChild()` to call:
++
+[source,java]
+----
+if (isModernMode()) {
+    removeAll(); // Brute-force GUI purge
+    setLayout(new BorderLayout());
+    add(m_ticketsbag.getNullComponent(), BorderLayout.CENTER);
+    revalidate();
+    return;
+}
+----
+3. **Leaky Catalog Coupling**: `JPanelTicketSales` inherited `CatalogSelector m_cat` and forced `JCatalog` instantiation inside `getSouthComponent()`, requiring defensive guards (`if (isModernMode()) return new JPanel();`) in five separate methods.
+4. **Rigid Modification Point**: Adding any layout required updating `SaleLayout.java`, `JTicketsBag.java`, `JPanelTicketSales.java`, `JPanelTicket.java`, and `JPanelConfigGeneral.java`.
+
+---
+
+== 3. Decoupling Strategy: Isolating the Legacy Base
+
+To eliminate the `removeAll()` hack and `isModernMode()` guards, the Classical Architecture is cleanly decoupled from the entry-point view:
+
+[source]
+----
+                   +-------------------------------+
+                   |       JPanelTicketSales       |  (Application Entry Point / Task)
+                   |  (Clean View Host Coordinator)|
+                   +---------------+---------------+
+                                   |
+         +-------------------------+-------------------------+
+         | (if legacy layout)                                | (if modern / standalone layout)
+         v                                                   v
++-------------------------------+             +-------------------------------+
+|      JPanelTicketClassic      |             |       ModernSalesLayout       |
+|    (extends JPanelTicket)     |             |   (ModernOne, ModernTwo...)   |
+|                               |             |                               |
+| - Hosts JCatalog              |             | - Zero JPanelTicket baggage   |
+| - Hosts Fixed Keypad          |             | - Responsive FlexLayout grid  |
+| - Retains classic bag tabs    |             | - Self-contained Touch UI     |
++-------------------------------+             +-------------------------------+
+----
+
+=== Key Improvements:
+* **`JPanelTicket` Becomes Purely Legacy**: All `isModernMode()` branches and `removeAll()` hacks are deleted from `JPanelTicket`. It serves solely as the base class for classic sales (`JPanelTicketClassic`) and ticket editing (`JPanelTicketEdits`).
+* **`JCatalog` Isolation**: `JCatalog` is instantiated only by `JPanelTicketClassic`. Modern layouts never touch `JCatalog` or allocate its resources.
+* **`JPanelTicketSales` as a Coordinator**: Acts as a lightweight host (`JPanelView`, `TicketsEditor`) that dynamically embeds the selected layout.
+
+---
+
+== 4. Modern Architecture (Arquitetura Moderna)
+
+=== 4.1 Modern Design Principles
+
+The Modern Architecture departs completely from fixed-size, legacy NetBeans forms, embracing:
+* **Responsive Proportions**: Flex-based dual-pane layouts adapting dynamically to any resolution (1024x768 touch screens to 4K displays).
+* **Touch-First Aesthetics**: High-contrast, clean rectangular cards with subtle border rounding (`JButton.buttonType = "roundRect"`), eliminating dated 3D bevels and oval pills.
+* **Consolidated Checkout Zone**: Fast visual scanning of digital receipt totals paired with prominent payment triggers.
+* **Dedicated Action Workspace**: Centralized operational controls in a dedicated action panel, keeping the receipt table clean and legible.
+
+=== 4.2 Modern Two Architecture Overview
+
+`ModernTwoSalesLayout` represents the flagship modern layout, structured in three distinct vertical tiers:
+
+```
++---------------------------------------------------------------------------------+
+| PAGE_START: Operator Status Banner ("Caixa Disponível: Operador 01")             |
++-------------------------------------------------------+-------------------------+
+| CENTER: Main Body (FlexLayout - 70% / 30% Split)                                |
+|                                                       |                         |
+| ModernTwoCatalogPane (70% Width)                      | ModernTwoTicketPane     |
+| - Global search bar with clear button                 | (30% Width)             |
+| - Horizontal category filter pills                    | - Digital receipt table |
+| - Responsive product wrapping cards grid              | - Subtotal, Tax, Total  |
+|   (ModernTwoProductCard - arc: 8)                     | - Large PAGAR (F12)     |
+|                                                       |                         |
++-------------------------------------------------------+-------------------------+
+| SOUTH: ModernTwoActionPane (Consolidated Operational Workspace)                 |
+| Row 1: [Cliente: Consumidor Final] [0] | [Entrada (F3)] [Saída (F4)] [Fechar]   |
+| Row 2: [-1] [+1] [Editar] [Remover]    | [Limpar] [Suspender] [Desconto]        |
++---------------------------------------------------------------------------------+
+```
+
+=== 4.3 Component Inventory (`com.openbravo.pos.sales.modern.two`)
+
+[cols="1,2,3",options="header"]
+|===
+| Component Class | Role | Visual & Technical Specifications
+| `ModernTwoSalesLayout`
+| Root Sales View
+| Extends `JTicketsBag`, implements `JPanelView`, `TicketsEditor`. Manages 70/30 FlexLayout split and global shortcuts (`F3`, `F4`, `F12`).
+| `ModernTwoTicketPane`
+| Digital Receipt
+| Right-hand pane (~30% width). Contains only the ticket item table, financial tax breakdown, and primary `PAGAR (F12)` checkout button.
+| `ModernTwoCatalogPane`
+| Product Catalog
+| Left-hand pane (~70% width). Features real-time search filtering, category pills, and `WrapLayout` product tile wrapping.
+| `ModernTwoProductCard`
+| Product Card Tile
+| Fixed `150x95` rectangular card with `arc: 8` rounded corners, price emphasis, and auto-fit multi-line typography.
+| `ModernTwoActionPane`
+| Action Workspace
+| Two-row southern toolbar (`BorderLayout.SOUTH`) housing customer selector, parked orders counter, cash operations (`Entrada`, `Saída`, `Fechar`), line modifiers, and ticket actions.
+| `ModernTwoCategoryBar`
+| Category Selector
+| Horizontal scrollable bar with FlatLaf styled category filter buttons.
+|===
+
+---
+
+== 5. Target Architecture: Java SPI Layout Extensibility
+
+=== 5.1 Parity with POSTheme Architecture
+
+To ensure zero hardcoding and support external layout plugins, the sales layout system adopts the identical SPI design pattern used by `POSThemeManager`:
+
+[cols="1,2,2",options="header"]
+|===
+| Role | Theme SPI (Reference) | Sales Layout SPI (Target)
+| **Metadata Record**
+| `POSThemeDefinition`
+| `SaleLayoutDefinition`
+| **SPI Interface**
+| `POSThemeFactory`
+| `SaleLayoutFactory`
+| **Registry Manager**
+| `POSThemeManager`
+| `SaleLayoutManager`
+| **Service Declaration**
+| `META-INF/services/...POSThemeFactory`
+| `META-INF/services/...SaleLayoutFactory`
+| **UI Config Renderer**
+| `POSThemeDefinitionRenderer`
+| `SaleLayoutDefinitionRenderer`
+|===
+
+=== 5.2 Class Diagram: SPI Sales Layout Architecture
+
+```mermaid
+classDiagram
+    direction TB
+    class SaleLayoutDefinition {
+        <<record>>
+        +String id
+        +String name
+        +String description
+        +boolean fullView
+        +boolean restaurant
+    }
+
+    class SaleLayoutFactory {
+        <<interface, SPI>>
+        +boolean hasLayout(String layoutId)
+        +Collection~SaleLayoutDefinition~ getAvailableLayouts()
+        +JTicketsBag createLayout(String layoutId, AppView app, TicketsEditor panelticket)
+        +boolean isFullView(String layoutId)
+        +boolean isRestaurantLayout(String layoutId)
+    }
+
+    class SaleLayoutManager {
+        <<registry singleton>>
+        -ServiceLoader~SaleLayoutFactory~ FACTORY_LOADER
+        +Collection~SaleLayoutDefinition~ getAllAvailableLayouts()
+        +Optional~SaleLayoutDefinition~ getLayoutDefinition(String layoutId)
+        +JTicketsBag createLayout(String layoutId, AppView app, TicketsEditor panelticket)
+        +boolean isFullView(String layoutId)
+        +boolean isRestaurant(String layoutId)
+        -JTicketsBag applyFallback(AppView app, TicketsEditor panelticket)
+        +void reload()
+    }
+
+    class CoreSaleLayoutFactory {
+        <<SPI Provider>>
+        simple
+        standard
+        restaurant
+    }
+
+    class ModernSaleLayoutFactory {
+        <<SPI Provider>>
+        modern_one
+        modern_two
+    }
+
+    SaleLayoutFactory <|.. CoreSaleLayoutFactory
+    SaleLayoutFactory <|.. ModernSaleLayoutFactory
+    SaleLayoutManager o-- SaleLayoutFactory : discovers via ServiceLoader
+    SaleLayoutManager ..> SaleLayoutDefinition
+```
+
+=== 5.3 SPI Contract Specification
+
+==== 1. `SaleLayoutDefinition`
+[source,java]
+----
+package com.openbravo.pos.sales.layout;
+
+/**
+ * Immutable metadata representing a discovered Sales Layout.
+ *
+ * @param id          Unique token (e.g. "modern_two", "standard").
+ * @param name        Human-readable label for settings UI (e.g. "Modern Two (Flex Touch)").
+ * @param description Detailed capabilities summary.
+ * @param fullView    True if layout provides a complete standalone UI; false if it docks into the legacy ticket frame.
+ * @param restaurant  True if layout supports table floor mapping workflows.
+ */
+public record SaleLayoutDefinition(
+        String id,
+        String name,
+        String description,
+        boolean fullView,
+        boolean restaurant) {
+
+    public SaleLayoutDefinition {
+        if (id == null || name == null) {
+            throw new IllegalArgumentException("Layout ID and Name tokens cannot be null.");
+        }
+    }
+}
+----
+
+==== 2. `SaleLayoutFactory`
+[source,java]
+----
+package com.openbravo.pos.sales.layout;
+
+import com.openbravo.pos.forms.AppView;
+import com.openbravo.pos.sales.JTicketsBag;
+import com.openbravo.pos.sales.TicketsEditor;
+import java.util.Collection;
+
+/**
+ * SPI provider contract for sales layout registration and instantiation.
+ */
+public interface SaleLayoutFactory {
+
+    boolean hasLayout(String layoutId);
+
+    Collection<SaleLayoutDefinition> getAvailableLayouts();
+
+    JTicketsBag createLayout(String layoutId, AppView app, TicketsEditor panelticket);
+
+    default boolean isFullView(String layoutId) {
+        return false;
+    }
+
+    default boolean isRestaurantLayout(String layoutId) {
+        return false;
+    }
+}
+----
+
+==== 3. `SaleLayoutManager`
+[source,java]
+----
+package com.openbravo.pos.sales.layout;
+
+import com.openbravo.pos.forms.AppView;
+import com.openbravo.pos.sales.JTicketsBag;
+import com.openbravo.pos.sales.TicketsEditor;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+/**
+ * Global Service Registry aggregating all discovered SaleLayoutFactory providers.
+ */
+public final class SaleLayoutManager {
+
+    private static final Logger LOGGER = Logger.getLogger(SaleLayoutManager.class.getName());
+    private static final ServiceLoader<SaleLayoutFactory> FACTORY_LOADER = 
+            ServiceLoader.load(SaleLayoutFactory.class);
+
+    private SaleLayoutManager() {}
+
+    public static Collection<SaleLayoutDefinition> getAllAvailableLayouts() {
+        Collection<SaleLayoutDefinition> all = new ArrayList<>();
+        for (SaleLayoutFactory factory : FACTORY_LOADER) {
+            all.addAll(factory.getAvailableLayouts());
+        }
+        return Collections.unmodifiableCollection(all);
+    }
+
+    public static Optional<SaleLayoutDefinition> getLayoutDefinition(String layoutId) {
+        return getAllAvailableLayouts().stream()
+                .filter(def -> def.id().equalsIgnoreCase(layoutId))
+                .findFirst();
+    }
+
+    public static JTicketsBag createLayout(String layoutId, AppView app, TicketsEditor panelticket) {
+        if (layoutId != null) {
+            for (SaleLayoutFactory factory : FACTORY_LOADER) {
+                if (factory.hasLayout(layoutId)) {
+                    try {
+                        return factory.createLayout(layoutId, app, panelticket);
+                    } catch (Exception ex) {
+                        LOGGER.log(Level.SEVERE, "Failed instantiating layout: " + layoutId, ex);
+                    }
+                }
+            }
+        }
+        LOGGER.log(Level.WARNING, "Requested layout ''{0}'' not found. Applying safety baseline.", layoutId);
+        return applyFallback(app, panelticket);
+    }
+
+    public static boolean isFullView(String layoutId) {
+        return getLayoutDefinition(layoutId).map(SaleLayoutDefinition::fullView).orElse(false);
+    }
+
+    public static boolean isRestaurant(String layoutId) {
+        return getLayoutDefinition(layoutId).map(SaleLayoutDefinition::restaurant).orElse(false);
+    }
+
+    private static JTicketsBag applyFallback(AppView app, TicketsEditor panelticket) {
+        // Attempt standard, then simple, then first available
+        for (String fallbackId : List.of("standard", "simple")) {
+            for (SaleLayoutFactory factory : FACTORY_LOADER) {
+                if (factory.hasLayout(fallbackId)) {
+                    return factory.createLayout(fallbackId, app, panelticket);
+                }
+            }
+        }
+        throw new IllegalStateException("CRITICAL: No sales layout provider found in classpath.");
+    }
+}
+----
+
+---
+
+== 6. Decoupling Modern Layouts from Legacy `JTicketsBag`
+
+=== 6.1 `JTicketsBag` is Purely Classic/Legacy
+
+In the legacy Openbravo / uniCenta architecture, `JTicketsBag` was an abstract Swing panel coupled to the top toolbar of `JPanelTicket` via `getBagComponent()` and `getNullComponent()`.
+
+Early modern layouts initially inherited `JTicketsBag` as a convenient bootstrap. However, this introduced artificial legacy coupling. Modern layouts are self-contained full-screen views that do not dock into the legacy toolbar.
+
+Modern layouts have now been completely decoupled:
+* **Base Class**: `ModernOne` and `ModernTwoSalesLayout` now extend `javax.swing.JPanel` directly instead of `JTicketsBag`.
+* **Contracts**: They implement `JPanelView` and `TicketsEditor` directly.
+* **No Feature Loss**: All features (receipt table, tax calculations, payments, customer assignment, line editing, barcodes, and parking) remain 100% functional.
+* **Legacy Scope**: `JTicketsBag` is now exclusively utilized by the Classic/Legacy layouts (`simple`, `standard`, `restaurant`).
+
+=== 6.2 Future Extraction Roadmap: `kriolos-opos-ui-modern`
+
+To avoid ripple effects across shared modal dialogs (payment receipts, line edits, customer search), Modern layouts remain co-located in `kriolos-opos-app` for now. When shared modal panels are migrated to `opos-ui-modal`, extracting `kriolos-opos-ui-modern` will be a zero-friction packaging step:
+
+[source]
+----
+kriolos-pos/
+├── kriolos-opos-ui-api/          <- Hosts SaleLayoutDefinition, SaleLayoutFactory, SaleLayoutManager
+├── kriolos-opos-app/             <- Core application (CoreSaleLayoutFactory, Classic Catalog, JTicketsBag)
+└── kriolos-opos-ui-modern/       <- Future extracted module (<scope>runtime</scope>)
+    ├── ModernOne.java
+    ├── ModernTwoSalesLayout.java
+    ├── ModernTouchCatalog.java
+    └── META-INF/services/com.openbravo.pos.ui.api.sales.SaleLayoutFactory
+----
+
+---
+
+== 7. Catalog SPI Architecture: Decoupling JCatalog & Supporting Modern Catalogs
+
+=== 7.1 Overview & Motivation
+
+Parallel to Sales Layouts, the POS Catalog was historically coupled to the concrete Swing class `JCatalog` (a button-based catalog with vertical tabs). While an interface named `CatalogSelector` existed in `kriolos-opos-app`, `JCatalog` was hardcoded with `new JCatalog(app)` across multiple screens (`JPanelTicketSales`, `JTicketCatalogLines`, `StockManagement`, `StockDiaryEditor`), and Modern layouts did not implement or reuse the catalog abstraction.
+
+To achieve clean decoupling, the catalog subsystem has also been elevated to a Java SPI architecture in `kriolos-opos-ui-api`:
+
+[cols="1,2,2",options="header"]
+|===
+| Artifact | Package | Responsibilities
+| `kriolos-opos-ui-api`
+| `com.openbravo.pos.ui.api.catalog`
+| * `CatalogSelector`: Base interface for all catalog visual selectors
+* `CatalogDefinition`: Immutable metadata record (`id`, `name`, `description`)
+* `CatalogFactory`: Service Provider Interface for catalog creation
+* `CatalogManager`: SPI registry, discovery, and safety fallback
+
+| `kriolos-opos-app`
+| `com.openbravo.pos.catalog`
+| * `ClassicCatalogFactory`: SPI provider supplying `"classic"` (`JCatalog`)
+* `CatalogSelector`: `@Deprecated` backward-compatible subinterface
+
+| `kriolos-opos-app`
+| `com.openbravo.pos.sales.modern`
+| * `ModernTouchCatalog`: Modern touch-first catalog implementing `CatalogSelector`
+* `ModernCatalogFactory`: SPI provider supplying `"modern"` (`ModernTouchCatalog`)
+|===
+
+=== 7.2 Type-Safe Service Resolution with `app.getBean(Class)`
+
+Modern layouts and catalogs leverage type-safe domain logic lookup via `app.getBean(Class<T>)`, replacing legacy string-based lookups and unchecked type casts:
+
+[source,java]
+----
+// Modern Type-Safe Lookup:
+DataLogicPIM dlPim = app.getBean(DataLogicPIM.class);
+DataLogicSales dlSales = app.getBean(DataLogicSales.class);
+DataLogicReceipts dlReceipts = app.getBean(DataLogicReceipts.class);
+----
+
+=== 7.3 Interoperability Matrix
+
+With the Catalog SPI in place:
+* **Classic Sales Layouts** (`simple`, `standard`, `restaurant`) utilize `CatalogManager.createDefaultCatalog(app)` to obtain the classic button catalog (`JCatalog`).
+* **Existing Ticket Edits** (`JPanelTicketEdits`) and Inventory screens continue using `CatalogSelector` without depending directly on `JCatalog` construction.
+* **Modern Catalogs** (`ModernTouchCatalog`) implement the identical `CatalogSelector` contract, enabling them to be embedded across different sales layouts.
+
+---
+
+== 8. POSButtonFactory & Touch Ergonomics
+
+=== 8.1 Ergonomic Touch Standards
+
+To address undersized buttons in touch POS environments, `POSButtonFactory` standardizes button construction across all modern layouts:
+
+* **Sizing Variants (`ButtonSize`)**:
+  ** `MEDIUM`: 32px height, 14px font (dense toolbars, header pills).
+  ** `LARGE`: 40px height, 15px font (line modifiers, secondary action bars).
+  ** `EXTRA_LARGE`: 48px height, 16px font (standard touch action pane controls).
+  ** `MASSIVE`: 56px height, 18px font (prominent payment & checkout CTA).
+
+* **Zero-Dependency Vector Glyphs**: Font-based Unicode symbols (`👤`, `⏸`, `📥`, `📤`, `🔒`, `➖`, `➕`, `✏️`, `🗑️`, `⌫`, `🏷️`, `💳`, `📋`) providing immediate visual scanning without third-party asset jars.
+
+* **Keyboard Accessibility & Mnemonics**:
+  ** Standardized `Alt+<Key>` mnemonics automatically annotated into tooltips (e.g., `Alt+C` for Customer, `Alt+F` for Close Cash, `Alt+P` / `F12` for Pay).
+  ** Dynamic orientation (`applyComponentOrientation`) supporting both LTR and RTL locales natively.
+  ** Touch focus suppression (`isFocusable = false`) to ensure barcode scanners and inputs maintain persistent focus.
+
+* **Cross-LaF Compatibility**:
+  ** Uses `JButton.buttonType = "roundRect"` rather than version-specific styling strings, guaranteeing compatibility across FlatLaf 2.x and higher.
+
+

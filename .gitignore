@@ -18,3 +18,5 @@
 /dev/
 **/derby.log
 *.code-workspace
+/modal-screenshots-baseline/
+/**/.asciidoctor/

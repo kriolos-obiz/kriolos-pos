@@ -17,7 +17,7 @@ package com.openbravo.pos.inventory;
 
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.gui.ComboBoxValModel;
-import com.openbravo.data.gui.JMessageDialog;
+import com.openbravo.data.gui.JMessagePanel;
 import com.openbravo.data.gui.MessageInf;
 import com.openbravo.data.user.DirtyManager;
 import com.openbravo.data.user.EditorRecord;
@@ -608,7 +608,7 @@ public final class CategoriesEditor extends JPanel implements EditorRecord {
         }
         catch (BasicException ex) {
             LOGGER.log(Level.SEVERE, "Exception adding/delete products to catalog categoryI: " + categoryId, ex);
-            JMessageDialog.showMessage(this, new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.cannotexecute"), ex));
+            JMessagePanel.showMessage(this, new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.cannotexecute"), ex));
         }
 
 
@@ -627,7 +627,7 @@ public final class CategoriesEditor extends JPanel implements EditorRecord {
                     uuidString, JOptionPane.INFORMATION_MESSAGE);
 
             /*
-            JMessageDialog.showMessage(this, 
+            JMessagePanel.showMessage(this, 
                     new MessageInf(MessageInf.SGN_SUCCESS, AppLocal.getIntString("message.cannotexecute"), uuidString));
              */
         }

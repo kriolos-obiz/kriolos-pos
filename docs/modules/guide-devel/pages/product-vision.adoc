@@ -7,12 +7,23 @@
 
 === UI & Business Logic
 
-* Evaluate Pattern: Mode View ViewModel(MVVM), Model View Control(MVC)
-* Compose for Desktop (Kolin DSL): 
-** https://github.com/JetBrains/compose-jb
-** https://github.com/JetBrains/compose-jb/blob/master/tutorials/Swing_Integration
-* OpenJX (XML)
-** Supported on: Netbeans Platform 
+Evaluate Pattern: 
+
+* Model View ViewModel(MVVM)
+* Model View Control(MVC)
+
+Java Swing
+
+* Long Term Technology
+
+JavaFX
+
+Compose for Desktop (Kolin DSL): 
+
+* https://github.com/JetBrains/compose-jb
+* https://github.com/JetBrains/compose-jb/blob/master/tutorials/Swing_Integration
+
+
 
 
 === Context

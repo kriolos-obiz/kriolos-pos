@@ -14,7 +14,7 @@ import java.awt.Frame;
 import java.awt.event.WindowListener;
 
 /**
- * Reusable Action Driver for controlling the Main Application Window (JRootFrame).
+ * Reusable Action Driver for controlling the Main Application Window (WindowShell).
  */
 public class MainWindowAction {
 
@@ -32,10 +32,10 @@ public class MainWindowAction {
     }
 
     /**
-     * Waits for and attaches to the main JFrame.
+     * Waits for and attaches to the main JFrame (WindowShell).
      */
     public FrameFixture attach(long timeoutMs) {
-        LOGGER.log(Level.INFO, "Waiting for main JRootFrame to appear...");
+        LOGGER.log(Level.INFO, "Waiting for main WindowShell to appear...");
         windowFixture = WindowFinder.findFrame(new GenericTypeMatcher<JFrame>(JFrame.class) {
             @Override
             protected boolean isMatching(JFrame frame) {

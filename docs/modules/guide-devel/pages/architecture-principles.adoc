@@ -439,19 +439,99 @@ git checkout -b feature/decouple-<module-name>
 * All file creations, code diffs, and spec assets are committed to this branch.
 * Branch is *never* merged until Phase E verification is complete.
 
-=== 14.2 Stage-Gate SDLC — Mandatory Phases
+=== 14.2 Agile SDLC Framework — Mandatory Iterative Phases (Java Swing Specialized)
 
-[cols="^1,2,3", options="header"]
+Modern desktop applications combining rich Java Swing presentation with Hexagonal Domain Architecture require an industry-standard Agile lifecycle. This lifecycle bridges Agile/Scrum single-piece flow and Test-Driven Development (TDD) with desktop-specific constraints: Swing Event Dispatch Thread (EDT) safety, NetBeans GUI Builder preservation, headless CI/CD execution, and component testability via Rule 7.2 URN anchoring.
+
+Every user story or refactoring increment must progress through these six mandatory phases:
+
+[cols="^1,2,2,3", options="header"]
 |===
-| Phase | Name | Deliverable
-| A | Analysis & Discovery | Workspace scan, legacy pathway map, structural risk flags
-| B | Domain & Spec Design | Java 17 Records/Services/Ports + Antora AsciiDoc + JSON Schema (no legacy code touched)
-| C | Adapter Implementation | Diff-only Swing adapter updates, `initDomainAdapters()`, `setName()` table
-| D | Testing Matrix | JUnit 5 domain tests + automation screenshot integration boilerplate
-| E | Verification & Merge Readiness | Compilation safety checklist + concrete `git` command sequence for safe merge review
+| Phase | Stage Name | Agile Deliverable | Desktop & Swing Focus
+| 1 | Discovery & Story Refinement | User Story with Gherkin ACs + Definition of Done (DoD) | UI component & state audit, EDT latency assessment, modal dialog inventory
+| 2 | Architectural Contract & Port Design | Pure Java 17 Records/Ports + Rule 7.2 URN Schema | Zero GUI/SQL dependencies in domain, async callback contracts, busy-state specification
+| 3 | Test-First Harness & Automation Setup (TDD) | JUnit 5 Domain Tests + AssertJ-Swing Action Drivers | URN anchoring tests in `ModalPanelUrnAnchoringTest`, EDT isolation, `System.exit` protection
+| 4 | Component Implementation & Adapter Wiring | Swing Panel/Frame + `initDomainAdapters()` | NetBeans GEN blocks untouched, event delegation rule, non-blocking `SwingWorker`, progress indicators
+| 5 | Automated Verification & Visual Quality Gates | Green CI Matrix across JDK 17 to latest | Pure bytecode compilation (`--release 17`), Wayland/X11 non-black frame assertions, test automation suite
+| 6 | Agile Trunk Integration & Retrospective | Atomic PR + Conventional Commit | Single-piece flow (no stacked branches), Strangler Fig verification, known issues log
 |===
 
-CAUTION: Legacy code must *not* be modified until Phase B specifications are reviewed and Phase A risks are resolved.
+==== Phase 1: Discovery & Story Refinement (Backlog Grooming)
+* **User Story Definition**: Express business requirements with explicit Acceptance Criteria using Gherkin syntax (`Given-When-Then`).
+* **Swing Component & State Audit**:
+  - Identify all touched Swing containers (`WindowShell`, `ApplicationShell`, `WordspacePanel`, `AuthenticationPanel`, or dialogs).
+  - Map UI dependencies and couplings to legacy singletons (`AppView`, `AppUserView`, `DataLogicSystem`).
+* **EDT & Latency Risk Assessment**:
+  - Classify every operation: Fast/In-Memory (safe on EDT) vs I/O / Database / Network / Hardware (strictly forbidden on EDT).
+* **Modal Dialog Strategy**:
+  - Identify any legacy blocking `JDialog` or `JOptionPane` calls.
+  - Plan replacement with non-blocking panel-based overlays (`PosUIModal` / `InFrameOverlayModalStrategy`) to prevent EDT deadlocks and enable headless automation.
+
+==== Phase 2: Architectural Contract & Ports/Adapters Design
+* **Pure Domain Model**:
+  - Formulate domain records, value objects, and domain services in `kriolos-opos-domain` using Java 17 constructs.
+  - *Strict Boundary Constraint*: Domain classes must have **zero imports** from `javax.swing.*`, `java.awt.*`, `com.openbravo.pos.forms.*`, or `java.sql.*`.
+* **Port Interfaces & Callbacks**:
+  - Define Driving Ports (invoked by Swing UI) and Driven Ports (implemented by infrastructure).
+  - Define asynchronous callbacks (e.g. `DatabaseActivationCallback`) for multi-step or long-running workflows.
+* **Rule 7.2 URN Anchoring Schema**:
+  - Draft the component identification mapping table following `kriolos:<domain>:<component-or-action>` (e.g. `kriolos:auth:combo-databases`, `kriolos:auth:btn-select-database`).
+* **Asynchronous Busy State Specification**:
+  - Define visual state transitions for UI components: disable triggers, display indeterminate `JProgressBar`, update status text during background processing.
+
+==== Phase 3: Test-First Harness & Automation Driver Construction (TDD / ATDD)
+* **Domain Unit Tests First**:
+  - Create JUnit 5 unit tests verifying happy paths, error boundaries, and `BigDecimal` rounding scales.
+* **URN Anchoring Verification**:
+  - Add test cases to `ModalPanelUrnAnchoringTest` verifying all interactive components expose their Rule 7.2 URNs via `.getName()` before wiring business logic.
+* **Automation Driver / Action Facade**:
+  - Build or enhance reusable action drivers in `kriolos-opos-automation/actions/` (e.g. `DatabaseSelectionAction`, `LoginAction`, `MainWindowAction`) utilizing AssertJ-Swing.
+* **Test Isolation & Headless Safeguards**:
+  - Set `machine.uniqueinstance=false` to prevent singleton port collisions with dev environments.
+  - Wrap application startup with `StartPOS.setExitAction(Runnable)` to prevent `System.exit()` from terminating the test JVM.
+  - Ensure compatibility with virtual display framebuffers (`xvfb`) and in-memory 2D double buffering.
+
+==== Phase 4: Component Implementation & GUI Builder Integrity (Swing Development)
+* **NetBeans Protected Block Rule (Strict)**:
+  - **NEVER** edit code inside `// GEN-BEGIN:initComponents` or `// GEN-END:initComponents` manually.
+  - Structural layout changes belong in the NetBeans visual designer (`.form` file).
+* **Generated Event Handler Delegation Rule**:
+  - Code inside `// GEN-FIRST:event_...` generated handlers MUST ALWAYS delegate immediately to a single private method (e.g. `btnActivateActionPerformed` delegates to `activateSelectedDatabase()`).
+  - Document all extracted methods with comprehensive Javadoc detailing purpose, thread safety, and UI state transitions.
+* **Domain Adapter Wiring (`initDomainAdapters()` / `initPanel()`)**:
+  - Register Rule 7.2 `.setName(...)` URN anchors programmatically outside GEN blocks.
+  - Attach domain listeners and wire presenters.
+* **EDT Concurrency & Asynchronous Execution**:
+  - All database, filesystem, network, or hardware operations must execute off the EDT using `SwingWorker<T, V>` or asynchronous background workers.
+  - UI state mutations must always be dispatched back to the EDT via `SwingUtilities.invokeLater()` or `SwingWorker.done()`.
+* **Real-Time Asynchronous User Feedback**:
+  - Whenever a background operation is initiated, immediately set the UI into a responsive busy state (e.g. show `kriolos:auth:progress-bar`, display status message, disable duplicate action buttons).
+
+==== Phase 5: Automated Verification & Visual Quality Gates (CI/CD Matrix)
+* **JDK 17 Baseline Verification**:
+  - Validate that all code compiles strictly with Java 17 bytecode targets (`<maven.compiler.release>17</maven.compiler.release>`). Never utilize post-17 APIs (e.g. `SequencedCollection`).
+* **Continuous Multi-Tier Verification**:
+  1. `mvn test -pl kriolos-opos-domain` (Unit tests 100% green).
+  2. `mvn test-compile -pl kriolos-opos-app` (Swing application clean build).
+  3. `mvn clean test-compile -f kriolos-opos-automation/pom.xml` (Automation test compilation).
+  4. `mvn test -f kriolos-opos-automation/pom.xml -Dtest=ModalPanelUrnAnchoringTest` (URN verification green).
+* **Framebuffer & Visual Rendering Assertion**:
+  - Autonomous robot tests take visual snapshots and assert non-black dialog/panel rendering (>50% non-black pixels) on Linux/Wayland graphics environments.
+
+==== Phase 6: Agile Trunk-Based Integration, Atomic PR & Retrospective
+* **Single-Piece Flow (No Stacked Branches)**:
+  - Commit all changes to a dedicated feature branch (`feature/<name>`) cut from clean `main`.
+  - Never stack a new feature on top of an unmerged feature branch.
+* **Professional Conventional Commit**:
+  - Use standardized commit syntax: `feat(...)`, `fix(...)`, `refactor(...)`, `test(...)`, `docs(...)`.
+  - Include structured bullet points detailing architectural rationale, component changes, and URNs.
+* **Atomic Pull Request & Merge**:
+  - Submit Pull Request to `main`. Ensure all automated GitHub Actions CI matrix checks pass.
+  - Squash and merge into `main`.
+* **Clean Main Synchronization**:
+  - Run `git checkout main && git pull origin main` before starting the next feature branch.
+* **Defect & Retrospective Tracking**:
+  - Record any platform-specific quirks (e.g. Wayland compositor rendering issues, X11 focus traps) in `docs/modules/guide-devel/pages/troubleshooting-known-issues.adoc`.
 
 === 14.3 Agile Trunk-Based Integration Protocol (Atomic PR & Merge)
 

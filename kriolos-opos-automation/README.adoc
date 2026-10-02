@@ -14,7 +14,7 @@ toc::[]
 
 === What It Does
 
-* **Automated Application Boot**: Programmatically launches `StartPOS.main()` within an isolated test harness.
+* **Automated Application Boot**: Programmatically launches `BootstrapPOS.main()` within an isolated test harness.
 * **UI Robot Interaction**:
 ** Discovers and clicks operator/user login buttons (e.g. `Administrator`).
 ** Enters credentials / submits authentication.
@@ -43,7 +43,7 @@ kriolos-opos-automation/
     ├── ScreenshotHelper.java           <-- Wayland-safe in-memory Swing PNG snapshot engine
     └── actions/                        <-- Reusable UI Drivers / Robot Action Facades
         ├── DatabaseSelectionAction.java <-- Multi-database selection dialog handler
-        ├── MainWindowAction.java        <-- JRootFrame lifecycle and window sizing
+        ├── MainWindowAction.java        <-- WindowShell lifecycle and window sizing
         ├── LoginAction.java             <-- Operator selection & password dialog
         ├── MenuNavigationAction.java    <-- Side menu navigation & view switching
         ├── NavigationHistoryAction.java <-- Back/Forward navigation buttons & URN assertion
@@ -208,7 +208,7 @@ After test execution, all recordings and milestone snapshots are saved under `ta
 | Full video recording of the Swing session (H.264 / 25 fps).
 
 | `.../screenshots/*_01_app_started.png`
-| Snapshot taken immediately after `StartPOS` initializes and displays `JRootFrame`.
+| Snapshot taken immediately after `BootstrapPOS` initializes and displays `WindowShell`.
 
 | `.../screenshots/*_02_user_logged_in.png`
 | Snapshot after clicking operator button and completing authentication.

@@ -28,7 +28,7 @@ public class SessionDBDerby implements SessionDB {
      */
     @Override
     public String TRUE() {
-        return "1";
+        return "TRUE";
     }
 
     /**
@@ -37,7 +37,7 @@ public class SessionDBDerby implements SessionDB {
      */
     @Override
     public String FALSE() {
-        return "0";
+        return "FALSE";
     }
 
     /**
