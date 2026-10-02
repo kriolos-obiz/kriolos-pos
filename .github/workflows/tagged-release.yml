@@ -29,7 +29,7 @@ jobs:
 
       # Build docs, classes, jars, and cross-platform packages, excluding jpackage module
       - name: Build Docs and App Package with Maven
-        run: mvn package -Prelease -pl !kriolos-opos-jpackage -DskipTests -B --file pom.xml
+        run: mvn package -Pgen-doc,release -pl !kriolos-opos-jpackage -DskipTests -B --file pom.xml
 
       # Share the compiled state (target folders and jars) with subsequent matrix jobs
       - name: Upload Compiled Workspace Artifacts
@@ -115,11 +115,11 @@ jobs:
       # Build native distribution packages: DEB and RPM on Linux, DMG on macOS, MSI on Windows
       - name: Build Native Distribution Package with Maven (Linux)
         if: matrix.os == 'ubuntu-latest'
-        run: mvn package -Prelease,rpm -pl kriolos-opos-jpackage -B "-Dmaven.main.skip=true" "-Dmaven.test.skip=true" --file pom.xml
+        run: mvn package -Prelease,rpm -pl kriolos-opos-jpackage -am -B "-Dmaven.main.skip=true" "-Dmaven.test.skip=true" --file pom.xml
 
       - name: Build Native Distribution Package with Maven (macOS & Windows)
         if: matrix.os != 'ubuntu-latest'
-        run: mvn package -Prelease -pl kriolos-opos-jpackage -B "-Dmaven.main.skip=true" "-Dmaven.test.skip=true" --file pom.xml
+        run: mvn package -Prelease -pl kriolos-opos-jpackage -am -B "-Dmaven.main.skip=true" "-Dmaven.test.skip=true" --file pom.xml
 
       # Compress standalone application directories using tar.gz on Unix to preserve executable permissions
       - name: Tar Artifact (Unix)

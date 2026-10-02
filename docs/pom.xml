@@ -24,10 +24,7 @@
      
     <profiles>
         <profile>
-            <id>antora</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
+            <id>gen-doc</id>
             <build>
                 <plugins>
                     <plugin>

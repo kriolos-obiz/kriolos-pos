@@ -481,6 +481,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     </reporting>
     <profiles>
         <profile>
+            <id>gen-doc</id>
+        </profile>
+        <profile>
             <id>checkstyle</id>
             <build>
                 <plugins>
