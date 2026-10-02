@@ -182,6 +182,12 @@
                                 <option>-Dawt.useSystemAAFontSettings=on</option>
                                 <option>-Dswing.aatext=true</option>
                                 <option>-Djava.desktop.appName=kriolosPOS</option>
+                                
+                                <option>--add-opens=java.desktop/java.beans=ALL-UNNAMED</option>
+                                <option>--add-opens=java.base/java.io=ALL-UNNAMED</option> 
+                                <option>--add-opens=java.base/java.lang.ref=ALL-UNNAMED</option>
+                                <option>--add-opens=java.base/java.lang=ALL-UNNAMED</option>
+                                <option>--add-opens=java.base/java.util=ALL-UNNAMED</option> 
                             </javaOptions>
                         </configuration>
                     </plugin>
@@ -212,6 +218,12 @@
                                 <option>-Dawt.useSystemAAFontSettings=gasp</option>
                                 <option>-Dswing.aatext=true</option>
                                 <option>-Djava.desktop.appName=kriolosPOS</option>
+                                
+                                <option>--add-opens=java.desktop/java.beans=ALL-UNNAMED</option>
+                                <option>--add-opens=java.base/java.io=ALL-UNNAMED</option> 
+                                <option>--add-opens=java.base/java.lang.ref=ALL-UNNAMED</option>
+                                <option>--add-opens=java.base/java.lang=ALL-UNNAMED</option>
+                                <option>--add-opens=java.base/java.util=ALL-UNNAMED</option> 
                             </javaOptions>
                         </configuration>
                     </plugin>
