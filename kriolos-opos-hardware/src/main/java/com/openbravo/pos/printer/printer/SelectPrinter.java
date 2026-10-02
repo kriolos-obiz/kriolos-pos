@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.openbravo.pos.util;
+package com.openbravo.pos.printer.printer;
 
 import com.openbravo.pos.forms.AppLocal;
 import java.awt.Component;
@@ -195,7 +195,7 @@ public class SelectPrinter extends javax.swing.JDialog {
         );
 
         setSize(new java.awt.Dimension(353, 117));
-        //REMOVED SET LOCATION RELATIVE TO
+        setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 
     private void jcmdOKActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jcmdOKActionPerformed

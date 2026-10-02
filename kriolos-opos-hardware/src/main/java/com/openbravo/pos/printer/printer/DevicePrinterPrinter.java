@@ -23,7 +23,6 @@ import com.openbravo.pos.printer.DevicePrinter;
 import com.openbravo.pos.printer.ticket.BasicTicket;
 import com.openbravo.pos.printer.ticket.BasicTicketForPrinter;
 import com.openbravo.pos.util.ReportUtils;
-import com.openbravo.pos.util.SelectPrinter;
 import java.awt.Component;
 import java.awt.Toolkit;
 import java.awt.image.BufferedImage;

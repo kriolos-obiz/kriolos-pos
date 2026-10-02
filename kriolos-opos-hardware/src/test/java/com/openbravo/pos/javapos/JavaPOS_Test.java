@@ -25,7 +25,7 @@ import jpos.loader.JposServiceLoader;
 
 /**
  *
- * @author psb
+ * @author poolborges
  */
 public class JavaPOS_Test {
 

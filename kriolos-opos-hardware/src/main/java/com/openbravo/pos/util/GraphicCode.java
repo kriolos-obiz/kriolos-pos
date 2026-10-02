@@ -41,7 +41,7 @@ import java.util.logging.Logger;
 
 /**
  * Util class to generate 1D (Baarcode) and 2D(QrCode) 
- * @author psb
+ * @author poolborges
  */
 public class GraphicCode {
 
