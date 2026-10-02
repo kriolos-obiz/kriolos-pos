@@ -27,9 +27,12 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
+      - name: Make mvnw executable
+        run: chmod +x ./mvnw
+
       # Build docs, classes, jars, and cross-platform packages, excluding jpackage module
       - name: Build Docs and App Package with Maven
-        run: mvn package -Pgen-doc,asciidoctor,release -pl !kriolos-opos-jpackage -DskipTests -B --file pom.xml
+        run: ./mvnw package -Pgen-doc,asciidoctor,release -pl !kriolos-opos-jpackage -DskipTests -B --file pom.xml
 
       # Share the compiled state (target folders and jars) with subsequent matrix jobs
       - name: Upload Compiled Workspace Artifacts
@@ -45,6 +48,7 @@ jobs:
           retention-days: 1
 
       - name: Create Release and Upload Docs & Cross-Platform App
+        if: ${{ !env.ACT }}
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
@@ -110,14 +114,18 @@ jobs:
           name: maven-compiled-workspace
           path: .
 
+      - name: Make mvnw executable
+        if: matrix.os != 'windows-latest'
+        run: chmod +x ./mvnw
+
       # Build native distribution packages: DEB and RPM on Linux, DMG on macOS, MSI on Windows
       - name: Build Native Distribution Package with Maven (Linux)
         if: matrix.os == 'ubuntu-latest'
-        run: mvn package -Prelease,rpm -pl kriolos-opos-jpackage -am -B "-Dmaven.main.skip=true" "-Dmaven.test.skip=true" --file pom.xml
+        run: ./mvnw package -Prelease,rpm -pl kriolos-opos-jpackage -am -B "-Dmaven.main.skip=true" "-Dmaven.test.skip=true" --file pom.xml
 
       - name: Build Native Distribution Package with Maven (macOS & Windows)
         if: matrix.os != 'ubuntu-latest'
-        run: mvn package -Prelease -pl kriolos-opos-jpackage -am -B "-Dmaven.main.skip=true" "-Dmaven.test.skip=true" --file pom.xml
+        run: ./mvnw package -Prelease -pl kriolos-opos-jpackage -am -B "-Dmaven.main.skip=true" "-Dmaven.test.skip=true" --file pom.xml
 
       # Compress standalone application directories using tar.gz on Unix to preserve executable permissions
       - name: Tar Artifact (Unix)
@@ -148,6 +156,7 @@ jobs:
 
       # Upload both the standalone compressed images and the native system installers to the GitHub Release
       - name: Upload Binaries to Release
+        if: ${{ !env.ACT }}
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
