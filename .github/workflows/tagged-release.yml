@@ -27,9 +27,9 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      # Build everything: docs, classes, jars, and cross-platform packages using profile 'release'
+      # Build docs, classes, jars, and cross-platform packages, excluding jpackage module
       - name: Build Docs and App Package with Maven
-        run: mvn package -Pdocs-gen,release -B --file pom.xml
+        run: mvn package -Prelease -pl !kriolos-opos-jpackage -DskipTests -B --file pom.xml
 
       # Share the compiled state (target folders and jars) with subsequent matrix jobs
       - name: Upload Compiled Workspace Artifacts
