@@ -288,6 +288,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                             <key>java.desktop.appName</key>
                             <value>kriolosPOS</value>
                         </systemProperty>
+                        <systemProperty>
+                            <key>awt.appname</key>
+                            <value>kriolosPOS</value>
+                        </systemProperty>
                     </systemProperties>
                 </configuration>
                 <dependencies>
