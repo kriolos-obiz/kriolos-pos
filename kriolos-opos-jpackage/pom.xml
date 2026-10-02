@@ -29,11 +29,27 @@
         <pluginManagement>
             <plugins>
                 <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-dependency-plugin</artifactId>
+                    <executions>
+                        <execution>
+                            <id>copy-dependencies</id>
+                            <phase>package</phase>
+                            <goals>
+                                <goal>copy-dependencies</goal>
+                            </goals>
+                            <configuration>
+                                <includeScope>runtime</includeScope>
+                                <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
                     <groupId>org.panteleyev</groupId>
                     <artifactId>jpackage-maven-plugin</artifactId>
                     <executions>
-
-                        <!-- Execution 1: Standalone Application Directory (App Image) -->
+                        <!-- Execution 1: Standalone Application Directory (App Image) without license flag -->
                         <execution>
                             <id>create-app-image</id>
                             <phase>package</phase>
@@ -46,7 +62,7 @@
                             </configuration>
                         </execution>
 
-                        <!-- Execution 2: Native Installer -->
+                        <!-- Execution 2: Native Installer (DEB, MSI, or DMG) with license flag -->
                         <execution>
                             <id>create-installer</id>
                             <phase>package</phase>
@@ -55,19 +71,20 @@
                             </goals>
                             <configuration>
                                 <destination>${project.build.directory}/dist/installer</destination>
-                                <type>${installer.type}</type> <!-- Set dynamically by active profile -->
+                                <type>${installer.type}</type>
                                 <icon>${app.icon}</icon>
                                 <aboutUrl>https://github.com/kriolos-obiz/kriolos-pos</aboutUrl>
+                                <licenseFile>${project.basedir}/../LICENSE</licenseFile>
 
-                                <!-- MACOS  OPTION -->
+                                <!-- MACOS OPTION -->
                                 <macPackageIdentifier>io.github.kriolos-obiz.opos</macPackageIdentifier>
 
-                                <!-- WINDOWS  OPTION -->
+                                <!-- WINDOWS OPTION -->
                                 <winMenu>true</winMenu>
                                 <winMenuGroup>KriolOS/OPOS</winMenuGroup>
                                 <winDirChooser>true</winDirChooser>
 
-                                <!-- LINUX  OPTION -->
+                                <!-- LINUX OPTION -->
                                 <linuxShortcut>true</linuxShortcut>
                                 <linuxPackageName>kriolos-pos</linuxPackageName>
                                 <linuxAppCategory>Office</linuxAppCategory>
@@ -82,7 +99,6 @@
                         <copyright>Paulo Borges</copyright>
                         <description>KriolOS Point of Sales</description>
                         <vendor>KriolOS</vendor>
-                        <licenseFile>${project.basedir}/../LICENSE</licenseFile>
                         <input>${project.build.directory}/lib</input>
                         <mainClass>${appMainClass}</mainClass>
                         <mainJar>${appJar}</mainJar>
@@ -94,11 +110,9 @@
                                 <file>${project.basedir}/jpackage/launcher-pos-config.properties</file>
                             </launcher>
                         </launchers>
-                 
 
                         <javaOptions>
                             <option>-Dfile.encoding=UTF-8</option>
-                                
                             <option>--add-opens=java.desktop/java.beans=ALL-UNNAMED</option>
                             <option>--add-opens=java.base/java.io=ALL-UNNAMED</option> 
                             <option>--add-opens=java.base/java.lang.ref=ALL-UNNAMED</option>
@@ -113,52 +127,14 @@
                             <jLinkOption>--no-header-files</jLinkOption>
                             <jLinkOption>--compress=2</jLinkOption>
                         </jLinkOptions>
-
-                        <!-- DON'T UNCOMMENT, THIS IS NOT THE FULL LIST
-                        <addModules>
-                            <addModule>java.base</addModule>
-                            <addModule>java.desktop</addModule>
-                            <addModule>java.logging</addModule>
-                            <addModule>java.rmi</addModule>
-                            <addModule>java.sql</addModule>
-                            <addModule>java.xml</addModule>
-                        </addModules>
-                        -->
                     </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>copy-dependencies</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>copy-dependencies</goal>
-                        </goals>
-                        <configuration>
-                            <includeScope>runtime</includeScope>
-                            <outputDirectory>${project.build.directory}/lib</outputDirectory>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
     </build>
 
     <profiles>
-        <!-- Perfil base que executa o jpackage na fase de package -->
-        <profile>
-            <id>jpackage</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-        </profile>
-
-        <!-- Profile per OS -->
+        <!-- Profile per OS: provides OS-specific properties & configuration without triggering execution -->
         <profile>
             <id>jpackage-windows</id>
             <activation>
@@ -167,31 +143,31 @@
                 </os>
             </activation>
             <properties>
-                <!-- Windows:  MSI, EXE -->
                 <installer.type>MSI</installer.type>
                 <app.icon>${project.basedir}/icons/app_icon.ico</app.icon>
             </properties>
             <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.panteleyev</groupId>
-                        <artifactId>jpackage-maven-plugin</artifactId>
-                        <configuration>
-                            <javaOptions>
-                                <option>-Dfile.encoding=UTF-8</option>
-                                <option>-Dawt.useSystemAAFontSettings=on</option>
-                                <option>-Dswing.aatext=true</option>
-                                <option>-Djava.desktop.appName=kriolosPOS</option>
-                                
-                                <option>--add-opens=java.desktop/java.beans=ALL-UNNAMED</option>
-                                <option>--add-opens=java.base/java.io=ALL-UNNAMED</option> 
-                                <option>--add-opens=java.base/java.lang.ref=ALL-UNNAMED</option>
-                                <option>--add-opens=java.base/java.lang=ALL-UNNAMED</option>
-                                <option>--add-opens=java.base/java.util=ALL-UNNAMED</option> 
-                            </javaOptions>
-                        </configuration>
-                    </plugin>
-                </plugins>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.panteleyev</groupId>
+                            <artifactId>jpackage-maven-plugin</artifactId>
+                            <configuration>
+                                <javaOptions>
+                                    <option>-Dfile.encoding=UTF-8</option>
+                                    <option>-Dawt.useSystemAAFontSettings=on</option>
+                                    <option>-Dswing.aatext=true</option>
+                                    <option>-Djava.desktop.appName=kriolosPOS</option>
+                                    <option>--add-opens=java.desktop/java.beans=ALL-UNNAMED</option>
+                                    <option>--add-opens=java.base/java.io=ALL-UNNAMED</option> 
+                                    <option>--add-opens=java.base/java.lang.ref=ALL-UNNAMED</option>
+                                    <option>--add-opens=java.base/java.lang=ALL-UNNAMED</option>
+                                    <option>--add-opens=java.base/java.util=ALL-UNNAMED</option> 
+                                </javaOptions>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
             </build>
         </profile>
 
@@ -203,31 +179,31 @@
                 </os>
             </activation>
             <properties>
-                <!-- macOS:  DMG, PKG -->
                 <installer.type>DMG</installer.type>
                 <app.icon>${project.basedir}/icons/app_icon.icns</app.icon>
             </properties>
             <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.panteleyev</groupId>
-                        <artifactId>jpackage-maven-plugin</artifactId>
-                        <configuration>
-                            <javaOptions>
-                                <option>-Dapple.laf.useScreenMenuBar=true</option>
-                                <option>-Dawt.useSystemAAFontSettings=gasp</option>
-                                <option>-Dswing.aatext=true</option>
-                                <option>-Djava.desktop.appName=kriolosPOS</option>
-                                
-                                <option>--add-opens=java.desktop/java.beans=ALL-UNNAMED</option>
-                                <option>--add-opens=java.base/java.io=ALL-UNNAMED</option> 
-                                <option>--add-opens=java.base/java.lang.ref=ALL-UNNAMED</option>
-                                <option>--add-opens=java.base/java.lang=ALL-UNNAMED</option>
-                                <option>--add-opens=java.base/java.util=ALL-UNNAMED</option> 
-                            </javaOptions>
-                        </configuration>
-                    </plugin>
-                </plugins>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.panteleyev</groupId>
+                            <artifactId>jpackage-maven-plugin</artifactId>
+                            <configuration>
+                                <javaOptions>
+                                    <option>-Dapple.laf.useScreenMenuBar=true</option>
+                                    <option>-Dawt.useSystemAAFontSettings=gasp</option>
+                                    <option>-Dswing.aatext=true</option>
+                                    <option>-Djava.desktop.appName=kriolosPOS</option>
+                                    <option>--add-opens=java.desktop/java.beans=ALL-UNNAMED</option>
+                                    <option>--add-opens=java.base/java.io=ALL-UNNAMED</option> 
+                                    <option>--add-opens=java.base/java.lang.ref=ALL-UNNAMED</option>
+                                    <option>--add-opens=java.base/java.lang=ALL-UNNAMED</option>
+                                    <option>--add-opens=java.base/java.util=ALL-UNNAMED</option> 
+                                </javaOptions>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
             </build>
         </profile>
 
@@ -239,31 +215,98 @@
                 </os>
             </activation>
             <properties>
-                <!-- Linux:  DEB, RPM -->
                 <installer.type>DEB</installer.type>
                 <app.icon>${project.basedir}/icons/app_icon.png</app.icon>
             </properties>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.panteleyev</groupId>
+                            <artifactId>jpackage-maven-plugin</artifactId>
+                            <configuration>
+                                <javaOptions>
+                                    <option>-Dfile.encoding=UTF-8</option>
+                                    <option>-Dawt.useSystemAAFontSettings=on</option>
+                                    <option>-Dswing.aatext=true</option>
+                                    <option>-Djava.desktop.appName=kriolosPOS</option>
+                                    <option>--add-opens=java.desktop/java.beans=ALL-UNNAMED</option>
+                                    <option>--add-opens=java.base/java.io=ALL-UNNAMED</option> 
+                                    <option>--add-opens=java.base/java.lang.ref=ALL-UNNAMED</option>
+                                    <option>--add-opens=java.base/java.lang=ALL-UNNAMED</option>
+                                    <option>--add-opens=java.base/java.util=ALL-UNNAMED</option> 
+                                </javaOptions>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+
+        <!-- Profile 'release': Activates copy-dependencies & jpackage packaging -->
+        <profile>
+            <id>release</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.panteleyev</groupId>
+                        <artifactId>jpackage-maven-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- Alias profile 'jpackage' to also activate packaging -->
+        <profile>
+            <id>jpackage</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.panteleyev</groupId>
+                        <artifactId>jpackage-maven-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- Profile 'rpm': Additional execution for generating RPM installers on Linux -->
+        <profile>
+            <id>rpm</id>
             <build>
                 <plugins>
                     <plugin>
                         <groupId>org.panteleyev</groupId>
                         <artifactId>jpackage-maven-plugin</artifactId>
-                        <configuration>
-                            <javaOptions>
-                                <option>-Dfile.encoding=UTF-8</option>
-                                <option>-Dawt.useSystemAAFontSettings=on</option>
-                                <option>-Dswing.aatext=true</option>
-                                <option>-Djava.desktop.appName=kriolosPOS</option>
-                                
-                                <option>--add-opens=java.desktop/java.beans=ALL-UNNAMED</option>
-                                <option>--add-opens=java.base/java.io=ALL-UNNAMED</option> 
-                                <option>--add-opens=java.base/java.lang.ref=ALL-UNNAMED</option>
-                                <option>--add-opens=java.base/java.lang=ALL-UNNAMED</option>
-                                <option>--add-opens=java.base/java.util=ALL-UNNAMED</option> 
-                            </javaOptions>
-                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>create-installer-rpm</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>jpackage</goal>
+                                </goals>
+                                <configuration>
+                                    <destination>${project.build.directory}/dist/installer</destination>
+                                    <type>RPM</type>
+                                    <icon>${app.icon}</icon>
+                                    <aboutUrl>https://github.com/kriolos-obiz/kriolos-pos</aboutUrl>
+                                    <licenseFile>${project.basedir}/../LICENSE</licenseFile>
+                                    <linuxShortcut>true</linuxShortcut>
+                                    <linuxPackageName>kriolos-pos</linuxPackageName>
+                                    <linuxAppCategory>Office</linuxAppCategory>
+                                    <linuxMenuGroup>Office</linuxMenuGroup>
+                                    <linuxRpmLicenseType>GPLv3</linuxRpmLicenseType>
+                                </configuration>
+                            </execution>
+                        </executions>
                     </plugin>
-                    
                 </plugins>
             </build>
         </profile>

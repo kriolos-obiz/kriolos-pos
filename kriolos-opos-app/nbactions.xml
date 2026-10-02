@@ -108,13 +108,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         </goals>
     </action>
     <action>
-        <actionName>CUSTOM-Distribuition</actionName>
-        <displayName>Distribuition</displayName>
+        <actionName>CUSTOM-Release</actionName>
+        <displayName>Release</displayName>
         <goals>
             <goal>package</goal>
         </goals>
         <activatedProfiles>
-            <activatedProfile>distribuition</activatedProfile>
+            <activatedProfile>release</activatedProfile>
         </activatedProfiles>
     </action>
 </actions>

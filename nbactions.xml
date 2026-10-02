@@ -68,15 +68,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         </properties>
     </action>
     <action>
-            <actionName>CUSTOM-Distribuition</actionName>
-            <displayName>Distribuition</displayName>
-            <goals>
-                <goal>package</goal>
-            </goals>
-            <activatedProfiles>
-                <activatedProfile>docs-gen</activatedProfile>
-                <activatedProfile>distribuition</activatedProfile>
-            </activatedProfiles>
-        </action>
+        <actionName>CUSTOM-Release</actionName>
+        <displayName>Release</displayName>
+        <goals>
+            <goal>package</goal>
+        </goals>
+        <activatedProfiles>
+            <activatedProfile>docs-gen</activatedProfile>
+            <activatedProfile>release</activatedProfile>
+        </activatedProfiles>
+    </action>
 
 </actions>
