@@ -48,6 +48,7 @@ jobs:
           retention-days: 1
 
       - name: Create Release and Upload Docs & Cross-Platform App
+        if: ${{ !env.ACT }}
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
@@ -155,6 +156,7 @@ jobs:
 
       # Upload both the standalone compressed images and the native system installers to the GitHub Release
       - name: Upload Binaries to Release
+        if: ${{ !env.ACT }}
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
