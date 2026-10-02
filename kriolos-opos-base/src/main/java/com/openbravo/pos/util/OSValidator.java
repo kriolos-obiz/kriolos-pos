@@ -23,11 +23,11 @@ package com.openbravo.pos.util;
  */
 public class OSValidator {
 
-    private final String OS = System.getProperty("os.name").toLowerCase();
+    private static final String OS = System.getProperty("os.name").toLowerCase();
 
-    public OSValidator() {}
+    private OSValidator() {}
 
-    public String getOS() {
+    public static String getOS() {
         if (isWindows()) {
             return ("w");
         } else if (isMac()) {
@@ -41,20 +41,20 @@ public class OSValidator {
         }
     }
 
-    public boolean isWindows() {
+    public static boolean isWindows() {
         return (OS.contains("win"));
     }
 
 
-    public boolean isMac() {
+    public static boolean isMac() {
         return (OS.contains("mac"));
     }
 
-    public boolean isUnix() {
-        return (OS.contains("nix") || OS.contains("nux") || OS.indexOf("aix") > 0);
+    public static boolean isUnix() {
+        return (OS.contains("nix") || OS.contains("nux") || OS.contains("aix"));
     }
 
-    public boolean isSolaris() {
+    public static boolean isSolaris() {
         return (OS.contains("sunos"));
     }
 

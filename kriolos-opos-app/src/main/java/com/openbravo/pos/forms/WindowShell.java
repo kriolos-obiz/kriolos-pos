@@ -156,7 +156,7 @@ public class WindowShell extends javax.swing.JFrame implements AppMessage {
         setResizable(false);
 
         // LINUX/UNIX
-        if (new OSValidator().isUnix()) {
+        if (OSValidator.isUnix()) {
             GraphicsDevice device = GraphicsEnvironment
                     .getLocalGraphicsEnvironment().getDefaultScreenDevice();
 
