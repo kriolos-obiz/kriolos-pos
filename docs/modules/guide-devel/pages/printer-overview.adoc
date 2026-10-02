@@ -192,7 +192,7 @@ Attributes
 == IDEIAS Printer
 
 .Diagram 1
-[plantuml]
+[plantuml, kriolos-pos-printer-overview-001, svg]
 ----
 @startuml
 
@@ -224,7 +224,7 @@ interface FiscalReceiptPrintr
 * DeviceTicket - Facade Class
 
 .Diagram 2
-[plantuml]
+[plantuml, kriolos-pos-printer-overview-002, svg]
 ----
 @startuml
 
