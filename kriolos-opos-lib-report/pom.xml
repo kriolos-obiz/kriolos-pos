@@ -19,10 +19,6 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>kriolos-opos-base</artifactId>
         </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>kriolos-opos-hardware</artifactId>
-        </dependency>
         
         <!-- JASPER REPOR -->
         <dependency> 
