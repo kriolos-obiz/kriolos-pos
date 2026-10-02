@@ -20,7 +20,7 @@ import java.util.Date;
 
 /**
  *
- * @author psb
+ * @author poolborges
  */
 public class ProductStockTransaction {
     private String id;

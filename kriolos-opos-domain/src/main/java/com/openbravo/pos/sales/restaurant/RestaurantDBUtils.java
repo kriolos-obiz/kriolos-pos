@@ -17,7 +17,6 @@ package com.openbravo.pos.sales.restaurant;
 
 import com.openbravo.data.loader.Session;
 import com.openbravo.pos.forms.AppView;
-import com.openbravo.pos.forms.DataLogicSystem;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -32,27 +31,15 @@ import java.util.logging.Logger;
  */
 public class RestaurantDBUtils {
 
-    private final static Logger LOGGER = Logger.getLogger(RestaurantDBUtils.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(RestaurantDBUtils.class.getName());
 
-    private Session dbSession;
+    private final Session dbSession;
 
+    private final AppView appView;
 
-    private AppView m_App;
-
-    protected DataLogicSystem dlSystem;
-
-    /**
-     *
-     * @param oApp
-     */
     public RestaurantDBUtils(AppView oApp) {
-        m_App = oApp;
-
-        try {
-            dbSession = m_App.getSession();
-        } catch (Exception e) {
-            LOGGER.log(Level.WARNING, null, e);
-        }
+        appView = oApp;
+        dbSession = appView.getSession();
     }
 
     /**
@@ -88,13 +75,15 @@ public class RestaurantDBUtils {
      * @param tableName
      */
     public void setCustomerNameInTable(String custName, String tableName) {
-        try (Connection con = dbSession.getConnection()) {
-            String SQL = "UPDATE places SET CUSTOMER=? WHERE NAME=?";
-            PreparedStatement pstmt = con.prepareStatement(SQL);
+
+        String sqlQuery = "UPDATE places SET CUSTOMER=? WHERE NAME=?";
+        try (Connection con = dbSession.getConnection(); PreparedStatement pstmt = con.prepareStatement(sqlQuery);) {
+
             pstmt.setString(1, custName);
             pstmt.setString(2, tableName);
             pstmt.executeUpdate();
-        } catch (SQLException e) {
+        }
+        catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "", e);
         }
     }
@@ -105,13 +94,14 @@ public class RestaurantDBUtils {
      * @param tableID
      */
     public void setCustomerNameInTableById(String custName, String tableID) {
-        try (Connection con = dbSession.getConnection()) {
-            String SQL = "UPDATE places SET CUSTOMER=? WHERE ID=?";
-            PreparedStatement pstmt = con.prepareStatement(SQL);
+        String sqlQuery = "UPDATE places SET CUSTOMER=? WHERE ID=?";
+        try (Connection con = dbSession.getConnection(); PreparedStatement pstmt = con.prepareStatement(sqlQuery);) {
+
             pstmt.setString(1, custName);
             pstmt.setString(2, tableID);
             pstmt.executeUpdate();
-        } catch (SQLException e) {
+        }
+        catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "", e);
         }
     }
@@ -122,13 +112,13 @@ public class RestaurantDBUtils {
      * @param ticketID
      */
     public void setCustomerNameInTableByTicketId(String custName, String ticketID) {
-        try (Connection con = dbSession.getConnection()) {
-            String SQL = "UPDATE places SET CUSTOMER=? WHERE TICKETID=?";
-            PreparedStatement pstmt = con.prepareStatement(SQL);
+        String sqlQuery = "UPDATE places SET CUSTOMER=? WHERE TICKETID=?";
+        try (Connection con = dbSession.getConnection(); PreparedStatement pstmt = con.prepareStatement(sqlQuery);) {
             pstmt.setString(1, custName);
             pstmt.setString(2, ticketID);
             pstmt.executeUpdate();
-        } catch (SQLException e) {
+        }
+        catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "", e);
         }
     }
@@ -141,8 +131,8 @@ public class RestaurantDBUtils {
     public String getCustomerNameInTable(String tableName) {
         String customerName = "";
         try (Connection con = dbSession.getConnection()) {
-            String SQL = "SELECT customer FROM places WHERE NAME=?";
-            try (PreparedStatement pstmt = con.prepareStatement(SQL)) {
+            String sqlQuery = "SELECT customer FROM places WHERE NAME=?";
+            try (PreparedStatement pstmt = con.prepareStatement(sqlQuery)) {
                 pstmt.setString(1, tableName);
 
                 try (ResultSet resultSet = pstmt.executeQuery()) {
@@ -151,7 +141,8 @@ public class RestaurantDBUtils {
                     }
                 }
             }
-        } catch (SQLException e) {
+        }
+        catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Exception get customer name in table: " + tableName, e);
         }
 
@@ -164,15 +155,16 @@ public class RestaurantDBUtils {
      * @return
      */
     public String getCustomerNameInTableById(String tableId) {
-        try (Connection con = dbSession.getConnection()) {
-            String SQL = "SELECT customer FROM places WHERE ID='" + tableId + "'";
-            Statement stmt = con.createStatement();
-            ResultSet rs = stmt.executeQuery(SQL);
+        String sqlQuery = "SELECT customer FROM places WHERE ID=?";
+        try (Connection con = dbSession.getConnection(); PreparedStatement pstmt = con.prepareStatement(sqlQuery);) {
+            pstmt.setString(1, tableId);
+            ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
                 String customer = rs.getString("CUSTOMER");
                 return (customer);
             }
-        } catch (SQLException e) {
+        }
+        catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "", e);
         }
 
@@ -184,12 +176,12 @@ public class RestaurantDBUtils {
      * @param tableName
      */
     public void clearCustomerNameInTable(String tableName) {
-        try (Connection con = dbSession.getConnection()) {
-            String SQL = "UPDATE places SET CUSTOMER=null WHERE NAME=?";
-            PreparedStatement pstmt = con.prepareStatement(SQL);
+        String sqlQuery = "UPDATE places SET CUSTOMER=null WHERE NAME=?";
+        try (Connection con = dbSession.getConnection(); PreparedStatement pstmt = con.prepareStatement(sqlQuery);) {
             pstmt.setString(1, tableName);
             pstmt.executeUpdate();
-        } catch (SQLException e) {
+        }
+        catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "", e);
         }
     }
@@ -199,12 +191,12 @@ public class RestaurantDBUtils {
      * @param tableID
      */
     public void clearCustomerNameInTableById(String tableID) {
-        try (Connection con = dbSession.getConnection()) {
-            String SQL = "UPDATE places SET CUSTOMER=null WHERE ID=?";
-            PreparedStatement pstmt = con.prepareStatement(SQL);
+        String sqlQuery = "UPDATE places SET CUSTOMER=null WHERE ID=?";
+        try (Connection con = dbSession.getConnection(); PreparedStatement pstmt = con.prepareStatement(sqlQuery);) {
             pstmt.setString(1, tableID);
             pstmt.executeUpdate();
-        } catch (SQLException e) {
+        }
+        catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "", e);
         }
     }
@@ -215,13 +207,13 @@ public class RestaurantDBUtils {
      * @param tableName
      */
     public void setWaiterNameInTable(String waiterName, String tableName) {
-        try (Connection con = dbSession.getConnection()) {
-            String SQL = "UPDATE places SET WAITER=? WHERE NAME=?";
-            PreparedStatement pstmt = con.prepareStatement(SQL);
+        String sqlQuery = "UPDATE places SET WAITER=? WHERE NAME=?";
+        try (Connection con = dbSession.getConnection(); PreparedStatement pstmt = con.prepareStatement(sqlQuery);) {
             pstmt.setString(1, waiterName);
             pstmt.setString(2, tableName);
             pstmt.executeUpdate();
-        } catch (SQLException e) {
+        }
+        catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "", e);
         }
     }
@@ -232,13 +224,13 @@ public class RestaurantDBUtils {
      * @param tableID
      */
     public void setWaiterNameInTableById(String waiterName, String tableID) {
-        try (Connection con = dbSession.getConnection()) {
-            String SQL = "UPDATE places SET WAITER=? WHERE ID=?";
-            PreparedStatement pstmt = con.prepareStatement(SQL);
+        String sqlQuery = "UPDATE places SET WAITER=? WHERE ID=?";
+        try (Connection con = dbSession.getConnection(); PreparedStatement pstmt = con.prepareStatement(sqlQuery);) {
             pstmt.setString(1, waiterName);
             pstmt.setString(2, tableID);
             pstmt.executeUpdate();
-        } catch (SQLException e) {
+        }
+        catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "", e);
         }
     }
@@ -249,16 +241,17 @@ public class RestaurantDBUtils {
      * @return
      */
     public String getWaiterNameInTable(String tableName) {
-        try (Connection con = dbSession.getConnection()) {
-            String SQL = "SELECT waiter FROM places WHERE NAME='" + tableName + "'";
-            Statement stmt = con.createStatement();
-            ResultSet rs = stmt.executeQuery(SQL);
+        String sqlQuery = "SELECT waiter FROM places WHERE NAME=?";
+        try (Connection con = dbSession.getConnection(); PreparedStatement pstmt = con.prepareStatement(sqlQuery);) {
+            pstmt.setString(1, tableName);
+            ResultSet rs = pstmt.executeQuery();
 
             if (rs.next()) {
                 String waiter = rs.getString("WAITER");
                 return (waiter);
             }
-        } catch (SQLException e) {
+        }
+        catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "", e);
         }
 
@@ -271,16 +264,17 @@ public class RestaurantDBUtils {
      * @return
      */
     public String getWaiterNameInTableById(String tableID) {
-        try (Connection con = dbSession.getConnection()) {
-            String SQL = "SELECT waiter FROM places WHERE ID='" + tableID + "'";
-            Statement stmt = con.createStatement();
-            ResultSet rs = stmt.executeQuery(SQL);
+        String sqlQuery = "SELECT waiter FROM places WHERE ID=?";
+        try (Connection con = dbSession.getConnection(); PreparedStatement pstmt = con.prepareStatement(sqlQuery);) {
+            pstmt.setString(1, tableID);
+            ResultSet rs = pstmt.executeQuery();
 
             if (rs.next()) {
                 String waiter = rs.getString("WAITER");
                 return (waiter);
             }
-        } catch (SQLException e) {
+        }
+        catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "", e);
         }
 
@@ -292,12 +286,12 @@ public class RestaurantDBUtils {
      * @param tableName
      */
     public void clearWaiterNameInTable(String tableName) {
-        try (Connection con = dbSession.getConnection()) {
-            String SQL = "UPDATE places SET WAITER=null WHERE NAME=?";
-            PreparedStatement pstmt = con.prepareStatement(SQL);
+        String sqlQuery = "UPDATE places SET WAITER=null WHERE NAME=?";
+        try (Connection con = dbSession.getConnection(); PreparedStatement pstmt = con.prepareStatement(sqlQuery);) {
             pstmt.setString(1, tableName);
             pstmt.executeUpdate();
-        } catch (SQLException e) {
+        }
+        catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "", e);
         }
     }
@@ -308,11 +302,12 @@ public class RestaurantDBUtils {
      */
     public void clearWaiterNameInTableById(String tableID) {
         try (Connection con = dbSession.getConnection()) {
-            String SQL = "UPDATE places SET WAITER=null WHERE ID=?";
-            PreparedStatement pstmt = con.prepareStatement(SQL);
+            String sqlQuery = "UPDATE places SET WAITER=null WHERE ID=?";
+            PreparedStatement pstmt = con.prepareStatement(sqlQuery);
             pstmt.setString(1, tableID);
             pstmt.executeUpdate();
-        } catch (SQLException e) {
+        }
+        catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "", e);
         }
     }
@@ -324,15 +319,16 @@ public class RestaurantDBUtils {
      */
     public String getTicketIdInTable(String ID) {
         try (Connection con = dbSession.getConnection()) {
-            String SQL = "SELECT TICKETID FROM places WHERE ID='" + ID + "'";
+            String sqlQuery = "SELECT TICKETID FROM places WHERE ID='" + ID + "'";
             Statement stmt = con.createStatement();
-            ResultSet rs = stmt.executeQuery(SQL);
+            ResultSet rs = stmt.executeQuery(sqlQuery);
 
             if (rs.next()) {
                 String customer = rs.getString("TICKETID");
                 return (customer);
             }
-        } catch (SQLException e) {
+        }
+        catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "", e);
         }
 
@@ -346,12 +342,13 @@ public class RestaurantDBUtils {
      */
     public void setTicketIdInTable(String TicketID, String tableName) {
         try (Connection con = dbSession.getConnection()) {
-            String SQL = "UPDATE places SET TICKETID=? WHERE NAME=?";
-            PreparedStatement pstmt = con.prepareStatement(SQL);
+            String sqlQuery = "UPDATE places SET TICKETID=? WHERE NAME=?";
+            PreparedStatement pstmt = con.prepareStatement(sqlQuery);
             pstmt.setString(1, TicketID);
             pstmt.setString(2, tableName);
             pstmt.executeUpdate();
-        } catch (SQLException e) {
+        }
+        catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "", e);
         }
     }
@@ -362,11 +359,12 @@ public class RestaurantDBUtils {
      */
     public void clearTicketIdInTable(String tableName) {
         try (Connection con = dbSession.getConnection()) {
-            String SQL = "UPDATE places SET TICKETID=null WHERE NAME=?";
-            PreparedStatement pstmt = con.prepareStatement(SQL);
+            String sqlQuery = "UPDATE places SET TICKETID=null WHERE NAME=?";
+            PreparedStatement pstmt = con.prepareStatement(sqlQuery);
             pstmt.setString(1, tableName);
             pstmt.executeUpdate();
-        } catch (SQLException e) {
+        }
+        catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "", e);
         }
     }
@@ -377,11 +375,12 @@ public class RestaurantDBUtils {
      */
     public void clearTicketIdInTableById(String tableID) {
         try (Connection con = dbSession.getConnection()) {
-            String SQL = "UPDATE places SET TICKETID=null WHERE ID=?";
-            PreparedStatement pstmt = con.prepareStatement(SQL);
+            String sqlQuery = "UPDATE places SET TICKETID=null WHERE ID=?";
+            PreparedStatement pstmt = con.prepareStatement(sqlQuery);
             pstmt.setString(1, tableID);
             pstmt.executeUpdate();
-        } catch (SQLException e) {
+        }
+        catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "", e);
         }
     }
@@ -393,15 +392,16 @@ public class RestaurantDBUtils {
      */
     public Integer countTicketIdInTable(String ticketID) {
         try (Connection con = dbSession.getConnection()) {
-            String SQL = "SELECT COUNT(*) AS RECORDCOUNT FROM places WHERE TICKETID='" + ticketID + "'";
+            String sqlQuery = "SELECT COUNT(*) AS RECORDCOUNT FROM places WHERE TICKETID='" + ticketID + "'";
             Statement stmt = con.createStatement();
-            ResultSet rs = stmt.executeQuery(SQL);
+            ResultSet rs = stmt.executeQuery(sqlQuery);
 
             if (rs.next()) {
                 Integer count = rs.getInt("RECORDCOUNT");
                 return (count);
             }
-        } catch (SQLException e) {
+        }
+        catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "", e);
         }
 
@@ -415,15 +415,16 @@ public class RestaurantDBUtils {
      */
     public String getTableDetails(String ticketID) {
         try (Connection con = dbSession.getConnection()) {
-            String SQL = "SELECT NAME FROM places WHERE TICKETID='" + ticketID + "'";
+            String sqlQuery = "SELECT NAME FROM places WHERE TICKETID='" + ticketID + "'";
             Statement stmt = con.createStatement();
-            ResultSet rs = stmt.executeQuery(SQL);
+            ResultSet rs = stmt.executeQuery(sqlQuery);
 
             if (rs.next()) {
                 String name = rs.getString("NAME");
                 return (name);
             }
-        } catch (SQLException e) {
+        }
+        catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "", e);
         }
 
@@ -436,11 +437,12 @@ public class RestaurantDBUtils {
      */
     public void setTableMovedFlag(String tableID) {
         try (Connection con = dbSession.getConnection()) {
-            String SQL = "UPDATE places SET TABLEMOVED='true' WHERE ID=?";
-            PreparedStatement pstmt = con.prepareStatement(SQL);
+            String sqlQuery = "UPDATE places SET TABLEMOVED='true' WHERE ID=?";
+            PreparedStatement pstmt = con.prepareStatement(sqlQuery);
             pstmt.setString(1, tableID);
             pstmt.executeUpdate();
-        } catch (SQLException e) {
+        }
+        catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "", e);
         }
     }
@@ -452,15 +454,16 @@ public class RestaurantDBUtils {
      */
     public String getTableMovedName(String ticketID) {
         try (Connection con = dbSession.getConnection()) {
-            String SQL = "SELECT NAME FROM places WHERE TICKETID='" + ticketID + "' AND TABLEMOVED ='true'";
+            String sqlQuery = "SELECT NAME FROM places WHERE TICKETID='" + ticketID + "' AND TABLEMOVED ='true'";
             Statement stmt = con.createStatement();
-            ResultSet rs = stmt.executeQuery(SQL);
+            ResultSet rs = stmt.executeQuery(sqlQuery);
 
             if (rs.next()) {
                 String name = rs.getString("NAME");
                 return (name);
             }
-        } catch (SQLException e) {
+        }
+        catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "", e);
         }
 
@@ -474,14 +477,15 @@ public class RestaurantDBUtils {
      */
     public Boolean getTableMovedFlag(String ticketID) {
         try (Connection con = dbSession.getConnection()) {
-            String SQL = "SELECT TABLEMOVED FROM places WHERE TICKETID='" + ticketID + "'";
+            String sqlQuery = "SELECT TABLEMOVED FROM places WHERE TICKETID='" + ticketID + "'";
             Statement stmt = con.createStatement();
-            ResultSet rs = stmt.executeQuery(SQL);
+            ResultSet rs = stmt.executeQuery(sqlQuery);
 
             if (rs.next()) {
                 return (rs.getBoolean("TABLEMOVED"));
             }
-        } catch (SQLException e) {
+        }
+        catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "", e);
         }
 
@@ -494,11 +498,12 @@ public class RestaurantDBUtils {
      */
     public void clearTableMovedFlag(String tableID) {
         try (Connection con = dbSession.getConnection()) {
-            String SQL = "UPDATE places SET TABLEMOVED='false' WHERE NAME=?";
-            PreparedStatement pstmt = con.prepareStatement(SQL);
+            String sqlQuery = "UPDATE places SET TABLEMOVED='false' WHERE NAME=?";
+            PreparedStatement pstmt = con.prepareStatement(sqlQuery);
             pstmt.setString(1, tableID);
             pstmt.executeUpdate();
-        } catch (SQLException e) {
+        }
+        catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "", e);
         }
     }
