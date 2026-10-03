@@ -94,8 +94,8 @@ public class JTicketsBagTicket extends JTicketsBag {
 
         previewDeviceTicket = PosHardwareManager.createPreviewTicketDevice();
 
-        previewTicketParser = new TicketParser(previewDeviceTicket, m_dlSystem);
-        systemTicketParser = new TicketParser(m_App.getDeviceTicket(), m_dlSystem);
+        previewTicketParser = m_App.createTicketParser(previewDeviceTicket);
+        systemTicketParser = m_App.createTicketParser();
 
         initComponents();
 

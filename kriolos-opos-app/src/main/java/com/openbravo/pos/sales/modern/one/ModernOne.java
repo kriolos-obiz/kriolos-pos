@@ -119,7 +119,7 @@ public class ModernOne extends JPanel implements JPanelView, TicketsEditor {
         dlCustomers = app.getBean(DataLogicCustomers.class);
 
         paymentService = new PaymentServiceImpl();
-        ticketParser = new TicketParser(app.getDeviceTicket(), dlSystem);
+        ticketParser = app.createTicketParser();
     }
 
     private void initUI() {

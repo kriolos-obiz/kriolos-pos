@@ -75,7 +75,7 @@ public class JPanelCloseMoneyReprint extends JPanel implements JPanelView, BeanF
 
         appView = app;
         dataLogicSystem = (DataLogicSystem) appView.getBean("com.openbravo.pos.forms.DataLogicSystem");
-        ticketParser = new TicketParser(appView.getDeviceTicket(), dataLogicSystem);
+        ticketParser = appView.createTicketParser();
         cashManagementService = new CashManagementServiceImpl(appView.getSession());
 
         m_jTicketTable.setDefaultRenderer(Object.class, new TableRendererBasic(

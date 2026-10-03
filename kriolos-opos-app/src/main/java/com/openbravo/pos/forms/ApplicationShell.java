@@ -126,7 +126,7 @@ public class ApplicationShell extends JPanel implements AppView {
     private void initPeripheral() {
         deviceTicket = PosHardwareManager.createDeviceTicket(this, appProperties);
 
-        ticketParser = new TicketParser(getDeviceTicket(), dlogicSystem);
+        ticketParser = createTicketParser();
         printerStart();
 
         deviceScale = PosHardwareManager.createDeviceScale(this, appProperties);
@@ -466,7 +466,7 @@ public class ApplicationShell extends JPanel implements AppView {
                     initPeripheral();
                     logStartup();
                 } else {
-                    ticketParser = new TicketParser(getDeviceTicket(), dlogicSystem);
+                    ticketParser = createTicketParser();
                 }
 
                 return dlogicSystem;

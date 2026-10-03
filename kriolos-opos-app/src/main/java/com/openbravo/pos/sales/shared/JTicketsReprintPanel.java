@@ -82,7 +82,7 @@ public class JTicketsReprintPanel extends JPanel {
     public JTicketsReprintPanel(AppView app) {
         this.m_App = app;
         this.m_TP = PosHardwareManager.createPreviewTicketDevice();
-        this.m_TTP = new TicketParser(m_TP, dlSystem);
+        this.m_TTP = (app != null) ? app.createTicketParser(m_TP) : null;
 
         initComponents();
         initDomainAdapters();

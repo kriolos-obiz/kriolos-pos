@@ -151,7 +151,7 @@ public class ModernTwoSalesLayout extends JPanel implements JPanelView, TicketsE
             }
 
             if (dlSystem != null) {
-                this.ticketParser = new TicketParser(app.getDeviceTicket(), dlSystem);
+                this.ticketParser = app.createTicketParser();
             }
         }
     }

@@ -66,7 +66,7 @@ public class JTicketsBagRestaurant extends javax.swing.JPanel {
         dataLogicSystem = (DataLogicSystem) appView.getBean("com.openbravo.pos.forms.DataLogicSystem");
         dataLogicSales = (DataLogicSales) appView.getBean("com.openbravo.pos.forms.DataLogicSales");
 
-        ticketParser = new TicketParser(appView.getDeviceTicket(), dataLogicSystem);
+        ticketParser = appView.createTicketParser();
         j_btnKitchen.setVisible(true);
 
         m_TablePlan.setVisible(appView.getAppUserView().getUser().

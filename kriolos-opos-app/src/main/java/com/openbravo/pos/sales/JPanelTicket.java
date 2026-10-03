@@ -175,7 +175,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         LOGGER.log(System.Logger.Level.DEBUG, "JPanelTicket.init: criar: Ticket.Line");
         m_ticketlines = new JTicketLines(dlSystem.getResourceAsXML(TicketConstants.RES_TICKET_LINES));
         m_jPanelLines.add(m_ticketlines, java.awt.BorderLayout.CENTER);
-        m_TTP = new TicketParser(m_App.getDeviceTicket(), dlSystem);
+        m_TTP = m_App.createTicketParser();
 
         senttax = dlSales.getTaxList();
         senttaxcategories = dlSales.getTaxCategoriesList();
