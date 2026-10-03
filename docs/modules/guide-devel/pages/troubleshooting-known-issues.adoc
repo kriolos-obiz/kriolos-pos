@@ -66,6 +66,7 @@ When `parent` is null or not yet attached to a Frame, `getWindow` constructs a d
 
 ==== Strategy A: Solid Window Ownership & Focus Guard (IntelliJ Pattern)
 1. **Real Ancestor Resolution**: Replace `new JFrame()` with active `JRootFrame` detection:
++
 [source,java]
 ----
 private static Window getWindow(Component parent) {

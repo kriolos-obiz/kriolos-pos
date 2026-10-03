@@ -9,28 +9,35 @@ Welcome to the **Developer Guide** for KriolOS POS. This guide provides an overv
 ** xref:product-vision.adoc[Product Vision]
 ** xref:contributors.adoc[Contributors]
 
-* **Architecture & Development**:
-** xref:develop-overview.adoc[Development Overview]
-** xref:modeling-overview.adoc[Domain Modeling]
+* **Architecture & Principles**:
+** xref:arch-principles.adoc[Architecture Principles (14 Rules & SDLC)]
+** xref:arch-dev-environment.adoc[Development Environment & QA]
+** xref:arch-domain-modeling.adoc[Domain Modeling]
+** xref:spec-navigation-flow.adoc[Specification: Navigation History Flow]
+
+* **User Interface & Modals**:
+** xref:ui-guidelines.adoc[UI Guidelines & Touch Architecture]
+** xref:ui-modal-migration.adoc[Modal Architecture Migration (PosUIModal)]
+** xref:ui-custom-buttons.adoc[Custom Buttons & Events (Ticket.Buttons.xml)]
+
+* **Tickets & Sales Engine**:
+** xref:sales-layout-migration.adoc[Sales Layout Architecture Migration]
+** xref:sales-ticket-lifecycle.adoc[Ticket Lifecycle & Taxes]
+** xref:sales-backoffice-tickets.adoc[Back Office Tickets]
 
 * **Database & Persistence**:
-** xref:database-overview.adoc[Database Overview]
-** xref:develop-database.adoc[Database Development]
+** xref:data-schema-overview.adoc[Database Schema Overview]
+** xref:data-access-layer.adoc[Database Access Layer]
 
 * **Hardware & Peripherals**:
-** xref:peripheral-overview.adoc[Peripheral Overview]
-** xref:printer-overview.adoc[Printers]
-** xref:support-barcode.adoc[Barcode Scanners]
+** xref:hardware-peripherals.adoc[Peripheral & Scales Overview]
+** xref:hardware-printers.adoc[Printers & ESC/POS Command Specs]
+** xref:hardware-barcodes.adoc[Barcode Support & Fonts]
 
-* **User Interface**:
-** xref:ui-guideslines.adoc[UI Guidelines]
-** xref:ui.jpanelbuttons.adoc[JPanel Buttons]
+* **Reporting & Assets**:
+** xref:report-jasper-overview.adoc[Reporting Overview (JasperReports)]
+** xref:report-pdf-export.adoc[PDF Export]
+** xref:resources-assets.adoc[Resources & Assets Overview]
 
-* **Tickets & Sales**:
-** xref:develop-ticket.adoc[Ticket Development]
-** xref:bo-ticket.adoc[Back Office Tickets]
-
-* **Reports & Resources**:
-** xref:report.adoc[Reporting]
-** xref:support-pdf.adoc[PDF Support]
-** xref:resources-overview.adoc[Resources Overview]
+* **Troubleshooting**:
+** xref:troubleshooting-known-issues.adoc[Known Issues (Wayland / FlatLaf / Compositor Diagnostics)]

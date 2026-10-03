@@ -8,34 +8,52 @@
 :source-highlighter: coderay
 :imagesdir: images
 
+// 1. Vision & Contributors
 include::pages/product-vision.adoc[]
 
 include::pages/contributors.adoc[]
 
-include::pages/develop-overview.adoc[]
+// 2. Architecture & Principles
+include::pages/arch-principles.adoc[leveloffset=+1]
 
-include::pages/modeling-overview.adoc[]
+include::pages/arch-dev-environment.adoc[]
 
-include::pages/database-overview.adoc[]
+include::pages/arch-domain-modeling.adoc[]
 
-include::pages/develop-database.adoc[]
+include::pages/spec-navigation-flow.adoc[leveloffset=+1]
 
-include::pages/peripheral-overview.adoc[]
+// 3. User Interface & Modals
+include::pages/ui-guidelines.adoc[leveloffset=+1]
 
-include::pages/printer-overview.adoc[]
+include::pages/ui-modal-migration.adoc[leveloffset=+1]
 
-include::pages/support-barcode.adoc[]
+include::pages/ui-custom-buttons.adoc[leveloffset=+1]
 
-include::pages/ui-guideslines.adoc[]
+// 4. Sales & Tickets
+include::pages/sales-layout-migration.adoc[leveloffset=+1]
 
-include::pages/ui.jpanelbuttons.adoc[]
+include::pages/sales-ticket-lifecycle.adoc[]
 
-include::pages/develop-ticket.adoc[]
+include::pages/sales-backoffice-tickets.adoc[leveloffset=+1]
 
-include::pages/bo-ticket.adoc[]
+// 5. Database & Persistence
+include::pages/data-schema-overview.adoc[]
 
-include::pages/report.adoc[]
+include::pages/data-access-layer.adoc[]
 
-include::pages/support-pdf.adoc[]
+// 6. Peripherals & Hardware
+include::pages/hardware-peripherals.adoc[]
 
-include::pages/resources-overview.adoc[]
+include::pages/hardware-printers.adoc[leveloffset=+1]
+
+include::pages/hardware-barcodes.adoc[]
+
+// 7. Reporting & Assets
+include::pages/report-jasper-overview.adoc[]
+
+include::pages/report-pdf-export.adoc[]
+
+include::pages/resources-assets.adoc[]
+
+// 8. Troubleshooting
+include::pages/troubleshooting-known-issues.adoc[leveloffset=+1]
