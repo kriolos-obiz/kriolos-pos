@@ -10,4 +10,4 @@
 :source-highlighter: coderay
 :imagesdir: images
 
-include::pages/product-vision.adoc[]
+include::pages/commercial-product-vision.adoc[]

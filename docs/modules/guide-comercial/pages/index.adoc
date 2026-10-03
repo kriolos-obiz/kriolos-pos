@@ -5,4 +5,4 @@ Welcome to the **Commercial Guide** for KriolOS POS.
 
 == Topics
 
-* xref:product-vision.adoc[Product Vision]: Discover the market opportunity, retail challenges, and architectural vision behind KriolOS POS.
+* xref:commercial-product-vision.adoc[Product Vision]: Discover the market opportunity, retail challenges, and architectural vision behind KriolOS POS.

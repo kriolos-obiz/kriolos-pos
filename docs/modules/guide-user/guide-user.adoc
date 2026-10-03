@@ -10,4 +10,4 @@
 :source-highlighter: coderay
 :imagesdir: images
 
-include::pages/setup.adoc[]
+include::pages/user-setup-guide.adoc[]

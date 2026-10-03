@@ -5,4 +5,4 @@ Welcome to the **Migration Guide** for KriolOS POS.
 
 == Topics
 
-* xref:implementation_plan.adoc[Deep Analysis & Implementation Plan]: Comprehensive architectural analysis and modernization roadmap.
+* xref:migration-implementation-plan.adoc[Deep Analysis & Implementation Plan]: Comprehensive architectural analysis and modernization roadmap.

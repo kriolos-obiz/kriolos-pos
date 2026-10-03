@@ -1,0 +1,37 @@
+[[user-setup-guide]]
+== Setup & Installation
+
+This chapter describes how to install, configure, and initialize KriolOS POS for first-time use.
+
+=== System Prerequisites
+
+* **Java Runtime**: OpenJDK 17 or higher (Eclipse Temurin recommended).
+* **Display**: Minimum screen resolution of 1024x768 (touch-screen optimized).
+* **Database**: Embedded Apache Derby, MariaDB 10.5+, MySQL 8.0+, or PostgreSQL 12+.
+
+=== Running the Application
+
+1. **Standalone Archive**:
+   Download the platform archive (`kriolos-opos-app-*.zip` or `kriolosPOS-image-*.tar.gz`), extract it, and execute:
+   * Linux/macOS: `./kriolospos.sh`
+   * Windows: `kriolospos.bat`
+
+2. **Native Installers**:
+   Run the platform installer (`.deb` for Debian/Ubuntu, `.rpm` for RedHat/Fedora, `.msi` for Windows, `.dmg` for macOS).
+
+=== Default Users and Roles
+
+Upon initial startup with a demo dataset, the following default credentials are provisioned:
+
+[cols="1,1,1,2", options="header"]
+|===
+| Username | Password | Role | Description
+| `admin` | `admin` | `ADMIN` | Full administrative access, back-office configuration, user management.
+| `manager` | `manager` | `MANAGER` | Store manager, end-of-day reports, cashier supervision.
+| `empl` | `empl` | `EMPLOYEE` | Standard cashier, sales registration, and receipt generation.
+|===
+
+[NOTE]
+====
+For production environments, it is mandatory to change all default passwords immediately via the **Administration -> Users** panel.
+====

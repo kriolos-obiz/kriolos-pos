@@ -10,4 +10,4 @@
 :source-highlighter: coderay
 :imagesdir: images
 
-include::pages/implementation_plan.adoc[leveloffset=+1]
+include::pages/migration-implementation-plan.adoc[leveloffset=+1]

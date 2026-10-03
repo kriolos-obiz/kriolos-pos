@@ -10,4 +10,4 @@
 :source-highlighter: coderay
 :imagesdir: images
 
-include::pages/taxes.adoc[leveloffset=+1]
+include::pages/notes-taxes-rounding.adoc[leveloffset=+1]
