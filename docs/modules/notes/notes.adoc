@@ -1,5 +1,7 @@
 = KriolOS POS - Technical & Architecture Notes
 :author: KriolOS Team
+:revnumber: {app-version}
+:revdate: {revdate}
 :doctype: book
 :toc: left
 :toclevels: 3
@@ -8,4 +10,4 @@
 :source-highlighter: coderay
 :imagesdir: images
 
-include::pages/taxes.adoc[leveloffset=+1]
+include::pages/notes-taxes-rounding.adoc[leveloffset=+1]

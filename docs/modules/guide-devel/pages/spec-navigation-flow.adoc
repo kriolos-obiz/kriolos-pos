@@ -148,5 +148,5 @@ onNavigateForward()
 
 == Related Assets
 
-* link:../../architecture-principles.adoc[Architecture Principles] — full 14-rule protocol
+* xref:arch-principles.adoc[Architecture Principles] — full 14-rule protocol
 * JSON Schema: xref:attachment$specification/navigation-screen-route.schema.json[navigation-screen-route.schema.json]

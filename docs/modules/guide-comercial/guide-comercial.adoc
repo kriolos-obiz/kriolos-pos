@@ -1,5 +1,7 @@
 = KriolOS POS - Commercial Guide
 :author: KriolOS Team
+:revnumber: {app-version}
+:revdate: {revdate}
 :doctype: book
 :toc: left
 :toclevels: 3
@@ -8,4 +10,4 @@
 :source-highlighter: coderay
 :imagesdir: images
 
-include::pages/product-vision.adoc[]
+include::pages/commercial-product-vision.adoc[]

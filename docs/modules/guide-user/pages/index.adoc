@@ -5,4 +5,4 @@ Welcome to the **User Guide** for KriolOS POS.
 
 == Topics
 
-* xref:setup.adoc[Setup & Installation]: Instructions on how to download, configure prerequisites, and run KriolOS POS.
+* xref:user-setup-guide.adoc[Setup & Installation]: Instructions on how to download, configure prerequisites, and run KriolOS POS.

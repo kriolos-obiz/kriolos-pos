@@ -5,4 +5,4 @@ Welcome to the **Technical Notes** module of KriolOS POS.
 
 == Available Notes
 
-* xref:taxes.adoc[Tax Calculations & Rounding]: Architectural guidance on tax calculation models (inclusive B2C vs. exclusive B2B) and rounding strategies for the POS engine.
+* xref:notes-taxes-rounding.adoc[Tax Calculations & Rounding]: Architectural guidance on tax calculation models (inclusive B2C vs. exclusive B2B) and rounding strategies for the POS engine.

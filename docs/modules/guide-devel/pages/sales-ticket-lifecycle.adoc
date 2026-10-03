@@ -1,0 +1,22 @@
+[[gd-sales-ticket-lifecycle]]
+== Ticket Lifecycle & Sales Domain
+
+This chapter describes the data structures, lifecycle, and business rules governing sales tickets in KriolOS POS.
+
+=== Overview
+
+A Ticket represents a commercial transaction within the POS. It acts as the core aggregate root for sales operations, discounts, multi-tax calculations, and payment settlements.
+
+=== Core Entities
+
+* `TicketInfo`: Represents the active sale or receipt header (customer, active user, date/time, ticket lines, payments, and global taxes).
+* `TicketLineInfo`: Represents an individual line item associated with a product, quantity, unit price, and applicable tax category.
+* `TaxInfo`: Defines tax percentages and category mappings applied per line.
+
+=== Ticket Lifecycle States
+
+1. **Draft / Open**: Lines are being added, modified, or discounted.
+2. **Shared / Parked**: Ticket is placed on hold (e.g. restaurant table or retail suspended ticket).
+3. **Payment**: Tenders are captured (cash, card, voucher) until the outstanding balance reaches zero.
+4. **Closed**: Receipt is printed, drawer opened (if cash), inventory updated, and transaction committed.
+5. **Refund / Void**: Reversal of an existing closed transaction.
