@@ -1,24 +1,23 @@
-//    KriolOS POS
-//    Copyright (c) 2019-2023 KriolOS
-//
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
-//
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//    GNU General Public License for more details.
-//
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+/*
+ * Copyright (C) 2026 KriolOS
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package com.openbravo.pos.printer;
 
 import com.openbravo.basic.BasicException;
 import com.openbravo.pos.forms.DataLogicSystem;
-import com.openbravo.pos.display.led8.DeviceDisplayLED8;
-import com.openbravo.pos.display.led8.DeviceDisplayPDLED8;
 import com.openbravo.pos.ticket.TicketInfo;
 import com.openbravo.pos.util.AudioUtils;
 import com.openbravo.pos.util.SAXParserUtils;
@@ -130,7 +129,7 @@ public class TicketParser extends DefaultHandler {
         barcodeType = null;
         barcodePosition = null;
         visorLineBuilder = null;
-        visorAnimation = DeviceDisplayEngine.ANIMATION_NULL;
+        visorAnimation = DeviceDisplay.ANIMATION_NULL;
         visorLine1 = null;
         visorLine2 = null;
         outputType = OUTPUT_NONE;
@@ -300,7 +299,7 @@ public class TicketParser extends DefaultHandler {
                 break;
             case "text":
                 if (textLength > 0) {
-                    outputPrinter.printText(textStyle, DeviceTicket.alignText(textAlignment, currentText.toString(), textLength));
+                    outputPrinter.printText(textStyle, currentText.toString(), textLength, textAlignment);
                 } else {
                     outputPrinter.printText(textStyle, currentText.toString());
                 }
@@ -365,25 +364,19 @@ public class TicketParser extends DefaultHandler {
                 break;
             case "text":
                 if (textLength > 0) {
-                    visorLineBuilder.append(DeviceTicket.alignText(textAlignment, currentText.toString(), textLength));
+                    visorLineBuilder.append(PrinterTextUtils.alignText(textAlignment, currentText.toString(), textLength));
                 } else {
                     visorLineBuilder.append(currentText);
                 }
                 
-                //Apply Display 'Light style' has 5 style (1...5)
-                if(this.deviceTicket.getDeviceDisplay() instanceof DeviceDisplayLED8 deviceDisplay){
-                    deviceDisplay.displayLight(this.textStyle);
-                }
-
-                //Apply Display 'Status line' has 5 status (0...4)
-                if(this.deviceTicket.getDeviceDisplay() instanceof DeviceDisplayPDLED8 deviceDisplay){
-                    deviceDisplay.changeStatus(this.textStyle);
-                }
+                // Apply optional customer display light style and status line
+                this.deviceTicket.getDeviceDisplay().displayLight(this.textStyle);
+                this.deviceTicket.getDeviceDisplay().changeStatus(this.textStyle);
                 currentText = null;
                 break;
             case "display":
                 deviceTicket.getDeviceDisplay().writeVisor(visorAnimation, visorLine1, visorLine2);
-                visorAnimation = DeviceDisplayEngine.ANIMATION_NULL;
+                visorAnimation = DeviceDisplay.ANIMATION_NULL;
                 visorLine1 = null;
                 visorLine2 = null;
                 outputType = OUTPUT_NONE;
@@ -461,15 +454,15 @@ public class TicketParser extends DefaultHandler {
     private int parseAnimation(String animationString) {
         return switch (readString(animationString, "none")) {
             case "scroll" ->
-                DeviceDisplayEngine.ANIMATION_SCROLL;
+                DeviceDisplay.ANIMATION_SCROLL;
             case "flyer" ->
-                DeviceDisplayEngine.ANIMATION_FLYER;
+                DeviceDisplay.ANIMATION_FLYER;
             case "blink" ->
-                DeviceDisplayEngine.ANIMATION_BLINK;
+                DeviceDisplay.ANIMATION_BLINK;
             case "curtain" ->
-                DeviceDisplayEngine.ANIMATION_CURTAIN;
+                DeviceDisplay.ANIMATION_CURTAIN;
             default ->
-                DeviceDisplayEngine.ANIMATION_NULL;
+                DeviceDisplay.ANIMATION_NULL;
         };
     }
 

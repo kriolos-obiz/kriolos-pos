@@ -24,6 +24,7 @@ import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.forms.DataLogicSales;
 import com.openbravo.pos.forms.DataLogicSystem;
+import com.openbravo.pos.hardware.PosHardwareManager;
 import com.openbravo.pos.printer.DeviceTicket;
 import com.openbravo.pos.printer.TicketParser;
 import com.openbravo.pos.printer.TicketPrinterException;
@@ -80,7 +81,7 @@ public class JTicketsReprintPanel extends JPanel {
 
     public JTicketsReprintPanel(AppView app) {
         this.m_App = app;
-        this.m_TP = new DeviceTicket();
+        this.m_TP = PosHardwareManager.createPreviewTicketDevice();
         this.m_TTP = new TicketParser(m_TP, dlSystem);
 
         initComponents();

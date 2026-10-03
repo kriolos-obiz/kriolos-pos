@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 KriolOS
+ * Copyright (C) 2022-2026 KriolOS
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,8 +21,9 @@ import com.openbravo.pos.spi.hardware.printer.FiscalPrinterDevice;
 import com.openbravo.pos.spi.hardware.printer.PrinterException;
 
 /**
+ * High-level contract for fiscal receipt printing operations.
  *
- * @author JG uniCenta
+ * @author JG uniCenta / KriolOS Team
  */
 public interface DeviceFiscalPrinter extends FiscalPrinterDevice {
 
@@ -36,58 +37,21 @@ public interface DeviceFiscalPrinter extends FiscalPrinterDevice {
         // default no-op
     }
 
- 
-    /**
-     *
-     * @return
-     */
-    public String getFiscalName();
+    String getFiscalName();
 
-    /**
-     *
-     * @return
-     */
-    public JComponent getFiscalComponent();
-    
-    /**
-     *
-     */
-    public void beginReceipt();
+    JComponent getFiscalComponent();
 
-    /**
-     *
-     */
-    public void endReceipt();
+    void beginReceipt();
 
-    /**
-     *
-     * @param sproduct
-     * @param dprice
-     * @param dunits
-     * @param taxinfo
-     */
-    public void printLine(String sproduct, double dprice, double dunits, int taxinfo);
+    void endReceipt();
 
-    /**
-     *
-     * @param smessage
-     */
-    public void printMessage(String smessage);
+    void printLine(String sproct, double dprice, double dunits, int taxinfo);
 
-    /**
-     *
-     * @param sPayment
-     * @param dpaid
-     */
-    public void printTotal(String sPayment, double dpaid);
-    
-    /**
-     *
-     */
-    public void printZReport();
+    void printMessage(String smessage);
 
-    /**
-     *
-     */
-    public void printXReport();
+    void printTotal(String smessage, double dtotal);
+
+    void printZReport();
+
+    void printXReport();
 }

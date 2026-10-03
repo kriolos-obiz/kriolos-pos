@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 KriolOS
+ * Copyright (C) 2022-2026 KriolOS
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,8 +23,9 @@ import com.openbravo.pos.spi.hardware.printer.PrinterProtocol;
 import com.openbravo.pos.spi.hardware.printer.PrinterException;
 
 /**
+ * High-level contract for receipt and ticket printer operations.
  *
- * @author JG uniCenta
+ * @author JG uniCenta / KriolOS Team
  */
 public interface DevicePrinter extends PrinterDevice {
 
@@ -43,68 +44,18 @@ public interface DevicePrinter extends PrinterDevice {
         // Raw byte print fallback
     }
 
-
-// Font Sizes
-    /**
-     * Represents the "size" attribute value for a "line" XML element,
-     * indicating Font Style Normal (widthScale: 1,  heightScale: 1)
-     * <p>
-     * This constant corresponds to the XML:
-     * <pre>
-     * &lt;line size="1"&gt;...&lt;/line&gt;
-     * </pre>
-     * </p>
-     */
+    // Font Sizes
     public static final int SIZE_0 = 0;
-    
-    /**
-     * Represents the "size" attribute value for a "line" XML element,
-     * indicating Font Style 'Double Width' (widthScale: 2,  heightScale: 1).
-     * Name: Condensed or expanded font, 
-     * 
-     * <p>
-     * This constant corresponds to the XML:
-     * <pre>
-     * &lt;line size="2"&gt;...&lt;/line&gt;
-     * </pre>
-     * </p>
-     */
-    public static final int SIZE_1 = 1;   
-    
-    /**
-     * Represents the "size" attribute value for a "line" XML element,
-     * indicating Font Style 'Double Height' (widthScale: 1,  heightScale: 2). 
-     * Name: Tall font
-     * 
-     * <p>
-     * This constant corresponds to the XML:
-     * <pre>
-     * &lt;line size="3"&gt;...&lt;/line&gt;
-     * </pre>
-     * </p>
-     */
+    public static final int SIZE_1 = 1;
     public static final int SIZE_2 = 2;
-    
-    /**
-     * Represents the "size" attribute value for a "line" XML element,
-     * indicating Font Style 'Double Width and Height' (widthScale: 2,  heightScale: 2).
-     * Name: Font both condensed and tall or expanded and tall
-     * 
-     * <p>
-     * This constant corresponds to the XML:
-     * <pre>
-     * &lt;line size="3"&gt;...&lt;/line&gt;
-     * </pre>
-     * </p>
-     */
     public static final int SIZE_3 = 3;
 
-// Font Enhancers
+    // Font Enhancers
     public static final int STYLE_PLAIN = 0;
     public static final int STYLE_BOLD = 1;
     public static final int STYLE_UNDERLINE = 2;
 
-// Layout    
+    // Layout
     public static final int ALIGN_LEFT = 0;
     public static final int ALIGN_RIGHT = 1;
     public static final int ALIGN_CENTER = 2;
@@ -112,7 +63,7 @@ public interface DevicePrinter extends PrinterDevice {
     public static final String POSITION_BOTTOM = "bottom";
     public static final String POSITION_NONE = "none";
 
-// Barcodes    
+    // Barcodes
     public static final String BARCODE_EAN8 = "EAN8";
     public static final String BARCODE_EAN13 = "EAN13";
     public static final String BARCODE_UPCA = "UPC-A";
@@ -120,47 +71,56 @@ public interface DevicePrinter extends PrinterDevice {
     public static final String BARCODE_CODE128 = "CODE128";
     public static final String BARCODE_CODE39 = "CODE39";
 
-//QrCode
+    // QR Code
     public static final int QRCODE_DEFAULT_SIZE = 4;
     public static final char QRCODE_DEFAULT_ERROR_CODE = 'M';
 
-    public String getPrinterName();
+    @Override
+    String getPrinterName();
 
-    public String getPrinterDescription();
+    @Override
+    String getPrinterDescription();
 
-    public JComponent getPrinterComponent();
+    JComponent getPrinterComponent();
 
-// Initialise    
-    public void reset();
+    // Initialise
+    void reset();
 
-    public void beginReceipt();
+    void beginReceipt();
 
-// Graphic renders
-    public void printImage(BufferedImage image);
+    // Graphic renders
+    void printImage(BufferedImage image);
 
-    public void printLogo();
+    void printLogo();
 
-    public void printBarCode(String type, String position, String code);
-    
-    public void printQRCode(String code, int size, char errorCorrection);
+    void printBarCode(String type, String position, String code);
 
-// Do TextLine
-    public void beginLine(int iTextSize);
+    void printQRCode(String code, int size, char errorCorrection);
 
-    public void printText(int iStyle, String sText);
+    // TextLine
+    void beginLine(int iTextSize);
 
-    public void endLine();
+    void printText(int iStyle, String sText);
 
-// Close
-    public void endReceipt();
 
-// Transact    
-    public void openDrawer();
+    default void printText(int iStyle, String sText, int textLenght, int textAlignment){
+        String aligntext = PrinterTextUtils.alignText(textAlignment, sText, textLenght);
+        this.printText(iStyle, aligntext);
+    }
+
+    void endLine();
+
+    // Close
+    void endReceipt();
+
+    // Transact
+    @Override
+    void openDrawer();
 
     /**
      * Enum for printer font sizes.
      */
-    public enum FontSize {
+    enum FontSize {
         NORMAL(1.0, 1.0),
         DOUBLE_WIDTH(2.0, 1.0),
         DOUBLE_HEIGHT(1.0, 2.0),
@@ -186,15 +146,6 @@ public interface DevicePrinter extends PrinterDevice {
             return (int) heightScale;
         }
 
-        /**
-         * A utility method to get the FontSize enum from the original integer
-         * constant.
-         *
-         * This can be used for backwards compatibility if needed.
-         *
-         * @param iSize The original integer size constant (0-3).
-         * @return The corresponding FontSize enum.
-         */
         public static FontSize fromInt(int iSize) {
             switch (iSize) {
                 case 0:
@@ -206,14 +157,12 @@ public interface DevicePrinter extends PrinterDevice {
                 case 3:
                     return DOUBLE_WIDTH_HEIGHT;
                 default:
-                    return NORMAL; // Fallback for invalid values
+                    return NORMAL;
             }
         }
-        
-        
+
         public static int getLineMultiplier(int iSize) {
             return FontSize.fromInt(iSize).getLineMultiplier();
         }
     }
-
 }

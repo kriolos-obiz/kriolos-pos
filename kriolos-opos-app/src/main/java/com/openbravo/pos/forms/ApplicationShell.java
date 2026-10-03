@@ -24,15 +24,16 @@ import com.openbravo.pos.cash.CashManagementService;
 import com.openbravo.pos.cash.CashManagementServiceImpl;
 import com.openbravo.pos.cash.CashRegister;
 import com.openbravo.pos.forms.AppProperties.DatabaseConfig;
+import com.openbravo.pos.hardware.PosHardwareManager;
 import com.openbravo.pos.printer.DeviceTicket;
 import com.openbravo.pos.printer.TicketParser;
 import com.openbravo.pos.printer.TicketPrinterException;
-import com.openbravo.pos.scale.DeviceScale;
-import com.openbravo.pos.scanpal2.DeviceScanner;
-import com.openbravo.pos.scanpal2.DeviceScannerFactory;
+import com.openbravo.pos.spi.hardware.scale.ScaleDevice;
+import com.openbravo.pos.spi.hardware.scanner.ScannerDevice;
 import com.openbravo.pos.scripting.ScriptEngine;
 import com.openbravo.pos.scripting.ScriptException;
 import com.openbravo.pos.scripting.ScriptFactory;
+import com.openbravo.pos.spi.hardware.scale.ScaleException;
 import java.awt.CardLayout;
 import java.awt.ComponentOrientation;
 import java.awt.Cursor;
@@ -65,8 +66,8 @@ public class ApplicationShell extends JPanel implements AppView {
     private CashRegister activeCash = new CashRegister();
     private String inventoryLocation;
 
-    private DeviceScale deviceScale;
-    private DeviceScanner deviceScanner;
+    private ScaleDevice deviceScale;
+    private ScannerDevice deviceScanner;
     private DeviceTicket deviceTicket;
     private TicketParser ticketParser;
 
@@ -123,14 +124,14 @@ public class ApplicationShell extends JPanel implements AppView {
     }
 
     private void initPeripheral() {
-        deviceTicket = new DeviceTicket(this, appProperties);
+        deviceTicket = PosHardwareManager.createDeviceTicket(this, appProperties);
 
         ticketParser = new TicketParser(getDeviceTicket(), dlogicSystem);
         printerStart();
 
-        deviceScale = new DeviceScale(this, appProperties);
+        deviceScale = PosHardwareManager.createDeviceScale(this, appProperties);
 
-        deviceScanner = DeviceScannerFactory.createInstance(appProperties);
+        deviceScanner = PosHardwareManager.createDeviceScanner(appProperties);
     }
 
     private boolean checkActiveCash() {
@@ -210,15 +211,7 @@ public class ApplicationShell extends JPanel implements AppView {
         return deviceTicket;
     }
 
-    @Override
-    public DeviceScale getDeviceScale() {
-        return deviceScale;
-    }
 
-    @Override
-    public DeviceScanner getDeviceScanner() {
-        return deviceScanner;
-    }
 
     @Override
     public Session getSession() {
@@ -647,5 +640,25 @@ public class ApplicationShell extends JPanel implements AppView {
     private javax.swing.JPanel statusBarSecondPanel;
     private javax.swing.JPanel topPanel;
     // End of variables declaration//GEN-END:variables
+
+    @Override
+    public boolean hasScale() {
+        return deviceScale.existsScale();
+    }
+
+    @Override
+    public Double readWeight() {
+        try {
+            return deviceScale.readWeight();
+        }
+        catch (ScaleException ex) {
+            return null;
+        }
+    }
+
+    @Override
+    public boolean hasScanner() {
+        return deviceScale.existsScale();
+    }
 
 }

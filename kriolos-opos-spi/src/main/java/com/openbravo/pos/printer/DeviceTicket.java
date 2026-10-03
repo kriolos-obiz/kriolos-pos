@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 KriolOS
+ * Copyright (C) 2022-2026 KriolOS
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,24 +16,23 @@
  */
 package com.openbravo.pos.printer;
 
+import java.util.List;
+
 /**
+ * Accessor contract for terminal printers, display, and fiscal hardware,
+ * along with common receipt text alignment utilities.
  *
- * @author JG uniCenta
+ * @author JG uniCenta / KriolOS Team
  */
-public class TicketPrinterException extends com.openbravo.pos.spi.hardware.printer.PrinterException {
+public interface DeviceTicket {
 
-    private static final long serialVersionUID = 1L;
+    DeviceFiscalPrinter getFiscalPrinter();
 
-    public TicketPrinterException() {
-        super();
-    }
+    DeviceDisplay getDeviceDisplay();
 
-    public TicketPrinterException(String msg) {
-        super(msg);
-    }
-    public TicketPrinterException(String msg, Throwable cause) {
-        super(msg, cause);
-    }
+    DevicePrinter getDevicePrinter(String key);
+
+    List<DevicePrinter> getDevicePrinterAll();
+
+   
 }
-
-

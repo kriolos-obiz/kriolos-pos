@@ -42,9 +42,8 @@ import com.openbravo.pos.payment.JPaymentSelectReceipt;
 import com.openbravo.pos.payment.JPaymentSelectRefund;
 import com.openbravo.pos.printer.TicketParser;
 import com.openbravo.pos.printer.TicketPrinterException;
-import com.openbravo.pos.printer.screen.DeviceDisplayAdvance;
+import com.openbravo.pos.hardware.PosHardwareManager;
 import com.openbravo.pos.sales.restaurant.RestaurantDBUtils;
-import com.openbravo.pos.scale.ScaleException;
 import com.openbravo.pos.scripting.ScriptEngine;
 import com.openbravo.pos.scripting.ScriptException;
 import com.openbravo.pos.scripting.ScriptFactory;
@@ -155,7 +154,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         dataLogicPIM = (DataLogicPIM) app.getBean("com.openbravo.pos.pim.DataLogicPIM");
 
         // Configuration>Peripheral options
-        m_jbtnScale.setVisible(m_App.getDeviceScale().existsScale());
+        m_jbtnScale.setVisible(m_App.hasScale());
         m_jPanelScripts.setVisible(false);
 
         jTBtnShow.setSelected(false);
@@ -863,14 +862,14 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
 
     private void incProduct(ProductInfoExt prod) {
 
-        if (prod.isScale() && m_App.getDeviceScale().existsScale()) {
+        if (prod.isScale() && m_App.hasScale()) {
             try {
-                Double value = m_App.getDeviceScale().readWeight();
+                Double value = m_App.readWeight();
                 if (value != null) {
                     incProduct(prod, value);
                 }
             }
-            catch (ScaleException ex) {
+            catch (Exception ex) {
                 LOGGER.log(System.Logger.Level.WARNING, "Exception on increment product: ", ex);
                 Toolkit.getDefaultToolkit().beep();
                 new MessageInf(MessageInf.SGN_WARNING, AppLocal
@@ -1385,16 +1384,16 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                     && m_iNumberStatusInput == NUMBERVALID
                     && m_iNumberStatusPor == NUMBERZERO) {
 
-                if (m_App.getDeviceScale().existsScale()
+                if (m_App.hasScale()
                         && m_App.hasPermission("sales.EditLines")) {
                     try {
-                        Double value = m_App.getDeviceScale().readWeight();
+                        Double value = m_App.readWeight();
                         if (value != null) {
                             ProductInfoExt product = getInputProduct();
                             addTicketLine(product, value, product.getPriceSell());
                         }
                     }
-                    catch (ScaleException ex) {
+                    catch (Exception ex) {
                         LOGGER.log(System.Logger.Level.WARNING, "Exception on read product SCALE and add ticket line: ",
                                 ex);
                         Toolkit.getDefaultToolkit().beep();
@@ -1413,9 +1412,9 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                 int i = m_ticketlines.getSelectedIndex();
                 if (i < 0) {
                     Toolkit.getDefaultToolkit().beep();
-                } else if (m_App.getDeviceScale().existsScale()) {
+                } else if (m_App.hasScale()) {
                     try {
-                        Double value = m_App.getDeviceScale().readWeight();
+                        Double value = m_App.readWeight();
                         if (value != null) {
                             TicketLineInfo newline = new TicketLineInfo(m_oTicket.getLine(i));
                             newline.setMultiply(value);
@@ -1423,7 +1422,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                             paintTicketLine(i, newline);
                         }
                     }
-                    catch (ScaleException ex) {
+                    catch (Exception ex) {
                         LOGGER.log(System.Logger.Level.WARNING, "Exception on process state transition '\u00a7' ", ex);
                         Toolkit.getDefaultToolkit().beep();
                         new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.noweight"), ex)
@@ -1958,8 +1957,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
 
     private void initDeviceDisplay() {
         var deviceDisplay = m_App.getDeviceTicket().getDeviceDisplay();
-        if (deviceDisplay != null && deviceDisplay instanceof DeviceDisplayAdvance) {
-            DeviceDisplayAdvance advDisplay = (DeviceDisplayAdvance) deviceDisplay;
+        if (deviceDisplay != null && PosHardwareManager.isAdvanceDisplay(deviceDisplay)) {
 
             // TODO EVALUATE PERFORMANCE TO CREATE THIS EVERY TIME
             JTicketLines m_ticketlines2 = new JTicketLines(
@@ -1968,11 +1966,10 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
 
             this.m_ticketlines.addListSelectionListener((ListSelectionEvent e) -> {
                 EventQueue.invokeLater(() -> {
-                    DeviceDisplayAdvance advDisplay1 = (DeviceDisplayAdvance) JPanelTicket.this.m_App.getDeviceTicket()
-                            .getDeviceDisplay();
+                    var currentDisplay = JPanelTicket.this.m_App.getDeviceTicket().getDeviceDisplay();
                     int ticketLineIndex = JPanelTicket.this.m_ticketlines.getSelectedIndex();
                     // FEATURE 1
-                    if (advDisplay1.hasFeature(1) && !e.getValueIsAdjusting()) {
+                    if (PosHardwareManager.hasFeature(currentDisplay, 1) && !e.getValueIsAdjusting()) {
                         if (ticketLineIndex >= 0) {
                             try {
                                 String sProductId = JPanelTicket.this.m_oTicket.getLine(ticketLineIndex).getProductID();
@@ -1982,7 +1979,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                                         prod = dataLogicPIM.getProductInfoByCode(sProductId);
                                     }
                                     if (prod != null) {
-                                        advDisplay1.setProductImage(prod.getImage());
+                                        PosHardwareManager.setProductImage(currentDisplay, prod.getImage());
                                     }
                                 }
                             }
@@ -1993,7 +1990,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                     }
 
                     // FEATURE 2
-                    if (advDisplay.hasFeature(2)) {
+                    if (PosHardwareManager.hasFeature(deviceDisplay, 2)) {
 
                         m_ticketlines2.clearTicketLines();
                         for (int j = 0; JPanelTicket.this.m_oTicket != null
@@ -2002,12 +1999,11 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                         }
                         m_ticketlines2.setSelectedIndex(ticketLineIndex);
 
-                        advDisplay.setTicketLines(m_ticketlines2);
+                        PosHardwareManager.setTicketLines(deviceDisplay, m_ticketlines2);
                     }
                 });
             });
         }
-
     }
 
     private void visorTicketLine(TicketLineInfo oLine) {

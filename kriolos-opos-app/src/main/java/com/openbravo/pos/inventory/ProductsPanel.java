@@ -25,6 +25,7 @@ import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.DataLogicSales;
 import com.openbravo.pos.panels.JPanelTable2;
 import com.openbravo.pos.pim.DataLogicPIM;
+import com.openbravo.pos.scanpal2.DeviceScanner;
 import com.openbravo.pos.ticket.ProductFilter;
 
 import java.awt.Component;
@@ -93,7 +94,7 @@ public class ProductsPanel extends JPanelTable2 implements EditorListener {
         
         JButton btnScanPal = new JButton();
         btnScanPal.setText("ScanPal");
-        btnScanPal.setVisible(app.getDeviceScanner() != null);
+        btnScanPal.setVisible(app.hasScanner());
         btnScanPal.addActionListener(new java.awt.event.ActionListener() {
             @Override
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -106,7 +107,7 @@ public class ProductsPanel extends JPanelTable2 implements EditorListener {
     
     private void btnScanPalActionPerformed(java.awt.event.ActionEvent evt) {                                           
   
-        JDlgUploadProducts.showMessage(this, app.getDeviceScanner(), bd);
+        JUploadProductsPanel.showMessage(this, bd);
     }
 
     /**

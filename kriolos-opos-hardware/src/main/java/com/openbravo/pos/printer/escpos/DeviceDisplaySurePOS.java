@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 KriolOS
+ * Copyright (C) 2026 KriolOS
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,6 +17,7 @@
 package com.openbravo.pos.printer.escpos;
 
 import com.openbravo.pos.printer.DeviceTicket;
+import com.openbravo.pos.printer.PrinterTextUtils;
 
 /**
  *
@@ -55,9 +56,9 @@ public class DeviceDisplaySurePOS extends DeviceDisplaySerial {
     @Override
     public void repaintLines() {
         display.write(new byte[]{0x10, 0x00}); // VISOR HOME
-        display.write(trans.transString(DeviceTicket.alignLeft(baseDeviceDisplay.getLine1(), 20)));
+        display.write(trans.transString(PrinterTextUtils.alignLeft(baseDeviceDisplay.getLine1(), 20)));
         display.write(new byte[]{0x10, 0x14});
-        display.write(trans.transString(DeviceTicket.alignLeft(baseDeviceDisplay.getLine2(), 20)));        
+        display.write(trans.transString(PrinterTextUtils.alignLeft(baseDeviceDisplay.getLine2(), 20)));        
         display.flush();
     }
 }

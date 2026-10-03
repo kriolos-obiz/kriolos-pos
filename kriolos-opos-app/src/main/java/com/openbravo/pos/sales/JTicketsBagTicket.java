@@ -32,6 +32,7 @@ import com.openbravo.pos.forms.AppProperties;
 import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.forms.DataLogicSales;
 import com.openbravo.pos.forms.DataLogicSystem;
+import com.openbravo.pos.hardware.PosHardwareManager;
 import com.openbravo.pos.printer.DeviceTicket;
 import com.openbravo.pos.printer.TicketParser;
 import com.openbravo.pos.printer.TicketPrinterException;
@@ -91,7 +92,7 @@ public class JTicketsBagTicket extends JTicketsBag {
         dlCustomers = (DataLogicCustomers) m_App.getBean("com.openbravo.pos.customers.DataLogicCustomers");
         AppProperties props = null;
 
-        previewDeviceTicket = new DeviceTicket();
+        previewDeviceTicket = PosHardwareManager.createPreviewTicketDevice();
 
         previewTicketParser = new TicketParser(previewDeviceTicket, m_dlSystem);
         systemTicketParser = new TicketParser(m_App.getDeviceTicket(), m_dlSystem);

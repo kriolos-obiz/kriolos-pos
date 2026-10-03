@@ -40,6 +40,15 @@ public interface ScaleDevice extends HardwareDevice {
     }
 
     /**
+     * Checks if an operational scale is configured and present.
+     *
+     * @return true if connected and protocol is not NONE.
+     */
+    default boolean existsScale() {
+        return isConnected() && getProtocol() != ScaleProtocol.NONE;
+    }
+
+    /**
      * Reads the current weight from the scale.
      *
      * @return Double weight value (in kilograms by default).

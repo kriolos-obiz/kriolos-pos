@@ -17,6 +17,7 @@
 package com.openbravo.pos.display.led8;
 
 import com.openbravo.pos.printer.DeviceTicket;
+import com.openbravo.pos.printer.PrinterTextUtils;
 import com.openbravo.pos.printer.escpos.DeviceDisplaySerial;
 import com.openbravo.pos.printer.escpos.ESCPOS;
 import com.openbravo.pos.printer.escpos.PrinterWritter;
@@ -61,7 +62,7 @@ public class DeviceDisplayLED8 extends DeviceDisplaySerial {
         this.display.write(ESCPOS.VISOR_CLEAR);
         this.display.write(ESCPOS.VISOR_HOME);
         this.display.write(new byte[]{27, 81, 65});
-        this.display.write(this.trans.transString(DeviceTicket.alignLeft(this.baseDeviceDisplay.getLine1(), 8)));
+        this.display.write(this.trans.transString(PrinterTextUtils.alignLeft(this.baseDeviceDisplay.getLine1(), 8)));
         this.display.write(new byte[]{13});
         this.display.flush();
     }
@@ -71,6 +72,7 @@ public class DeviceDisplayLED8 extends DeviceDisplaySerial {
      *
      * @param iStyle Style index (1 to 4).
      */
+    @Override
     public void displayLight(int iStyle) {
         this.display.write(ESCPOS.SELECT_DISPLAY);
         switch (iStyle) {

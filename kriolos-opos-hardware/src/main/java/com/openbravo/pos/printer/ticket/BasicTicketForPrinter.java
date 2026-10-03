@@ -28,8 +28,9 @@ import java.awt.geom.AffineTransform;
 public class BasicTicketForPrinter extends BasicTicket {
 
 
-    private static final Font BASEFONT = new Font("Courier New", 
-            Font.PLAIN, 7).deriveFont(AffineTransform.getScaleInstance(1.0, 1.50));
+    private static final Font BASEFONT = new Font("Courier New", Font.PLAIN, 7)
+            .deriveFont(AffineTransform.getScaleInstance(1.0, 1.50));
+    
     private static final int FONTHEIGHT = 12;
     private static final double IMAGE_SCALE = 0.65;
 

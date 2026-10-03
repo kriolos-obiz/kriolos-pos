@@ -19,8 +19,6 @@ package com.openbravo.pos.forms;
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.loader.Session;
 import com.openbravo.pos.printer.DeviceTicket;
-import com.openbravo.pos.scale.DeviceScale;
-import com.openbravo.pos.scanpal2.DeviceScanner;
 import java.util.Date;
 
 /**
@@ -29,9 +27,29 @@ import java.util.Date;
  */
 public interface AppView {
     
-    public DeviceScale getDeviceScale();
     public DeviceTicket getDeviceTicket();
-    public DeviceScanner getDeviceScanner();
+
+    /**
+     * Checks if a hardware scale is configured and operational.
+     *
+     * @return true if scale is available
+     */
+    public boolean hasScale();
+
+    /**
+     * Reads weight from the configured hardware scale.
+     *
+     * @return the measured weight or null if unavailable
+     */
+    public Double readWeight();
+
+    /**
+     * Checks if a handheld scanner is configured.
+     *
+     * @return true if scanner device is configured
+     */
+    public boolean hasScanner();
+
     public Session getSession();
     public AppProperties getProperties();
 

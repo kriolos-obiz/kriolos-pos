@@ -20,8 +20,7 @@ import com.openbravo.data.gui.MessageInf;
 import com.openbravo.data.gui.modal.PosUIModal;
 import com.openbravo.data.user.BrowsableEditableData;
 import com.openbravo.pos.forms.AppLocal;
-import com.openbravo.pos.scanpal2.DeviceScanner;
-import com.openbravo.pos.scanpal2.DeviceScannerException;
+import com.openbravo.pos.hardware.PosHardwareManager;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -31,14 +30,13 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.ListModel;
 import javax.swing.SwingConstants;
+import org.openide.util.Exceptions;
 
 public class JUploadProductsPanel extends JPanel {
 
     private static final long serialVersionUID = 1L;
 
-    private DeviceScanner m_scanner;
     private BrowsableEditableData m_bd;
     private PosUIModal modalContext;
 
@@ -47,10 +45,9 @@ public class JUploadProductsPanel extends JPanel {
         initDomainAdapters();
     }
 
-    public JUploadProductsPanel(DeviceScanner scanner, BrowsableEditableData bd) {
+    public JUploadProductsPanel(BrowsableEditableData bd) {
         initComponents();
         initDomainAdapters();
-        this.m_scanner = scanner;
         this.m_bd = bd;
         if (getRootPane() != null) {
             getRootPane().setDefaultButton(jcmdOK);
@@ -67,8 +64,8 @@ public class JUploadProductsPanel extends JPanel {
         this.modalContext = modalContext;
     }
 
-    public static void showMessage(Component parent, DeviceScanner scanner, BrowsableEditableData bd) {
-        JUploadProductsPanel panel = new JUploadProductsPanel(scanner, bd);
+    public static void showMessage(Component parent, BrowsableEditableData bd) {
+        JUploadProductsPanel panel = new JUploadProductsPanel(bd);
         PosUIModal modal = PosUIModal.create(parent, panel)
                 .setTitle(AppLocal.getIntString("caption.upload"))
                 .setModal(true)
@@ -140,26 +137,11 @@ public class JUploadProductsPanel extends JPanel {
         jcmdCancel.setEnabled(false);
 
         try {
-            m_scanner.connectDevice();
-            m_scanner.startUploadProduct();
-
-            ListModel l = m_bd.getListModel();
-            for (int i = 0; i < l.getSize(); i++) {
-                Object[] myprod = (Object[]) l.getElementAt(i);
-                m_scanner.sendProduct(
-                        (String) myprod[3],
-                        (String) myprod[2],
-                        (Double) myprod[6]
-                );
-            }
-            m_scanner.stopUploadProduct();
-            MessageInf msg = new MessageInf(MessageInf.SGN_SUCCESS, AppLocal.getIntString("message.scannerok"));
+            PosHardwareManager.uploadProducts(m_bd);
+        }
+        catch (Exception ex) {
+            MessageInf msg = new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.scannerfail"), ex);
             msg.show(this);
-        } catch (DeviceScannerException e) {
-            MessageInf msg = new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.scannerfail"), e);
-            msg.show(this);
-        } finally {
-            m_scanner.disconnectDevice();
         }
 
         jLabel1.setText(stext);

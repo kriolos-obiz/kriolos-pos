@@ -27,11 +27,7 @@
             <artifactId>kriolos-opos-base</artifactId>
             <type>jar</type>
         </dependency>
-        <dependency>
-            <groupId>io.github.kriolos.opos</groupId>
-            <artifactId>kriolos-opos-hardware</artifactId>
-            <type>jar</type>
-        </dependency>
+
         <dependency>
             <groupId>io.github.kriolos.opos</groupId>
             <artifactId>kriolos-opos-spi</artifactId>

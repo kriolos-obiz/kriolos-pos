@@ -16,7 +16,7 @@
  */
 package com.openbravo.pos.display.led8;
 
-import com.openbravo.pos.printer.DeviceTicket;
+import com.openbravo.pos.printer.PrinterTextUtils;
 import com.openbravo.pos.printer.escpos.DeviceDisplaySerial;
 import com.openbravo.pos.printer.escpos.PrinterWritter;
 import com.openbravo.pos.spi.hardware.display.DisplayProtocol;
@@ -55,11 +55,12 @@ public class DeviceDisplayPDLED8 extends DeviceDisplaySerial {
     public void repaintLines() {
         this.display.write(CODE.CMD_VISOR_CLEAR);
         this.display.write(CODE.CMD_HEADER);
-        this.display.write(this.trans.translateString(DeviceTicket.alignRight(this.baseDeviceDisplay.getLine1(), PD_LED8_MAX_NUM_OF_DIGIT)));
+        this.display.write(this.trans.translateString(PrinterTextUtils.alignRight(this.baseDeviceDisplay.getLine1(), PD_LED8_MAX_NUM_OF_DIGIT)));
         this.display.write(CODE.CMD_TERMINATOR);
         this.display.flush();
     }
 
+    @Override
     public void changeStatus(int status) {
         switch (status) {
             case 0 -> {

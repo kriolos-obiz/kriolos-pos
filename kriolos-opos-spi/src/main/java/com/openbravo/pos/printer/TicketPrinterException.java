@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 KriolOS
+ * Copyright (C) 2022-2026 KriolOS
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,30 +16,26 @@
  */
 package com.openbravo.pos.printer;
 
-import com.openbravo.pos.spi.hardware.display.DisplayDevice;
-import com.openbravo.pos.spi.hardware.display.DisplayProtocol;
+import com.openbravo.pos.spi.hardware.printer.PrinterException;
 
 /**
+ * Ticket printer exception.
  *
- * @author JG uniCenta
+ * @author JG uniCenta / KriolOS Team
  */
-public interface DeviceDisplay extends DisplayDevice {
+public class TicketPrinterException extends PrinterException {
 
-    @Override
-    default DisplayProtocol getProtocol() {
-        return DisplayProtocol.SUREPOS;
+    private static final long serialVersionUID = 1L;
+
+    public TicketPrinterException() {
+        super();
     }
 
-    @Override
-    default boolean isConnected() {
-        return true;
+    public TicketPrinterException(String msg) {
+        super(msg);
     }
 
-    public String getDisplayName();
-    public String getDisplayDescription();
-    public void writeVisor(int animation, String sLine1, String sLine2);
-    public void writeVisor(String sLine1, String sLine2);
-    public void clearVisor();
-    public void repaintLines();
+    public TicketPrinterException(String msg, Throwable cause) {
+        super(msg, cause);
+    }
 }
-

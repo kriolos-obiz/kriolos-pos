@@ -30,7 +30,7 @@ import java.awt.Component;
  *
  * @author JG uniCenta / KriolOS Team
  */
-public class DeviceScale {
+public class DeviceScale implements ScaleDevice {
     
     private Scale m_scale;
     
@@ -88,10 +88,17 @@ public class DeviceScale {
         return m_scale;
     }
     
-    /**
-     *
-     * @return
-     */
+    @Override
+    public ScaleProtocol getProtocol() {
+        return m_scale != null ? m_scale.getProtocol() : ScaleProtocol.NONE;
+    }
+
+    @Override
+    public boolean isConnected() {
+        return m_scale != null && m_scale.isConnected();
+    }
+
+    @Override
     public boolean existsScale() {
         return m_scale != null;
     }
@@ -101,6 +108,7 @@ public class DeviceScale {
      * @return
      * @throws ScaleException
      */
+    @Override
     public Double readWeight() throws ScaleException {
         
         if (m_scale == null) {
