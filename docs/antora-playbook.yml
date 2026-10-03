@@ -17,3 +17,5 @@ asciidoc:
     idprefix: ''
     idseparator: '-'
     source-highlighter: highlight.js
+    app-version: '1.0.0-SNAPSHOT'
+    revdate: '@'

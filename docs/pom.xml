@@ -20,6 +20,7 @@
 
         <skipPdfGeneration>true</skipPdfGeneration>
         <antora-maven-plugin.version>1.0.0-alpha.5</antora-maven-plugin.version>
+        <maven.build.timestamp.format>yyyy-MM-dd</maven.build.timestamp.format>
     </properties>
      
     <profiles>
@@ -107,6 +108,8 @@
                                 <app-product-name>KriolOS POS</app-product-name>
                                 <app-version>${project.version}</app-version>
                                 <app-package-base-name>kriolos</app-package-base-name>
+                                <revnumber>${project.version}</revnumber>
+                                <revdate>${maven.build.timestamp}</revdate>
                                 <source-highlighter>coderay</source-highlighter>
                                 <pdf-stylesdir>${project.basedir}/src/themes</pdf-stylesdir>
                                 <pdf-style>custom</pdf-style>
