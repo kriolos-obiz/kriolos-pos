@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.openbravo.pos.spi.hardware.printer;
+package com.openbravo.pos.spi.hardware.display;
 
 import com.openbravo.pos.spi.hardware.ConnectorType;
 import com.openbravo.pos.spi.hardware.DeviceConfig;
@@ -24,28 +24,28 @@ import java.util.Collections;
 import java.util.Map;
 
 /**
- * Immutable configuration descriptor for instantiating a ticket/receipt printer.
+ * Immutable configuration descriptor for instantiating a customer visor display.
  *
- * @param protocol   Target printer command set / protocol dialect.
+ * @param protocol   Target display protocol dialect.
  * @param connector  Communication transport scheme / connector ({@link ConnectorType}).
- * @param target     Target address, port, endpoint (e.g. "/dev/ttyUSB0", "COM1", "192.168.1.100:9100"), or drawer name.
+ * @param target     Target address, COM port, baud rate, or window descriptor.
  * @param properties Key-value properties map.
  *
  * @author KriolOS Team
  * @since 1.0.0
  */
-public record PrinterConfig(
-        PrinterProtocol protocol,
+public record DisplayConfig(
+        DisplayProtocol protocol,
         ConnectorType connector,
         String target,
         Map<String, String> properties
 ) implements DeviceConfig {
 
-    public PrinterConfig(PrinterProtocol protocol, ConnectorType connector, String target) {
+    public DisplayConfig(DisplayProtocol protocol, ConnectorType connector, String target) {
         this(protocol, connector, target, Collections.emptyMap());
     }
 
-    public PrinterConfig(PrinterProtocol protocol, TransportType transport, String target) {
+    public DisplayConfig(DisplayProtocol protocol, TransportType transport, String target) {
         this(protocol, transport != null ? transport.toConnectorType() : ConnectorType.NONE, target, Collections.emptyMap());
     }
 
@@ -70,50 +70,52 @@ public record PrinterConfig(
     }
 
     /**
-     * Parses a printer property configuration line strictly according to current syntax.
+     * Parses a display property line strictly according to current syntax.
      * Format:
-     * - {@code "<protocol>"} (e.g. {@code "screen"})
-     * - {@code "<protocol>:<connector>,<target>"} (e.g. {@code "epson:serial,/dev/ttyUSB0"}, {@code "epson:network,192.168.1.100:9100"})
-     * - {@code "<protocol>:<target>"} (e.g. {@code "printer:ReceiptPrinter"}, {@code "javapos:jposDrawer"})
+     * - {@code "<protocol>"} (e.g. {@code "screen"}, {@code "window"}, {@code "dual"})
+     * - {@code "<protocol>:<connector>,<target>"} (e.g. {@code "epson:serial,COM2,9600"}, {@code "led8:serial,/dev/ttyUSB0,2400"})
+     * - {@code "<protocol>:<target>"} (e.g. {@code "javapos:display1"})
      *
-     * @param raw Raw printer configuration string.
-     * @return Fully parsed {@link PrinterConfig}.
+     * @param raw Raw display configuration string.
+     * @return Fully parsed {@link DisplayConfig}.
      */
-    public static PrinterConfig parse(String raw) {
+    public static DisplayConfig parse(String raw) {
         if (raw == null || raw.isBlank()) {
-            return new PrinterConfig(PrinterProtocol.NONE, ConnectorType.NONE, "");
+            return new DisplayConfig(DisplayProtocol.NONE, ConnectorType.NONE, "");
         }
 
         String trimmed = raw.trim();
         int colonIdx = trimmed.indexOf(':');
 
         if (colonIdx < 0) {
-            PrinterProtocol protocol = PrinterProtocol.fromToken(trimmed);
-            ConnectorType connector = protocol == PrinterProtocol.SCREEN ? ConnectorType.SCREEN : ConnectorType.NONE;
-            return new PrinterConfig(protocol, connector, "");
+            DisplayProtocol protocol = DisplayProtocol.fromToken(trimmed);
+            ConnectorType connector = protocol == DisplayProtocol.SCREEN
+                    || protocol == DisplayProtocol.WINDOW
+                    || protocol == DisplayProtocol.DUAL
+                    ? ConnectorType.SCREEN
+                    : ConnectorType.NONE;
+            return new DisplayConfig(protocol, connector, "");
         }
 
         String typeToken = trimmed.substring(0, colonIdx).trim();
         String params = trimmed.substring(colonIdx + 1).trim();
 
-        PrinterProtocol protocol = PrinterProtocol.fromToken(typeToken);
+        DisplayProtocol protocol = DisplayProtocol.fromToken(typeToken);
 
         int commaIdx = params.indexOf(',');
         if (commaIdx >= 0) {
             String p1 = params.substring(0, commaIdx).trim();
             String p2 = params.substring(commaIdx + 1).trim();
             ConnectorType connector = ConnectorType.fromCode(p1);
-            return new PrinterConfig(protocol, connector, p2);
+            return new DisplayConfig(protocol, connector, p2);
         }
 
-        if (protocol == PrinterProtocol.PRINTER) {
-            return new PrinterConfig(protocol, ConnectorType.SYSTEM, params);
-        } else if (protocol == PrinterProtocol.JAVAPOS) {
-            return new PrinterConfig(protocol, ConnectorType.JAVAPOS, params);
+        if (protocol == DisplayProtocol.JAVAPOS) {
+            return new DisplayConfig(protocol, ConnectorType.JAVAPOS, params);
         }
 
         ConnectorType connector = ConnectorType.fromCode(params);
         String target = connector != ConnectorType.NONE ? "" : params;
-        return new PrinterConfig(protocol, connector, target);
+        return new DisplayConfig(protocol, connector, target);
     }
 }

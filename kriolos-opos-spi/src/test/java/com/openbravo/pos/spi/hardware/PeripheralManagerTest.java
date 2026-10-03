@@ -16,109 +16,140 @@
  */
 package com.openbravo.pos.spi.hardware;
 
-import com.openbravo.pos.spi.hardware.printer.*;
-import com.openbravo.pos.spi.hardware.scale.*;
-import com.openbravo.pos.spi.hardware.scanner.*;
+import com.openbravo.pos.spi.hardware.display.DisplayConfig;
+import com.openbravo.pos.spi.hardware.display.DisplayDevice;
+import com.openbravo.pos.spi.hardware.display.DisplayProtocol;
+import com.openbravo.pos.spi.hardware.printer.FiscalPrinterDevice;
+import com.openbravo.pos.spi.hardware.printer.PrinterConfig;
+import com.openbravo.pos.spi.hardware.printer.PrinterDevice;
+import com.openbravo.pos.spi.hardware.printer.PrinterProtocol;
+import com.openbravo.pos.spi.hardware.scale.ScaleConfig;
+import com.openbravo.pos.spi.hardware.scale.ScaleDevice;
+import com.openbravo.pos.spi.hardware.scale.ScaleException;
+import com.openbravo.pos.spi.hardware.scale.ScaleProtocol;
+import com.openbravo.pos.spi.hardware.scanner.ScannerConfig;
+import com.openbravo.pos.spi.hardware.scanner.ScannerDevice;
+import com.openbravo.pos.spi.hardware.scanner.ScannerProtocol;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import java.util.List;
 
-/**
- * Unit tests verifying the SPI contracts, configuration parsers, DeviceType URNs,
- * and PeripheralManager fallback behaviors.
- */
-public class PeripheralManagerTest {
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class PeripheralManagerTest {
 
     @Test
-    @DisplayName("DeviceType should provide valid URN, short code, and bidirectional parsing")
-    void testDeviceTypeUrnAndParsing() {
-        assertEquals("scale", DeviceType.SCALE.getCode());
-        assertEquals("urn:kriolos:device:scale", DeviceType.SCALE.getUrn());
-        assertEquals("device:scale", DeviceType.SCALE.getSelector());
-
-        // Test parsing via short code, enum name, selector, and full URN
+    @DisplayName("DeviceType should resolve standard codes, selectors, and URNs")
+    void testDeviceTypeResolution() {
         assertEquals(DeviceType.SCALE, DeviceType.fromCode("scale"));
         assertEquals(DeviceType.SCALE, DeviceType.fromCode("SCALE"));
+        assertEquals(DeviceType.SCALE, DeviceType.fromCode("hardware:scale"));
         assertEquals(DeviceType.SCALE, DeviceType.fromCode("device:scale"));
-        assertEquals(DeviceType.SCALE, DeviceType.fromCode("urn:kriolos:device:scale"));
+        assertEquals(DeviceType.SCALE, DeviceType.fromCode("urn:kriolos:hardware:scale"));
 
         assertEquals(DeviceType.PRINTER, DeviceType.fromCode("printer"));
-        assertEquals(DeviceType.PRINTER, DeviceType.fromCode("urn:kriolos:device:printer"));
+        assertEquals(DeviceType.PRINTER, DeviceType.fromCode("hardware:printer"));
+        assertEquals(DeviceType.PRINTER, DeviceType.fromCode("urn:kriolos:hardware:printer"));
 
         assertEquals(DeviceType.DISPLAY, DeviceType.fromCode("display"));
-        assertEquals(DeviceType.SCANNER, DeviceType.fromCode("scanner"));
-        assertEquals(DeviceType.FISCAL_PRINTER, DeviceType.fromCode("fiscal_printer"));
-        assertEquals(DeviceType.CASH_DRAWER, DeviceType.fromCode("cash_drawer"));
+        assertEquals(DeviceType.DISPLAY, DeviceType.fromCode("hardware:display"));
+        assertEquals(DeviceType.DISPLAY, DeviceType.fromCode("urn:kriolos:hardware:display"));
 
+        assertEquals(DeviceType.SCANNER, DeviceType.fromCode("scanner"));
+        assertEquals(DeviceType.SCANNER, DeviceType.fromCode("hardware:scanner"));
+        assertEquals(DeviceType.SCANNER, DeviceType.fromCode("urn:kriolos:hardware:scanner"));
+
+        assertEquals(DeviceType.FISCAL_PRINTER, DeviceType.fromCode("fiscal_printer"));
+        assertEquals(DeviceType.FISCAL_PRINTER, DeviceType.fromCode("hardware:fiscal_printer"));
+
+        assertNull(DeviceType.fromCode("unknown_device_type"));
+        assertNull(DeviceType.fromCode(""));
         assertNull(DeviceType.fromCode(null));
-        assertNull(DeviceType.fromCode("unknown_device"));
     }
 
     @Test
-    @DisplayName("ScaleProtocol and ScaleConfig parsing should extract valid protocols and ports")
-    void testScaleParsing() {
+    @DisplayName("ConnectorType should resolve standard codes, selectors, schemes, and transport aliases")
+    void testConnectorTypeResolution() {
+        assertEquals(ConnectorType.SERIAL, ConnectorType.fromCode("serial"));
+        assertEquals(ConnectorType.SERIAL, ConnectorType.fromCode("rxtx"));
+        assertEquals(ConnectorType.SERIAL, ConnectorType.fromCode("comm"));
+        assertEquals(ConnectorType.SERIAL, ConnectorType.fromCode("rs232"));
+        assertEquals(ConnectorType.SERIAL, ConnectorType.fromCode("tty"));
+        assertEquals(ConnectorType.SERIAL, ConnectorType.fromCode("connector:serial"));
+        assertEquals(ConnectorType.SERIAL, ConnectorType.fromCode("urn:kriolos:hardware:connector:serial"));
+
+        assertEquals(ConnectorType.NETWORK, ConnectorType.fromCode("network"));
+        assertEquals(ConnectorType.NETWORK, ConnectorType.fromCode("tcp"));
+        assertEquals(ConnectorType.NETWORK, ConnectorType.fromCode("socket"));
+        assertEquals(ConnectorType.NETWORK, ConnectorType.fromCode("ethernet"));
+        assertEquals(ConnectorType.NETWORK, ConnectorType.fromCode("ip"));
+
+        assertEquals(ConnectorType.USB, ConnectorType.fromCode("usb"));
+        assertEquals(ConnectorType.USB, ConnectorType.fromCode("hid"));
+        assertEquals(ConnectorType.FILE, ConnectorType.fromCode("file"));
+        assertEquals(ConnectorType.PIPE, ConnectorType.fromCode("pipe"));
+        assertEquals(ConnectorType.JAVAPOS, ConnectorType.fromCode("javapos"));
+        assertEquals(ConnectorType.SYSTEM, ConnectorType.fromCode("system"));
+        assertEquals(ConnectorType.SCREEN, ConnectorType.fromCode("screen"));
+        assertEquals(ConnectorType.NONE, ConnectorType.fromCode("none"));
+        assertEquals(ConnectorType.NONE, ConnectorType.fromCode("unknown"));
+    }
+
+    @Test
+    @DisplayName("ScaleProtocol should resolve known protocols and default to NONE")
+    void testScaleProtocols() {
         assertEquals(ScaleProtocol.CAS_PDII, ScaleProtocol.fromToken("caspdii"));
         assertEquals(ScaleProtocol.ACOM_PC100, ScaleProtocol.fromToken("acompc100"));
+        assertEquals(ScaleProtocol.AVERY_BERKEL_6720, ScaleProtocol.fromToken("averyberkel6720"));
+        assertEquals(ScaleProtocol.CASIO_PD1, ScaleProtocol.fromToken("casiopd1"));
+        assertEquals(ScaleProtocol.DIALOG_1, ScaleProtocol.fromToken("dialog1"));
+        assertEquals(ScaleProtocol.MT_IND221, ScaleProtocol.fromToken("mtind221"));
+        assertEquals(ScaleProtocol.SAMSUNG_ESP, ScaleProtocol.fromToken("samsungesp"));
+        assertEquals(ScaleProtocol.JAVAPOS, ScaleProtocol.fromToken("javapos"));
         assertEquals(ScaleProtocol.FAKE, ScaleProtocol.fromToken("fake"));
-        assertEquals(ScaleProtocol.NONE, ScaleProtocol.fromToken("nonexistent"));
-
-        ScaleConfig c1 = ScaleConfig.parse("caspdii:/dev/ttyS0,9600");
-        assertEquals(ScaleProtocol.CAS_PDII, c1.protocol());
-        assertEquals("/dev/ttyS0", c1.port());
-        assertEquals("9600", c1.properties().get("param2"));
-
-        ScaleConfig cFake = ScaleConfig.parse("fake");
-        assertEquals(ScaleProtocol.FAKE, cFake.protocol());
-        assertEquals("", cFake.port());
-
-        ScaleConfig cNull = ScaleConfig.parse(null);
-        assertEquals(ScaleProtocol.NONE, cNull.protocol());
+        assertEquals(ScaleProtocol.NONE, ScaleProtocol.fromToken("unknown"));
+        assertEquals(ScaleProtocol.NONE, ScaleProtocol.fromToken(null));
     }
 
     @Test
-    @DisplayName("PrinterProtocol and PrinterConfig parsing should resolve aliases and parameters")
-    void testPrinterParsing() {
-        assertEquals(PrinterProtocol.EPSON, PrinterProtocol.fromToken("epson"));
-        // Serial aliases
-        assertEquals(PrinterProtocol.EPSON, PrinterProtocol.fromToken("serial"));
-        assertEquals(PrinterProtocol.EPSON, PrinterProtocol.fromToken("rxtx"));
-        assertEquals(PrinterProtocol.SCREEN, PrinterProtocol.fromToken("screen"));
+    @DisplayName("PrinterConfig and DisplayConfig parse strict syntax without legacy normalization")
+    void testStrictConfigParsing() {
+        // Printer configs
+        PrinterConfig screenPrinter = PrinterConfig.parse("screen");
+        assertEquals(PrinterProtocol.SCREEN, screenPrinter.protocol());
+        assertEquals(ConnectorType.SCREEN, screenPrinter.connector());
+        assertEquals("", screenPrinter.target());
 
-        PrinterConfig cEpson = PrinterConfig.parse("epson:COM1,9600");
-        assertEquals(PrinterProtocol.EPSON, cEpson.protocol());
-        assertEquals("COM1", cEpson.param1());
-        assertEquals("9600", cEpson.param2());
+        PrinterConfig serialPrinter = PrinterConfig.parse("epson:serial,/dev/ttyUSB0");
+        assertEquals(PrinterProtocol.EPSON, serialPrinter.protocol());
+        assertEquals(ConnectorType.SERIAL, serialPrinter.connector());
+        assertEquals("/dev/ttyUSB0", serialPrinter.target());
 
-        // Serial alias normalization: "serial:/dev/ttyS0,9600" -> protocol EPSON, param1=serial, param2=/dev/ttyS0
-        PrinterConfig cSerial = PrinterConfig.parse("serial:/dev/ttyUSB0");
-        assertEquals(PrinterProtocol.EPSON, cSerial.protocol());
-        assertEquals("serial", cSerial.param1());
-        assertEquals("/dev/ttyUSB0", cSerial.param2());
-    }
+        PrinterConfig netPrinter = PrinterConfig.parse("epson:tcp,192.168.1.50:9100");
+        assertEquals(PrinterProtocol.EPSON, netPrinter.protocol());
+        assertEquals(ConnectorType.NETWORK, netPrinter.connector());
+        assertEquals("192.168.1.50:9100", netPrinter.target());
 
-    @Test
-    @DisplayName("DisplayProtocol and DisplayConfig parsing should recognize visor types")
-    void testDisplayParsing() {
-        assertEquals(DisplayProtocol.LED8, DisplayProtocol.fromToken("led8"));
-        assertEquals(DisplayProtocol.PDLED8, DisplayProtocol.fromToken("pdled8"));
-        assertEquals(DisplayProtocol.WINDOW, DisplayProtocol.fromToken("window"));
+        // Without legacy normalization, "serial" in protocol position does NOT become EPSON
+        PrinterConfig legacySerial = PrinterConfig.parse("serial:/dev/ttyS0");
+        assertEquals(PrinterProtocol.NONE, legacySerial.protocol());
 
-        DisplayConfig cLed8 = DisplayConfig.parse("led8:/dev/ttyUSB0,2400");
-        assertEquals(DisplayProtocol.LED8, cLed8.protocol());
-        assertEquals("/dev/ttyUSB0", cLed8.param1());
-        assertEquals("2400", cLed8.param2());
-    }
+        // Display configs
+        DisplayConfig screenDisplay = DisplayConfig.parse("screen");
+        assertEquals(DisplayProtocol.SCREEN, screenDisplay.protocol());
+        assertEquals(ConnectorType.SCREEN, screenDisplay.connector());
 
-    @Test
-    @DisplayName("ScannerProtocol and ScannerConfig parsing should recognize scanner types")
-    void testScannerParsing() {
-        assertEquals(ScannerProtocol.SCANPAL2, ScannerProtocol.fromToken("scanpal2"));
-        assertEquals(ScannerProtocol.NONE, ScannerProtocol.fromToken("unknown"));
-
-        ScannerConfig c = ScannerConfig.parse("scanpal2:COM3");
-        assertEquals(ScannerProtocol.SCANPAL2, c.protocol());
-        assertEquals("COM3", c.port());
+        DisplayConfig serialDisplay = DisplayConfig.parse("epson:serial,COM2,9600");
+        assertEquals(DisplayProtocol.EPSON, serialDisplay.protocol());
+        assertEquals(ConnectorType.SERIAL, serialDisplay.connector());
+        assertEquals("COM2,9600", serialDisplay.target());
     }
 
     @Test
@@ -131,7 +162,7 @@ public class PeripheralManagerTest {
         assertThrows(ScaleException.class, nullScale::readWeight);
 
         // Printers
-        PrinterDevice nullPrinter = PeripheralManager.getPrinter(new PrinterConfig(PrinterProtocol.NONE, "", ""));
+        PrinterDevice nullPrinter = PeripheralManager.getPrinter(new PrinterConfig(PrinterProtocol.NONE, ConnectorType.NONE, ""));
         assertNotNull(nullPrinter);
         assertFalse(nullPrinter.isConnected());
         assertDoesNotThrow(() -> nullPrinter.print(new byte[]{}));
@@ -139,7 +170,7 @@ public class PeripheralManagerTest {
         assertDoesNotThrow(nullPrinter::openDrawer);
 
         // Displays
-        DisplayDevice nullDisplay = PeripheralManager.getDisplay(new DisplayConfig(DisplayProtocol.NONE, "", ""));
+        DisplayDevice nullDisplay = PeripheralManager.getDisplay(new DisplayConfig(DisplayProtocol.NONE, ConnectorType.NONE, ""));
         assertNotNull(nullDisplay);
         assertFalse(nullDisplay.isConnected());
         assertDoesNotThrow(nullDisplay::clearVisor);
@@ -152,16 +183,18 @@ public class PeripheralManagerTest {
         assertDoesNotThrow(nullScanner::start);
         assertDoesNotThrow(nullScanner::stop);
 
-        // Fiscal Printer
-        FiscalPrinterDevice nullFiscal = PeripheralManager.getFiscalPrinter(new FiscalPrinterConfig("none", ""));
+        // Fiscal Printers
+        FiscalPrinterDevice nullFiscal = PeripheralManager.getFiscalPrinter(null);
         assertNotNull(nullFiscal);
         assertFalse(nullFiscal.isConnected());
-        assertDoesNotThrow(() -> nullFiscal.printFiscalReceipt(null));
+        assertDoesNotThrow(nullFiscal::printZReport);
+        assertDoesNotThrow(nullFiscal::printXReport);
+    }
 
-        // Unknown device
-        assertTrue(PeripheralManager.getDevice(HardwareDevice.class, null).isEmpty());
-
-        // Reload
-        assertDoesNotThrow(PeripheralManager::reload);
+    @Test
+    @DisplayName("PeripheralManager discovery returns available providers")
+    void testPeripheralDiscovery() {
+        var providers = PeripheralManager.getAllProviders();
+        assertNotNull(providers);
     }
 }

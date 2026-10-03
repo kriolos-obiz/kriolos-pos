@@ -32,6 +32,11 @@ public interface PrinterDevice extends HardwareDevice {
         return DeviceType.PRINTER;
     }
 
+    @Override
+    default String getDeviceId() {
+        return getDeviceType().getCode();
+    }
+
     /**
      * Human-readable printer name or assigned station name.
      *

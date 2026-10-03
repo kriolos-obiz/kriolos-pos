@@ -17,8 +17,8 @@ package com.openbravo.pos.printer;
 
 import com.openbravo.basic.BasicException;
 import com.openbravo.pos.forms.DataLogicSystem;
-import com.openbravo.pos.printer.custom.DeviceDisplayPDLED8;
-import com.openbravo.pos.printer.escpos.DeviceDisplayLED8;
+import com.openbravo.pos.display.led8.DeviceDisplayLED8;
+import com.openbravo.pos.display.led8.DeviceDisplayPDLED8;
 import com.openbravo.pos.ticket.TicketInfo;
 import com.openbravo.pos.util.AudioUtils;
 import com.openbravo.pos.util.SAXParserUtils;

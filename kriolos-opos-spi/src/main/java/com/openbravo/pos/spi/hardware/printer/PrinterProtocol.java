@@ -57,7 +57,7 @@ public enum PrinterProtocol {
     }
 
     /**
-     * Resolves a PrinterProtocol from string tokens with legacy alias normalization.
+     * Resolves a PrinterProtocol strictly from string tokens.
      *
      * @param token String identifier from configuration.
      * @return The matching {@link PrinterProtocol}, or {@link #NONE} if unrecognized.
@@ -67,11 +67,6 @@ public enum PrinterProtocol {
             return NONE;
         }
         String clean = token.trim().toLowerCase();
-
-        // Legacy serial aliases: "serial", "rxtx", "file" resolve to EPSON ESC/POS by default
-        if ("serial".equals(clean) || "rxtx".equals(clean) || "file".equals(clean)) {
-            return EPSON;
-        }
 
         for (PrinterProtocol p : values()) {
             if (p.token.equalsIgnoreCase(clean)) {

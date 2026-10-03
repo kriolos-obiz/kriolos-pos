@@ -87,4 +87,10 @@ public class DeviceDisplayNull implements DeviceDisplay {
     @Override
     public void repaintLines() {
     }
+
+    @Override
+    public boolean isConnected() {
+        return false;
+    }
 }
+

@@ -18,12 +18,31 @@ package com.openbravo.pos.printer;
 
 import java.awt.image.BufferedImage;
 import javax.swing.JComponent;
+import com.openbravo.pos.spi.hardware.printer.PrinterDevice;
+import com.openbravo.pos.spi.hardware.printer.PrinterProtocol;
+import com.openbravo.pos.spi.hardware.printer.PrinterException;
 
 /**
  *
  * @author JG uniCenta
  */
-public interface DevicePrinter {
+public interface DevicePrinter extends PrinterDevice {
+
+    @Override
+    default PrinterProtocol getProtocol() {
+        return PrinterProtocol.PLAIN;
+    }
+
+    @Override
+    default boolean isConnected() {
+        return true;
+    }
+
+    @Override
+    default void print(byte[] data) throws PrinterException {
+        // Raw byte print fallback
+    }
+
 
 // Font Sizes
     /**

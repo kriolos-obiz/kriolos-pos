@@ -16,11 +16,24 @@
  */
 package com.openbravo.pos.printer;
 
+import com.openbravo.pos.spi.hardware.display.DisplayDevice;
+import com.openbravo.pos.spi.hardware.display.DisplayProtocol;
+
 /**
  *
  * @author JG uniCenta
  */
-public interface DeviceDisplay {
+public interface DeviceDisplay extends DisplayDevice {
+
+    @Override
+    default DisplayProtocol getProtocol() {
+        return DisplayProtocol.SUREPOS;
+    }
+
+    @Override
+    default boolean isConnected() {
+        return true;
+    }
 
     public String getDisplayName();
     public String getDisplayDescription();
@@ -29,3 +42,4 @@ public interface DeviceDisplay {
     public void clearVisor();
     public void repaintLines();
 }
+

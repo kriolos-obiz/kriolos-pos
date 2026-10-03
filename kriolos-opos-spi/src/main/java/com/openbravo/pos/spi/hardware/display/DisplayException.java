@@ -14,34 +14,25 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.openbravo.pos.spi.hardware.printer;
+package com.openbravo.pos.spi.hardware.display;
 
-import com.openbravo.pos.spi.hardware.DeviceType;
-import com.openbravo.pos.spi.hardware.HardwareDevice;
+import com.openbravo.pos.spi.hardware.HardwareException;
 
 /**
- * Contract representing an operational fiscal memory printer.
+ * Exception thrown when a customer display / visor hardware error occurs.
  *
  * @author KriolOS Team
  * @since 1.0.0
  */
-public interface FiscalPrinterDevice extends HardwareDevice {
+public class DisplayException extends HardwareException {
 
-    @Override
-    default DeviceType getDeviceType() {
-        return DeviceType.FISCAL_PRINTER;
+    private static final long serialVersionUID = 1L;
+
+    public DisplayException(String message) {
+        super(message);
     }
 
-    @Override
-    default String getDeviceId() {
-        return getDeviceType().getCode();
+    public DisplayException(String message, Throwable cause) {
+        super(message, cause);
     }
-
-    String getFiscalName();
-
-    void printFiscalReceipt(Object receipt) throws PrinterException;
-
-    void printZReport() throws PrinterException;
-
-    void printXReport() throws PrinterException;
 }

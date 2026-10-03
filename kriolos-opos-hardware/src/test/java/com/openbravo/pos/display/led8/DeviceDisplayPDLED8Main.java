@@ -14,24 +14,19 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.openbravo.pos.printer.custom;
+package com.openbravo.pos.display.led8;
 
 import com.openbravo.pos.printer.TicketPrinterException;
-import com.openbravo.pos.printer.escpos.DeviceDisplayLED8;
 import com.openbravo.pos.printer.escpos.PrinterWritterRXTX;
 
 /**
+ * Manual test runner for DeviceDisplayPDLED8.
  *
  * @author Administrator
  */
 public class DeviceDisplayPDLED8Main {
 
-    /**
-     * @param args the command line arguments
-     */
     public static void main(String[] args) throws TicketPrinterException {
-        // TODO code application logic here
-        
         DeviceDisplayPDLED8 m_devicedisplay = new DeviceDisplayPDLED8(new PrinterWritterRXTX("COM2", 2400));
 
         System.out.println("initVisor...");
@@ -41,5 +36,4 @@ public class DeviceDisplayPDLED8Main {
         System.out.println("changeStatus...");      
         m_devicedisplay.changeStatus(1);
     }
-    
 }

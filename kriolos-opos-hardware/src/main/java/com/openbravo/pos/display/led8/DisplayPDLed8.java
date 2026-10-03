@@ -14,29 +14,30 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.openbravo.pos.printer.custom;
+package com.openbravo.pos.display.led8;
 
 import gnu.io.CommPort;
 import gnu.io.CommPortIdentifier;
 import gnu.io.SerialPort;
+
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-
 /**
+ * Driver para Display de Polo Posiflex PD-LED8 via porta Serial/COM (RXTX).
  *
- * @author poolborges
+ * @author Paulo Borges
+ * @since 1.0.0
  */
 public class DisplayPDLed8 {
-    
+
     private static final Logger LOGGER = Logger.getLogger(DisplayPDLed8.class.getName());
 
     private final String nomePorta;
     private SerialPort serialPort;
 
-    // Constantes para as Luzes de Status
     public static final int STATUS_ESCURO = 0;
     public static final int STATUS_PRECO = 1;
     public static final int STATUS_TOTAL = 2;
@@ -50,8 +51,8 @@ public class DisplayPDLed8 {
     /**
      * Envia um valor numérico e define a luz de status correspondente.
      * 
-     * @param statusOpcao
-     * @param valor
+     * @param statusOpcao Opção de status LED (0=escuro, 1=preço, 2=total, 3=recebido, 4=troco).
+     * @param valor       Texto/valor numérico a exibir.
      */
     public void atualizarDisplay(int statusOpcao, String valor) {
         OutputStream out = null;
@@ -61,7 +62,7 @@ public class DisplayPDLed8 {
 
             if (!(commPort instanceof SerialPort)) {
                 LOGGER.log(Level.WARNING, "Not a valid Serial/COM port: " + nomePorta);
-                if(commPort != null){
+                if (commPort != null) {
                     commPort.close();
                 }
                 return;
@@ -73,15 +74,10 @@ public class DisplayPDLed8 {
                                            SerialPort.STOPBITS_1, 
                                            SerialPort.PARITY_NONE);
             
-            // Configura os pinos de controle de fluxo de hardware
-            // serialPort.setDTR(true);
-            // serialPort.setRTS(true);
-            
             serialPort.setFlowControlMode(SerialPort.FLOWCONTROL_RTSCTS_IN);
 
             out = serialPort.getOutputStream();
 
-            // Formatação estável automática de dízimas e espaços
             String textoValidado = valor;
             byte[] textBytes = textoValidado.getBytes(StandardCharsets.UTF_8);
 
@@ -94,24 +90,21 @@ public class DisplayPDLed8 {
             payload[2] = statusByte;
             
             // Bloco .QA
-            payload[3] = 0x1B; //ESC
+            payload[3] = 0x1B; // ESC
             payload[4] = 0x51;
             payload[5] = 0x41;
 
             System.arraycopy(textBytes, 0, payload, 6, textBytes.length);
             payload[payload.length - 1] = 0x0D; // CR
 
-            // Envia os dados através da Stream de saída
             out.write(payload);
             out.flush();
 
             Thread.sleep(150);
-            return;
 
         } catch (Exception ex) {
             LOGGER.log(Level.WARNING, "Exception on PDLed8: ", ex);
         } finally {
-            // Fecha a stream e a porta com segurança
             try { if (out != null) out.close(); } catch (Exception ignored) {}
             try { if (serialPort != null) serialPort.close(); } catch (Exception ignored) {}
         }

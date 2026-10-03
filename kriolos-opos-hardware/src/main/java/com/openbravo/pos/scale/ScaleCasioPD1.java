@@ -163,4 +163,10 @@ public class ScaleCasioPD1 extends AbstractSerialScale implements Scale, SerialP
                 SerialPort.STOPBITS_1,
                 SerialPort.PARITY_EVEN);
     }
+
+    @Override
+    public com.openbravo.pos.spi.hardware.scale.ScaleProtocol getProtocol() {
+        return com.openbravo.pos.spi.hardware.scale.ScaleProtocol.CASIO_PD1;
+    }
 }
+

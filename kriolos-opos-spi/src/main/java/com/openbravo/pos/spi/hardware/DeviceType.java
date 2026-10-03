@@ -25,13 +25,13 @@ package com.openbravo.pos.spi.hardware;
  * @since 1.0.0
  */
 public enum DeviceType {
-    SCALE("scale", "urn:kriolos:device:scale", "Weight Scale"),
-    PRINTER("printer", "urn:kriolos:device:printer", "Receipt / Kitchen Printer"),
-    DISPLAY("display", "urn:kriolos:device:display", "Customer Facing Display"),
-    SCANNER("scanner", "urn:kriolos:device:scanner", "Barcode Scanner / Mobile Terminal"),
-    FISCAL_PRINTER("fiscal_printer", "urn:kriolos:device:fiscal_printer", "Fiscal Memory Printer"),
-    CASH_DRAWER("cash_drawer", "urn:kriolos:device:cash_drawer", "Cash Drawer Trigger"),
-    PAYMENT_TERMINAL("payment_terminal", "urn:kriolos:device:payment_terminal", "EFT / Payment Terminal");
+    SCALE("scale", "urn:kriolos:hardware:scale", "Weight Scale"),
+    PRINTER("printer", "urn:kriolos:hardware:printer", "Receipt / Kitchen Printer"),
+    DISPLAY("display", "urn:kriolos:hardware:display", "Customer Facing Display"),
+    SCANNER("scanner", "urn:kriolos:hardware:scanner", "Barcode Scanner / Mobile Terminal"),
+    FISCAL_PRINTER("fiscal_printer", "urn:kriolos:hardware:fiscal_printer", "Fiscal Memory Printer"),
+    CASH_DRAWER("cash_drawer", "urn:kriolos:hardware:cash_drawer", "Cash Drawer Trigger"),
+    PAYMENT_TERMINAL("payment_terminal", "urn:kriolos:hardware:payment_terminal", "EFT / Payment Terminal");
 
     private final String code;
     private final String urn;
@@ -53,7 +53,7 @@ public enum DeviceType {
     }
 
     /**
-     * Canonical URN representation (e.g. "urn:kriolos:device:scale").
+     * Canonical URN representation (e.g. "urn:kriolos:hardware:scale").
      *
      * @return URN string.
      */
@@ -71,20 +71,21 @@ public enum DeviceType {
     }
 
     /**
-     * Short URI selector (e.g. "device:scale") compatible with {@link com.openbravo.pos.spi.annotation.PluginMetadata#selectors()}.
+     * Standard URI selector (e.g. "hardware:scale") aligned with package and {@link com.openbravo.pos.spi.annotation.PluginMetadata#selectors()}.
      *
-     * @return short URI selector string.
+     * @return URI selector string.
      */
     public String getSelector() {
-        return "device:" + code;
+        return "hardware:" + code;
     }
 
     /**
      * Resolves a {@link DeviceType} from any valid representation:
      * - Short code ("scale", "printer")
      * - Enum constant name ("SCALE", "PRINTER")
-     * - Short URI ("device:scale")
-     * - Canonical URN ("urn:kriolos:device:scale")
+     * - Hardware selector ("hardware:scale")
+     * - Legacy selector ("device:scale")
+     * - Canonical URN ("urn:kriolos:hardware:scale")
      *
      * @param input Input token or URN.
      * @return The matching {@link DeviceType}, or {@code null} if unrecognized.
@@ -99,7 +100,8 @@ public enum DeviceType {
             if (type.code.equalsIgnoreCase(clean)
                     || type.name().equalsIgnoreCase(clean)
                     || type.urn.equalsIgnoreCase(clean)
-                    || type.getSelector().equalsIgnoreCase(clean)) {
+                    || type.getSelector().equalsIgnoreCase(clean)
+                    || ("device:" + type.code).equalsIgnoreCase(clean)) {
                 return type;
             }
         }

@@ -16,6 +16,7 @@
  */
 package com.openbravo.pos.spi.hardware;
 
+import com.openbravo.pos.spi.hardware.display.*;
 import com.openbravo.pos.spi.hardware.printer.*;
 import com.openbravo.pos.spi.hardware.scale.*;
 import com.openbravo.pos.spi.hardware.scanner.*;

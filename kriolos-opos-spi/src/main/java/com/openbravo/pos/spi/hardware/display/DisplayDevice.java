@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.openbravo.pos.spi.hardware.printer;
+package com.openbravo.pos.spi.hardware.display;
 
 import com.openbravo.pos.spi.hardware.DeviceType;
 import com.openbravo.pos.spi.hardware.HardwareDevice;
@@ -30,6 +30,11 @@ public interface DisplayDevice extends HardwareDevice {
     @Override
     default DeviceType getDeviceType() {
         return DeviceType.DISPLAY;
+    }
+
+    @Override
+    default String getDeviceId() {
+        return getDeviceType().getCode();
     }
 
     /**

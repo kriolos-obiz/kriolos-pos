@@ -133,4 +133,32 @@ public class ScaleJavaPOS implements Scale {
         return result;
 
     }
+
+    @Override
+    public String getDeviceId() {
+        return m_sName;
+    }
+
+    @Override
+    public boolean isConnected() {
+        return m_scale != null && m_scale.getState() != jpos.JposConst.JPOS_S_CLOSED;
+    }
+
+    @Override
+    public void close() {
+        if (m_scale != null) {
+            try {
+                m_scale.setDeviceEnabled(false);
+                m_scale.release();
+                m_scale.close();
+            } catch (JposException e) {
+                LOGGER.log(Level.WARNING, "Error closing JavaPOS scale", e);
+            }
+        }
+    }
+
+    @Override
+    public com.openbravo.pos.spi.hardware.scale.ScaleProtocol getProtocol() {
+        return com.openbravo.pos.spi.hardware.scale.ScaleProtocol.JAVAPOS;
+    }
 }

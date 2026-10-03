@@ -20,7 +20,7 @@ package com.openbravo.pos.printer;
  *
  * @author JG uniCenta
  */
-public class TicketPrinterException extends java.lang.Exception {
+public class TicketPrinterException extends com.openbravo.pos.spi.hardware.printer.PrinterException {
 
     private static final long serialVersionUID = 1L;
 

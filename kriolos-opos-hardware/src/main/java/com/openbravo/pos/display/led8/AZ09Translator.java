@@ -14,16 +14,22 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.openbravo.pos.printer.custom;
+package com.openbravo.pos.display.led8;
 
 import java.text.Normalizer;
 import java.util.regex.Pattern;
 
+/**
+ * 7-segment and alphanumeric ASCII translator for 8-digit pole displays.
+ *
+ * @author Paulo Borges
+ * @since 1.0.0
+ */
 public class AZ09Translator {
 
     public AZ09Translator() {
     }
-    
+
     public byte[] translateString(String text) {
         if (text == null) {
             return new byte[] {0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20};
@@ -47,7 +53,6 @@ public class AZ09Translator {
         String cleaned = withoutAccents.replaceAll("[^A-Z0-9 .]", "");
 
         // 6. Garante exatamente 8 caracteres (Ajusta se "PRECO 12.50" passar de 8)
-        // Nota: Se o display processar o ponto como um caractere normal, "PRECO 12.50" tem 11 caracteres e será cortado.
         String finalString = String.format("%-8s", cleaned).substring(0, 8);
 
         return finalString.getBytes(java.nio.charset.StandardCharsets.US_ASCII);

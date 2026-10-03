@@ -26,6 +26,11 @@ import com.openbravo.pos.printer.screen.DeviceDisplayWindowDualScreen;
 import com.openbravo.pos.printer.screen.DeviceDisplayPanel;
 import com.openbravo.pos.printer.screen.DeviceDisplayWindow;
 import com.openbravo.pos.printer.screen.DevicePrinterPanel;
+import com.openbravo.pos.spi.hardware.PeripheralManager;
+import com.openbravo.pos.spi.hardware.display.DisplayConfig;
+import com.openbravo.pos.spi.hardware.display.DisplayDevice;
+import com.openbravo.pos.spi.hardware.printer.FiscalPrinterConfig;
+import com.openbravo.pos.spi.hardware.printer.FiscalPrinterDevice;
 import com.openbravo.pos.util.StringParser;
 import java.awt.Component;
 import java.util.ArrayList;
@@ -89,17 +94,13 @@ public class DeviceTicket {
      * @param pws
      */
     private void initDeviceFiscalPrinter(AppProperties props) {
-        StringParser sf = new StringParser(props.getProperty("machine.fiscalprinter"));
-        String sFiscalType = sf.nextToken(':');
-        String sFiscalParam1 = sf.nextToken(',');
-        try {
-            if ("javapos".equals(sFiscalType)) {
-                m_deviceFiscal = new DeviceFiscalPrinterJavaPOS(sFiscalParam1);
-            } else {
-                m_deviceFiscal = new DeviceFiscalPrinterNull();
-            }
-        } catch (TicketPrinterException e) {
-            m_deviceFiscal = new DeviceFiscalPrinterNull(e.getMessage());
+        String raw = props != null ? props.getProperty("machine.fiscalprinter") : null;
+        FiscalPrinterConfig config = FiscalPrinterConfig.parse(raw);
+        FiscalPrinterDevice device = PeripheralManager.getFiscalPrinter(config);
+        if (device instanceof DeviceFiscalPrinter) {
+            m_deviceFiscal = (DeviceFiscalPrinter) device;
+        } else {
+            m_deviceFiscal = new DeviceFiscalPrinterNull();
         }
     }
 
@@ -201,65 +202,13 @@ public class DeviceTicket {
     }
 
     private void initDeviceDisplay(AppProperties props, PrinterWritterPool pws) {
-        String deviceUri = props.getProperty("machine.display");
-        StringParser sd = new StringParser(deviceUri);
-        String sDisplayType = sd.nextToken(':');
-        String sDisplayParam1 = sd.nextToken(',');
-        String sDisplayParam2 = sd.nextToken(',');
-
-        if ("serial".equals(sDisplayType)
-                || "rxtx".equals(sDisplayType)
-                || "file".equals(sDisplayType)) {
-            sDisplayParam2 = sDisplayParam1;
-            sDisplayParam1 = sDisplayType;
-            sDisplayType = "epson";
-        }
-
-        try {
-
-            switch (sDisplayType) {
-                case "screen":
-                    m_devicedisplay = new DeviceDisplayPanel();
-                    break;
-                case "window":
-                    m_devicedisplay = new DeviceDisplayWindow();
-                    break;
-                case "dual":
-                    m_devicedisplay = new DeviceDisplayWindowDualScreen();
-                    break;
-                case "epson":
-                    m_devicedisplay = new DeviceDisplayESCPOS(
-                            pws.getPrinterWritter(sDisplayParam1, sDisplayParam2),
-                            new UnicodeTranslatorInt());
-                    break;
-                case "surepos":
-                    m_devicedisplay = new DeviceDisplaySurePOS(
-                            pws.getPrinterWritter(sDisplayParam1, sDisplayParam2));
-                    break;
-                case "ld200":
-                    m_devicedisplay = new DeviceDisplayESCPOS(
-                            pws.getPrinterWritter(sDisplayParam1, sDisplayParam2),
-                            new UnicodeTranslatorEur());
-                    break;
-                case "javapos":
-                    m_devicedisplay = new DeviceDisplayJavaPOS(sDisplayParam1);
-                    break;
-                case "led8":
-                    this.m_devicedisplay = new DeviceDisplayLED8(
-                            pws.getPrinterWritter(sDisplayParam1, sDisplayParam2));
-                    break;
-                case "pdled8":
-                    this.m_devicedisplay = new DeviceDisplayLED8(
-                            pws.getDisplayPrinterWritter(sDisplayParam1, sDisplayParam2, 2400)
-                    );
-                    break;
-                default:
-                    m_devicedisplay = new DeviceDisplayNull();
-                    break;
-            }
-        } catch (TicketPrinterException e) {
-            logger.log(Level.WARNING, "Exception init device display " + deviceUri, e);
-            m_devicedisplay = new DeviceDisplayNull(e.getMessage());
+        String deviceUri = props != null ? props.getProperty("machine.display") : null;
+        DisplayConfig config = DisplayConfig.parse(deviceUri);
+        DisplayDevice device = PeripheralManager.getDisplay(config);
+        if (device instanceof DeviceDisplay) {
+            m_devicedisplay = (DeviceDisplay) device;
+        } else {
+            m_devicedisplay = new DeviceDisplayNull();
         }
     }
 
@@ -282,71 +231,7 @@ public class DeviceTicket {
      *
      * Class to avoid two device (serial/file/rxtx) to open the same COM port
      * Avoid colision on Computer COM port
-     *
-     */
-    private static class PrinterWritterPool {
 
-        private final Map<String, PrinterWritter> m_apool = new HashMap<>();
-
-        private String genUniqueKey(String connector, String port) {
-            return connector + "-->" + port;
-        }
-
-        public PrinterWritter getDisplayPrinterWritter(String con, String port, int baud) throws TicketPrinterException {
-
-            String skey = genUniqueKey(con, port);
-            PrinterWritter pw = m_apool.get(skey);
-            if (pw == null) {
-
-                switch (con) {
-                    case "serial":
-                    case "rxtx":
-                        pw = new PrinterWritterRXTX(port, baud);
-                        m_apool.put(skey, pw);
-                        break;
-                }
-            }
-            return pw;
-        }
-
-        public PrinterWritter getPrinterWritter(String con, String port) throws TicketPrinterException {
-
-            String skey = genUniqueKey(con, port);
-            PrinterWritter pw = m_apool.get(skey);
-            if (pw == null) {
-
-                switch (con) {
-                    case "serial":
-                    case "rxtx":
-                        pw = new PrinterWritterRXTX(port);
-                        m_apool.put(skey, pw);
-                        break;
-                    case "file":
-                        pw = new PrinterWritterFile(port);
-                        m_apool.put(skey, pw);
-                        break;
-                    case "usb":
-                        pw = new PrinterWritterRaw(port);
-                        this.m_apool.put(skey, pw);
-                        break;
-                    case "network":
-                        String[] str = port.split("\\:");
-                        String hostAddr = str[0];
-                        int portAddr = (str.length == 2) ? Integer.parseInt(str[1]) : 9100;
-                        if (hostAddr != null && !hostAddr.isBlank()) {
-                            pw = new PrinterWritterNetwork(hostAddr, portAddr);
-                            this.m_apool.put(skey, pw);
-                            return pw;
-                        } else {
-                            throw new TicketPrinterException("Invalid host addr: " + hostAddr + "; connection string: " + skey);
-                        }
-                    default:
-                        throw new TicketPrinterException("Not supported protocol with connection string: " + skey);
-                }
-            }
-            return pw;
-        }
-    }
 
     /**
      *

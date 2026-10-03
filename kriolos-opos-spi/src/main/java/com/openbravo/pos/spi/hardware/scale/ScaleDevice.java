@@ -34,6 +34,11 @@ public interface ScaleDevice extends HardwareDevice {
         return DeviceType.SCALE;
     }
 
+    @Override
+    default String getDeviceId() {
+        return getDeviceType().getCode();
+    }
+
     /**
      * Reads the current weight from the scale.
      *

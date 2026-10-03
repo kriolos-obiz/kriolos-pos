@@ -17,12 +17,25 @@
 package com.openbravo.pos.printer;
 
 import javax.swing.JComponent;
+import com.openbravo.pos.spi.hardware.printer.FiscalPrinterDevice;
+import com.openbravo.pos.spi.hardware.printer.PrinterException;
 
 /**
  *
  * @author JG uniCenta
  */
-public interface DeviceFiscalPrinter {
+public interface DeviceFiscalPrinter extends FiscalPrinterDevice {
+
+    @Override
+    default boolean isConnected() {
+        return true;
+    }
+
+    @Override
+    default void printFiscalReceipt(Object receipt) throws PrinterException {
+        // default no-op
+    }
+
  
     /**
      *

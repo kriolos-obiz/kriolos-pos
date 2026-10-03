@@ -146,4 +146,10 @@ public class ScaleSamsungEsp extends AbstractSerialScale implements Scale, Seria
                         SerialPort.STOPBITS_1, 
                         SerialPort.PARITY_ODD);
     }
+
+    @Override
+    public com.openbravo.pos.spi.hardware.scale.ScaleProtocol getProtocol() {
+        return com.openbravo.pos.spi.hardware.scale.ScaleProtocol.SAMSUNG_ESP;
+    }
 }
+

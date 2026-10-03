@@ -17,34 +17,40 @@
 package com.openbravo.pos.scanpal2;
 
 import com.openbravo.pos.forms.AppProperties;
-import com.openbravo.pos.util.StringParser;
+import com.openbravo.pos.spi.hardware.PeripheralManager;
+import com.openbravo.pos.spi.hardware.scanner.ScannerConfig;
+import com.openbravo.pos.spi.hardware.scanner.ScannerDevice;
+import com.openbravo.pos.spi.hardware.scanner.ScannerProtocol;
 
 /**
+ * Legacy scanner factory delegating to {@link PeripheralManager}.
  *
- * @author JG uniCenta
+ * @author JG uniCenta / KriolOS Team
  */
 public class DeviceScannerFactory {
     
-    /** Creates a new instance of DeviceScannerFactory */
     private DeviceScannerFactory() {
     }
     
     /**
+     * Creates or resolves scanner instance from application properties.
      *
-     * @param props
-     * @return
+     * @param props Application configuration properties.
+     * @return {@link DeviceScanner} or null if disabled.
      */
     public static DeviceScanner createInstance(AppProperties props) {
-        
-        StringParser sd = new StringParser(props.getProperty("machine.scanner"));
-        String sScannerType = sd.nextToken(':');
-        String sScannerParam1 = sd.nextToken(',');
-        // String sScannerParam2 = sd.nextToken(',');
-        
-        if ("scanpal2".equals(sScannerType)) {
-            return new DeviceScannerComm(sScannerParam1);
-        } else {
+        String raw = props != null ? props.getProperty("machine.scanner") : null;
+        if (raw == null || raw.isBlank()) {
             return null;
         }
+        ScannerConfig config = ScannerConfig.parse(raw);
+        if (config.protocol() == ScannerProtocol.NONE) {
+            return null;
+        }
+        ScannerDevice device = PeripheralManager.getScanner(config);
+        if (device instanceof DeviceScanner) {
+            return (DeviceScanner) device;
+        }
+        return null;
     }  
 }

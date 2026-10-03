@@ -32,6 +32,11 @@ public interface ScannerDevice extends HardwareDevice {
         return DeviceType.SCANNER;
     }
 
+    @Override
+    default String getDeviceId() {
+        return getDeviceType().getCode();
+    }
+
     /**
      * Protocol implemented by this scanner device.
      *

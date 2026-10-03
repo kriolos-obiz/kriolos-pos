@@ -75,7 +75,18 @@ public abstract class AbstractSerialScale implements Scale, SerialPortEventListe
         }
     }
 
-    private void close() {
+    @Override
+    public String getDeviceId() {
+        return m_sPortScale;
+    }
+
+    @Override
+    public boolean isConnected() {
+        return m_CommPortPrinter != null;
+    }
+
+    @Override
+    public void close() {
         if (m_in != null) {
             try {
                 m_in.close();

@@ -47,6 +47,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         
         <dependency>
             <groupId>${project.groupId}</groupId>
+            <artifactId>kriolos-opos-spi</artifactId>
+        </dependency>
+        
+        <dependency>
+            <groupId>com.google.auto.service</groupId>
+            <artifactId>auto-service</artifactId>
+        </dependency>
+        
+        <dependency>
+            <groupId>${project.groupId}</groupId>
             <artifactId>kriolos-opos-assets-image</artifactId>
             <scope>test</scope>
         </dependency>

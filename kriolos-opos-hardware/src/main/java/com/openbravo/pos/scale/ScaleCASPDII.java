@@ -137,4 +137,9 @@ public class ScaleCASPDII extends AbstractSerialScale implements Scale, SerialPo
                 SerialPort.STOPBITS_1,
                 SerialPort.PARITY_EVEN);
     }
+
+    @Override
+    public com.openbravo.pos.spi.hardware.scale.ScaleProtocol getProtocol() {
+        return com.openbravo.pos.spi.hardware.scale.ScaleProtocol.CAS_PDII;
+    }
 }

@@ -16,11 +16,14 @@
  */
 package com.openbravo.pos.scanpal2;
 
+import com.openbravo.pos.spi.hardware.scanner.ScannerException;
+
 /**
  *
  * @author adrianromero
  */
-public class DeviceScannerException extends java.lang.Exception {
+public class DeviceScannerException extends ScannerException {
+
     
     /**
      * Creates a new instance of <code>DeviceScannerException</code> without detail message.

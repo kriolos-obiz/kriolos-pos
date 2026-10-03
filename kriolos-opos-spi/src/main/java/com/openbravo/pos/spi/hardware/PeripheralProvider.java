@@ -16,8 +16,8 @@
  */
 package com.openbravo.pos.spi.hardware;
 
-import com.openbravo.pos.spi.hardware.printer.DisplayConfig;
-import com.openbravo.pos.spi.hardware.printer.DisplayDevice;
+import com.openbravo.pos.spi.hardware.display.DisplayConfig;
+import com.openbravo.pos.spi.hardware.display.DisplayDevice;
 import com.openbravo.pos.spi.hardware.printer.FiscalPrinterConfig;
 import com.openbravo.pos.spi.hardware.printer.FiscalPrinterDevice;
 import com.openbravo.pos.spi.hardware.printer.PrinterConfig;
@@ -58,6 +58,17 @@ public interface PeripheralProvider extends Provider, ConfigurableProvider {
      * @return provider display name.
      */
     String getProviderName();
+
+    /**
+     * Checks if this provider can resolve peripherals of the given category.
+     *
+     * @param type Target {@link DeviceType}.
+     * @return {@code true} if supported, {@code false} otherwise.
+     */
+    default boolean supports(DeviceType type) {
+        return type != null;
+    }
+
 
     /**
      * Resolves, constructs, and connects the weight scale peripheral described by the config.

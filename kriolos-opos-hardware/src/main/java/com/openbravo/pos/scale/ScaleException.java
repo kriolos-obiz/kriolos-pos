@@ -20,7 +20,9 @@ package com.openbravo.pos.scale;
  *
  * @author JG uniCenta
  */
-public class ScaleException extends java.lang.Exception {
+public class ScaleException extends com.openbravo.pos.spi.hardware.scale.ScaleException {
+    
+    private static final long serialVersionUID = 1L;
     
     /**
      * Creates a new instance of <code>ScaleException</code> without detail message.

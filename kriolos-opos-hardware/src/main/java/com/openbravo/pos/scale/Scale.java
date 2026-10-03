@@ -16,16 +16,30 @@
  */
 package com.openbravo.pos.scale;
 
+import com.openbravo.pos.spi.hardware.scale.ScaleDevice;
+import com.openbravo.pos.spi.hardware.scale.ScaleProtocol;
+
 /**
  *
  * @author JG uniCenta
  */
-public interface Scale {
+public interface Scale extends ScaleDevice {
     
     /**
      *
      * @return
      * @throws ScaleException
      */
+    @Override
     public Double readWeight() throws ScaleException;
+
+    @Override
+    default ScaleProtocol getProtocol() {
+        return ScaleProtocol.NONE;
+    }
+
+    @Override
+    default boolean isConnected() {
+        return true;
+    }
 }

@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.openbravo.pos.spi.hardware.printer;
+package com.openbravo.pos.spi.hardware.display;
 
 /**
  * Type-safe enumeration of customer-facing visor and screen display protocols.
@@ -57,7 +57,7 @@ public enum DisplayProtocol {
     }
 
     /**
-     * Resolves a DisplayProtocol from string tokens with legacy alias normalization.
+     * Resolves a DisplayProtocol strictly from string tokens.
      *
      * @param token String identifier from configuration.
      * @return The matching {@link DisplayProtocol}, or {@link #NONE} if unrecognized.
@@ -67,11 +67,6 @@ public enum DisplayProtocol {
             return NONE;
         }
         String clean = token.trim().toLowerCase();
-
-        // Legacy serial aliases: "serial", "rxtx", "file" resolve to EPSON ESC/POS by default
-        if ("serial".equals(clean) || "rxtx".equals(clean) || "file".equals(clean)) {
-            return EPSON;
-        }
 
         for (DisplayProtocol p : values()) {
             if (p.token.equalsIgnoreCase(clean)) {
