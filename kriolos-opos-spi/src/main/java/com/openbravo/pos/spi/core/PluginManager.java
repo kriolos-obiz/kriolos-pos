@@ -7,6 +7,7 @@ import com.openbravo.pos.spi.provider.ConfigurableProvider;
 import com.openbravo.pos.spi.provider.ConfigProperty;
 import com.openbravo.pos.spi.provider.PropertyType;
 import com.openbravo.pos.spi.localization.LocalizationProvider;
+import com.openbravo.pos.spi.hardware.PeripheralProvider;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -37,6 +38,7 @@ public final class PluginManager {
         this.configurationStore = pluginId -> Collections.emptyMap();
         List<Class<?>> contracts = new ArrayList<>();
         contracts.add(LocalizationProvider.class);
+        contracts.add(PeripheralProvider.class);
         this.registeredContracts = List.copyOf(contracts);
     }
 
