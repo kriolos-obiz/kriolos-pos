@@ -20,10 +20,10 @@ import com.openbravo.pos.forms.DataLogicSales;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.basic.BasicException;
 import com.openbravo.beans.DateUtils;
-import com.openbravo.beans.JCalendarDlgPanel;
+import com.openbravo.beans.JCalendarPanel2;
 import com.openbravo.data.gui.ComboBoxValModel;
 import com.openbravo.data.gui.MessageInf;
-import com.openbravo.data.loader.LocalRes;
+import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.format.Formats;
 import com.openbravo.pos.catalog.CatalogSelector;
 import com.openbravo.pos.catalog.JCatalog;
@@ -240,8 +240,8 @@ public class StockManagement extends JPanel implements JPanelView {
 
         if (m_invlines.getCount() > 0) {
             int res = JOptionPane.showConfirmDialog(this,
-                    LocalRes.getIntString("message.wannasave"),
-                    LocalRes.getIntString("title.editor"),
+                    AppLocal.getIntString("message.wannasave"),
+                    AppLocal.getIntString("title.editor"),
                     JOptionPane.YES_NO_CANCEL_OPTION,
                     JOptionPane.QUESTION_MESSAGE);
             if (res == JOptionPane.YES_OPTION) {
@@ -1225,7 +1225,7 @@ public class StockManagement extends JPanel implements JPanelView {
         catch (BasicException e) {
             date = null;
         }
-        date = JCalendarDlgPanel.showCalendarTime(this, date);
+        date = JCalendarPanel2.showCalendarTime(this, date);
         if (date != null) {
             m_jdate.setText(Formats.TIMESTAMP.formatValue(date));
         }

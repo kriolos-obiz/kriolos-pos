@@ -16,8 +16,6 @@
 
 package com.openbravo.pos.forms;
 
-import com.openbravo.beans.LocaleResources;
-
 /**
  * @author Jack Gerrard
  * @author adrianromero
@@ -36,6 +34,7 @@ public class AppLocal {
         m_resources = new LocaleResources();
         m_resources.addBundleName("pos_messages");
         m_resources.addBundleName("erp_messages");
+        m_resources.addBundleName("data_messages");
     }
     
     /** Creates a new instance of AppLocal */

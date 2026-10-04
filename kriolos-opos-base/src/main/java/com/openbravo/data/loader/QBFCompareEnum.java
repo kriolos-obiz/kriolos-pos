@@ -16,6 +16,8 @@
 
 package com.openbravo.data.loader;
 
+import com.openbravo.pos.forms.AppLocal;
+
 /**
  *
  * @author  adrian
@@ -124,7 +126,7 @@ public abstract class QBFCompareEnum {
     }
     @Override
     public String toString() {
-        return LocalRes.getIntString(m_sKey);
+        return AppLocal.getIntString(m_sKey);
     }
 
     /**

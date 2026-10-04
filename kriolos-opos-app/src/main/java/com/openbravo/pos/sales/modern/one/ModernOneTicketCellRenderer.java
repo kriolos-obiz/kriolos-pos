@@ -1,19 +1,19 @@
-//    KriolOS POS
-//    Copyright (c) 2019-2026 KriolOS
-//
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
-//
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//    GNU General Public License for more details.
-//
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+/*
+ * Copyright (C) 2026 KriolOS
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package com.openbravo.pos.sales.modern.one;
 
 import java.awt.Component;
@@ -34,11 +34,11 @@ import javax.swing.table.DefaultTableCellRenderer;
  *
  * @author KriolOS Team
  */
-public class ModernTicketCellRenderer extends DefaultTableCellRenderer {
+public class ModernOneTicketCellRenderer extends DefaultTableCellRenderer {
 
     private static final long serialVersionUID = 1L;
 
-    public ModernTicketCellRenderer() {
+    public ModernOneTicketCellRenderer() {
         super();
         setOpaque(true);
         applyComponentOrientation(ComponentOrientation.getOrientation(Locale.getDefault()));
@@ -59,19 +59,19 @@ public class ModernTicketCellRenderer extends DefaultTableCellRenderer {
 
             // Typography & Alignment
             switch (column) {
-                case ModernTicketTableModel.COL_PRODUCT:
+                case ModernOneTicketTableModel.COL_PRODUCT:
                     label.setHorizontalAlignment(SwingConstants.LEADING);
                     label.setFont(table.getFont().deriveFont(Font.BOLD, 13f));
                     break;
-                case ModernTicketTableModel.COL_QTY:
+                case ModernOneTicketTableModel.COL_QTY:
                     label.setHorizontalAlignment(SwingConstants.CENTER);
                     label.setFont(table.getFont().deriveFont(Font.BOLD, 13f));
                     break;
-                case ModernTicketTableModel.COL_PRICE:
+                case ModernOneTicketTableModel.COL_PRICE:
                     label.setHorizontalAlignment(SwingConstants.TRAILING);
                     label.setFont(table.getFont().deriveFont(Font.PLAIN, 12f));
                     break;
-                case ModernTicketTableModel.COL_TOTAL:
+                case ModernOneTicketTableModel.COL_TOTAL:
                     label.setHorizontalAlignment(SwingConstants.TRAILING);
                     label.setFont(table.getFont().deriveFont(Font.BOLD, 14f));
                     break;

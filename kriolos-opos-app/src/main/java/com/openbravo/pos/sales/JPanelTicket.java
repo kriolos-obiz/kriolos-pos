@@ -23,7 +23,6 @@ import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.basic.BasicException;
 import com.openbravo.beans.JPasswordPanel;
 import com.openbravo.data.gui.ComboBoxValModel;
-import com.openbravo.data.gui.ListKeyed;
 import com.openbravo.data.gui.MessageInf;
 import com.openbravo.data.loader.SentenceList;
 import com.openbravo.pos.customers.CustomerInfo;
@@ -113,9 +112,8 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     private StringBuffer m_sBarcode;
 
     private JTicketsBag m_ticketsbag;
-    private TicketParser m_TTP;
+    private TicketParser ticketParser;
     private SentenceList senttax;
-    private ListKeyed taxcollection;
 
     private SentenceList senttaxcategories;
     // private ListKeyed taxcategoriescollection;
@@ -147,11 +145,11 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         m_App = app;
         restDB = new RestaurantDBUtils(m_App);
 
-        dlSystem = (DataLogicSystem) m_App.getBean("com.openbravo.pos.forms.DataLogicSystem");
-        dlSales = (DataLogicSales) m_App.getBean("com.openbravo.pos.forms.DataLogicSales");
-        dlCustomers = (DataLogicCustomers) m_App.getBean("com.openbravo.pos.customers.DataLogicCustomers");
-        dlReceipts = (DataLogicReceipts) app.getBean("com.openbravo.pos.sales.DataLogicReceipts");
-        dataLogicPIM = (DataLogicPIM) app.getBean("com.openbravo.pos.pim.DataLogicPIM");
+        dlSystem = m_App.getBean(DataLogicSystem.class);
+        dlSales = m_App.getBean(DataLogicSales.class);
+        dlCustomers = m_App.getBean(DataLogicCustomers.class);
+        dlReceipts = app.getBean(DataLogicReceipts.class);
+        dataLogicPIM = app.getBean(DataLogicPIM.class);
 
         // Configuration>Peripheral options
         m_jbtnScale.setVisible(m_App.hasScale());
@@ -175,7 +173,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         LOGGER.log(System.Logger.Level.DEBUG, "JPanelTicket.init: criar: Ticket.Line");
         m_ticketlines = new JTicketLines(dlSystem.getResourceAsXML(TicketConstants.RES_TICKET_LINES));
         m_jPanelLines.add(m_ticketlines, java.awt.BorderLayout.CENTER);
-        m_TTP = m_App.createTicketParser();
+        ticketParser = m_App.createTicketParser();
 
         senttax = dlSales.getTaxList();
         senttaxcategories = dlSales.getTaxCategoriesList();
@@ -332,7 +330,6 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         m_jaddtax.setSelected("true".equals(m_jbtnconfig.getProperty("taxesincluded")));
 
         List<TaxInfo> taxlist = senttax.list();
-        taxcollection = new ListKeyed<>(taxlist);
         List<TaxCategoryInfo> taxcategorieslist = senttaxcategories.list();
 
         // Initialize Services
@@ -710,8 +707,8 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
             //new UUID(0L, 0L).toString();
             ticketID = "Void";
         }
-        
-        LOGGER.log(System.Logger.Level.INFO, "Delete Ticket Line number: " + ticketLineNumber + "; for TicketId: "+ticketID);
+
+        LOGGER.log(System.Logger.Level.INFO, "Delete Ticket Line number: " + ticketLineNumber + "; for TicketId: " + ticketID);
 
         if (ticketLineNumber < 0 || ticketLineNumber >= m_oTicket.getLinesCount()) {
             return;
@@ -1480,7 +1477,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
 
                 int i = m_ticketlines.getSelectedIndex();
 
-                LOGGER.log(System.Logger.Level.INFO,"EditLines select line: " + i);
+                LOGGER.log(System.Logger.Level.INFO, "EditLines select line: " + i);
 
                 if (i < 0) {
                     Toolkit.getDefaultToolkit().beep();
@@ -1848,24 +1845,11 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
             MessageInf msg = new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.cannotprintticket"));
             msg.show(JPanelTicket.this);
         } else {
-            if (ticket.getPickupId() == 0) {
-                try {
-                    ticket.setPickupId(dlSales.getNextPickupIndex());
-                }
-                catch (BasicException ex) {
-                    LOGGER.log(System.Logger.Level.WARNING, "Exception on get pickup id: ", ex);
-                    ticket.setPickupId(0);
-                }
-            }
 
             try {
                 ScriptEngine script = ScriptFactory.getScriptEngine(ScriptFactory.VELOCITY);
 
-                if (Boolean.parseBoolean(getAppProperty("receipt.newlayout"))) {
-                    script.put("taxes", ticket.getTaxLines());
-                } else {
-                    script.put("taxes", taxcollection);
-                }
+                script.put("taxes", ticket.getTaxLines());
 
                 Boolean warrantyPrint = warrantyCheck(ticket);
 
@@ -1879,7 +1863,9 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                 refreshTicket();
 
                 processTemaplated = script.eval(sresource).toString();
-                m_TTP.printTicket(processTemaplated, ticket);
+                ticketParser.printTicket(processTemaplated, ticket);
+                
+                Notify(AppLocal.getIntString("notify.printed"));
             }
             catch (ScriptException | TicketPrinterException ex) {
                 LOGGER.log(System.Logger.Level.WARNING, "Exception on processing/Print resource id: " + sresourcename,
@@ -1894,15 +1880,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     }
 
     public void printTicket(String resource) {
-        LOGGER.log(System.Logger.Level.DEBUG, "JPanelTicket printTicket: " + resource);
-        if (resource == null) {
-            MessageInf msg = new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.cannotexecute"));
-            msg.show(this);
-        } else {
-            printTicket(resource, m_oTicket, m_oTicketExt);
-        }
-
-        Notify(AppLocal.getIntString("notify.printed"));
+        printTicket(resource, m_oTicket, m_oTicketExt);
         j_btnRemotePrt.setEnabled(false);
     }
 
@@ -2016,7 +1994,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                 script.put("ticketline", oLine);
                 String resourcePrintTemplate = dlSystem.getResourceAsXML(resourceName);
                 String generatedPrintContent = script.eval(resourcePrintTemplate).toString();
-                m_TTP.printTicket(generatedPrintContent);
+                ticketParser.printTicket(generatedPrintContent);
 
             }
             catch (ScriptException | TicketPrinterException ex) {
@@ -2763,7 +2741,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
             Boolean warrantyPrint = warrantyCheck(m_oTicket);
             scriptEngine.put("ticket", m_oTicket);
             scriptEngine.put("place", m_oTicketExt);
-            scriptEngine.put("taxes", taxcollection);
+            scriptEngine.put("taxes", m_oTicket.getTaxLines());
             scriptEngine.put("taxeslogic", taxeslogic);
             scriptEngine.put("user", m_App.getAppUserView().getUser());
             scriptEngine.put("sales", this);
@@ -2784,36 +2762,31 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
 
     private void btnReprint1ActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_btnReprint1ActionPerformed
 
-        // TODO GET LAST FROM DB (USER ID)
-        if (m_config.getProperty("lastticket.number") != null) {
-            try {
-                TicketInfo ticketInfo = dlSales.loadTicket(
-                        Integer.parseInt((m_config.getProperty("lastticket.type"))),
-                        Integer.parseInt((m_config.getProperty("lastticket.number"))));
-                if (ticketInfo == null) {
-                    JFrame frame = new JFrame();
-                    JOptionPane.showMessageDialog(frame,
-                            AppLocal.getIntString("message.notexiststicket"),
-                            AppLocal.getIntString("message.notexiststickettitle"),
-                            JOptionPane.WARNING_MESSAGE);
-                } else {
-                    try {
-                        taxeslogic.calculateTaxes(ticketInfo);
-                        //TicketTaxInfo[] taxlist = m_ticket.getTaxLines();
-                    }
-                    catch (TaxesException ex) {
-                        LOGGER.log(System.Logger.Level.WARNING, "Exception on: ", ex);
-                    }
-                    printTicket("Printer.ReprintTicket", ticketInfo, null);
-                    Notify("'Printed'");
+        try {
+            int ticketType = 0;
+            TicketInfo ticketInfo = dlSales.loadLastTicket(ticketType);
+            if (ticketInfo == null) {
+                JFrame frame = new JFrame();
+                JOptionPane.showMessageDialog(frame,
+                        AppLocal.getIntString("message.notexiststicket"),
+                        AppLocal.getIntString("message.notexiststickettitle"),
+                        JOptionPane.WARNING_MESSAGE);
+            } else {
+                try {
+                    taxeslogic.calculateTaxes(ticketInfo);
+                printTicket("Printer.ReprintTicket", ticketInfo, null);
+                Notify("'Printer.reprint.last.ticket'");
+                }
+                catch (TaxesException ex) {
+                    LOGGER.log(System.Logger.Level.WARNING, "Exception on: ", ex);
                 }
             }
-            catch (BasicException ex) {
-                LOGGER.log(System.Logger.Level.WARNING, "Exception on: ", ex);
-                MessageInf msg = new MessageInf(MessageInf.SGN_WARNING,
-                        AppLocal.getIntString("message.cannotloadticket"), ex);
-                msg.show(this);
-            }
+        }
+        catch (BasicException ex) {
+            LOGGER.log(System.Logger.Level.WARNING, "Exception on: ", ex);
+            MessageInf msg = new MessageInf(MessageInf.SGN_WARNING,
+                    AppLocal.getIntString("message.cannotloadticket"), ex);
+            msg.show(this);
         }
     }// GEN-LAST:event_btnReprint1ActionPerformed
 

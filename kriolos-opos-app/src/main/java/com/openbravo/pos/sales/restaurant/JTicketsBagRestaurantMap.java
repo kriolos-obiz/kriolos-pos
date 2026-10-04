@@ -112,12 +112,11 @@ public class JTicketsBagRestaurantMap extends JTicketsBag {
         placeService = new PlaceServiceImpl(app.getSession());
 
         try {
-            // floorList = placeService.getFloors();
-            floorList = new java.util.ArrayList(); // Fallback to empty list to avoid null pointer later?
+            floorList = placeService.getFloors();
+            //floorList = new java.util.ArrayList(); // Fallback to empty list to avoid null pointer later?
         } catch (Exception e) {
-            // MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE,
-            // LocalRes.getIntString("message.cannotloadfloors"), e);
-            // msg.show(this);
+            MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE, AppLocal.getIntString("message.cannotloadfloors"), e);
+            msg.show(this);
             floorList = new java.util.ArrayList();
         }
         try {

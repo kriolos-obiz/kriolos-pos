@@ -1,19 +1,19 @@
-//    KriolOS POS
-//    Copyright (c) 2019-2026 KriolOS
-//
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
-//
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//    GNU General Public License for more details.
-//
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+/*
+ * Copyright (C) 2026 KriolOS
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package com.openbravo.pos.sales.modern.two;
 
 import com.openbravo.basic.BasicException;
@@ -50,9 +50,6 @@ import com.openbravo.pos.ticket.TaxInfo;
 import com.openbravo.pos.ticket.TicketInfo;
 import com.openbravo.pos.ticket.TicketLineInfo;
 import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.ComponentOrientation;
-import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
@@ -61,16 +58,13 @@ import javax.swing.KeyStroke;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.BorderFactory;
-import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
 /**
@@ -88,10 +82,10 @@ import javax.swing.UIManager;
  *
  * @author KriolOS Team
  */
-public class ModernTwoSalesLayout extends JPanel implements JPanelView, TicketsEditor {
+public class ModernTwo extends JPanel implements JPanelView, TicketsEditor {
 
     private static final long serialVersionUID = 1L;
-    private static final Logger LOGGER = Logger.getLogger(ModernTwoSalesLayout.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(ModernTwo.class.getName());
 
     private final AppView app;
     private final TicketsEditor panelticket;
@@ -118,7 +112,7 @@ public class ModernTwoSalesLayout extends JPanel implements JPanelView, TicketsE
     private String activeTicketExt;
     private CustomerInfoExt activeCustomer;
 
-    public ModernTwoSalesLayout(AppView app, TicketsEditor panelticket) {
+    public ModernTwo(AppView app, TicketsEditor panelticket) {
         this.app = app;
         this.panelticket = panelticket;
         setName("kriolos:sales:modern-two:panel");
@@ -127,7 +121,7 @@ public class ModernTwoSalesLayout extends JPanel implements JPanelView, TicketsE
         initUI();
     }
 
-    public ModernTwoSalesLayout(AppView app) {
+    public ModernTwo(AppView app) {
         this(app, null);
     }
 
@@ -140,14 +134,10 @@ public class ModernTwoSalesLayout extends JPanel implements JPanelView, TicketsE
             this.dlSystem = app.getBean(DataLogicSystem.class);
 
             if (dlSales != null) {
-                try {
-                    List<TaxInfo> taxList = dlSales.getTaxList().list();
-                    this.taxeslogic = new TaxesLogic(taxList);
-                    this.paymentService = new PaymentServiceImpl();
-                    this.salesService = new SalesServiceImpl(taxeslogic);
-                } catch (BasicException e) {
-                    LOGGER.log(Level.WARNING, "Failed to load tax list for ModernTwo", e);
-                }
+                List<TaxInfo> taxList = dlSales.getTaxListAll();
+                this.taxeslogic = new TaxesLogic(taxList);
+                this.paymentService = new PaymentServiceImpl();
+                this.salesService = new SalesServiceImpl(taxeslogic);
             }
 
             if (dlSystem != null) {

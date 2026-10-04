@@ -18,8 +18,6 @@ package com.openbravo.pos.config;
 import com.openbravo.data.user.DirtyManager;
 import com.openbravo.pos.forms.AppConfig;
 import com.openbravo.pos.forms.AppLocal;
-import com.openbravo.pos.forms.AppProperties;
-import com.openbravo.pos.sales.SaleLayout;
 import com.openbravo.pos.ui.api.sales.SaleLayoutDefinition;
 import com.openbravo.pos.ui.api.sales.SaleLayoutManager;
 import com.openbravo.pos.ui.api.POSThemeDefinition;
@@ -31,8 +29,6 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.DefaultListCellRenderer;
-import javax.swing.JList;
 import javax.swing.JOptionPane;
 
 
@@ -200,7 +196,7 @@ public class JPanelConfigGeneral extends javax.swing.JPanel implements PanelConf
         LOGGER.info("Current LaF: "+UIManager.getLookAndFeel().getClass().getName());
         POSThemeDefinition theme = (POSThemeDefinition) jcboLAF.getSelectedItem();
         POSThemeManager.applyTheme(theme.id());
-        
+            
     }
     /** This method is called from within the constructor to
      * initialize the form.

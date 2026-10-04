@@ -19,7 +19,7 @@ package com.openbravo.data.gui;
 import java.util.*;
 import javax.swing.*;
 import com.openbravo.basic.BasicException;
-import com.openbravo.data.loader.LocalRes;
+import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.data.user.BrowsableEditableData;
 import com.openbravo.data.user.StateListener;
 
@@ -144,7 +144,7 @@ public class JSaver extends JPanel implements StateListener {
         try {
             m_bd.saveData();
         } catch (BasicException eD) {
-            JMessagePanel.showMessage(this.getParent(),new MessageInf(MessageInf.SGN_NOTICE, LocalRes.getIntString("message.nosave"), eD));
+            JMessagePanel.showMessage(this.getParent(),new MessageInf(MessageInf.SGN_NOTICE, AppLocal.getIntString("message.nosave"), eD));
         }          
     }//GEN-LAST:event_jbtnSaveActionPerformed
 
@@ -152,7 +152,7 @@ public class JSaver extends JPanel implements StateListener {
         try {
             m_bd.actionDelete();
         } catch (BasicException eD) {
-            JMessagePanel.showMessage(this.getParent(),new MessageInf(MessageInf.SGN_NOTICE, LocalRes.getIntString("message.nodelete"), eD));
+            JMessagePanel.showMessage(this.getParent(),new MessageInf(MessageInf.SGN_NOTICE, AppLocal.getIntString("message.nodelete"), eD));
         }        
     }//GEN-LAST:event_jbtnDeleteActionPerformed
 
@@ -160,7 +160,7 @@ public class JSaver extends JPanel implements StateListener {
         try {
             m_bd.actionInsert();
         } catch (BasicException eD) {
-            JMessagePanel.showMessage(this.getParent(),new MessageInf(MessageInf.SGN_NOTICE, LocalRes.getIntString("message.nonew"), eD));
+            JMessagePanel.showMessage(this.getParent(),new MessageInf(MessageInf.SGN_NOTICE, AppLocal.getIntString("message.nonew"), eD));
         }
     }//GEN-LAST:event_jbtnNewActionPerformed
    

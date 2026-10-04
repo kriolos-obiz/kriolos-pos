@@ -15,6 +15,7 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package com.openbravo.data.loader;
 
+import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.basic.BasicException;
 import java.util.logging.Logger;
 
@@ -212,7 +213,7 @@ public class QBFBuilder implements ISQLBuilderStatic {
         private String exceptionMessage(int paramIndex, Object value) {
             String valueS = value != null ? value.toString() : "null";
             return String.format("%s <<<DETAILED>>> paramIndex: %d value: %s",
-                    LocalRes.getIntString("exception.nocompare"),
+                    AppLocal.getIntString("exception.nocompare"),
                     paramIndex,
                     valueS);
         }

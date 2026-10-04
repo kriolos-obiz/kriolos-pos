@@ -36,25 +36,30 @@ import javax.swing.SwingUtilities;
 /**
  * A shared, multi-ticket implementation of the {@link JTicketsBag} controller.
  * <p>
- * This class manages a "layaway" or suspended ticket workflow where multiple active sales receipts
- * can be temporarily stored in the database (as shared tickets) and resumed later. This is
- * particularly useful in retail and bar environments, allowing an operator to put a customer's
- * transaction on hold to serve someone else without losing progress.
+ * This class manages a "layaway" or suspended ticket workflow where multiple
+ * active sales receipts can be temporarily stored in the database (as shared
+ * tickets) and resumed later. This is particularly useful in retail and bar
+ * environments, allowing an operator to put a customer's transaction on hold to
+ * serve someone else without losing progress.
  * </p>
  *
  * <h3>Core Features & Business Logic:</h3>
  * <ul>
- *   <li><b>Permission-Based Visibility:</b> Filters the list of shared tickets based on user roles.
- *       Managers or users with override rights see all global tickets, while standard operators
- *       are restricted to their own active entries.</li>
- *   <li><b>Data Persistence Safety:</b> Automatically saves work-in-progress carts to the temporary database
- *       ({@link DataLogicReceipts}) during screen transitions or new ticket instantiation, provided
- *       the cart contains at least one line item.</li>
- *   <li><b>Secure Transaction Voiding:</b> Enforces supervisor validation checks (PIN entry via
- *       {@link JPasswordDialog}) before allowing terminal users to delete or void a running invoice.</li>
- *   <li><b>Asynchronous Lookups:</b> Dispatches heavy database lookups—such as fetching shared lists
- *       or closed historical tickets for reprinting—safely onto the Swing Event Dispatch Thread (EDT)
- *       to keep the point-of-sale layout smooth and responsive.</li>
+ * <li><b>Permission-Based Visibility:</b> Filters the list of shared tickets
+ * based on user roles. Managers or users with override rights see all global
+ * tickets, while standard operators are restricted to their own active
+ * entries.</li>
+ * <li><b>Data Persistence Safety:</b> Automatically saves work-in-progress
+ * carts to the temporary database ({@link DataLogicReceipts}) during screen
+ * transitions or new ticket instantiation, provided the cart contains at least
+ * one line item.</li>
+ * <li><b>Secure Transaction Voiding:</b> Enforces supervisor validation checks
+ * (PIN entry via {@link JPasswordDialog}) before allowing terminal users to
+ * delete or void a running invoice.</li>
+ * <li><b>Asynchronous Lookups:</b> Dispatches heavy database lookups—such as
+ * fetching shared lists or closed historical tickets for reprinting—safely onto
+ * the Swing Event Dispatch Thread (EDT) to keep the point-of-sale layout smooth
+ * and responsive.</li>
  * </ul>
  *
  * @author KriolOS / JG uniCenta
@@ -63,7 +68,6 @@ import javax.swing.SwingUtilities;
  * @see com.openbravo.pos.sales.shared.JTicketsBagSharedList
  * @see javax.swing.JPanel
  */
-
 public class JTicketsBagShared extends JTicketsBag {
 
     private DataLogicReceipts dlReceipts = null;
@@ -190,18 +194,18 @@ public class JTicketsBagShared extends JTicketsBag {
         updateCount();
     }
 
-    private void setActiveTicket(String id) throws BasicException {
+    private void setActiveTicket(String ticketUUID) throws BasicException {
 
-        TicketInfo ticket = dlReceipts.getSharedTicket(id);
+        TicketInfo ticket = dlReceipts.getSharedTicket(ticketUUID);
         if (ticket == null) {
             m_jListTickets.setText("");
-            LOGGER.log(System.Logger.Level.WARNING, "NOT FOUND Shared TICKET for id: " + id);
+            LOGGER.log(System.Logger.Level.WARNING, "NOT FOUND Shared TICKET for id: " + ticketUUID);
             throw new BasicException(AppLocal.getIntString("message.noticket"));
         } else {
-            Integer pickUp = dlReceipts.getPickupId(id);
-            dlReceipts.deleteSharedTicket(id);
-            m_panelticket.setActiveTicket(ticket, null);
+            Integer pickUp = dlReceipts.getPickupId(ticketUUID);
             ticket.setPickupId(pickUp);
+            m_panelticket.setActiveTicket(ticket, null);
+            dlReceipts.deleteSharedTicket(ticketUUID);
         }
 
         updateCount();
@@ -243,7 +247,7 @@ public class JTicketsBagShared extends JTicketsBag {
             } else {
                 listSharedTicket = dlReceipts.getUserSharedTicketList(appuser.getId());
             }
-            
+
             LOGGER.log(System.Logger.Level.DEBUG, "Shared ticket found " + listSharedTicket.size() + " tickets for  user: " + appuser.getName());
         }
         catch (BasicException e) {
@@ -492,10 +496,7 @@ public class JTicketsBagShared extends JTicketsBag {
                             
                         }
                          */
-
-                        List<ReprintTicketInfo> l = dlSales.getReprintTicketList();
-                        JTicketsReprintList listDialog = JTicketsReprintList.newJDialog(JTicketsBagShared.this);
-                        String id = listDialog.showTicketsList(l, dlSales);
+                        String id = JTicketsReprintPanel.show(JTicketsBagShared.this, getAppView());
 
                         if (id != null) {
                             saveCurrentTicket();

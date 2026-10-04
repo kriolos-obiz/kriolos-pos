@@ -386,7 +386,8 @@ public class DataLogicSales extends BeanFactoryDataSingle {
         List<TaxInfo> list = null;
         try {
             list = this.getTaxList().list();
-        } catch (BasicException ex) {
+        }
+        catch (BasicException ex) {
             LOGGER.log(Level.WARNING, "Cannot get Tax list", ex);
         }
         return list;
@@ -471,7 +472,8 @@ public class DataLogicSales extends BeanFactoryDataSingle {
         List<TaxCategoryInfo> list = null;
         try {
             list = this.getTaxCategoriesList().list();
-        } catch (BasicException ex) {
+        }
+        catch (BasicException ex) {
             LOGGER.log(Level.WARNING, "Cannot get TaxCategoryInfo list", ex);
         }
         return list;
@@ -496,7 +498,8 @@ public class DataLogicSales extends BeanFactoryDataSingle {
         List<AttributeSetInfo> list = null;
         try {
             list = this.getAttributeSetList().list();
-        } catch (BasicException ex) {
+        }
+        catch (BasicException ex) {
             LOGGER.log(Level.WARNING, "Cannot get AttributeSetInfo list", ex);
         }
         return list;
@@ -521,7 +524,8 @@ public class DataLogicSales extends BeanFactoryDataSingle {
         List<LocationInfo> list = null;
         try {
             list = this.getLocationsList().list();
-        } catch (BasicException ex) {
+        }
+        catch (BasicException ex) {
             LOGGER.log(Level.WARNING, "Cannot get AttributeSetInfo list", ex);
         }
         return list;
@@ -558,8 +562,7 @@ public class DataLogicSales extends BeanFactoryDataSingle {
      */
     public final TicketInfo loadTicket(final int tickettype, final int ticketid) throws BasicException {
 
-        SerializerWrite<Object[]> sw = new SerializerWriteBasicExt(new Datas[]{Datas.INT, Datas.INT},
-                new int[]{0, 1});
+        SerializerWrite<Object[]> sw = new SerializerWriteBasicExt(new Datas[]{Datas.INT, Datas.INT}, new int[]{0, 1});
         Object[] params = new Object[]{tickettype, ticketid};
 
         TicketInfo ticket = (TicketInfo) new PreparedSentence(sessionDB,
@@ -583,6 +586,49 @@ public class DataLogicSales extends BeanFactoryDataSingle {
                 new SerializerReadClass(TicketInfo.class))
                 .find(params);
 
+        setTicketData(ticket);
+
+        return ticket;
+    }
+    
+    /**
+     * 
+     * @param ticketType
+     * @return
+     * @throws BasicException 
+     */
+    public final TicketInfo loadLastTicket(final int ticketType) throws BasicException {
+
+        SerializerWrite<Object[]> serialWriter = new SerializerWriteBasicExt(new Datas[]{Datas.INT}, new int[]{0});
+        Object[] params = new Object[]{ticketType};
+
+        TicketInfo ticket = (TicketInfo) new PreparedSentence(sessionDB,
+                "SELECT "
+                + "T.ID, "
+                + "T.TICKETTYPE, "
+                + "T.TICKETID, "
+                + "R.DATENEW, "
+                + "R.MONEY, "
+                + "R.ATTRIBUTES, "
+                + "P.ID, "
+                + "P.NAME, "
+                + "T.CUSTOMER, "
+                + "T.STATUS "
+                + "FROM receipts R "
+                + "JOIN tickets T ON R.ID = T.ID "
+                + "LEFT OUTER JOIN people P ON T.PERSON = P.ID "
+                + "WHERE T.TICKETTYPE = ?  "
+                + "ORDER BY R.DATENEW DESC LIMIT 1",
+                serialWriter,
+                new SerializerReadClass(TicketInfo.class))
+                .find(params);
+
+        setTicketData(ticket);
+
+        return ticket;
+    }
+
+    private void setTicketData(TicketInfo ticket) throws BasicException {
         if (ticket != null) {
 
             String customerid = ticket.getCustomerId();
@@ -608,7 +654,6 @@ public class DataLogicSales extends BeanFactoryDataSingle {
                     SerializerWriteString.INSTANCE,
                     new SerializerReadClass(PaymentInfoTicket.class)).list(ticket.getId()));
         }
-        return ticket;
     }
 
     /**
@@ -653,7 +698,8 @@ public class DataLogicSales extends BeanFactoryDataSingle {
                     ByteArrayOutputStream o = new ByteArrayOutputStream();
                     ticket.getProperties().storeToXML(o, AppLocal.APP_NAME, "UTF-8");
                     properties = o.toByteArray();
-                } catch (IOException e) {
+                }
+                catch (IOException e) {
                     LOGGER.log(Level.WARNING, "Cannot convert ticket properties to XML ", e);
                 }
 
@@ -974,7 +1020,8 @@ public class DataLogicSales extends BeanFactoryDataSingle {
 
         try {
             return (BufferedImage) getProductImage().find(imageId);
-        } catch (BasicException e) {
+        }
+        catch (BasicException e) {
             return null;
         }
     }
@@ -1387,7 +1434,8 @@ public class DataLogicSales extends BeanFactoryDataSingle {
         List<UomInfo> list = null;
         try {
             list = this.getUomList().list();
-        } catch (BasicException ex) {
+        }
+        catch (BasicException ex) {
             LOGGER.log(Level.WARNING, "Cannot get UomInfo list", ex);
         }
         return list;
@@ -1532,7 +1580,8 @@ public class DataLogicSales extends BeanFactoryDataSingle {
             Object[] line = new Object[]{username, ticketId, productId, productName, quantity, new Date()};
 
             m_lineremoved.exec(line);
-        } catch (BasicException e) {
+        }
+        catch (BasicException e) {
             LOGGER.log(Level.SEVERE, "Exception on execute line removed: ", e);
         }
     }
@@ -1550,7 +1599,8 @@ public class DataLogicSales extends BeanFactoryDataSingle {
         try {
             Object[] ticketDeleted = new Object[]{username, "Void", "Ticket Deleted", 0.0, new Date()};
             m_ticketremoved.exec(ticketDeleted);
-        } catch (BasicException e) {
+        }
+        catch (BasicException e) {
             LOGGER.log(Level.SEVERE, "Exception on execute ticket removed: ", e);
         }
     }

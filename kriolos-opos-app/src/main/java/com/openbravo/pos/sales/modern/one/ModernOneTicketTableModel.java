@@ -1,19 +1,19 @@
-//    KriolOS POS
-//    Copyright (c) 2019-2026 KriolOS
-//
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
-//
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//    GNU General Public License for more details.
-//
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+/*
+ * Copyright (C) 2026 KriolOS
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package com.openbravo.pos.sales.modern.one;
 
 import com.openbravo.format.Formats;
@@ -28,7 +28,7 @@ import javax.swing.table.AbstractTableModel;
  *
  * @author KriolOS Team
  */
-public class ModernTicketTableModel extends AbstractTableModel {
+public class ModernOneTicketTableModel extends AbstractTableModel {
 
     private static final long serialVersionUID = 1L;
 
@@ -119,7 +119,7 @@ public class ModernTicketTableModel extends AbstractTableModel {
             case COL_QTY:
                 return Formats.DOUBLE.formatValue(line.getMultiply());
             case COL_PRICE:
-                return Formats.CURRENCY.formatValue(line.getPrice());
+                return Formats.CURRENCY.formatValue(line.getPriceTax());
             case COL_TOTAL:
                 return Formats.CURRENCY.formatValue(line.getSubValue());
             default:

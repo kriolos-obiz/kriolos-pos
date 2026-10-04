@@ -17,7 +17,7 @@
 package com.openbravo.pos.panels;
 
 import com.openbravo.basic.BasicException;
-import com.openbravo.beans.JCalendarDlgPanel;
+import com.openbravo.beans.JCalendarPanel2;
 import com.openbravo.data.gui.ComboBoxValModel;
 import com.openbravo.data.gui.ListQBFModelNumber;
 import com.openbravo.data.gui.MessageInf;
@@ -679,7 +679,7 @@ public class JTicketsFinderPanel extends JPanel implements EditorCreator {
         } catch (BasicException e) {
             date = null;
         }
-        date = JCalendarDlgPanel.showCalendarTimeHours(this, date);
+        date = JCalendarPanel2.showCalendarTimeHours(this, date);
         if (date != null) {
             jTxtStartDate.setText(Formats.TIMESTAMP.formatValue(date));
         }
@@ -695,7 +695,7 @@ public class JTicketsFinderPanel extends JPanel implements EditorCreator {
         } catch (BasicException e) {
             date = null;
         }
-        date = JCalendarDlgPanel.showCalendarTimeHours(this, date);
+        date = JCalendarPanel2.showCalendarTimeHours(this, date);
         if (date != null) {
             jTxtEndDate.setText(Formats.TIMESTAMP.formatValue(date));
         }

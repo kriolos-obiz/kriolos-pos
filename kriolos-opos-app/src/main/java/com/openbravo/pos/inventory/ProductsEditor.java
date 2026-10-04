@@ -30,7 +30,7 @@ import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
-import com.openbravo.beans.JCalendarDlgPanel;
+import com.openbravo.beans.JCalendarPanel2;
 import com.openbravo.pos.domain.utils.AmountCalculatorUtil;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
@@ -2149,7 +2149,7 @@ public final class ProductsEditor extends com.openbravo.pos.panels.ValidationPan
         catch (BasicException e) {
             date = null;
         }
-        date = JCalendarDlgPanel.showCalendarTime(this, date);
+        date = JCalendarPanel2.showCalendarTime(this, date);
         if (date != null) {
             m_jdate.setText(Formats.TIMESTAMP.formatValue(date));
         }

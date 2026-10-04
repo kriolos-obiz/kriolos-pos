@@ -16,6 +16,7 @@
 
 package com.openbravo.data.loader;
 
+import com.openbravo.pos.forms.AppLocal;
 import java.sql.*;
 import java.util.*; 
 import com.openbravo.basic.BasicException;
@@ -48,26 +49,26 @@ public class MetaSentence extends JDBCBaseSentence {
         public MetaParameter() {}
         
         public void setDouble(int paramIndex, Double dValue) throws BasicException {
-            throw new BasicException(LocalRes.getIntString("exception.noparamtype"));
+            throw new BasicException(AppLocal.getIntString("exception.noparamtype"));
         }
         public void setBoolean(int paramIndex, Boolean bValue) throws BasicException {
-            throw new BasicException(LocalRes.getIntString("exception.noparamtype"));
+            throw new BasicException(AppLocal.getIntString("exception.noparamtype"));
         }
         public void setInt(int paramIndex, Integer iValue) throws BasicException {
-            throw new BasicException(LocalRes.getIntString("exception.noparamtype"));
+            throw new BasicException(AppLocal.getIntString("exception.noparamtype"));
         }   
         public void setString(int paramIndex, String sValue) throws BasicException {
             ensurePlace(paramIndex - 1);
             m_aParams.set(paramIndex - 1, sValue);
         }
         public void setTimestamp(int paramIndex, java.util.Date dValue) throws BasicException {
-            throw new BasicException(LocalRes.getIntString("exception.noparamtype"));
+            throw new BasicException(AppLocal.getIntString("exception.noparamtype"));
         }
 //        public void setBinaryStream(int paramIndex, java.io.InputStream in, int length) throws DataException {
 //             throw new DataException("Param type not allowed");
 //       }
         public void setBytes(int paramIndex, byte[] value) throws BasicException {
-             throw new BasicException(LocalRes.getIntString("exception.noparamtype"));
+             throw new BasicException(AppLocal.getIntString("exception.noparamtype"));
        }
         public void setObject(int paramIndex, Object value) throws BasicException {
             setString(paramIndex, (value == null) ? null : value.toString());

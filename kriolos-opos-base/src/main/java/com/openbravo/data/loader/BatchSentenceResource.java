@@ -16,6 +16,7 @@
 
 package com.openbravo.data.loader;
 
+import com.openbravo.pos.forms.AppLocal;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -48,12 +49,12 @@ public class BatchSentenceResource extends BatchSentence {
         InputStream in = BatchSentenceResource.class.getResourceAsStream(m_sResScript);
         
         if (in == null) {
-            throw new BasicException(LocalRes.getIntString("exception.nosentencesfile"));
+            throw new BasicException(AppLocal.getIntString("exception.nosentencesfile"));
         } else {  
             try {
                 return new InputStreamReader(in, "UTF-8");
             } catch (UnsupportedEncodingException ex) {
-                throw new BasicException(LocalRes.getIntString("exception.nosentencesfile"), ex);
+                throw new BasicException(AppLocal.getIntString("exception.nosentencesfile"), ex);
             }
         }
     }   

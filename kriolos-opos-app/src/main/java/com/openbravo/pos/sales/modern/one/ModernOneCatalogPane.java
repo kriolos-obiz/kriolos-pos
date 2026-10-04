@@ -1,19 +1,19 @@
-//    KriolOS POS
-//    Copyright (c) 2019-2026 KriolOS
-//
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
-//
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//    GNU General Public License for more details.
-//
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+/*
+ * Copyright (C) 2026 KriolOS
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package com.openbravo.pos.sales.modern.one;
 
 import com.openbravo.pos.sales.modern.WrapLayout;
@@ -23,7 +23,6 @@ import java.awt.BorderLayout;
 import java.awt.ComponentOrientation;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.Font;
 import java.awt.Insets;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,11 +42,11 @@ import javax.swing.event.DocumentListener;
  *
  * @author KriolOS Team
  */
-public class ModernCatalogPane extends JPanel {
+public class ModernOneCatalogPane extends JPanel {
 
     private static final long serialVersionUID = 1L;
 
-    private final ModernCategoryBar categoryBar;
+    private final ModernOneCategoryBar categoryBar;
     private final JTextField searchField;
     private final JPanel gridContainer;
     private final JScrollPane gridScrollPane;
@@ -57,7 +56,7 @@ public class ModernCatalogPane extends JPanel {
     private CategoryInfo currentCategory = null;
     private String currentSearchFilter = "";
 
-    public ModernCatalogPane(Consumer<ProductInfoExt> onProductSelected) {
+    public ModernOneCatalogPane(Consumer<ProductInfoExt> onProductSelected) {
         this.onProductSelected = onProductSelected;
 
         setLayout(new BorderLayout(0, 18));
@@ -94,7 +93,7 @@ public class ModernCatalogPane extends JPanel {
             }
         });
 
-        categoryBar = new ModernCategoryBar(category -> {
+        categoryBar = new ModernOneCategoryBar(category -> {
             this.currentCategory = category;
             renderGrid();
         });
@@ -156,7 +155,7 @@ public class ModernCatalogPane extends JPanel {
                 .collect(Collectors.toList());
 
         for (ProductInfoExt prod : filtered) {
-            ModernProductCard card = new ModernProductCard(prod, e -> {
+            ModernOneProductCard card = new ModernOneProductCard(prod, e -> {
                 if (onProductSelected != null) {
                     onProductSelected.accept(prod);
                 }

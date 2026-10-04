@@ -18,9 +18,8 @@ package com.openbravo.pos.sales;
 
 import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.forms.DataLogicSales;
-import com.openbravo.pos.sales.restaurant.JTicketsBagRestaurantMap;
-import com.openbravo.pos.sales.shared.JTicketsBagShared;
 import com.openbravo.pos.sales.simple.JTicketsBagSimple;
+import com.openbravo.pos.ui.api.sales.SaleLayoutManager;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 
@@ -70,7 +69,12 @@ public abstract class JTicketsBag extends JPanel {
     public JTicketsBag(AppView oApp, TicketsEditor panelticket) {        
         m_App = oApp;     
         m_panelticket = panelticket;        
-        m_dlSales = (DataLogicSales) m_App.getBean("com.openbravo.pos.forms.DataLogicSales");
+        m_dlSales = m_App.getBean(DataLogicSales.class);
+    }
+    
+    
+    protected AppView getAppView(){
+        return m_App;
     }
     
     /**
@@ -109,7 +113,7 @@ public abstract class JTicketsBag extends JPanel {
      * @return
      */
     public static JTicketsBag createTicketsBag(String sName, AppView app, TicketsEditor panelticket) {
-        JComponent comp = com.openbravo.pos.ui.api.sales.SaleLayoutManager.createLayout(sName, app, panelticket);
+        JComponent comp = SaleLayoutManager.createLayout(sName, app, panelticket);
         if (comp instanceof JTicketsBag bag) {
             return bag;
         }

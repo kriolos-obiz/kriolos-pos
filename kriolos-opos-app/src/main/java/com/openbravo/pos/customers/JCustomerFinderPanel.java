@@ -40,7 +40,7 @@ public class JCustomerFinderPanel extends javax.swing.JPanel implements EditorCr
     private static final long serialVersionUID = 1L;
 
     private CustomerInfo m_ReturnCustomer;
-    private ListProvider lpr;
+    private ListProvider<CustomerInfo> lpr;
     private AppView appView;
     private PosUIModal modalContext;
 
@@ -133,7 +133,7 @@ public class JCustomerFinderPanel extends javax.swing.JPanel implements EditorCr
 
         m_jtxtTaxID.activate();
 
-        lpr = new ListProviderCreator(dlCustomers.getCustomerList(), this);
+        lpr = new ListProviderCreator<>(dlCustomers.getCustomerList(), this);
 
         jListCustomers.setCellRenderer(new BusinessPartnerListCellRenderer());
 
@@ -180,7 +180,7 @@ public class JCustomerFinderPanel extends javax.swing.JPanel implements EditorCr
         m_jtxtPostal.setText("");
         m_jtxtPhone.setText("");
         m_jtxtEmail.setText("");
-        jListCustomers.setModel(new MyListData(new ArrayList()));
+        jListCustomers.setModel(new CustomerInfoListModel(new ArrayList()));
     }
 
     /**
@@ -189,7 +189,7 @@ public class JCustomerFinderPanel extends javax.swing.JPanel implements EditorCr
     public void executeSearch() {
         
         try {
-            jListCustomers.setModel(new MyListData(lpr.loadData()));
+            jListCustomers.setModel(new CustomerInfoListModel(lpr.loadData()));
             if (jListCustomers.getModel().getSize() > 0) {
                 jListCustomers.setSelectedIndex(0);
             } else {
@@ -278,16 +278,18 @@ public class JCustomerFinderPanel extends javax.swing.JPanel implements EditorCr
         return afilter;
     }
 
-    private static class MyListData extends javax.swing.AbstractListModel {
+    private static class CustomerInfoListModel extends javax.swing.AbstractListModel<CustomerInfo> {
 
-        private final java.util.List m_data;
+        private static final long serialVersionUID = 1L;
 
-        public MyListData(java.util.List data) {
+        private final java.util.List<CustomerInfo> m_data;
+
+        public CustomerInfoListModel(java.util.List<CustomerInfo> data) {
             m_data = data;
         }
 
         @Override
-        public Object getElementAt(int index) {
+        public CustomerInfo getElementAt(int index) {
             return m_data.get(index);
         }
 

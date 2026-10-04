@@ -16,7 +16,7 @@
 package com.openbravo.pos.epm;
 
 import com.openbravo.basic.BasicException;
-import com.openbravo.beans.JCalendarDlgPanel;
+import com.openbravo.beans.JCalendarPanel2;
 import com.openbravo.data.user.DirtyManager;
 import com.openbravo.data.user.EditorRecord;
 import com.openbravo.format.Formats;
@@ -394,7 +394,7 @@ public final class LeavesView extends com.openbravo.pos.panels.ValidationPanel i
         } catch (BasicException e) {
             date = null;
         }
-        date = JCalendarDlgPanel.showCalendarTimeHours(this, date);
+        date = JCalendarPanel2.showCalendarTimeHours(this, date);
         if (date != null) {
             m_jEndDate.setText(Formats.TIMESTAMP.formatValue(date));
         }
@@ -407,7 +407,7 @@ public final class LeavesView extends com.openbravo.pos.panels.ValidationPanel i
         } catch (BasicException e) {
             date = null;
         }
-        date = JCalendarDlgPanel.showCalendarTimeHours(this, date);
+        date = JCalendarPanel2.showCalendarTimeHours(this, date);
         if (date != null) {
             m_jStartDate.setText(Formats.TIMESTAMP.formatValue(date));
         }

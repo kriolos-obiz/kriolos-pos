@@ -22,7 +22,7 @@ import javax.swing.ListCellRenderer;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import com.openbravo.basic.BasicException;
-import com.openbravo.data.loader.LocalRes;
+import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.data.user.BrowsableEditableData;
 import com.openbravo.data.user.BrowseListener;
 
@@ -102,7 +102,7 @@ public class JListNavigator extends javax.swing.JPanel implements BrowseListener
                     try {
                         m_bd.moveTo(i);
                     } catch (BasicException eD) {
-                        MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE, LocalRes.getIntString("message.nomove"), eD);
+                        MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE, AppLocal.getIntString("message.nomove"), eD);
                         msg.show(this);
                     }
                 }

@@ -16,6 +16,7 @@
 
 package com.openbravo.pos.sales.restaurant;
 
+import com.openbravo.pos.forms.AppLocal;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.beans.*;
@@ -322,7 +323,7 @@ public class JTicketsBagRestaurantRes extends javax.swing.JPanel implements Edit
                 m_bd.actionLoad();
             } catch (BasicException eD) {
                 MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE, 
-                    LocalRes.getIntString("message.noreload"), eD);
+                    AppLocal.getIntString("message.noreload"), eD);
                 msg.show(this);
                 m_dcurrentday = doldcurrentday; // nos retractamos...
             }
@@ -635,7 +636,7 @@ public class JTicketsBagRestaurantRes extends javax.swing.JPanel implements Edit
             m_restaurantmap.viewTables(customer);      
         } catch (BasicException eD) {
             MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE, 
-                LocalRes.getIntString("message.nosaveticket"), eD);
+                AppLocal.getIntString("message.nosaveticket"), eD);
             msg.show(this);
         }       
         

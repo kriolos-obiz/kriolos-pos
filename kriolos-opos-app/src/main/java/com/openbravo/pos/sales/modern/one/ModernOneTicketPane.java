@@ -1,18 +1,19 @@
-//    KriolOS POS
-//    Copyright (c) 2019-2026 KriolOS
-//
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
-//
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//    GNU General Public License for more details.
-//
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+/*
+ * Copyright (C) 2026 KriolOS
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package com.openbravo.pos.sales.modern.one;
 
 import com.openbravo.format.Formats;
@@ -51,12 +52,12 @@ import javax.swing.UIManager;
  *
  * @author KriolOS Team
  */
-public class ModernTicketPane extends JPanel {
+public class ModernOneTicketPane extends JPanel {
 
     private static final long serialVersionUID = 1L;
     private static final int MIN_ROW_HEIGHT = 52;
 
-    private final ModernTicketTableModel tableModel;
+    private final ModernOneTicketTableModel tableModel;
     private final JTable table;
     private final JLabel ticketHeaderLabel;
     private final JButton customerButton;
@@ -88,7 +89,7 @@ public class ModernTicketPane extends JPanel {
     private Runnable onDeleteLineClicked;
     private Runnable onEditLineClicked;
 
-    public ModernTicketPane() {
+    public ModernOneTicketPane() {
         setLayout(new BorderLayout(0, 8));
         setOpaque(true);
         setBackground(UIManager.getColor("Panel.background"));
@@ -147,14 +148,14 @@ public class ModernTicketPane extends JPanel {
         // ----------------------------------------------------
         // 2. CENTER: Flat, Borderless Line Items Table (>= 50px)
         // ----------------------------------------------------
-        tableModel = new ModernTicketTableModel();
+        tableModel = new ModernOneTicketTableModel();
         table = new JTable(tableModel);
         table.setRowHeight(MIN_ROW_HEIGHT);
         table.setShowGrid(false);
         table.setIntercellSpacing(new Dimension(0, 0));
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setFillsViewportHeight(true);
-        table.setDefaultRenderer(Object.class, new ModernTicketCellRenderer());
+        table.setDefaultRenderer(Object.class, new ModernOneTicketCellRenderer());
         table.setName("kriolos:sales:modern:ticket-table");
 
         // Touch scrolling
@@ -163,10 +164,10 @@ public class ModernTicketPane extends JPanel {
         table.getTableHeader().setFont(table.getTableHeader().getFont().deriveFont(Font.BOLD, 12f));
 
         // Column widths
-        table.getColumnModel().getColumn(ModernTicketTableModel.COL_PRODUCT).setPreferredWidth(170);
-        table.getColumnModel().getColumn(ModernTicketTableModel.COL_QTY).setPreferredWidth(45);
-        table.getColumnModel().getColumn(ModernTicketTableModel.COL_PRICE).setPreferredWidth(65);
-        table.getColumnModel().getColumn(ModernTicketTableModel.COL_TOTAL).setPreferredWidth(75);
+        table.getColumnModel().getColumn(ModernOneTicketTableModel.COL_PRODUCT).setPreferredWidth(170);
+        table.getColumnModel().getColumn(ModernOneTicketTableModel.COL_QTY).setPreferredWidth(45);
+        table.getColumnModel().getColumn(ModernOneTicketTableModel.COL_PRICE).setPreferredWidth(65);
+        table.getColumnModel().getColumn(ModernOneTicketTableModel.COL_TOTAL).setPreferredWidth(75);
 
         JScrollPane tableScrollPane = new JScrollPane(table);
         tableScrollPane.setBorder(BorderFactory.createEmptyBorder());

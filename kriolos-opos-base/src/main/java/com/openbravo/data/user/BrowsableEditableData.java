@@ -22,7 +22,7 @@ import java.util.*;
 import javax.swing.*;
 import java.awt.Component;
 import javax.swing.event.EventListenerList;
-import com.openbravo.data.loader.LocalRes;
+import com.openbravo.pos.forms.AppLocal;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -574,8 +574,8 @@ public class BrowsableEditableData<E> {
         if (m_Dirty.isDirty()) {
 
             confimed = JOptionPane.showConfirmDialog(c,
-                    LocalRes.getIntString("message.changeslost"),
-                    LocalRes.getIntString("title.editor"),
+                    AppLocal.getIntString("message.changeslost"),
+                    AppLocal.getIntString("title.editor"),
                     JOptionPane.YES_NO_OPTION,
                     JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION;
         }else{

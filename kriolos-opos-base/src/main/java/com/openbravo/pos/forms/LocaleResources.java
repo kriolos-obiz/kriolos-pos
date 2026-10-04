@@ -1,4 +1,4 @@
-package com.openbravo.beans;
+package com.openbravo.pos.forms;
 
 import java.io.File;
 import java.net.MalformedURLException;
@@ -11,9 +11,9 @@ import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
-public class LocaleResources {
+class LocaleResources {
 
-    private List<ResourceBundle> m_resources = new LinkedList<>();
+    private final List<ResourceBundle> m_resources = new LinkedList<>();
 
     private ClassLoader m_localeloader;
 

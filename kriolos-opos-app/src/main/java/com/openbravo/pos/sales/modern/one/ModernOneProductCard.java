@@ -1,19 +1,19 @@
-//    KriolOS POS
-//    Copyright (c) 2019-2026 KriolOS
-//
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
-//
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//    GNU General Public License for more details.
-//
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://gnu.org>.
-
+/*
+ * Copyright (C) 2026 KriolOS
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package com.openbravo.pos.sales.modern.one;
 
 import com.openbravo.format.Formats;
@@ -38,14 +38,14 @@ import javax.swing.SwingUtilities;
  *
  * @author KriolOS Team
  */
-public class ModernProductCard extends JButton {
+public class ModernOneProductCard extends JButton {
 
     private static final long serialVersionUID = 1L;
     private static final Dimension CARD_SIZE = new Dimension(135, 115);
 
     private final ProductInfoExt product;
 
-    public ModernProductCard(ProductInfoExt product, ActionListener listener) {
+    public ModernOneProductCard(ProductInfoExt product, ActionListener listener) {
         this.product = product;
         initCard(listener);
     }

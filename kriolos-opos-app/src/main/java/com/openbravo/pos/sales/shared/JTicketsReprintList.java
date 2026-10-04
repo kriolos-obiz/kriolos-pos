@@ -17,7 +17,6 @@
 package com.openbravo.pos.sales.shared;
 
 import com.openbravo.pos.forms.DataLogicSales;
-import com.openbravo.pos.sales.ReprintTicketInfo;
 import java.awt.Component;
 import java.util.List;
 
@@ -29,21 +28,4 @@ import java.util.List;
 @Deprecated
 public class JTicketsReprintList {
 
-    private final Component parent;
-
-    private JTicketsReprintList(Component parent) {
-        this.parent = parent;
-    }
-
-    public static JTicketsReprintList newJDialog(JTicketsBagShared ticketsbagshared) {
-        return new JTicketsReprintList(ticketsbagshared);
-    }
-
-    public static String show(Component parent, List<ReprintTicketInfo> atickets, DataLogicSales dlSales) {
-        return JTicketsReprintPanel.show(parent, atickets, dlSales, null);
-    }
-
-    public String showTicketsList(List<ReprintTicketInfo> atickets, DataLogicSales dlSales) {
-        return JTicketsReprintPanel.show(parent, atickets, dlSales, null);
-    }
 }

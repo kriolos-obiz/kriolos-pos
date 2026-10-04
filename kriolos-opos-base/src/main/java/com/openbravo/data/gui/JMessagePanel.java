@@ -16,7 +16,7 @@
 package com.openbravo.data.gui;
 
 import com.openbravo.data.gui.modal.PosUIModal;
-import com.openbravo.data.loader.LocalRes;
+import com.openbravo.pos.forms.AppLocal;
 import java.awt.*;
 import javax.swing.*;
 
@@ -90,7 +90,7 @@ public class JMessagePanel extends JPanel {
             if (!codeText.trim().isEmpty()) {
                 jlblIcon.setText(codeText);
             } else {
-                jlblIcon.setText(LocalRes.getIntString("title.message"));
+                jlblIcon.setText(AppLocal.getIntString("title.message"));
             }
 
             jlblMessage.setText(inf.getMessage());
@@ -158,7 +158,7 @@ public class JMessagePanel extends JPanel {
     }
 
     public String getTitle() {
-        return LocalRes.getIntString("title.message");
+        return AppLocal.getIntString("title.message");
     }
 
     public JButton getOkButton() {
@@ -380,7 +380,7 @@ public class JMessagePanel extends JPanel {
         southContainer.setOpaque(false);
         GridBagConstraints gbc = new GridBagConstraints();
 
-        jcmdMore = new JButton(LocalRes.getIntString("button.information")); // Exemplo usando ficheiro de recursos nativo
+        jcmdMore = new JButton(AppLocal.getIntString("button.information")); // Exemplo usando ficheiro de recursos nativo
         //styleSpectrumButton(jcmdMore, new Color(245, 240, 235), spectrumTextDark, false);
         styleSpectrumButton(jcmdMore, jcmdMore.getBackground(), jcmdMore.getForeground(), false);
         jcmdMore.addActionListener(e -> handleToggleExceptionDetails());
@@ -394,12 +394,12 @@ public class JMessagePanel extends JPanel {
         actionButtonContainer = new JPanel(new GridLayout(1, 0, 12, 0));
         actionButtonContainer.setOpaque(false);
 
-        jcmdCancel = new JButton(LocalRes.getIntString("button.cancel"));
+        jcmdCancel = new JButton(AppLocal.getIntString("button.cancel"));
         styleSpectrumButton(jcmdCancel, new Color(230, 230, 230), Color.BLACK, false);
         jcmdCancel.addActionListener(e -> handleCancel());
         actionButtonContainer.add(jcmdCancel);
 
-        jcmdOK = new JButton(LocalRes.getIntString("button.ok"));
+        jcmdOK = new JButton(AppLocal.getIntString("button.ok"));
         styleSpectrumButton(jcmdOK, spectrumPrimaryButtonBg, spectrumPrimaryButtonFg, true);
         jcmdOK.addActionListener(e -> handleAccept());
         actionButtonContainer.add(jcmdOK);

@@ -20,11 +20,8 @@ import com.openbravo.data.loader.*;
 import com.openbravo.data.user.DefaultSaveProvider;
 import com.openbravo.data.user.SaveProvider;
 import com.openbravo.format.Formats;
-import com.openbravo.pos.customers.CustomerInfo;
-import com.openbravo.pos.customers.CustomerInfoExt;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.BeanFactoryDataSingle;
-import com.openbravo.pos.voucher.VoucherInfo;
 
 /**
  * @author JG uniCenta

@@ -16,6 +16,7 @@
 package com.openbravo.beans;
 
 import com.openbravo.data.gui.modal.PosUIModal;
+import com.openbravo.pos.forms.AppLocal;
 import java.awt.Component;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -29,10 +30,9 @@ import javax.swing.JPanel;
  *
  * @author KriolOS
  */
-public class JCalendarDlgPanel extends JPanel {
+public class JCalendarPanel2 extends JPanel {
 
     private static final long serialVersionUID = 1L;
-    private static LocaleResources m_resources;
 
     private Date m_date;
     private JCalendarPanel myCalendar = null;
@@ -43,7 +43,7 @@ public class JCalendarDlgPanel extends JPanel {
     /**
      * Creates new form JCalendarDlgPanel
      */
-    public JCalendarDlgPanel() {
+    public JCalendarPanel2() {
         this(DateUtils.getTodayMinutes(), false);
     }
 
@@ -53,8 +53,7 @@ public class JCalendarDlgPanel extends JPanel {
      * @param date initial date
      * @param bTimePanel whether to include the time picker panel
      */
-    public JCalendarDlgPanel(Date date, boolean bTimePanel) {
-        initResources();
+    public JCalendarPanel2(Date date, boolean bTimePanel) {
         initComponents();
         initContent(date, bTimePanel);
         initDomainAdapters();
@@ -74,12 +73,6 @@ public class JCalendarDlgPanel extends JPanel {
         }
     }
 
-    private static synchronized void initResources() {
-        if (m_resources == null) {
-            m_resources = new LocaleResources();
-            m_resources.addBundleName("beans_messages");
-        }
-    }
 
     private void initContent(Date date, boolean bTimePanel) {
         Date d = date != null ? date : DateUtils.getTodayMinutes();
@@ -124,8 +117,7 @@ public class JCalendarDlgPanel extends JPanel {
      * @return the localized calendar title
      */
     public String getTitle() {
-        initResources();
-        return m_resources.getString("title.calendar");
+        return AppLocal.getIntString("title.calendar");
     }
 
     /**
@@ -246,7 +238,7 @@ public class JCalendarDlgPanel extends JPanel {
     }
 
     public static Date show(Component parent, Date date, boolean bTimePanel) {
-        JCalendarDlgPanel panel = new JCalendarDlgPanel(date, bTimePanel);
+        JCalendarPanel2 panel = new JCalendarPanel2(date, bTimePanel);
         PosUIModal modal = PosUIModal.create(parent, panel)
                 .setTitle(panel.getTitle())
                 .setModal(true)
@@ -279,7 +271,7 @@ public class JCalendarDlgPanel extends JPanel {
 
         jcmdOK.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
         jcmdOK.setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/openbravo/images/ok.png"))); // NOI18N
-        jcmdOK.setText(m_resources.getString("button.ok")); // NOI18N
+        jcmdOK.setText(com.openbravo.pos.forms.AppLocal.getIntString("button.ok")); // NOI18N
         jcmdOK.setMargin(new java.awt.Insets(8, 16, 8, 16));
         jcmdOK.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -290,7 +282,7 @@ public class JCalendarDlgPanel extends JPanel {
 
         jcmdCancel.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
         jcmdCancel.setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/openbravo/images/cancel.png"))); // NOI18N
-        jcmdCancel.setText(m_resources.getString("button.cancel")); // NOI18N
+        jcmdCancel.setText(com.openbravo.pos.forms.AppLocal.getIntString("button.cancel")); // NOI18N
         jcmdCancel.setMargin(new java.awt.Insets(8, 16, 8, 16));
         jcmdCancel.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {

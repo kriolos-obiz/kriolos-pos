@@ -13,29 +13,23 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package com.openbravo.pos.sales.shared;
 
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.gui.MessageInf;
 import com.openbravo.data.gui.modal.PosUIModal;
-import com.openbravo.data.gui.ListKeyed;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.forms.DataLogicSales;
 import com.openbravo.pos.forms.DataLogicSystem;
 import com.openbravo.pos.hardware.PosHardwareManager;
-import com.openbravo.pos.printer.DeviceTicket;
 import com.openbravo.pos.printer.TicketParser;
 import com.openbravo.pos.printer.TicketPrinterException;
 import com.openbravo.pos.sales.ReprintTicketInfo;
-import com.openbravo.pos.sales.TaxesException;
-import com.openbravo.pos.sales.TaxesLogic;
 import com.openbravo.pos.scripting.ScriptEngine;
 import com.openbravo.pos.scripting.ScriptException;
 import com.openbravo.pos.scripting.ScriptFactory;
 import com.openbravo.pos.ticket.TicketInfo;
-import com.openbravo.pos.ticket.TicketTaxInfo;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -55,35 +49,24 @@ import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import org.openide.util.Exceptions;
 
 public class JTicketsReprintPanel extends JPanel {
 
     private static final long serialVersionUID = 1L;
     private static final Logger LOGGER = Logger.getLogger(JTicketsReprintPanel.class.getName());
 
-    private String m_sDialogTicket;
-    private final DeviceTicket m_TP;
-    private final TicketParser m_TTP;
-    private TaxesLogic taxeslogic;
-    private ListKeyed taxcollection;
+    private String currentTicketId;
+    private AppView appView;
 
-    private TicketInfo m_ticket;
-    private TicketInfo m_ticketCopy;
-    private AppView m_App;
-
-    private DataLogicSystem dlSystem = null;
-    private DataLogicSales dlSales = null;
+    private final DataLogicSystem dlSystem;
+    private final DataLogicSales dlSales;
     private PosUIModal modalContext;
 
-    public JTicketsReprintPanel() {
-        this(null);
-    }
-
     public JTicketsReprintPanel(AppView app) {
-        this.m_App = app;
-        this.m_TP = PosHardwareManager.createPreviewTicketDevice();
-        this.m_TTP = (app != null) ? app.createTicketParser(m_TP) : null;
-
+        this.appView = app;
+        this.dlSystem = appView.getBean(DataLogicSystem.class);
+        this.dlSales = appView.getBean(DataLogicSales.class);
         initComponents();
         initDomainAdapters();
 
@@ -101,25 +84,30 @@ public class JTicketsReprintPanel extends JPanel {
     }
 
     public String getSelectedTicketId() {
-        return m_sDialogTicket;
+        return currentTicketId;
     }
 
-    public void loadTickets(List<ReprintTicketInfo> atickets, DataLogicSales dlSales) {
-        this.dlSales = dlSales;
-        m_ticket = null;
-        m_ticketCopy = null;
-        m_sDialogTicket = null;
-        m_jtickets.removeAll();
+    public void loadTickets() {
+        try {
+            currentTicketId = null;
+            m_jtickets.removeAll();
 
-        for (ReprintTicketInfo aticket : atickets) {
-            m_jtickets.add(new JButtonTicket(aticket, dlSales));
+            List<ReprintTicketInfo> atickets = dlSales.getReprintTicketList();
+
+            for (ReprintTicketInfo aticket : atickets) {
+                m_jtickets.add(new JButtonTicket(aticket));
+            }
+
+            revalidate();
+            repaint();
         }
-
-        revalidate();
-        repaint();
+        catch (BasicException ex) {
+            Exceptions.printStackTrace(ex);
+        }
     }
 
-    public static String show(Component parent, List<ReprintTicketInfo> atickets, DataLogicSales dlSales, AppView app) {
+    public static String show(Component parent, AppView app) {
+        /*
         if (atickets == null || atickets.isEmpty()) {
             JOptionPane.showMessageDialog(parent,
                     AppLocal.getIntString("message.nosharedtickets"),
@@ -127,9 +115,9 @@ public class JTicketsReprintPanel extends JPanel {
                     JOptionPane.OK_OPTION);
             return null;
         }
-
+         */
         JTicketsReprintPanel panel = new JTicketsReprintPanel(app);
-        panel.loadTickets(atickets, dlSales);
+        panel.loadTickets();
         PosUIModal modal = PosUIModal.create(parent, panel)
                 .setTitle(AppLocal.getIntString("caption.tickets"))
                 .setModal(true)
@@ -141,11 +129,11 @@ public class JTicketsReprintPanel extends JPanel {
 
     private class JButtonTicket extends JButton {
 
-        private final ReprintTicketInfo m_Ticket;
+        private final ReprintTicketInfo ticketInfo;
 
-        public JButtonTicket(ReprintTicketInfo ticket, DataLogicSales dlSales) {
+        public JButtonTicket(ReprintTicketInfo ticket) {
             super();
-            this.m_Ticket = ticket;
+            this.ticketInfo = ticket;
             setFocusPainted(false);
             setFocusable(false);
             setRequestFocusEnabled(false);
@@ -155,33 +143,26 @@ public class JTicketsReprintPanel extends JPanel {
                 @Override
                 public void actionPerformed(ActionEvent evt) {
                     try {
-                        m_sDialogTicket = m_Ticket.getId();
+                        currentTicketId = ticketInfo.getId();
                         if (modalContext != null) {
-                            modalContext.setResult(m_sDialogTicket);
+                            modalContext.setResult(currentTicketId);
                             modalContext.close();
                         }
 
-                        int iTkt = Integer.parseInt(m_sDialogTicket);
-                        int iTt = 0;
-                        TicketInfo ticketLoaded = dlSales.loadTicket(iTt, iTkt);
+                        int ticketId = Integer.parseInt(currentTicketId);
+                        int ticketType = 0;
+                        TicketInfo ticketInfoOriginal = dlSales.loadTicket(ticketType, ticketId);
 
-                        if (ticketLoaded == null) {
+                        if (ticketInfoOriginal != null) {
+                            printTicket(ticketInfoOriginal, null);
+                        } else {
                             JFrame frame = new JFrame();
                             JOptionPane.showMessageDialog(frame, AppLocal.getIntString("message.notexiststicket"), AppLocal.getIntString("message.notexiststickettitle"), JOptionPane.WARNING_MESSAGE);
-                        } else {
-                            m_ticket = ticketLoaded;
-                            m_ticketCopy = null;
-                            try {
-                                if (taxeslogic != null) {
-                                    taxeslogic.calculateTaxes(m_ticket);
-                                    TicketTaxInfo[] taxlist = m_ticket.getTaxLines();
-                                }
-                            } catch (TaxesException ex) {
-                            }
-                            printTicket("Printer.ReprintLastTicket", m_ticket, null);
+
                         }
-                    } catch (BasicException ex) {
-                        LOGGER.log(Level.SEVERE, null, ex);
+                    }
+                    catch (BasicException ex) {
+                        LOGGER.log(Level.SEVERE, "Exception on ", ex);
                     }
                 }
             });
@@ -190,36 +171,21 @@ public class JTicketsReprintPanel extends JPanel {
         }
     }
 
-    private void printTicket(String sresourcename, TicketInfo ticket, Object ticketext) {
-        if (dlSystem == null) {
-            return;
-        }
-        String sresource = dlSystem.getResourceAsXML(sresourcename);
-        if (sresource == null) {
-            MessageInf msg = new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.cannotprintticket"));
-        } else {
-            if (ticket.getPickupId() == 0) {
-                try {
-                    ticket.setPickupId(dlSales.getNextPickupIndex());
-                } catch (BasicException e) {
-                    ticket.setPickupId(0);
-                }
-            }
-            try {
-                ScriptEngine script = ScriptFactory.getScriptEngine(ScriptFactory.VELOCITY);
-                if (m_App != null && Boolean.parseBoolean(m_App.getProperties().getProperty("receipt.newlayout"))) {
-                    script.put("taxes", ticket.getTaxLines());
-                } else {
-                    script.put("taxes", taxcollection);
-                }
-                script.put("taxeslogic", taxeslogic);
-                script.put("ticket", ticket);
-                script.put("place", ticketext);
+    private void printTicket(TicketInfo ticket, Object ticketext) {
 
-                m_TTP.printTicket(script.eval(sresource).toString(), ticket);
-            } catch (ScriptException | TicketPrinterException e) {
-                MessageInf msg = new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.cannotprintticket"), e);
-            }
+        String sresourcename = "Printer.ReprintLastTicket";
+        String sresource = dlSystem.getResourceAsXML(sresourcename);
+        try {
+            ScriptEngine script = ScriptFactory.getScriptEngine(ScriptFactory.VELOCITY);
+            script.put("taxes", ticket.getTaxLines());
+            script.put("ticket", ticket);
+            script.put("place", ticketext);
+
+            TicketParser ticketParser = this.appView.createTicketParser(PosHardwareManager.createPreviewTicketDevice());
+            ticketParser.printTicket(script.eval(sresource).toString(), ticket);
+        }
+        catch (ScriptException | TicketPrinterException e) {
+            MessageInf msg = new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.cannotprintticket"), e);
         }
     }
 

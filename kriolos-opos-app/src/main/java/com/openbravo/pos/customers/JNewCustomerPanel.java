@@ -19,7 +19,7 @@ package com.openbravo.pos.customers;
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.gui.MessageInf;
 import com.openbravo.data.gui.modal.PosUIModal;
-import com.openbravo.data.loader.LocalRes;
+import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.data.user.DirtyManager;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
@@ -189,14 +189,14 @@ public class JNewCustomerPanel extends JPanel {
                 }
             } else {
                 MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE,
-                        LocalRes.getIntString("message.nosave"), "Error save");
+                        AppLocal.getIntString("message.nosave"), "Error save");
                 msg.show(this);
             }
 
         } catch (BasicException ex) {
             LOGGER.log(Level.SEVERE, "Error ", ex);
             MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE,
-                    LocalRes.getIntString("message.nosave"), ex);
+                    AppLocal.getIntString("message.nosave"), ex);
             msg.show(this);
         }
     }//GEN-LAST:event_m_jBtnOKActionPerformed

@@ -24,8 +24,8 @@ public class RemoteOrderDisplay {
         this.ticketInfo = ticketInfo;
         this.orderId = orderId;
         this.ticketExternalId = ticketExternalId;
-        dlSystem = (DataLogicSystem) appView.getBean("com.openbravo.pos.forms.DataLogicSystem");
-        dlSales = (DataLogicSales) appView.getBean("com.openbravo.pos.forms.DataLogicSales");
+        dlSystem = appView.getBean(DataLogicSystem.class);
+        dlSales = appView.getBean(DataLogicSales.class);
     }
 
     protected final static System.Logger LOGGER = System.getLogger(RemoteOrderDisplay.class.getName());
@@ -44,21 +44,23 @@ public class RemoteOrderDisplay {
 
     public String remoteOrderId() {
 
-        if ((ticketInfo.getCustomer() != null)) {
+        if ((ticketInfo.getCustomer() != null && ticketInfo.getCustomer().getName() != null)) {
             return ticketInfo.getCustomer().getName();
         } else if (ticketExternalId != null) {
             return ticketExternalId;
+        } else if (orderId != null) {
+            return orderId;
         } else {
             if (ticketInfo.getPickupId() == 0) {
                 try {
                     ticketInfo.setPickupId(dlSales.getNextPickupIndex());
                 } catch (BasicException ex) {
-                    LOGGER.log(System.Logger.Level.WARNING, "Exception on: ", ex);
+                    LOGGER.log(System.Logger.Level.WARNING, "Exception on generate next pickup id: ", ex);
                     ticketInfo.setPickupId(0);
                 }
             }
 
-            return orderId;
+            return ""+ticketInfo.getPickupId();
         }
     }
 

@@ -28,7 +28,6 @@ import javax.swing.JPanel;
 public class DinerNumberPanel extends JPanel {
 
     private static final long serialVersionUID = 1L;
-    private static LocaleResources m_resources;
 
     private PosUIModal modalContext;
     private Double m_value;
@@ -42,11 +41,7 @@ public class DinerNumberPanel extends JPanel {
     }
 
     private void init() {
-        if (m_resources == null) {
-            m_resources = new LocaleResources();
-            m_resources.addBundleName("beans_messages");
-        }
-
+  
         initComponents();
 
         m_jnumber.addEditorKeys(m_jKeys);

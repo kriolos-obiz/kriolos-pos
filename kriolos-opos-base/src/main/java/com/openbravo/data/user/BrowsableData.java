@@ -17,7 +17,7 @@
 package com.openbravo.data.user;
 
 import com.openbravo.basic.BasicException;
-import com.openbravo.data.loader.LocalRes;
+import com.openbravo.pos.forms.AppLocal;
 import java.util.*;
 import javax.swing.ListModel;
 import javax.swing.event.EventListenerList;
@@ -284,11 +284,11 @@ public class BrowsableData<E> implements ListModel<E> {
                 }
                 return newindex;
             } else {
-                throw new BasicException(LocalRes.getIntString("exception.nodelete"));
+                throw new BasicException(AppLocal.getIntString("exception.nodelete"));
             }     
         } else {
             // indice no valido
-            throw new BasicException(LocalRes.getIntString("exception.nodelete"));
+            throw new BasicException(AppLocal.getIntString("exception.nodelete"));
         }
     }
     
@@ -332,11 +332,11 @@ public class BrowsableData<E> implements ListModel<E> {
                 return newindex;
             } else {
                 // fallo la actualizacion
-                throw new BasicException(LocalRes.getIntString("exception.noupdate"));
+                throw new BasicException(AppLocal.getIntString("exception.noupdate"));
             }
         } else {
             // registro invalido
-            throw new BasicException(LocalRes.getIntString("exception.noupdate"));
+            throw new BasicException(AppLocal.getIntString("exception.noupdate"));
         }
     }
 
@@ -363,7 +363,7 @@ public class BrowsableData<E> implements ListModel<E> {
             fireDataIntervalAdded(newindex, newindex);
             return newindex;
         } else {
-            throw new BasicException(LocalRes.getIntString("exception.noinsert"));
+            throw new BasicException(AppLocal.getIntString("exception.noinsert"));
         }       
     }
     
