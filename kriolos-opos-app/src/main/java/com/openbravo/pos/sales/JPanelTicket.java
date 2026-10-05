@@ -594,17 +594,13 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         boolean priceIncludesTax = false;
         if (oProduct.isVprice()) {
             priceIncludesTax = m_jaddtax.isSelected();
+        } else {
+            j_btnRemotePrt.setEnabled(true);
         }
 
         TicketLineInfo line = salesService.createLine(m_oTicket, oProduct, dMul, dPrice, priceIncludesTax);
         addTicketLine(line);
-
-        // Refresh handled in addTicketLine(line) -> visorTicketLine, etc.
-        // But original code had specific calls for non-Vprice:
-        if (!oProduct.isVprice()) {
-            refreshTicket();
-            j_btnRemotePrt.setEnabled(true);
-        }
+        refreshTicket();
     }
 
     /**
@@ -629,7 +625,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                     m_oTicket.insertLine(i, oLine);
                     m_ticketlines.insertTicketLine(i, oLine);
                 } else {
-                    Toolkit.getDefaultToolkit().beep();
+                    com.openbravo.pos.util.NotifyUtils.beep();
                 }
             } else {
                 m_oTicket.addLine(oLine);
@@ -669,7 +665,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
 
             executeEvent(m_oTicket, m_oTicketExt, TicketConstants.EV_TICKET_CHANGE);
         } else {
-            Toolkit.getDefaultToolkit().beep();
+            com.openbravo.pos.util.NotifyUtils.beep();
         }
     }
 
@@ -815,7 +811,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
             ProductInfoExt oProduct = dataLogicPIM.getProductInfoByCode(sCode);
 
             if (oProduct == null) {
-                Toolkit.getDefaultToolkit().beep();
+                com.openbravo.pos.util.NotifyUtils.beep();
                 JOptionPane.showMessageDialog(this,
                         sCode + " - " + AppLocal.getIntString("message.noproduct"),
                         "Check", JOptionPane.WARNING_MESSAGE);
@@ -836,7 +832,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         try {
             ProductInfoExt oProduct = dataLogicPIM.getProductInfoByCode(sCode);
             if (oProduct == null) {
-                Toolkit.getDefaultToolkit().beep();
+                com.openbravo.pos.util.NotifyUtils.beep();
                 new MessageInf(MessageInf.SGN_WARNING, AppLocal
                         .getIntString("message.noproduct")).show(this);
                 stateToZero();
@@ -858,6 +854,10 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     }
 
     private void incProduct(ProductInfoExt prod) {
+        incProduct(prod, 1.0);
+    }
+
+    private void incProduct(ProductInfoExt prod, double dPor) {
 
         if (prod.isScale() && m_App.hasScale()) {
             try {
@@ -868,29 +868,19 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
             }
             catch (Exception ex) {
                 LOGGER.log(System.Logger.Level.WARNING, "Exception on increment product: ", ex);
-                Toolkit.getDefaultToolkit().beep();
-                new MessageInf(MessageInf.SGN_WARNING, AppLocal
-                        .getIntString("message.noweight"), ex).show(this);
+                com.openbravo.pos.util.NotifyUtils.beep();
+                new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.noweight"), ex).show(this);
                 stateToZero();
             }
         } else {
-            if (!prod.isVprice()) {
-                incProduct(prod, 1.0);
+
+            if (prod.isVprice()) {
+                addTicketLine(prod, getPorValue(), getInputValue());
             } else {
-                Toolkit.getDefaultToolkit().beep();
-                JOptionPane.showMessageDialog(this,
-                        AppLocal.getIntString("message.novprice"));
+                addTicketLine(prod, dPor, prod.getPriceSell());
             }
         }
-    }
 
-    private void incProduct(ProductInfoExt prod, double dPor) {
-
-        if (prod.isVprice()) {
-            addTicketLine(prod, getPorValue(), getInputValue());
-        } else {
-            addTicketLine(prod, dPor, prod.getPriceSell());
-        }
     }
 
     /**
@@ -906,7 +896,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         } else if (prod.isVprice()) {
             addTicketLine(prod, getPorValue(), getInputValue());
         } else {
-            Toolkit.getDefaultToolkit().beep();
+            com.openbravo.pos.util.NotifyUtils.beep();
         }
     }
 
@@ -932,7 +922,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                         CustomerInfoExt newcustomer = dlCustomers.findCustomerInfoExtByCard(card);
 
                         if (newcustomer == null) {
-                            Toolkit.getDefaultToolkit().beep();
+                            com.openbravo.pos.util.NotifyUtils.beep();
                             new MessageInf(MessageInf.SGN_WARNING, AppLocal
                                     .getIntString("message.nocustomer")).show(this);
                         } else {
@@ -942,7 +932,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                     }
                     catch (BasicException ex) {
                         LOGGER.log(System.Logger.Level.WARNING, "Exception on process state transition 'C': ", ex);
-                        Toolkit.getDefaultToolkit().beep();
+                        com.openbravo.pos.util.NotifyUtils.beep();
                         new MessageInf(MessageInf.SGN_WARNING, AppLocal
                                 .getIntString("message.nocustomer"), ex).show(this);
                     }
@@ -985,7 +975,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                                 = dataLogicPIM.getProductInfoByShortCode(sCode);
 
                         if (oProduct == null) { // nothing returned so display message to user
-                            Toolkit.getDefaultToolkit().beep();
+                            com.openbravo.pos.util.NotifyUtils.beep();
                             JOptionPane.showMessageDialog(this,
                                     sCode + " - "
                                     + AppLocal.getIntString("message.noproduct"),
@@ -1176,7 +1166,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                         ProductInfoExt oProduct = dataLogicPIM.getProductInfoByUShortCode(sCode); // Return only UPC product
 
                         if (oProduct == null) {
-                            Toolkit.getDefaultToolkit().beep();
+                            com.openbravo.pos.util.NotifyUtils.beep();
                             JOptionPane.showMessageDialog(this,
                                     sCode + " - "
                                     + AppLocal.getIntString("message.noproduct"),
@@ -1235,7 +1225,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                 // END OF BARCODE
 
             } else {
-                Toolkit.getDefaultToolkit().beep();
+                com.openbravo.pos.util.NotifyUtils.beep();
             }
 
         } else {
@@ -1393,14 +1383,14 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                     catch (Exception ex) {
                         LOGGER.log(System.Logger.Level.WARNING, "Exception on read product SCALE and add ticket line: ",
                                 ex);
-                        Toolkit.getDefaultToolkit().beep();
+                        com.openbravo.pos.util.NotifyUtils.beep();
                         new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.noweight"), ex)
                                 .show(this);
                         stateToZero();
                     }
                 } else {
 
-                    Toolkit.getDefaultToolkit().beep();
+                    com.openbravo.pos.util.NotifyUtils.beep();
                 }
             } else if (cTrans == '\u00a7'
                     && m_iNumberStatusInput == NUMBERZERO
@@ -1408,7 +1398,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
 
                 int i = m_ticketlines.getSelectedIndex();
                 if (i < 0) {
-                    Toolkit.getDefaultToolkit().beep();
+                    com.openbravo.pos.util.NotifyUtils.beep();
                 } else if (m_App.hasScale()) {
                     try {
                         Double value = m_App.readWeight();
@@ -1421,14 +1411,14 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                     }
                     catch (Exception ex) {
                         LOGGER.log(System.Logger.Level.WARNING, "Exception on process state transition '\u00a7' ", ex);
-                        Toolkit.getDefaultToolkit().beep();
+                        com.openbravo.pos.util.NotifyUtils.beep();
                         new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.noweight"), ex)
                                 .show(this);
                         stateToZero();
                     }
                 } else {
 
-                    Toolkit.getDefaultToolkit().beep();
+                    com.openbravo.pos.util.NotifyUtils.beep();
                 }
 
             } else if (cTrans == '+'
@@ -1437,7 +1427,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                 int i = m_ticketlines.getSelectedIndex();
 
                 if (i < 0) {
-                    Toolkit.getDefaultToolkit().beep();
+                    com.openbravo.pos.util.NotifyUtils.beep();
                 } else {
                     TicketLineInfo newline = new TicketLineInfo(m_oTicket.getLine(i));
                     // If it's a refund + button means one unit less
@@ -1480,7 +1470,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                 LOGGER.log(System.Logger.Level.INFO, "EditLines select line: " + i);
 
                 if (i < 0) {
-                    Toolkit.getDefaultToolkit().beep();
+                    com.openbravo.pos.util.NotifyUtils.beep();
                 } else {
                     TicketLineInfo newline = new TicketLineInfo(m_oTicket.getLine(i));
 
@@ -1532,7 +1522,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                 int i = m_ticketlines.getSelectedIndex();
 
                 if (i < 0) {
-                    Toolkit.getDefaultToolkit().beep();
+                    com.openbravo.pos.util.NotifyUtils.beep();
                 } else {
                     double dPor = getPorValue();
                     TicketLineInfo newline = new TicketLineInfo(m_oTicket.getLine(i));
@@ -1577,7 +1567,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                 int i = m_ticketlines.getSelectedIndex();
 
                 if (i < 0) {
-                    Toolkit.getDefaultToolkit().beep();
+                    com.openbravo.pos.util.NotifyUtils.beep();
                 } else {
                     double dPor = getPorValue();
                     TicketLineInfo newline = new TicketLineInfo(m_oTicket.getLine(i));
@@ -1668,7 +1658,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                     }
                     refreshTicket();
                 } else {
-                    Toolkit.getDefaultToolkit().beep();
+                    com.openbravo.pos.util.NotifyUtils.beep();
                     LOGGER.log(System.Logger.Level.DEBUG, "Canno close Ticket, because m_oTicket is " + m_oTicket
                             + ", and LinesCount is " + (m_oTicket != null ? m_oTicket.getLinesCount() : 0));
                 }
@@ -1864,7 +1854,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
 
                 processTemaplated = script.eval(sresource).toString();
                 ticketParser.printTicket(processTemaplated, ticket);
-                
+
                 Notify(AppLocal.getIntString("notify.printed"));
             }
             catch (ScriptException | TicketPrinterException ex) {
@@ -2641,7 +2631,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         int i = m_ticketlines.getSelectedIndex();
 
         if (i < 0) {
-            Toolkit.getDefaultToolkit().beep(); // no line selected
+            com.openbravo.pos.util.NotifyUtils.beep(); // no line selected
         } else {
             try {
                 TicketLineInfo newline = JProductLineEdit.showMessage(this, m_App, m_oTicket.getLine(i));
@@ -2671,7 +2661,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         int i = m_ticketlines.getSelectedIndex();
 
         if (i < 0) {
-            Toolkit.getDefaultToolkit().beep();
+            com.openbravo.pos.util.NotifyUtils.beep();
         } else {
             removeTicketLine(i);
         }
@@ -2683,7 +2673,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         if (prod != null && m_oTicket != null) {
             buttonTransition(prod);
         } else {
-            Toolkit.getDefaultToolkit().beep();
+            com.openbravo.pos.util.NotifyUtils.beep();
         }
 
     }// GEN-LAST:event_m_jListActionPerformed
@@ -2695,7 +2685,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         int i = m_ticketlines.getSelectedIndex();
         // no line selected (-1)
         if (i < 0) {
-            Toolkit.getDefaultToolkit().beep();
+            com.openbravo.pos.util.NotifyUtils.beep();
         } else {
             try {
                 TicketLineInfo line = m_oTicket.getLine(i);
@@ -2774,8 +2764,8 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
             } else {
                 try {
                     taxeslogic.calculateTaxes(ticketInfo);
-                printTicket("Printer.ReprintTicket", ticketInfo, null);
-                Notify("'Printer.reprint.last.ticket'");
+                    printTicket("Printer.ReprintTicket", ticketInfo, null);
+                    Notify("'Printer.reprint.last.ticket'");
                 }
                 catch (TaxesException ex) {
                     LOGGER.log(System.Logger.Level.WARNING, "Exception on: ", ex);
@@ -3116,7 +3106,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                 LOGGER.log(System.Logger.Level.WARNING, "Exception on check stock for line number: ", ex);
             }
         } else {
-            Toolkit.getDefaultToolkit().beep();
+            com.openbravo.pos.util.NotifyUtils.beep();
         }
 
         if (inactivityListener != null) {

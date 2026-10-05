@@ -35,9 +35,9 @@ import java.util.Map;
  */
 public class TaxesLogic {
     
-    private List<TaxInfo> taxlist;
+    private final List<TaxInfo> taxlist;
     
-    private Map<String, TaxesLogicElement> taxtrees;
+    private final Map<String, TaxesLogicElement> taxtrees;
     
     /**
      *

@@ -1509,7 +1509,7 @@ public final class CustomersView extends com.openbravo.pos.panels.ValidationPane
             resetTranxTable();
         } else {
             LOGGER.log(System.Logger.Level.DEBUG, "Customer ID is null");
-            Toolkit.getDefaultToolkit().beep();
+            com.openbravo.pos.util.NotifyUtils.beep();
         }
     }//GEN-LAST:event_jBtnShowTransActionPerformed
 

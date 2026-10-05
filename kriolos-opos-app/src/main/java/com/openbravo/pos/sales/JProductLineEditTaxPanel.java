@@ -98,7 +98,7 @@ public class JProductLineEditTaxPanel extends JPanel {
         m_jName.setText(oLine.getProductName());
         m_jUnits.setDoubleValue(oLine.getMultiply());
         m_jPrice.setDoubleValue(oLine.getPrice());
-        m_jPriceTax.setDoubleValue(oLine.getPriceTax());
+        m_jPriceTax.setDoubleValue(oLine.getPriceWithTax());
         m_jTaxrateOld.setText(oLine.getTaxInfo().getName());
         m_jTaxrate.setDoubleValue(oLine.getTaxRate());
 
@@ -165,7 +165,7 @@ public class JProductLineEditTaxPanel extends JPanel {
                 m_bpriceok = false;
             } else {
                 m_oLine.setPrice(value);
-                m_jPriceTax.setDoubleValue(m_oLine.getPriceTax());
+                m_jPriceTax.setDoubleValue(m_oLine.getPriceWithTax());
                 m_bpriceok = true;
                 m_jBtnPriceUpdate.setEnabled(AppConfig.getInstance().getBoolean("db.prodpriceupdate"));
             }

@@ -31,6 +31,8 @@ import java.awt.Insets;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.AbstractListModel;
 import javax.swing.BorderFactory;
 import javax.swing.GroupLayout;
@@ -46,6 +48,7 @@ import javax.swing.LayoutStyle;
 public class JSupplierFinderPanel extends JPanel implements EditorCreator {
 
     private static final long serialVersionUID = 1L;
+    private static final Logger LOGGER = Logger.getLogger(JSupplierFinderPanel.class.getName());
 
     private SupplierInfo m_ReturnSupplier;
     private ListProvider lpr;
@@ -210,14 +213,17 @@ public class JSupplierFinderPanel extends JPanel implements EditorCreator {
                         }
                         if (appView != null && appView.getAppUserView() != null) {
                             appView.getAppUserView().showTask("com.openbravo.pos.suppliers.SuppliersPanel");
+                        } else {
+                            JOptionPane.showMessageDialog(this,
+                                    "You must complete Account to add to Ticket",
+                                    "Create Supplier", JOptionPane.OK_OPTION);
                         }
-                        JOptionPane.showMessageDialog(this,
-                                "You must complete Account and Search Key Then Save to add to Ticket",
-                                "Create Supplier", JOptionPane.OK_OPTION);
                     }
                 }
             }
-        } catch (BasicException e) {
+        }
+        catch (BasicException ex) {
+            LOGGER.log(Level.WARNING, "Exception search: ", ex);
         }
     }
 
@@ -283,6 +289,7 @@ public class JSupplierFinderPanel extends JPanel implements EditorCreator {
     }
 
     private static class MyListData extends AbstractListModel {
+
         private final List m_data;
 
         public MyListData(List data) {

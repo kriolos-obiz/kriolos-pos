@@ -58,12 +58,7 @@ public class CatalogController {
     
         this.dataLogicPIM = dataLogicPIM;
         this.dlLogicSales = dlSales;
-        try {
-            this.taxeslogic = new TaxesLogic(dlLogicSales.getTaxList().list());
-        }
-        catch (BasicException ex) {
-            LOGGER.log(Level.WARNING,"construct taxe logic",ex);
-        }
+        this.taxeslogic = new TaxesLogic(dlLogicSales.getTaxListAll());
         
         tnbcat = new ThumbNailBuilder(CAT_DEFAULT_WIDTH, CAT_DEFAULT_HEIGHT, "com/openbravo/images/category.png");
         tnbsubcat = new ThumbNailBuilder(CAT_DEFAULT_WIDTH, CAT_DEFAULT_HEIGHT, "com/openbravo/images/subcategory.png");

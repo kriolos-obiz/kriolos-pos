@@ -207,7 +207,7 @@ public class BundleEditor extends javax.swing.JPanel implements EditorRecord {
             ProductInfoExt prod = dataLogicPIM.getProductInfoByCode(m_jBarcode.getText());
             assignProduct(prod);
             if (prod == null) {
-                Toolkit.getDefaultToolkit().beep();       
+                com.openbravo.pos.util.NotifyUtils.beep();       
             }
         } catch (BasicException eData) {
             assignProduct(null);
@@ -222,7 +222,7 @@ public class BundleEditor extends javax.swing.JPanel implements EditorRecord {
             ProductInfoExt prod = dataLogicPIM.getProductInfoByReference(m_jReference.getText());
             assignProduct(prod);
             if (prod == null) {
-                Toolkit.getDefaultToolkit().beep();       
+                com.openbravo.pos.util.NotifyUtils.beep();       
             }
         } catch (BasicException eData) {
             assignProduct(null);

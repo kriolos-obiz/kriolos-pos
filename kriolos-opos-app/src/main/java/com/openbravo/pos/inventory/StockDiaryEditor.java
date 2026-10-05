@@ -446,7 +446,7 @@ public final class StockDiaryEditor extends javax.swing.JPanel implements Editor
             ProductInfoExt oProduct = dataLogicPIM.getProductInfoByCode(m_jcodebar.getText());
             if (oProduct == null) {       
                 assignProduct(null);
-                Toolkit.getDefaultToolkit().beep();                   
+                com.openbravo.pos.util.NotifyUtils.beep();                   
             } else {
                 assignProduct(oProduct);
             }
@@ -462,7 +462,7 @@ public final class StockDiaryEditor extends javax.swing.JPanel implements Editor
             ProductInfoExt oProduct = dataLogicPIM.getProductInfoByReference(m_jreference.getText());
             if (oProduct == null) {       
                 assignProduct(null);
-                Toolkit.getDefaultToolkit().beep();                   
+                com.openbravo.pos.util.NotifyUtils.beep();                   
             } else {
                 assignProduct(oProduct);
             }

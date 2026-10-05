@@ -3,7 +3,7 @@ package com.openbravo.pos.util;
 import javax.swing.JOptionPane;
 import java.awt.Toolkit;
 
-public class NotificationHelper {
+public class NotifyUtils {
 
     public static void beep() {
         try {

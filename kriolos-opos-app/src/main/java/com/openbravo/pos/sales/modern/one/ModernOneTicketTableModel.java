@@ -119,9 +119,9 @@ public class ModernOneTicketTableModel extends AbstractTableModel {
             case COL_QTY:
                 return Formats.DOUBLE.formatValue(line.getMultiply());
             case COL_PRICE:
-                return Formats.CURRENCY.formatValue(line.getPriceTax());
+                return Formats.CURRENCY.formatValue(line.getPriceWithTax());
             case COL_TOTAL:
-                return Formats.CURRENCY.formatValue(line.getSubValue());
+                return Formats.CURRENCY.formatValue(line.getSubTotalWithTax());
             default:
                 return null;
         }

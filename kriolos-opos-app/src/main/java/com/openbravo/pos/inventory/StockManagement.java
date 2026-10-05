@@ -262,7 +262,7 @@ public class StockManagement extends JPanel implements JPanelView {
 
     private void deleteLine(int index) {
         if (index < 0) {
-            Toolkit.getDefaultToolkit().beep();
+            com.openbravo.pos.util.NotifyUtils.beep();
         } else {
             m_invlines.deleteLine(index);
             clearStockTable();
@@ -288,7 +288,7 @@ public class StockManagement extends JPanel implements JPanelView {
         try {
             ProductInfoExt oProduct = dataLogicPIM.getProductInfoByCode(sCode);
             if (oProduct == null) {
-                Toolkit.getDefaultToolkit().beep();
+                com.openbravo.pos.util.NotifyUtils.beep();
             } else {
                 incProduct(oProduct, dQuantity);
             }
@@ -364,7 +364,7 @@ public class StockManagement extends JPanel implements JPanelView {
         int i = m_invlines.getSelectedRow();
 
         if (i < 0) {
-            Toolkit.getDefaultToolkit().beep();
+            com.openbravo.pos.util.NotifyUtils.beep();
         } else {
             InventoryLine line = m_invlines.getLine(i);
             pId = line.getProductID();
@@ -492,7 +492,7 @@ public class StockManagement extends JPanel implements JPanelView {
             NUMBER_STATE = DECIMAL;
         } else if (cTrans == ' ' || cTrans == '=') {
             if (m_invlines.getCount() == 0) {
-                Toolkit.getDefaultToolkit().beep();
+                com.openbravo.pos.util.NotifyUtils.beep();
             } else {
                 saveData();
                 jNumberKeys.setEnabled(true);
@@ -517,7 +517,7 @@ public class StockManagement extends JPanel implements JPanelView {
             }
 
         } else {
-            Toolkit.getDefaultToolkit().beep();
+            com.openbravo.pos.util.NotifyUtils.beep();
         }
     }
 
@@ -530,7 +530,7 @@ public class StockManagement extends JPanel implements JPanelView {
 //        if (m_iNumberStatusInput == NUMBERZERO && m_iNumberStatusPor == NUMBERZERO) {
         incProduct(prod);
 //        } else {
-//            Toolkit.getDefaultToolkit().beep();
+//            com.openbravo.pos.util.NotifyUtils.beep();
 //        }      
     }
 
@@ -783,7 +783,7 @@ public class StockManagement extends JPanel implements JPanelView {
     private void removeInvLine(int index) {
 
         if (index < 0) {
-            Toolkit.getDefaultToolkit().beep();
+            com.openbravo.pos.util.NotifyUtils.beep();
         } else {
             m_invlines.deleteLine(index);
             clearStockTable();
@@ -1282,7 +1282,7 @@ public class StockManagement extends JPanel implements JPanelView {
         int i = m_invlines.getSelectedRow();
 
         if (i < 0) {
-            Toolkit.getDefaultToolkit().beep();
+            com.openbravo.pos.util.NotifyUtils.beep();
         } else {
             removeInvLine(i);
 
@@ -1302,7 +1302,7 @@ public class StockManagement extends JPanel implements JPanelView {
 
         int i = m_invlines.getSelectedRow();
         if (i < 0) {
-            Toolkit.getDefaultToolkit().beep();
+            com.openbravo.pos.util.NotifyUtils.beep();
         } else {
             InventoryLine line = m_invlines.getLine(i);
 
@@ -1323,7 +1323,7 @@ public class StockManagement extends JPanel implements JPanelView {
 
         int i = m_invlines.getSelectedRow();
         if (i < 0) {
-            Toolkit.getDefaultToolkit().beep();
+            com.openbravo.pos.util.NotifyUtils.beep();
         } else {
             try {
                 InventoryLine line = m_invlines.getLine(i);

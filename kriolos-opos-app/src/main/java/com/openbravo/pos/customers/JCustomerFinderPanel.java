@@ -28,6 +28,8 @@ import com.openbravo.pos.forms.AppView;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.*;
 
 /**
@@ -38,6 +40,7 @@ import javax.swing.*;
 public class JCustomerFinderPanel extends javax.swing.JPanel implements EditorCreator {
 
     private static final long serialVersionUID = 1L;
+    private static final Logger LOGGER = Logger.getLogger(JCustomerFinderPanel.class.getName());
 
     private CustomerInfo m_ReturnCustomer;
     private ListProvider<CustomerInfo> lpr;
@@ -52,6 +55,7 @@ public class JCustomerFinderPanel extends javax.swing.JPanel implements EditorCr
     public JCustomerFinderPanel(DataLogicCustomers dlCustomers) {
         init(dlCustomers);
         initDomainAdapters();
+        cleanSearch();
     }
 
     private void initDomainAdapters() {
@@ -202,17 +206,21 @@ public class JCustomerFinderPanel extends javax.swing.JPanel implements EditorCr
                         JOptionPane.YES_NO_OPTION);
 
                     if (n != 1) {
-                        this.setVisible(false);
+                        if (modalContext != null) {
+                            modalContext.close();
+                        }
                         if (appView != null) {
                             appView.getAppUserView().showTask("com.openbravo.pos.customers.CustomersPanel");
+                        } else {
+                            JOptionPane.showMessageDialog(this,
+                                    "You must complete Account to add to Ticket",
+                                    "Create Supplier", JOptionPane.OK_OPTION);
                         }
-                        JOptionPane.showMessageDialog(this, 
-                            "You must complete Account and Search Key Then Save to add to Ticket",
-                            "Create Customer",JOptionPane.OK_OPTION);
                     }
                 }
             }
-        } catch (BasicException e) {
+        } catch (BasicException ex) {
+            LOGGER.log(Level.WARNING, "Exception search: ", ex);
         }
     }
 

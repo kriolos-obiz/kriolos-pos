@@ -30,7 +30,6 @@ import java.util.ArrayList;
 import javax.swing.JFrame;
 import javax.swing.*;
 
-import java.awt.event.KeyEvent;
 
 import com.openbravo.data.gui.modal.PosUIModal;
 

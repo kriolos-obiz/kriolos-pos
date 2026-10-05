@@ -162,7 +162,7 @@ public class AuxiliarFilter extends javax.swing.JPanel implements ReportEditorCr
         try {
             ProductInfoExt prod = dataLogicPIM.getProductInfoByCode(m_jBarcode1.getText());
             if (prod == null) {
-                Toolkit.getDefaultToolkit().beep();
+                com.openbravo.pos.util.NotifyUtils.beep();
             }
             assignProduct(prod);
         } catch (BasicException eData) {
@@ -176,7 +176,7 @@ public class AuxiliarFilter extends javax.swing.JPanel implements ReportEditorCr
         try {
             ProductInfoExt prod = dataLogicPIM.getProductInfoByReference(m_jReference1.getText());
             if (prod == null) {
-                Toolkit.getDefaultToolkit().beep();
+                com.openbravo.pos.util.NotifyUtils.beep();
             }
             assignProduct(prod);
         } catch (BasicException eData) {
