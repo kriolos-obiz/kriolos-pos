@@ -176,7 +176,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
 
         m_oTicket = null;
         m_oTicketExt = null;
-        jCheckStock.setText(AppLocal.getIntString("message.title.checkstock"));
+        ticketToolbarPane.setCheckStockText(AppLocal.getIntString("message.title.checkstock"));
 
         initExtButtons();
 
@@ -364,7 +364,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
             m_jaddtax.setVisible(false);
         }
 
-        m_jDelete.setEnabled(m_App.hasPermission("sales.EditLines"));
+        ticketToolbarPane.setDeleteLineEnabled(m_App.hasPermission("sales.EditLines"));
         m_jNumberKeys.setMinusEnabled(m_App.hasPermission("sales.EditLines"));
         m_jNumberKeys.setEqualsEnabled(m_App.hasPermission("sales.Total"));
         m_jbtnconfig.setPermissions(m_App.getAppUserView().getUser());
@@ -485,8 +485,11 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
 
         } else {
             if (m_oTicket.getTicketType() == TicketInfo.RECEIPT_REFUND) {
-                m_jEditLine.setVisible(false);
-                m_jList.setVisible(false);
+                ticketToolbarPane.setEditLineVisible(false);
+                ticketToolbarPane.setFindProductVisible(false);
+            } else {
+                ticketToolbarPane.setEditLineVisible(true);
+                ticketToolbarPane.setFindProductVisible(true);
             }
 
             m_oTicket.getLines().forEach((line) -> {
@@ -849,7 +852,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                 ProductInfoExt product = getInputProduct();
                 if (keypadStateMachine.isPorZero()) {
                     addTicketLine(product, 1.0, sign * product.getPriceSell());
-                    m_jEditLine.doClick();
+                    ticketToolbarPane.triggerEditLine();
                 } else if (keypadStateMachine.isPorValid()) {
                     addTicketLine(product, getPorValue(), sign * product.getPriceSell());
                 }
@@ -1097,13 +1100,12 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         m_jPanelBagExt = new javax.swing.JPanel();
         m_jPanelBagExtDefaultEmpty = new javax.swing.JPanel();
         m_jPanelTicket = new javax.swing.JPanel();
-        m_jPanelLinesToolbar = new javax.swing.JPanel();
-        jPanel2 = new javax.swing.JPanel();
-        m_jDelete = new javax.swing.JButton();
-        m_jList = new javax.swing.JButton();
-        m_jEditLine = new javax.swing.JButton();
-        jEditAttributes = new javax.swing.JButton();
-        jCheckStock = new javax.swing.JButton();
+        ticketToolbarPane = new com.openbravo.pos.sales.TicketToolbarPane();
+        ticketToolbarPane.setOnDeleteLine(this::deleteSelectedLine);
+        ticketToolbarPane.setOnFindProduct(this::findProduct);
+        ticketToolbarPane.setOnEditLine(this::editSelectedLine);
+        ticketToolbarPane.setOnEditAttributes(this::editSelectedLineAttributes);
+        ticketToolbarPane.setOnCheckStock(this::checkStock);
         m_jPanelLines = new javax.swing.JPanel();
         ticketSummaryPane = new com.openbravo.pos.sales.TicketSummaryPane();
         m_jContEntries = new javax.swing.JPanel();
@@ -1267,102 +1269,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         m_jPanelTicket.setBorder(javax.swing.BorderFactory.createEmptyBorder(5, 5, 5, 5));
         m_jPanelTicket.setLayout(new java.awt.BorderLayout());
 
-        m_jPanelLinesToolbar.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
-        m_jPanelLinesToolbar.setPreferredSize(new java.awt.Dimension(75, 270));
-        m_jPanelLinesToolbar.setLayout(new java.awt.BorderLayout());
-
-        jPanel2.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 5, 0, 5));
-        jPanel2.setPreferredSize(new java.awt.Dimension(70, 250));
-        jPanel2.setLayout(new java.awt.GridLayout(0, 1, 5, 5));
-
-        m_jDelete.setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/openbravo/images/editdelete.png"))); // NOI18N
-        m_jDelete.setToolTipText(bundle.getString("tooltip.saleremoveline")); // NOI18N
-        m_jDelete.setFocusPainted(false);
-        m_jDelete.setFocusable(false);
-        m_jDelete.setMargin(new java.awt.Insets(8, 14, 8, 14));
-        m_jDelete.setMaximumSize(new java.awt.Dimension(42, 36));
-        m_jDelete.setMinimumSize(new java.awt.Dimension(42, 36));
-        m_jDelete.setPreferredSize(new java.awt.Dimension(50, 45));
-        m_jDelete.setRequestFocusEnabled(false);
-        m_jDelete.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                m_jDeleteActionPerformed(evt);
-            }
-        });
-        jPanel2.add(m_jDelete);
-
-        m_jList.setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/openbravo/images/search32.png"))); // NOI18N
-        m_jList.setToolTipText(bundle.getString("tooltip.saleproductfind")); // NOI18N
-        m_jList.setFocusPainted(false);
-        m_jList.setFocusable(false);
-        m_jList.setMargin(new java.awt.Insets(8, 14, 8, 14));
-        m_jList.setMaximumSize(new java.awt.Dimension(42, 36));
-        m_jList.setMinimumSize(new java.awt.Dimension(42, 36));
-        m_jList.setPreferredSize(new java.awt.Dimension(50, 45));
-        m_jList.setRequestFocusEnabled(false);
-        m_jList.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                m_jListActionPerformed(evt);
-            }
-        });
-        jPanel2.add(m_jList);
-
-        m_jEditLine.setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/openbravo/images/sale_editline.png"))); // NOI18N
-        m_jEditLine.setToolTipText(bundle.getString("tooltip.saleeditline")); // NOI18N
-        m_jEditLine.setFocusPainted(false);
-        m_jEditLine.setFocusable(false);
-        m_jEditLine.setMargin(new java.awt.Insets(8, 14, 8, 14));
-        m_jEditLine.setMaximumSize(new java.awt.Dimension(42, 36));
-        m_jEditLine.setMinimumSize(new java.awt.Dimension(42, 36));
-        m_jEditLine.setPreferredSize(new java.awt.Dimension(50, 45));
-        m_jEditLine.setRequestFocusEnabled(false);
-        m_jEditLine.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                m_jEditLineActionPerformed(evt);
-            }
-        });
-        jPanel2.add(m_jEditLine);
-
-        jEditAttributes.setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/openbravo/images/attributes.png"))); // NOI18N
-        jEditAttributes.setToolTipText(bundle.getString("tooltip.saleattributes")); // NOI18N
-        jEditAttributes.setFocusPainted(false);
-        jEditAttributes.setFocusable(false);
-        jEditAttributes.setMargin(new java.awt.Insets(8, 14, 8, 14));
-        jEditAttributes.setMaximumSize(new java.awt.Dimension(42, 36));
-        jEditAttributes.setMinimumSize(new java.awt.Dimension(42, 36));
-        jEditAttributes.setPreferredSize(new java.awt.Dimension(50, 45));
-        jEditAttributes.setRequestFocusEnabled(false);
-        jEditAttributes.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jEditAttributesActionPerformed(evt);
-            }
-        });
-        jPanel2.add(jEditAttributes);
-
-        jCheckStock.setFont(new java.awt.Font("Arial", 1, 14)); // NOI18N
-        jCheckStock.setForeground(new java.awt.Color(76, 197, 237));
-        jCheckStock.setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/openbravo/images/info.png"))); // NOI18N
-        jCheckStock.setToolTipText(bundle.getString("tooltip.salecheckstock")); // NOI18N
-        jCheckStock.setFocusPainted(false);
-        jCheckStock.setFocusable(false);
-        jCheckStock.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
-        jCheckStock.setHorizontalTextPosition(javax.swing.SwingConstants.LEFT);
-        jCheckStock.setMargin(new java.awt.Insets(8, 4, 8, 4));
-        jCheckStock.setMaximumSize(new java.awt.Dimension(42, 36));
-        jCheckStock.setMinimumSize(new java.awt.Dimension(42, 36));
-        jCheckStock.setPreferredSize(new java.awt.Dimension(80, 45));
-        jCheckStock.setRequestFocusEnabled(false);
-        jCheckStock.setVerticalTextPosition(javax.swing.SwingConstants.TOP);
-        jCheckStock.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jCheckStockActionPerformed(evt);
-            }
-        });
-        jPanel2.add(jCheckStock);
-
-        m_jPanelLinesToolbar.add(jPanel2, java.awt.BorderLayout.NORTH);
-
-        m_jPanelTicket.add(m_jPanelLinesToolbar, java.awt.BorderLayout.LINE_START);
+        m_jPanelTicket.add(ticketToolbarPane, java.awt.BorderLayout.LINE_START);
 
         m_jPanelLines.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
         m_jPanelLines.setPreferredSize(new java.awt.Dimension(450, 240));
@@ -1510,56 +1417,45 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
 
     }// GEN-LAST:event_m_jbtnScaleActionPerformed
 
-    private void m_jEditLineActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_m_jEditLineActionPerformed
+    private void m_jNumberKeysKeyPerformed(com.openbravo.beans.JNumberEvent evt) {
+        stateTransition(evt.getKey());
+        j_btnRemotePrt.setEnabled(true);
+        j_btnRemotePrt.revalidate();
+    }
 
+    private void editSelectedLine() {
         int i = m_ticketlines.getSelectedIndex();
-
         if (i < 0) {
-            com.openbravo.pos.util.NotifyUtils.beep(); // no line selected
+            com.openbravo.pos.util.NotifyUtils.beep();
         } else {
             ticketLineController.editLine(this, m_oTicket.getLine(i))
                     .ifPresent(newline -> paintTicketLine(i, newline));
         }
+    }
 
-    }// GEN-LAST:event_m_jEditLineActionPerformed
-
-    private void m_jNumberKeysKeyPerformed(com.openbravo.beans.JNumberEvent evt) {// GEN-FIRST:event_m_jNumberKeysKeyPerformed
-
-        stateTransition(evt.getKey());
-
-        j_btnRemotePrt.setEnabled(true);
-        j_btnRemotePrt.revalidate();
-
-    }// GEN-LAST:event_m_jNumberKeysKeyPerformed
-
-    private void m_jDeleteActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_m_jDeleteActionPerformed
-
+    private void deleteSelectedLine() {
         int i = m_ticketlines.getSelectedIndex();
-
         if (i < 0) {
             com.openbravo.pos.util.NotifyUtils.beep();
         } else {
             removeTicketLine(i);
         }
-    }// GEN-LAST:event_m_jDeleteActionPerformed
+    }
 
-    private void m_jListActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_m_jListActionPerformed
-
-        ProductInfoExt prod = JProductFinder.showMessage(JPanelTicket.this, m_App);
+    private void findProduct() {
+        ProductInfoExt prod = JProductFinder.showMessage(this, m_App);
         if (prod != null && m_oTicket != null) {
             buttonTransition(prod);
         } else {
             com.openbravo.pos.util.NotifyUtils.beep();
         }
+    }
 
-    }// GEN-LAST:event_m_jListActionPerformed
-
-    private void jEditAttributesActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_jEditAttributesActionPerformed
+    private void editSelectedLineAttributes() {
         if (inactivityListener != null) {
             inactivityListener.stop();
         }
         int i = m_ticketlines.getSelectedIndex();
-        // no line selected (-1)
         if (i < 0) {
             com.openbravo.pos.util.NotifyUtils.beep();
         } else {
@@ -1568,11 +1464,10 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                 paintTicketLine(i, line);
             }
         }
-
         if (inactivityListener != null) {
             inactivityListener.restart();
         }
-    }// GEN-LAST:event_jEditAttributesActionPerformed
+    }
 
     private void j_btnRemotePrtActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_j_btnRemotePrtActionPerformed
         if (peripheralCoordinator != null) {
@@ -1610,10 +1505,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         }
     }// GEN-LAST:event_btnSplitActionPerformed
 
-    private void jCheckStockActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_jCheckStockActionPerformed
 
-        checkAndShowStockForLine(true);
-    }// GEN-LAST:event_jCheckStockActionPerformed
 
     private void jTBtnShowActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_jTBtnShowActionPerformed
         if (jTBtnShow.isSelected()) {
@@ -1681,19 +1573,13 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     private javax.swing.JButton btnReprint1;
     private javax.swing.JButton btnSplit;
     private javax.swing.JButton jBtnCustomer;
-    private javax.swing.JButton jCheckStock;
-    private javax.swing.JButton jEditAttributes;
-    private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanelScanner;
     private javax.swing.JToggleButton jTBtnShow;
     private javax.swing.JButton j_btnRemotePrt;
     private javax.swing.JPanel m_jButtons;
     private javax.swing.JPanel m_jContEntries;
-    private javax.swing.JButton m_jDelete;
-    private javax.swing.JButton m_jEditLine;
     private javax.swing.JButton m_jEnter;
     private javax.swing.JTextField m_jKeyFactory;
-    private javax.swing.JButton m_jList;
     private com.openbravo.beans.JNumberKeys m_jNumberKeys;
     private javax.swing.JPanel m_jPanEntries;
     private javax.swing.JPanel m_jPanelBag;
@@ -1702,7 +1588,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     private javax.swing.JPanel m_jPanelCatalog;
     private javax.swing.JPanel m_jPanelContainer;
     private javax.swing.JPanel m_jPanelLines;
-    private javax.swing.JPanel m_jPanelLinesToolbar;
+    private com.openbravo.pos.sales.TicketToolbarPane ticketToolbarPane;
     private javax.swing.JPanel m_jPanelMainToolbar;
     private javax.swing.JPanel m_jPanelScripts;
     private javax.swing.JPanel m_jPanelTicket;
@@ -1759,14 +1645,8 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     }
 
     private void updateStockButton(boolean hasStock) {
-        if (!hasStock) {
-            Color errorColor = javax.swing.UIManager.getColor("Component.error.focusedBorderColor");
-            if (errorColor == null) {
-                errorColor = javax.swing.UIManager.getColor("nb.errorForeground");
-            }
-            jCheckStock.setForeground(errorColor != null ? errorColor : javax.swing.UIManager.getColor("Button.foreground"));
-        } else {
-            jCheckStock.setForeground(javax.swing.UIManager.getColor("Button.foreground"));
+        if (ticketToolbarPane != null) {
+            ticketToolbarPane.setStockAvailable(hasStock);
         }
     }
 
