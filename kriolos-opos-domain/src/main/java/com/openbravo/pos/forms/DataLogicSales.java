@@ -628,16 +628,25 @@ public class DataLogicSales extends BeanFactoryDataSingle {
         return ticket;
     }
 
+    private DataLogicCustomers getCustomerDataLogic() {
+        if (app != null) {
+            try {
+                return app.getBean(DataLogicCustomers.class);
+            } catch (BeanFactoryException ignored) {
+            }
+        }
+        DataLogicCustomers fallback = new DataLogicCustomers();
+        fallback.init(sessionDB);
+        return fallback;
+    }
+
     private void setTicketData(TicketInfo ticket) throws BasicException {
         if (ticket != null) {
 
             String customerid = ticket.getCustomerId();
 
-            //TODO MUST move this datalogic
             if (customerid != null) {
-                DataLogicCustomers customerDataLogic = new DataLogicCustomers();
-                customerDataLogic.init(sessionDB);
-                ticket.setCustomer(customerDataLogic.findCustomerInfoExtById(customerid));
+                ticket.setCustomer(getCustomerDataLogic().findCustomerInfoExtById(customerid));
             }
 
             ticket.setLines(new PreparedSentence(sessionDB,

@@ -26,8 +26,9 @@ import com.openbravo.pos.forms.BeanFactoryDataSingle;
  */
 public class DataLogicOrders extends BeanFactoryDataSingle {
     private SentenceExec m_addOrder;
+    private SentenceExec m_updateOrder;
+    private SentenceExec m_deleteOrder;
 
-    
     public DataLogicOrders() {            
     }
     
@@ -36,35 +37,77 @@ public class DataLogicOrders extends BeanFactoryDataSingle {
      * @param s
      */
     @Override
-    public void init(Session s){
-        
-        m_addOrder =  new StaticSentence(s
-                , "INSERT INTO orders (orderid, qty, details, attributes, "
-                        + "notes, ticketid, ordertime, displayid, auxiliary, "
-                        + "completetime) " +
-                  "VALUES (?, ?, ?, ?, ?, "
-                        + "?, ?, ?, ?, ? ) "
-                , new SerializerWriteBasic(new Datas[] {
+    public void init(Session s) {
+        m_addOrder = new StaticSentence(s,
+                "INSERT INTO orders (ORDERID, QTY, DETAILS, ATTRIBUTES, "
+                + "NOTES, TICKETID, ORDERTIME, DISPLAYID, AUXILIARY, "
+                + "COMPLETETIME) "
+                + "VALUES (?, ?, ?, ?, ?, "
+                + "?, ?, ?, ?, ? ) ",
+                new SerializerWriteBasic(new Datas[]{
                     Datas.STRING,   // OrderId
                     Datas.INT,      // Qty
                     Datas.STRING,   // Details
                     Datas.STRING,   // Attributes
                     Datas.STRING,   // Notes
                     Datas.STRING,   // TicketId
-                    Datas.TIMESTAMP,   // OrderTime
+                    Datas.TIMESTAMP,// OrderTime
                     Datas.INT,      // DisplayId
-                    Datas.INT,     // Auxiliary
-                    Datas.TIMESTAMP    // CompleteTime
+                    Datas.INT,      // Auxiliary
+                    Datas.TIMESTAMP // CompleteTime
                 }));
-    }
 
+        m_updateOrder = new StaticSentence(s,
+                "UPDATE orders SET "
+                + "ORDERID = ?, "
+                + "QTY = ?, "
+                + "DETAILS = ?, "
+                + "ATTRIBUTES = ?, "
+                + "NOTES = ?, "
+                + "TICKETID = ?, "
+                + "ORDERTIME = ?, "
+                + "DISPLAYID = ?, "
+                + "AUXILIARY = ?, "
+                + "COMPLETETIME = ? "
+                + "WHERE ORDERID = ? ",
+                new SerializerWriteBasic(new Datas[]{
+                    Datas.STRING, // OrderId
+                    Datas.INT,    // Qty
+                    Datas.STRING, // Details
+                    Datas.STRING, // Attributes
+                    Datas.STRING, // Notes
+                    Datas.STRING, // TicketId
+                    Datas.STRING, // OrderTime
+                    Datas.INT,    // DisplayId
+                    Datas.INT,    // Auxiliary
+                    Datas.STRING  // CompleteTime
+                }));
+
+        m_deleteOrder = new StaticSentence(s,
+                "DELETE FROM orders WHERE ORDERID = ?",
+                SerializerWriteString.INSTANCE);
+    }
 
     public final void addOrder(String orderId, Integer qty, 
             String details, String attributes, String notes, String ticketId, 
             String ordertime, Integer displayId, String auxiliary, String completetime
-        ) throws BasicException {
-
+    ) throws BasicException {
+        if (ordertime == null) {
+            ordertime = Long.toString(new java.util.Date().getTime());
+        }
         m_addOrder.exec(new Object[]{orderId, qty, details, attributes, notes, ticketId, 
                 ordertime, displayId, auxiliary, completetime});    
-    }      
+    }
+
+    public final void updateOrder(String orderId, Integer qty,
+            String details, String attributes, String notes, String ticketId,
+            String ordertime, Integer displayId, String auxiliary, String completetime
+    ) throws BasicException {
+        m_updateOrder.exec(new Object[]{orderId, qty, details, attributes, notes, ticketId,
+                ordertime, displayId, auxiliary, completetime});
+    }
+
+    public void deleteOrder(String orderId) throws BasicException {
+        m_deleteOrder.exec(orderId);
+    }
 }

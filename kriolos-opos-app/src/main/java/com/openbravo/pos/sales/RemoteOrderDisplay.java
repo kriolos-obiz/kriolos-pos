@@ -2,8 +2,8 @@ package com.openbravo.pos.sales;
 
 import com.openbravo.basic.BasicException;
 import com.openbravo.pos.forms.AppView;
+import com.openbravo.pos.forms.DataLogicOrders;
 import com.openbravo.pos.forms.DataLogicSales;
-import com.openbravo.pos.forms.DataLogicSystem;
 import com.openbravo.pos.ticket.TicketInfo;
 
 /**
@@ -13,7 +13,7 @@ import com.openbravo.pos.ticket.TicketInfo;
  */
 public class RemoteOrderDisplay {
 
-    private final DataLogicSystem dlSystem;
+    private final DataLogicOrders dlOrders;
     private final DataLogicSales dlSales;
     private final TicketInfo ticketInfo;
     private final String orderId;
@@ -24,7 +24,7 @@ public class RemoteOrderDisplay {
         this.ticketInfo = ticketInfo;
         this.orderId = orderId;
         this.ticketExternalId = ticketExternalId;
-        dlSystem = appView.getBean(DataLogicSystem.class);
+        dlOrders = appView.getBean(DataLogicOrders.class);
         dlSales = appView.getBean(DataLogicSales.class);
     }
 
@@ -71,7 +71,7 @@ public class RemoteOrderDisplay {
     public void remoteOrderDisplay(String orderId, Integer display, boolean primary) {
 
         try {
-            dlSystem.deleteOrder(orderId);
+            dlOrders.deleteOrder(orderId);
         } catch (BasicException ex) {
             LOGGER.log(System.Logger.Level.WARNING, "Exception on: ", ex);
         }
@@ -87,7 +87,7 @@ public class RemoteOrderDisplay {
                     }
                 }
 
-                dlSystem.addOrder(this.orderId,
+                dlOrders.addOrder(this.orderId,
                         (int) ticketInfo.getLine(i).getMultiply(),
                         ticketInfo.getLine(i).getProductName(),
                         ticketInfo.getLine(i).getProductAttSetInstDesc(),

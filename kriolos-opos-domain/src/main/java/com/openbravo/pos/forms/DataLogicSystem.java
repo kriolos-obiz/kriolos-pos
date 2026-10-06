@@ -390,13 +390,20 @@ public class DataLogicSystem extends BeanFactoryDataSingle {
     
 //// </editor-fold>
     
+    /**
+     * @deprecated Use {@link com.openbravo.pos.voucher.DataLogicVouchers#getVoucherList()} instead.
+     */
+    @Deprecated
     public final List<VoucherInfo> getVouchersActiveList() throws BasicException {
-        final SentenceList<VoucherInfo> m_voucherlist = new StaticSentence(this.session,
-                "SELECT id, voucher_number, customer, amount, status FROM vouchers WHERE status LIKE 'A'",
-                SerializerWriteString.INSTANCE,
-                VoucherInfo.getSerializerRead());
-
-        return m_voucherlist.list();
+        if (app != null) {
+            try {
+                return app.getBean(com.openbravo.pos.voucher.DataLogicVouchers.class).getVoucherList();
+            } catch (BeanFactoryException ignored) {
+            }
+        }
+        com.openbravo.pos.voucher.DataLogicVouchers fallback = new com.openbravo.pos.voucher.DataLogicVouchers();
+        fallback.init(this.session);
+        return fallback.getVoucherList();
     }
 
 //// <editor-fold defaultstate="collapsed" desc="START OF ORDER">   
@@ -415,96 +422,48 @@ public class DataLogicSystem extends BeanFactoryDataSingle {
      * @param completetime
      * @throws BasicException 
      */
+    private DataLogicOrders getDataLogicOrders() {
+        if (app != null) {
+            try {
+                return app.getBean(DataLogicOrders.class);
+            } catch (BeanFactoryException ignored) {
+            }
+        }
+        DataLogicOrders fallback = new DataLogicOrders();
+        fallback.init(this.session);
+        return fallback;
+    }
+
+    /**
+     * @deprecated Use {@link DataLogicOrders#addOrder} instead.
+     */
+    @Deprecated
     public final void addOrder(String orderId, Integer qty,
             String details, String attributes, String notes, String ticketId,
             String ordertime, Integer displayId, String auxiliary, String completetime
     ) throws BasicException {
-
-        if (ordertime == null) {
-            ordertime = Long.toString(new Date().getTime());
-        }
-
-        final SentenceExec m_addOrder = new StaticSentence(this.session,
-                "INSERT INTO orders (ORDERID, QTY, DETAILS, ATTRIBUTES, "
-                + "NOTES, TICKETID, ORDERTIME, DISPLAYID, AUXILIARY, "
-                + "COMPLETETIME) "
-                + "VALUES (?, ?, ?, ?, ?, "
-                + "?, ?, ?, ?, ? ) ",
-                new SerializerWriteBasic(new Datas[]{
-            Datas.STRING, // OrderId
-            Datas.INT, // Qty
-            Datas.STRING, // Details
-            Datas.STRING, // Attributes
-            Datas.STRING, // Notes
-            Datas.STRING, // TicketId
-            Datas.TIMESTAMP, // OrderTime
-            Datas.INT, // DisplayId
-            Datas.INT, // Auxiliary
-            Datas.TIMESTAMP // CompleteTime
-        }));
-        m_addOrder.exec(new Object[]{orderId, qty, details, attributes, notes, ticketId,
-            ordertime, displayId, auxiliary, completetime});
+        getDataLogicOrders().addOrder(orderId, qty, details, attributes, notes, ticketId,
+                ordertime, displayId, auxiliary, completetime);
     }
 
     /**
-     *
-     * @param orderId
-     * @param qty
-     * @param details
-     * @param attributes
-     * @param notes
-     * @param ticketId
-     * @param ordertime
-     * @param displayId
-     * @param auxiliary
-     * @param completetime
-     * @throws BasicException
+     * @deprecated Use {@link DataLogicOrders#updateOrder} instead.
      */
+    @Deprecated
     public final void updateOrder(String orderId, Integer qty,
             String details, String attributes, String notes, String ticketId,
             String ordertime, Integer displayId, String auxiliary, String completetime
     ) throws BasicException {
-
-        final SentenceExec m_updateOrder = new StaticSentence(this.session,
-                "UPDATE orders SET "
-                + "ORDERID = ?, "
-                + "QTY = ?, "
-                + "DETAILS = ?, "
-                + "ATTRIBUTES = ?, "
-                + "NOTES = ?, "
-                + "TICKETID = ?, "
-                + "ORDERTIME = ?, "
-                + "DISPLAYID = ?, "
-                + "AUXILIARY = ?, "
-                + "COMPLETETIME = ? "
-                + "WHERE ORDERID = ? ",
-                new SerializerWriteBasic(new Datas[]{
-            Datas.STRING, // OrderId
-            Datas.INT, // Qty
-            Datas.STRING, // Details
-            Datas.STRING, // Attributes
-            Datas.STRING, // Notes
-            Datas.STRING, // TicketId
-            Datas.STRING, // OrderTime
-            Datas.INT, // DisplayId
-            Datas.INT, // Auxiliary
-            Datas.STRING // CompleteTime
-        }));
-        m_updateOrder.exec(new Object[]{orderId, qty, details, attributes, notes, ticketId,
-            ordertime, displayId, auxiliary, completetime});
+        getDataLogicOrders().updateOrder(orderId, qty, details, attributes, notes, ticketId,
+                ordertime, displayId, auxiliary, completetime);
     }
 
     /**
-     * Delete Order
-     *
-     * @param orderId
-     * @throws BasicException
+     * @deprecated Use {@link DataLogicOrders#deleteOrder} instead.
      */
+    @Deprecated
     public void deleteOrder(String orderId) throws BasicException {
-        final SentenceExec m_deleteOrder = new StaticSentence(this.session,
-                "DELETE FROM orders WHERE ORDERID = ?",
-                SerializerWriteString.INSTANCE);
-        m_deleteOrder.exec(orderId);
+        getDataLogicOrders().deleteOrder(orderId);
     }
 
     //// </editor-fold> 
