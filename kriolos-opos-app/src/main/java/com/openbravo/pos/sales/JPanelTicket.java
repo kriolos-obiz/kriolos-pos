@@ -35,15 +35,14 @@ import com.openbravo.pos.customers.JCustomerFinder;
 import com.openbravo.pos.customers.JDialogNewCustomer;
 import com.openbravo.pos.domain.utils.AmountCalculatorUtil;
 import com.openbravo.pos.forms.*;
+import com.openbravo.pos.inventory.LocationInfo;
 import com.openbravo.pos.inventory.ProductStock;
 import com.openbravo.pos.inventory.TaxCategoryInfo;
+import com.openbravo.pos.pim.CategoryInfo;
 import com.openbravo.pos.panels.JProductFinder;
 import com.openbravo.pos.payment.JPaymentSelect;
 import com.openbravo.pos.payment.JPaymentSelectReceipt;
 import com.openbravo.pos.payment.JPaymentSelectRefund;
-import com.openbravo.pos.printer.TicketParser;
-import com.openbravo.pos.printer.TicketPrinterException;
-import com.openbravo.pos.hardware.PosHardwareManager;
 import com.openbravo.pos.sales.restaurant.PlaceServiceImpl;
 import com.openbravo.pos.scripting.ScriptEngine;
 import com.openbravo.pos.scripting.ScriptException;
@@ -113,7 +112,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     private StringBuffer m_sBarcode;
 
     private JTicketsBag m_ticketsbag;
-    private TicketParser ticketParser;
+    protected SalesPeripheralCoordinator peripheralCoordinator;
     private SentenceList senttax;
 
     private SentenceList senttaxcategories;
@@ -175,7 +174,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         LOGGER.log(System.Logger.Level.DEBUG, "JPanelTicket.init: criar: Ticket.Line");
         m_ticketlines = new JTicketLines(dlSystem.getResourceAsXML(TicketConstants.RES_TICKET_LINES));
         m_jPanelLines.add(m_ticketlines, java.awt.BorderLayout.CENTER);
-        ticketParser = m_App.createTicketParser();
+        peripheralCoordinator = new SalesPeripheralCoordinator(m_App, dlSystem);
 
         senttax = dlSales.getTaxList();
         senttaxcategories = dlSales.getTaxCategoriesList();
@@ -858,16 +857,10 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     private void incProduct(ProductInfoExt prod, double dPor) {
 
         if (prod.isScale() && m_App.hasScale()) {
-            try {
-                Double value = m_App.readWeight();
-                if (value != null) {
-                    incProduct(prod, value);
-                }
-            }
-            catch (Exception ex) {
-                LOGGER.log(System.Logger.Level.WARNING, "Exception on increment product: ", ex);
-                com.openbravo.pos.util.NotifyUtils.beep();
-                new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.noweight"), ex).show(this);
+            Double value = peripheralCoordinator.readWeight(this);
+            if (value != null) {
+                incProduct(prod, value);
+            } else {
                 stateToZero();
             }
         } else {
@@ -1055,25 +1048,15 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                     && m_iNumberStatusInput == NUMBERVALID
                     && m_iNumberStatusPor == NUMBERZERO) {
 
-                if (m_App.hasScale()
-                        && m_App.hasPermission("sales.EditLines")) {
-                    try {
-                        Double value = m_App.readWeight();
-                        if (value != null) {
-                            ProductInfoExt product = getInputProduct();
-                            addTicketLine(product, value, product.getPriceSell());
-                        }
-                    }
-                    catch (Exception ex) {
-                        LOGGER.log(System.Logger.Level.WARNING, "Exception on read product SCALE and add ticket line: ",
-                                ex);
-                        com.openbravo.pos.util.NotifyUtils.beep();
-                        new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.noweight"), ex)
-                                .show(this);
+                if (m_App.hasPermission("sales.EditLines")) {
+                    Double value = peripheralCoordinator.readWeight(this);
+                    if (value != null) {
+                        ProductInfoExt product = getInputProduct();
+                        addTicketLine(product, value, product.getPriceSell());
+                    } else {
                         stateToZero();
                     }
                 } else {
-
                     com.openbravo.pos.util.NotifyUtils.beep();
                 }
             } else if (cTrans == '\u00a7'
@@ -1083,26 +1066,16 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                 int i = m_ticketlines.getSelectedIndex();
                 if (i < 0) {
                     com.openbravo.pos.util.NotifyUtils.beep();
-                } else if (m_App.hasScale()) {
-                    try {
-                        Double value = m_App.readWeight();
-                        if (value != null) {
-                            TicketLineInfo newline = new TicketLineInfo(m_oTicket.getLine(i));
-                            newline.setMultiply(value);
-                            newline.setPrice(Math.abs(newline.getPrice()));
-                            paintTicketLine(i, newline);
-                        }
-                    }
-                    catch (Exception ex) {
-                        LOGGER.log(System.Logger.Level.WARNING, "Exception on process state transition '\u00a7' ", ex);
-                        com.openbravo.pos.util.NotifyUtils.beep();
-                        new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.noweight"), ex)
-                                .show(this);
+                } else {
+                    Double value = peripheralCoordinator.readWeight(this);
+                    if (value != null) {
+                        TicketLineInfo newline = new TicketLineInfo(m_oTicket.getLine(i));
+                        newline.setMultiply(value);
+                        newline.setPrice(Math.abs(newline.getPrice()));
+                        paintTicketLine(i, newline);
+                    } else {
                         stateToZero();
                     }
-                } else {
-
-                    com.openbravo.pos.util.NotifyUtils.beep();
                 }
 
             } else if (cTrans == '+'
@@ -1510,46 +1483,11 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     }
 
     private void printTicket(String sresourcename, TicketInfo ticket, String ticketext) {
-
-        String processTemaplated = "";
-        LOGGER.log(System.Logger.Level.INFO, "Reading resource id: " + sresourcename);
-        String sresource = dlSystem.getResourceAsXML(sresourcename);
-        if (sresource == null) {
-            LOGGER.log(System.Logger.Level.WARNING, "NOTFOUND content for resource id: " + sresourcename);
-            MessageInf msg = new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.cannotprintticket"));
-            msg.show(JPanelTicket.this);
-        } else {
-
-            try {
-                ScriptEngine script = ScriptFactory.getScriptEngine(ScriptFactory.VELOCITY);
-
-                script.put("taxes", ticket.getTaxLines());
-
-                Boolean warrantyPrint = warrantyCheck(ticket);
-
-                script.put("taxeslogic", taxeslogic);
-                script.put("ticket", ticket);
-                script.put("place", ticketext);
-                script.put("warranty", warrantyPrint);
-                script.put("pickupid", getPickupString(ticket));
-
-                // TODO - MUST present to the progress o printing processing
-                refreshTicket();
-
-                processTemaplated = script.eval(sresource).toString();
-                ticketParser.printTicket(processTemaplated, ticket);
-
-                Notify(AppLocal.getIntString("notify.printed"));
-            }
-            catch (ScriptException | TicketPrinterException ex) {
-                LOGGER.log(System.Logger.Level.WARNING, "Exception on processing/Print resource id: " + sresourcename,
-                        ex);
-                LOGGER.log(System.Logger.Level.DEBUG, "Exeception PROCESSED TEMPLATE: \n\r+++++++++++++\n\r "
-                        + processTemaplated + "\n\r+++++++++++++\n\r");
-                MessageInf msg = new MessageInf(MessageInf.SGN_WARNING,
-                        AppLocal.getIntString("message.cannotprintticket"), ex);
-                msg.show(JPanelTicket.this);
-            }
+        refreshTicket();
+        boolean ok = peripheralCoordinator.printTicket(sresourcename, ticket, ticketext, taxeslogic,
+                warrantyCheck(ticket), getPickupString(ticket), this);
+        if (ok) {
+            Notify(AppLocal.getIntString("notify.printed"));
         }
     }
 
@@ -1608,77 +1546,18 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     }
 
     private void initDeviceDisplay() {
-        var deviceDisplay = m_App.getDeviceTicket().getDeviceDisplay();
-        if (deviceDisplay != null && PosHardwareManager.isAdvanceDisplay(deviceDisplay)) {
-
-            // TODO EVALUATE PERFORMANCE TO CREATE THIS EVERY TIME
-            JTicketLines m_ticketlines2 = new JTicketLines(
-                    this.dlSystem.getResourceAsXML(TicketConstants.RES_TICKET_LINES));
-            m_ticketlines2.setTicketTableFont(new Font("Arial", 0, 18));
-
-            this.m_ticketlines.addListSelectionListener((ListSelectionEvent e) -> {
-                EventQueue.invokeLater(() -> {
-                    var currentDisplay = JPanelTicket.this.m_App.getDeviceTicket().getDeviceDisplay();
-                    int ticketLineIndex = JPanelTicket.this.m_ticketlines.getSelectedIndex();
-                    // FEATURE 1
-                    if (PosHardwareManager.hasFeature(currentDisplay, 1) && !e.getValueIsAdjusting()) {
-                        if (ticketLineIndex >= 0) {
-                            try {
-                                String sProductId = JPanelTicket.this.m_oTicket.getLine(ticketLineIndex).getProductID();
-                                if (sProductId != null) {
-                                    ProductInfoExt prod = JPanelTicket.this.dataLogicPIM.getProductInfo(sProductId);
-                                    if (prod == null) {
-                                        prod = dataLogicPIM.getProductInfoByCode(sProductId);
-                                    }
-                                    if (prod != null) {
-                                        PosHardwareManager.setProductImage(currentDisplay, prod.getImage());
-                                    }
-                                }
-                            }
-                            catch (BasicException ex) {
-                                LOGGER.log(System.Logger.Level.WARNING, "", ex);
-                            }
-                        }
-                    }
-
-                    // FEATURE 2
-                    if (PosHardwareManager.hasFeature(deviceDisplay, 2)) {
-
-                        m_ticketlines2.clearTicketLines();
-                        for (int j = 0; JPanelTicket.this.m_oTicket != null
-                                && j < JPanelTicket.this.m_oTicket.getLinesCount(); j++) {
-                            m_ticketlines2.insertTicketLine(j, JPanelTicket.this.m_oTicket.getLine(j));
-                        }
-                        m_ticketlines2.setSelectedIndex(ticketLineIndex);
-
-                        PosHardwareManager.setTicketLines(deviceDisplay, m_ticketlines2);
-                    }
-                });
-            });
-        }
+        peripheralCoordinator.setupAdvancedDisplayListener(this.m_ticketlines, () -> this.m_oTicket, sProductId -> {
+            try {
+                ProductInfoExt prod = dataLogicPIM.getProductInfo(sProductId);
+                return prod != null ? prod : dataLogicPIM.getProductInfoByCode(sProductId);
+            } catch (BasicException ex) {
+                return null;
+            }
+        });
     }
 
     private void visorTicketLine(TicketLineInfo oLine) {
-        String resourceName = "Printer.TicketLine";
-        if (oLine == null) {
-            m_App.getDeviceTicket().getDeviceDisplay().clearVisor();
-        } else {
-            try {
-                ScriptEngine script = ScriptFactory.getScriptEngine(ScriptFactory.VELOCITY);
-                script.put("ticketline", oLine);
-                String resourcePrintTemplate = dlSystem.getResourceAsXML(resourceName);
-                String generatedPrintContent = script.eval(resourcePrintTemplate).toString();
-                ticketParser.printTicket(generatedPrintContent);
-
-            }
-            catch (ScriptException | TicketPrinterException ex) {
-                LOGGER.log(System.Logger.Level.WARNING,
-                        "Exception execute visor ticket line with resource name: " + resourceName, ex);
-                MessageInf msg = new MessageInf(MessageInf.SGN_WARNING,
-                        AppLocal.getIntString("message.cannotprintline"), ex);
-                msg.show(JPanelTicket.this);
-            }
-        }
+        peripheralCoordinator.updateCustomerDisplay(oLine, this);
     }
 
     private Object evalScript(ScriptObject scr, String resource, ScriptArg... args) {
@@ -1764,11 +1643,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                 discount = AppLocal.getIntString("message.discno");
             }
 
-            String content = "<html>"
-                    + "<b>" + AppLocal.getIntString("label.vip") + " : " + "</b>" + vip + "<br>"
-                    + "<b>" + AppLocal.getIntString("label.discount") + " : " + "</b>" + discount + "<br>" + "</html>";
-
-            new MessageInf(MessageInf.SGN_NOTICE, content).show(this);
+            CustomerDiscountInfoPanel.show(this, vip, discount);
         }
     }
 
@@ -2724,11 +2599,10 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                 Double pMax = 0.0;
                 Double pUnits = 0.0;
                 Date pMemoDate = null;
-                String content = "";
+                Double pPriceSell = line.getPrice();
+                boolean validLocation = (productStock != null && location != null && location.equals(productStock.getLocation()));
 
-                if (productStock == null || location == null || !location.equals(productStock.getLocation())) {
-                    content = AppLocal.getIntString("message.location.current");
-                } else {
+                if (validLocation) {
                     if (productStock.getMinimum() != null) {
                         pMin = productStock.getMinimum();
                     }
@@ -2745,15 +2619,9 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                         pMemoDate = productStock.getMemoDate();
                     }
 
-                    content = "<html>"
-                            + "<b>" + AppLocal.getIntString("label.currentstock")
-                            + " : " + "</b>" + pUnits + "<br>"
-                            + "<b>" + AppLocal.getIntString("label.maximum")
-                            + " : " + "</b>" + pMax + "<br>"
-                            + "<b>" + AppLocal.getIntString("label.minimum")
-                            + " : " + "</b>" + pMin + "<br>"
-                            + "<b>" + AppLocal.getIntString("label.proddate")
-                            + " : " + "</b>" + pMemoDate + "<br>";
+                    if (productStock.getPriceSell() != null && productStock.getPriceSell() > 0) {
+                        pPriceSell = productStock.getPriceSell();
+                    }
                 }
 
                 if (pUnits <= 0) {
@@ -2763,7 +2631,74 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                 }
 
                 if (showDialog) {
-                    new MessageInf(MessageInf.SGN_NOTICE, content).show(this);
+                    if (validLocation) {
+                        String productName = line.getProductName();
+                        String categoryName = null;
+                        String reference = null;
+                        String barcode = null;
+                        String locationName = location;
+
+                        if (pId != null && dataLogicPIM != null) {
+                            try {
+                                ProductInfoExt prod = dataLogicPIM.getProductInfo(pId);
+                                if (prod != null) {
+                                    if (productName == null || productName.isBlank()) {
+                                        productName = prod.getName();
+                                    }
+                                    reference = prod.getReference();
+                                    barcode = prod.getCode();
+                                    if (prod.getCategoryID() != null) {
+                                        CategoryInfo cat = dataLogicPIM.getCategoryInfo(prod.getCategoryID());
+                                        if (cat != null) {
+                                            categoryName = cat.getName();
+                                        }
+                                    }
+                                }
+                            } catch (BasicException ignored) {
+                            }
+                        }
+
+                        if (categoryName == null && line.getProductCategoryID() != null && dataLogicPIM != null) {
+                            try {
+                                CategoryInfo cat = dataLogicPIM.getCategoryInfo(line.getProductCategoryID());
+                                if (cat != null) {
+                                    categoryName = cat.getName();
+                                }
+                            } catch (BasicException ignored) {
+                            }
+                        }
+
+                        if (dlSales != null && location != null) {
+                            try {
+                                List<LocationInfo> locs = dlSales.getLocationsListAll();
+                                if (locs != null) {
+                                    for (LocationInfo loc : locs) {
+                                        if (location.equals(loc.getID())) {
+                                            locationName = loc.getName();
+                                            break;
+                                        }
+                                    }
+                                }
+                            } catch (Exception ignored) {
+                            }
+                        }
+
+                        ProductStockDetails details = new ProductStockDetails(
+                                productName,
+                                categoryName,
+                                reference,
+                                barcode,
+                                locationName,
+                                pUnits,
+                                pMin,
+                                pMax,
+                                pPriceSell,
+                                pMemoDate
+                        );
+                        ProductStockInfoPanel.show(this, details);
+                    } else {
+                        new MessageInf(MessageInf.SGN_NOTICE, AppLocal.getIntString("message.location.current")).show(this);
+                    }
                 }
 
             }
@@ -2907,60 +2842,5 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
             return script.eval(code);
         }
     }
-
-    /**
-     * JPnaleTicket constant defined in a single place
-     */
-    private static class TicketConstants {
-
-        /**
-         * Ticket Events(event key :string): Ticket event 'show'
-         */
-        public static final String EV_TICKET_SHOW = "ticket.show";
-
-        /**
-         * Ticket Events (eventKey :string): Ticket event 'change' Event:
-         * 'ticket.change' (Ticket changed)
-         */
-        public static final String EV_TICKET_CHANGE = "ticket.change";
-
-        /**
-         * Ticket Events (eventKey :string): Ticket event 'close' Event:
-         * 'ticket.close' (Ticket closed)
-         */
-        public static final String EV_TICKET_CLOSE = "ticket.close";
-
-        /**
-         * Ticket Events (eventKey :string): Ticket event 'save' Event:
-         * 'ticket.save' (Ticket saved)
-         */
-        public static final String EV_TICKET_SAVE = "ticket.save";
-
-        /**
-         * Ticket Events (eventKey :string): Ticket event 'total' Event:
-         * 'ticket.total' (Ticket total)
-         */
-        public static final String EV_TICKET_TOTAL = "ticket.total";
-
-        /**
-         * Ticket Property (property :boolean['true'|'false'): Ticket property
-         * 'updated' Property: 'ticket.updated' (TicketLine was updated)
-         */
-        public static final String PROP_TICKET_UPDATED = "ticket.updated";
-
-        /**
-         * Ticket Resource (resource: XML): Ticket resource Resource:
-         * 'Ticket.Buttons' (Define which buttons to show in Top Menu)
-         */
-        public static final String RES_TICKET_BUTTONS = "Ticket.Buttons";
-
-        /**
-         * Ticket Resource (resource: XML): Ticket resource: TicketLine Panel
-         * configuration Resource: 'Ticket.Line' (Define which TicketLine
-         * attribute to show in TicketLinePanel)
-         */
-        public static final String RES_TICKET_LINES = "Ticket.Line";
-
-    }
-
 }
+
