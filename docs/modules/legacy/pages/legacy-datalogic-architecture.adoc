@@ -1,0 +1,191 @@
+= Legacy Architecture — DataLogic Scope & Monolith Analysis
+:description: Architectural analysis of all 13 legacy DataLogic classes in KriolOS POS, documenting broad scope flaws, cross-domain contamination, target domain model, and decoupling roadmap.
+:keywords: legacy architecture, datalogic, monolith, domain modeling, refactoring, openbravo, bounded context
+:toc: left
+:toclevels: 3
+:sectnums:
+:icons: font
+
+== Overview
+
+In the original Openbravo POS / uniCenta architecture inherited by KriolOS POS, data access and transactional business logic are coupled directly to the database via 13 monolithic `DataLogic*` classes located in `kriolos-opos-domain`.
+
+These classes are registered as singletons inside `BeanContainer` (extending `BeanFactoryDataSingle` or `BeanFactoryApp`). Over years of evolution, individual `DataLogic` classes accumulated multiple unrelated business concerns, resulting in **broad scope anti-patterns**, **cross-domain entity coupling**, and **hidden dependencies**.
+
+This document serves as the baseline record of the legacy data layer architecture to guide the long-term objective of extracting clean, well-defined Business Modules.
+
+---
+
+== Legacy DataLogic Inventory
+
+[cols="2,2,1,3,2", options="header"]
+|===
+| Class | Package | Lines | Declared Purpose | Scope Diagnosis
+| `DataLogicSales` | `com.openbravo.pos.forms` | 1,608 | Sales & checkout transactions | *Super-Monolith* (9 mixed domains)
+| `DataLogicPIM` | `com.openbravo.pos.pim` | 1,199 | Product Information Management | *Heavy Monolith* (Catalog + Pricing + Stock)
+| `DataLogicSystem` | `com.openbravo.pos.forms` | 537 | System configuration & core | *Catch-All Sink* (Duplicates Orders & Vouchers)
+| `DataLogicCustomers` | `com.openbravo.pos.customers` | 535 | Customer profiles & debts | *Cross-Domain Bleed* (Dining reservations)
+| `DataLogicPresenceManagement` | `com.openbravo.pos.epm` | 447 | Employee presence / HR time clock | *Focused Domain*
+| `DataLogicReceipts` | `com.openbravo.pos.sales` | 420 | Receipts / shared tickets | *Misnamed* (Exclusively Shared Tickets)
+| `DataLogicSuppliers` | `com.openbravo.pos.suppliers` | 354 | Supplier master data & accounts | *Coupled to Stock Diary*
+| `DataLogicImport` | `com.openbravo.pos.imports` | 177 | CSV data import engine | *Focused Domain*
+| `DataLogicAttribute` | `com.openbravo.pos.inventory` | 131 | Product attributes & sets | *Fragmented PIM*
+| `DataLogicAdmin` | `com.openbravo.pos.admin` | 125 | Admin user/role maintenance | *Split Domain* (Overlaps with `DataLogicSystem`)
+| `DataLogicVouchers` | `com.openbravo.pos.voucher` | 90 | Voucher & gift card ledger | *Focused Domain* (Bypassed by `DataLogicSystem`)
+| `DataLogicInventory` | `com.openbravo.pos.inventory` | 72 | Warehouse inventory levels | *Anemic / Under-Scoped* (Starved by Sales)
+| `DataLogicOrders` | `com.openbravo.pos.forms` | 70 | Kitchen / remote orders | *Orphaned / Duplicated* in `DataLogicSystem`
+|===
+
+---
+
+== Scope Analysis & Anti-Patterns
+
+=== `DataLogicSales`: The Super-Monolith (1,608 LOC)
+
+`DataLogicSales` is the central God Object of the legacy system. Despite its name, it directly queries or mutates 29 database tables spanning **9 distinct business domains**:
+
+1. **Ticket Lifecycle & Checkout (Core Sales Domain):**
+   * Methods: `loadTicket`, `loadLastTicket`, `saveTicket`, `deleteTicket`, `getTicketsList`, `getReprintTicket`, `getReprintTicketList`.
+   * Sequence Numbering: `getNextTicketIndex`, `getNextTicketRefundIndex`, `getNextPickupIndex`, `resetPickup`.
+2. **Inventory & Stock Diary (Inventory Domain):**
+   * Methods: `getProductStockState`, `getProductStockList`, `saveStockDiary`, `getStockDiaryInsert`, `getStockDiaryDelete`, `findProductStock`.
+   * *Issue:* Stock diary recording and stock level checking are core inventory operations, yet they are stranded inside `DataLogicSales` rather than `DataLogicInventory`.
+3. **Taxes & Fiscality (Finance/Tax Domain):**
+   * Methods: `getTableTaxes`, `getTableTaxCategories`, `getTableTaxCustCategories`, `getTaxList`, `getTaxListAll`, `getTaxCategoriesList`.
+4. **Customers & Debt (CRM Domain):**
+   * Methods: `getCustomerInsert`, `getCustomerUpdate`, `getCustomerDelete`, `getCustomersTransactionList`, `updateCustomerDebt`.
+   * *Issue:* Duplicates customer CRUD already provided by `DataLogicCustomers`.
+5. **Locations & Warehouses (Master Data Domain):**
+   * Methods: `getTableLocations`, `getLocationsList`, `getLocationsListAll`.
+6. **Restaurant Layout (Hospitality Domain):**
+   * Methods: `getFloorsList`, `getFloorTablesList` (queries `floors` and `places` tables).
+7. **Product Master Data & UOM (PIM / Catalog Domain):**
+   * Methods: `getTableUom`, `getUomInfoById`, `getUomList`, `getAttributeSetList`, `addProductsToCatalogWithCategoryId`, `removeProductsFromCatalogWithCategoryId`, `getProductImage`.
+8. **Cash Movements & Drawers (Treasury Domain):**
+   * Methods: `getPaymentMovementInsert`, `getPaymentMovementDelete`.
+9. **Security & Audit Logging (Surveillance Domain):**
+   * Methods: `addTicketLineRemoved`, `addTicketDeleted`.
+
+[WARNING]
+====
+`DataLogicSales` contains tight couplings that bypass the bean container:
+* Instantiates `DataLogicCustomers` directly inside transaction logic:
++
+[source,java]
+----
+DataLogicCustomers customerDataLogic = new DataLogicCustomers();
+customerDataLogic.init(sessionDB);
+----
+* Calls static methods across other DataLogics:
+  ** `DataLogicVouchers.updateVoucherNonActive(...)`
+  ** `DataLogicPIM.getProductsBundle(...)`
+  ** `DataLogicPIM.getProductInfoExtById(...)`
+====
+
+---
+
+=== `DataLogicSystem`: The Catch-All Trap (537 LOC)
+
+Located in `com.openbravo.pos.forms`, `DataLogicSystem` combines platform-level infrastructure with high-level application logic:
+
+* **System Metadata:** `getDBVersion()`, `findVersion()`.
+* **Security & Auth (Overlapping with `DataLogicAdmin`):**
+  * `listPeopleVisible()`, `findPeopleByCard()`, `getUser()`, `execChangePassword()`.
+  * `getPermissions()`, `findRolePermissions()`, `execUpdatePermissions()`.
+* **UI Resources & Assets:** `getTableResources()`, `getResourceAsBinary()`, `getResourceAsText()`, `setResource()`.
+* **Kitchen Orders (Duplicate of `DataLogicOrders`):**
+  * Implements `addOrder()`, `updateOrder()`, and `deleteOrder()`. `DataLogicOrders` only contains `addOrder()` and is largely orphaned.
+* **Vouchers (Duplicate of `DataLogicVouchers`):**
+  * Implements `getVouchersActiveList()` directly against the `vouchers` table rather than using `DataLogicVouchers`.
+
+---
+
+=== `DataLogicInventory` vs `DataLogicSales`: Anemic Fragmentation
+
+* `DataLogicInventory` is only **72 lines** long and contains only 3 static statements for `stocklevel` and `stockcurrent`.
+* All meaningful inventory operations—ledger transactions in `stockdiary`, stock valuations, multi-location stock calculations, and inventory adjustment statements—live inside `DataLogicSales`.
+* Consequently, inventory UI screens (such as `StockManagement` and `StockDiaryEditor`) are forced to inject `DataLogicSales`, `DataLogicSystem`, `DataLogicSuppliers`, and `DataLogicPIM` concurrently.
+
+---
+
+=== `DataLogicReceipts`: Misnamed Component (420 LOC)
+
+* The class name suggests receipt generation, printing, or fiscal receipt storage.
+* In reality, it deals **100% with networked shared/parked tickets** (`sharedtickets` table):
+  * `getSharedTicket()`, `getSharedTicketList()`, `insertSharedTicket()`, `updateSharedTicket()`, `lockSharedTicket()`, `unlockSharedTicket()`.
+* Standard customer receipts and receipt reprints are handled entirely by `DataLogicSales` (`loadTicket`, `getReprintTicket`).
+
+---
+
+=== `DataLogicCustomers`: Hospitality Bleed
+
+`DataLogicCustomers` manages customer accounts, cards, and tax numbers, but also includes table reservation management:
+* `getReservationsList()`, `getReservationsInsert()`, `getReservationsUpdate()`, `getReservationsDelete()`.
+* Interacts with `reservations` and `reservation_customers` tables (`CHAIRS`, `DATENEW`, etc.).
+* Table reservations belong to the **Hospitality / Restaurant** domain, not the generic CRM domain.
+
+---
+
+== Cross-Domain Entity Matrix
+
+The following matrix identifies tables accessed across multiple legacy DataLogic classes:
+
+[cols="3,1,1,1,1,1,1,1,1,1", options="header"]
+|===
+| Entity / Table | `Sales` | `System` | `PIM` | `Inventory` | `Customers` | `Admin` | `Suppliers` | `Vouchers` | `Orders`
+| `products`, `products_cat` | X | | X | X | | | X | |
+| `stockdiary`, `stockcurrent` | X | | | X | | | X | |
+| `taxes`, `taxcategories` | X | | X | | | | | |
+| `customers` | X | | | | X | | | X |
+| `people`, `roles`, `permissions` | | X | | | | X | | |
+| `resources` | | X | | | | X | | |
+| `locations` | X | X | X | | | | | |
+| `floors`, `places` | X | X | | | | | | |
+| `reservations` | | | | | X | | | |
+| `vouchers` | X | X | | | | | | X |
+| `orders` | | X | | | | | | | X
+|===
+
+---
+
+== Target Business Module Architecture
+
+To transform the legacy monolith into clean, modular components, the 13 `DataLogic` classes should be decoupled into bounded contexts:
+
+[cols="2,3,2", options="header"]
+|===
+| Bounded Context | Responsibilities | Target Services
+| **`system`** | Database version, system properties, binary & text resources | `SystemDomainService`
+| **`auth`** | Users (`people`), roles, permissions, PIN/card authentication | `SecurityDomainService`
+| **`catalog` (PIM)** | Products, categories, attributes, bundles, units of measure (UOM) | `CatalogDomainService`
+| **`inventory`** | Warehouses, stock levels, stock diary ledger, stock adjustments | `InventoryDomainService`
+| **`pricing-tax`** | Tax categories, tax rates, customer tax categories | `TaxDomainService`
+| **`sales`** | Tickets, ticket lines, ticket sequence numbering, sales audit | `SalesDomainService`
+| **`sales-parked`** | Networked shared/parked tickets, terminal locks, pickup tracking | `SharedTicketService`
+| **`customer` (CRM)** | Customer profiles, cards, account debts, transaction ledger | `CustomerDomainService`
+| **`procurement`** | Supplier master data, supplier transactions | `ProcurementDomainService`
+| **`hospitality`** | Restaurant floors, tables/places, table reservations, kitchen orders | `HospitalityDomainService`
+| **`treasury`** | Cash drawer movements, payment ledger, vouchers/gift cards | `PaymentDomainService`
+| **`workforce` (EPM)** | Shifts, breaks, leaves, employee check-in/out | `WorkforceDomainService`
+| **`data-exchange`** | CSV import/export routines | `ImportExportService`
+|===
+
+---
+
+== Decoupling Roadmap
+
+=== Phase 1: Deduplication & Bean Isolation
+1. **Consolidate Kitchen Orders:** Remove duplicate order methods in `DataLogicSystem` and consolidate onto `DataLogicOrders` (or target `HospitalityDomainService`).
+2. **Consolidate Vouchers:** Remove direct voucher queries in `DataLogicSystem` and `DataLogicSales`, routing them through `DataLogicVouchers`.
+3. **Eliminate Ad-Hoc Instantiations:** Replace `new DataLogicCustomers()` inside `DataLogicSales` with type-safe `app.getBean(DataLogicCustomers.class)`.
+
+=== Phase 2: Domain Extraction & Backwards-Compatible Facades
+1. **Extract Inventory Logic:** Move `saveStockDiary`, `getProductStockState`, `getProductStockList`, and `findProductStock` from `DataLogicSales` into `DataLogicInventory`.
+2. **Preserve Delegating Facades:** Keep `@Deprecated` proxy methods on `DataLogicSales` that delegate to `DataLogicInventory`, allowing callers in UI panels to migrate gradually.
+3. **Extract Tax Logic:** Move tax queries and table definitions out of `DataLogicSales` into a dedicated tax service.
+4. **Extract Hospitality:** Move `floors`, `places`, and `reservations` out of `DataLogicSales` and `DataLogicCustomers` into a dedicated restaurant service.
+
+=== Phase 3: Pure Domain Services (Hexagonal Ports)
+1. Define pure Java interfaces (Ports) in domain API modules.
+2. Encapsulate low-level `SentenceList`, `PreparedSentence`, and SQL strings within Repository adapters rather than exposing data loader objects to Swing UI components.
+3. Replace `app.getBean(DataLogic*.class)` in UI panels with injected domain service interfaces.
