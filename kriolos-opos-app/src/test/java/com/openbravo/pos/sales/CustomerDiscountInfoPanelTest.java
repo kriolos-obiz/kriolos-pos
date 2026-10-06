@@ -25,10 +25,33 @@ import static org.junit.jupiter.api.Assertions.*;
 public class CustomerDiscountInfoPanelTest {
 
     @Test
-    @DisplayName("Should initialize CustomerDiscountInfoPanel with proper names and structure")
-    void testPanelInit() {
+    @DisplayName("Should initialize CustomerDiscountInfoPanel with legacy parameters")
+    void testPanelInitLegacy() {
         CustomerDiscountInfoPanel panel = new CustomerDiscountInfoPanel("Yes", "10%");
         assertEquals("kriolos:sales:customer_discount_info", panel.getName());
+        assertTrue(panel.getComponentCount() > 0);
+    }
+
+    @Test
+    @DisplayName("Should initialize CustomerDiscountInfoPanel with CustomerDiscountDetails record")
+    void testPanelInitWithRecord() {
+        CustomerDiscountDetails details = new CustomerDiscountDetails(
+                "Jane Doe",
+                "987654321",
+                "CARD-001",
+                true,
+                15.0,
+                50.0,
+                500.0,
+                "Preferred VIP client"
+        );
+
+        CustomerDiscountInfoPanel panel = new CustomerDiscountInfoPanel(details);
+        assertEquals("kriolos:sales:customer_discount_info", panel.getName());
+        assertEquals(details, panel.getDetails());
+        assertEquals("Jane Doe", panel.getDetails().customerName());
+        assertEquals(15.0, panel.getDetails().discountPercent());
+        assertTrue(panel.getDetails().vip());
         assertTrue(panel.getComponentCount() > 0);
     }
 }

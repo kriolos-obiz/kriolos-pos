@@ -1633,17 +1633,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
 
     public void checkCustomer() {
         if (m_oTicket.getCustomer() != null && m_oTicket.getCustomer().isVIP()) {
-
-            String vip = AppLocal.getIntString("message.vipyes");
-            String discount;
-
-            if (m_oTicket.getCustomer().getDiscount() > 0) {
-                discount = AppLocal.getIntString("message.discyes") + m_oTicket.getCustomer().getDiscount() + "%";
-            } else {
-                discount = AppLocal.getIntString("message.discno");
-            }
-
-            CustomerDiscountInfoPanel.show(this, vip, discount);
+            CustomerDiscountInfoPanel.show(this, m_oTicket.getCustomer());
         }
     }
 
