@@ -53,11 +53,24 @@ public class SalesPeripheralCoordinator {
     private final AppView app;
     private final DataLogicSystem dlSystem;
     private final TicketParser ticketParser;
+    private final Function<String, String> textResourceResolver;
+    private final Function<String, String> xmlResourceResolver;
 
     public SalesPeripheralCoordinator(AppView app, DataLogicSystem dlSystem) {
+        this(app, dlSystem,
+                app != null ? app.createTicketParser() : null,
+                dlSystem != null ? dlSystem::getResourceAsText : key -> null,
+                dlSystem != null ? dlSystem::getResourceAsXML : key -> null);
+    }
+
+    SalesPeripheralCoordinator(AppView app, DataLogicSystem dlSystem, TicketParser ticketParser,
+                               Function<String, String> textResourceResolver,
+                               Function<String, String> xmlResourceResolver) {
         this.app = Objects.requireNonNull(app, "AppView cannot be null");
-        this.dlSystem = Objects.requireNonNull(dlSystem, "DataLogicSystem cannot be null");
-        this.ticketParser = app.createTicketParser();
+        this.dlSystem = dlSystem;
+        this.ticketParser = ticketParser;
+        this.textResourceResolver = textResourceResolver != null ? textResourceResolver : (dlSystem != null ? dlSystem::getResourceAsText : key -> null);
+        this.xmlResourceResolver = xmlResourceResolver != null ? xmlResourceResolver : (dlSystem != null ? dlSystem::getResourceAsXML : key -> null);
     }
 
     /**
@@ -99,7 +112,7 @@ public class SalesPeripheralCoordinator {
             try {
                 ScriptEngine script = ScriptFactory.getScriptEngine(ScriptFactory.VELOCITY);
                 script.put("ticketline", oLine);
-                String resourcePrintTemplate = dlSystem.getResourceAsXML(resourceName);
+                String resourcePrintTemplate = xmlResourceResolver.apply(resourceName);
                 if (resourcePrintTemplate != null) {
                     String generatedPrintContent = script.eval(resourcePrintTemplate).toString();
                     ticketParser.printTicket(generatedPrintContent);
@@ -126,7 +139,7 @@ public class SalesPeripheralCoordinator {
     public boolean printTicket(String resourceName, TicketInfo ticket, String ticketext,
                                TaxesLogic taxeslogic, boolean warrantyPrint, String pickupId, Component parent) {
         LOGGER.log(Level.INFO, "Reading resource id: " + resourceName);
-        String sresource = dlSystem.getResourceAsXML(resourceName);
+        String sresource = xmlResourceResolver.apply(resourceName);
         if (sresource == null) {
             LOGGER.log(Level.WARNING, "NOTFOUND content for resource id: " + resourceName);
             new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.cannotprintticket")).show(parent);
@@ -151,6 +164,47 @@ public class SalesPeripheralCoordinator {
             LOGGER.log(Level.DEBUG, "Exception PROCESSED TEMPLATE: \n\r+++++++++++++\n\r "
                     + processTemplated + "\n\r+++++++++++++\n\r");
             new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.cannotprintticket"), ex).show(parent);
+            return false;
+        }
+    }
+
+    /**
+     * Executes the remote order printing script (script.SendOrder) to dispatch items to kitchen/bar printers.
+     *
+     * @param ticket the ticket whose order is being sent
+     * @param place the ticket extension / table name
+     * @param taxeslogic taxes logic for tax calculations
+     * @param taxesIncluded whether taxes are included in prices
+     * @param warrantyPrint whether warranty is included
+     * @param pickupId human-readable pickup ID
+     * @param salesContext sales UI facade for script execution
+     * @return true if script executed without error
+     */
+    public boolean sendRemoteOrder(TicketInfo ticket, String place, TaxesLogic taxeslogic,
+                                  boolean taxesIncluded, boolean warrantyPrint, String pickupId,
+                                  Object salesContext) {
+        String scriptId = "script.SendOrder";
+        try {
+            String rScript = textResourceResolver.apply(scriptId);
+            if (rScript == null) {
+                LOGGER.log(Level.WARNING, "Resource not found for script: " + scriptId);
+                return false;
+            }
+            ScriptEngine scriptEngine = ScriptFactory.getScriptEngine(ScriptFactory.BEANSHELL);
+            scriptEngine.put("ticket", ticket);
+            scriptEngine.put("place", place);
+            scriptEngine.put("taxes", ticket != null ? ticket.getTaxLines() : null);
+            scriptEngine.put("taxeslogic", taxeslogic);
+            scriptEngine.put("user", app.getAppUserView() != null ? app.getAppUserView().getUser() : null);
+            scriptEngine.put("sales", salesContext);
+            scriptEngine.put("taxesinc", taxesIncluded);
+            scriptEngine.put("warranty", warrantyPrint);
+            scriptEngine.put("pickupid", pickupId);
+
+            scriptEngine.eval(rScript);
+            return true;
+        } catch (ScriptException ex) {
+            LOGGER.log(Level.WARNING, "Exception on executing script: " + scriptId, ex);
             return false;
         }
     }

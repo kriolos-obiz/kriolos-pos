@@ -1906,38 +1906,18 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     }// GEN-LAST:event_jEditAttributesActionPerformed
 
     private void j_btnRemotePrtActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_j_btnRemotePrtActionPerformed
-
-        String scriptId = "script.SendOrder";
-        try {
-            String rScript = (dlSystem.getResourceAsText(scriptId));
-            ScriptEngine scriptEngine = ScriptFactory.getScriptEngine(ScriptFactory.BEANSHELL);
-            scriptEngine.put("ticket", m_oTicket);
-            scriptEngine.put("place", m_oTicketExt);
-            scriptEngine.put("user", m_App.getAppUserView().getUser());
-            scriptEngine.put("sales", this);
-            scriptEngine.put("pickupid", m_oTicket.getPickupId());
-
-            // TODO PB_NOTE MUST BE IMPROVE HERE
-            Boolean warrantyPrint = warrantyCheck(m_oTicket);
-            scriptEngine.put("ticket", m_oTicket);
-            scriptEngine.put("place", m_oTicketExt);
-            scriptEngine.put("taxes", m_oTicket.getTaxLines());
-            scriptEngine.put("taxeslogic", taxeslogic);
-            scriptEngine.put("user", m_App.getAppUserView().getUser());
-            scriptEngine.put("sales", this);
-            scriptEngine.put("taxesinc", m_jaddtax.isSelected());
-            scriptEngine.put("warranty", warrantyPrint);
-            scriptEngine.put("pickupid", getPickupString(m_oTicket));
-
-            scriptEngine.eval(rScript);
-
+        if (peripheralCoordinator != null) {
+            peripheralCoordinator.sendRemoteOrder(
+                    m_oTicket,
+                    m_oTicketExt,
+                    taxeslogic,
+                    m_jaddtax.isSelected(),
+                    warrantyCheck(m_oTicket),
+                    getPickupString(m_oTicket),
+                    this
+            );
         }
-        catch (ScriptException ex) {
-            LOGGER.log(System.Logger.Level.WARNING, "Exception on executing script: " + scriptId, ex);
-        }
-
         remoteOrderDisplay();
-
     }// GEN-LAST:event_j_btnRemotePrtActionPerformed
 
     private void btnReprint1ActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_btnReprint1ActionPerformed
