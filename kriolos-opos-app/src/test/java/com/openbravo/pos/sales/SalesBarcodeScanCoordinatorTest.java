@@ -189,4 +189,82 @@ class SalesBarcodeScanCoordinatorTest {
         assertNotNull(receivedProduct.get());
         assertEquals("Bread", receivedProduct.get().getName());
     }
+
+    @Test
+    @DisplayName("resolveBarcode automatically identifies EAN-13 variable barcode without config flag")
+    void testResolveBarcode_AutoDetectEanVariable() {
+        ProductInfoExt eanProduct = new ProductInfoExt();
+        eanProduct.setID("EAN-PROD");
+        eanProduct.setCodetype("EAN-13");
+        eanProduct.setName("Apples KG");
+        eanProduct.setPriceSell(2.50);
+
+        SalesBarcodeScanCoordinator coordinator = new SalesBarcodeScanCoordinator(
+                code -> null,
+                code -> eanProduct,
+                code -> null,
+                card -> null
+        );
+
+        // 13-digit barcode starting with 20: 2012345005001
+        SalesBarcodeScanCoordinator.BarcodeScanResult result = coordinator.resolveBarcode(
+                "2012345005001", null, null, false);
+
+        assertTrue(result instanceof SalesBarcodeScanCoordinator.BarcodeScanResult.VariableProductScanned);
+        SalesBarcodeScanCoordinator.BarcodeScanResult.VariableProductScanned vps =
+                (SalesBarcodeScanCoordinator.BarcodeScanResult.VariableProductScanned) result;
+        assertEquals("Apples KG", vps.product().getName());
+        assertEquals(2.50, vps.priceSell(), 0.001);
+    }
+
+    @Test
+    @DisplayName("resolveBarcode automatically identifies UPC-A variable barcode without config flag")
+    void testResolveBarcode_AutoDetectUpcVariable() {
+        ProductInfoExt upcProduct = new ProductInfoExt();
+        upcProduct.setID("UPC-PROD");
+        upcProduct.setCodetype("UPC-A");
+        upcProduct.setName("Pears Pack");
+        upcProduct.setPriceSell(3.00);
+
+        SalesBarcodeScanCoordinator coordinator = new SalesBarcodeScanCoordinator(
+                code -> null,
+                code -> null,
+                code -> upcProduct,
+                card -> null
+        );
+
+        // 12-digit barcode starting with 2: 212345601509
+        SalesBarcodeScanCoordinator.BarcodeScanResult result = coordinator.resolveBarcode(
+                "212345601509", null, null, false);
+
+        assertTrue(result instanceof SalesBarcodeScanCoordinator.BarcodeScanResult.VariableProductScanned);
+        SalesBarcodeScanCoordinator.BarcodeScanResult.VariableProductScanned vps =
+                (SalesBarcodeScanCoordinator.BarcodeScanResult.VariableProductScanned) result;
+        assertEquals("Pears Pack", vps.product().getName());
+    }
+
+    @Test
+    @DisplayName("resolveBarcode falls back to standard product when 12-digit code is not variable")
+    void testResolveBarcode_AutoFallbackToStandard() {
+        ProductInfoExt stdProduct = new ProductInfoExt();
+        stdProduct.setID("STD-PROD");
+        stdProduct.setCode("212345678901");
+        stdProduct.setName("Standard Canned Item");
+        stdProduct.setPriceSell(4.20);
+
+        SalesBarcodeScanCoordinator coordinator = new SalesBarcodeScanCoordinator(
+                code -> "212345678901".equals(code) ? stdProduct : null,
+                code -> null, // No EAN variable short code
+                code -> null, // No UPC variable short code
+                card -> null
+        );
+
+        SalesBarcodeScanCoordinator.BarcodeScanResult result = coordinator.resolveBarcode(
+                "212345678901", null, null, false);
+
+        assertTrue(result instanceof SalesBarcodeScanCoordinator.BarcodeScanResult.StandardProductScanned);
+        SalesBarcodeScanCoordinator.BarcodeScanResult.StandardProductScanned sp =
+                (SalesBarcodeScanCoordinator.BarcodeScanResult.StandardProductScanned) result;
+        assertEquals("Standard Canned Item", sp.product().getName());
+    }
 }

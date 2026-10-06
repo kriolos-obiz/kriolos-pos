@@ -753,11 +753,9 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
 
     private void incProductByCode(String sCode) {
         if (salesBarcodeScanCoordinator != null) {
-            boolean isUpc = "true".equals(getAppProperty("machine.barcodetype"));
             salesBarcodeScanCoordinator.processBarcode(
                     this,
                     sCode,
-                    isUpc,
                     taxeslogic,
                     m_oTicket != null ? m_oTicket.getCustomer() : null,
                     m_jaddtax.isSelected(),
@@ -846,12 +844,10 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
 
             if (m_sBarcode.length() > 0) {
                 String sCode = m_sBarcode.toString();
-                boolean isUpc = "true".equals(getAppProperty("machine.barcodetype"));
                 if (salesBarcodeScanCoordinator != null) {
                     salesBarcodeScanCoordinator.processBarcode(
                             this,
                             sCode,
-                            isUpc,
                             taxeslogic,
                             m_oTicket != null ? m_oTicket.getCustomer() : null,
                             m_jaddtax.isSelected(),

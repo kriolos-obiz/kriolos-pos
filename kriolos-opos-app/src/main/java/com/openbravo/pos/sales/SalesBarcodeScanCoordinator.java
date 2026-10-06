@@ -84,22 +84,21 @@ public class SalesBarcodeScanCoordinator {
     }
 
     /**
-     * Resolves the scanned barcode text to a strongly-typed {@link BarcodeScanResult}.
+     * Resolves the scanned barcode text to a strongly-typed {@link BarcodeScanResult}
+     * with automatic format identification (Customer card, EAN-13 variable, UPC-A variable,
+     * Track-2 magnetic swipe, or standard product code) without requiring configuration flags.
      *
      * @param barcode the scanned raw barcode string
-     * @param isUpcMode true if UPC mode is active, false for EAN mode
      * @param taxeslogic taxes calculation logic
      * @param customer current ticket customer (for tax rate resolution)
      * @param taxesIncluded whether taxes are included in prices
      * @return the resolved {@link BarcodeScanResult}
      */
-    public BarcodeScanResult resolveBarcode(String barcode, boolean isUpcMode, TaxesLogic taxeslogic,
+    public BarcodeScanResult resolveBarcode(String barcode, TaxesLogic taxeslogic,
                                             CustomerInfoExt customer, boolean taxesIncluded) {
         if (barcode == null || barcode.isEmpty()) {
             return new BarcodeScanResult.NotFound("", AppLocal.getIntString("message.noproduct"));
         }
-
-        String codeType = isUpcMode ? "UPC" : "EAN";
 
         // 1. Customer Loyalty Card Scan (Prefix C or c)
         if (barcode.startsWith("C") || barcode.startsWith("c")) {
@@ -121,41 +120,47 @@ public class SalesBarcodeScanCoordinator {
             return new BarcodeScanResult.Track2CardSwiped(barcode);
         }
 
-        // 3. Variable Weight / Price EAN Barcode
-        if (EmbeddedBarcodeDecoder.isEanVariableBarcode(barcode) && "EAN".equals(codeType)) {
-            try {
-                ProductInfoExt oProduct = byShortCode.find(barcode);
-                if (oProduct == null) {
-                    return new BarcodeScanResult.NotFound(barcode, barcode + " - " + AppLocal.getIntString("message.noproduct"));
-                } else if ("EAN-13".equals(oProduct.getCodetype())) {
-                    TaxInfo tax = taxeslogic != null ? taxeslogic.getTaxInfo(oProduct.getTaxCategoryID(), customer) : null;
-                    EmbeddedBarcodeDecoder.DecodedBarcode decoded = EmbeddedBarcodeDecoder.decodeEan(barcode, oProduct, tax, taxesIncluded);
-                    return new BarcodeScanResult.VariableProductScanned(oProduct, decoded.getUnits(), decoded.getPriceSell());
+        // 3. Variable Weight / Price Barcode (Auto-detection by length, prefix, and product codetype)
+        if (EmbeddedBarcodeDecoder.isEanVariableBarcode(barcode) || EmbeddedBarcodeDecoder.isUpcVariableBarcode(barcode)) {
+            // EAN-13: 13 digits or starting with "02"
+            if (barcode.length() == 13 || barcode.startsWith("02")) {
+                try {
+                    ProductInfoExt oProduct = byShortCode.find(barcode);
+                    if (oProduct != null && "EAN-13".equalsIgnoreCase(oProduct.getCodetype())) {
+                        TaxInfo tax = taxeslogic != null ? taxeslogic.getTaxInfo(oProduct.getTaxCategoryID(), customer) : null;
+                        EmbeddedBarcodeDecoder.DecodedBarcode decoded = EmbeddedBarcodeDecoder.decodeEan(barcode, oProduct, tax, taxesIncluded);
+                        return new BarcodeScanResult.VariableProductScanned(oProduct, decoded.getUnits(), decoded.getPriceSell());
+                    }
+                } catch (BasicException ex) {
+                    LOGGER.log(System.Logger.Level.WARNING, "Exception processing EAN barcode: " + barcode, ex);
+                    return new BarcodeScanResult.ScanError(barcode, ex);
                 }
-            } catch (BasicException ex) {
-                LOGGER.log(System.Logger.Level.WARNING, "Exception processing EAN barcode: " + barcode, ex);
-                return new BarcodeScanResult.ScanError(barcode, ex);
+            }
+
+            // 12 digits: check UPC-A first, then 12-digit EAN short code
+            if (barcode.length() == 12) {
+                try {
+                    ProductInfoExt upcProduct = byUShortCode.find(barcode);
+                    if (upcProduct != null && "UPC-A".equalsIgnoreCase(upcProduct.getCodetype())) {
+                        TaxInfo tax = taxeslogic != null ? taxeslogic.getTaxInfo(upcProduct.getTaxCategoryID(), customer) : null;
+                        EmbeddedBarcodeDecoder.DecodedBarcode decoded = EmbeddedBarcodeDecoder.decodeUpcA(barcode, upcProduct, tax, taxesIncluded);
+                        return new BarcodeScanResult.VariableProductScanned(upcProduct, decoded.getUnits(), decoded.getPriceSell());
+                    }
+
+                    ProductInfoExt eanProduct = byShortCode.find(barcode);
+                    if (eanProduct != null && "EAN-13".equalsIgnoreCase(eanProduct.getCodetype())) {
+                        TaxInfo tax = taxeslogic != null ? taxeslogic.getTaxInfo(eanProduct.getTaxCategoryID(), customer) : null;
+                        EmbeddedBarcodeDecoder.DecodedBarcode decoded = EmbeddedBarcodeDecoder.decodeEan(barcode, eanProduct, tax, taxesIncluded);
+                        return new BarcodeScanResult.VariableProductScanned(eanProduct, decoded.getUnits(), decoded.getPriceSell());
+                    }
+                } catch (BasicException ex) {
+                    LOGGER.log(System.Logger.Level.WARNING, "Exception processing variable barcode: " + barcode, ex);
+                    return new BarcodeScanResult.ScanError(barcode, ex);
+                }
             }
         }
 
-        // 4. Variable Weight / Price UPC Barcode
-        if (EmbeddedBarcodeDecoder.isUpcVariableBarcode(barcode) && "UPC".equals(codeType)) {
-            try {
-                ProductInfoExt oProduct = byUShortCode.find(barcode);
-                if (oProduct == null) {
-                    return new BarcodeScanResult.NotFound(barcode, barcode + " - " + AppLocal.getIntString("message.noproduct"));
-                } else if ("Upc-A".equals(oProduct.getCodetype())) {
-                    TaxInfo tax = taxeslogic != null ? taxeslogic.getTaxInfo(oProduct.getTaxCategoryID(), customer) : null;
-                    EmbeddedBarcodeDecoder.DecodedBarcode decoded = EmbeddedBarcodeDecoder.decodeUpcA(barcode, oProduct, tax, taxesIncluded);
-                    return new BarcodeScanResult.VariableProductScanned(oProduct, decoded.getUnits(), decoded.getPriceSell());
-                }
-            } catch (BasicException ex) {
-                LOGGER.log(System.Logger.Level.WARNING, "Exception processing UPC barcode: " + barcode, ex);
-                return new BarcodeScanResult.ScanError(barcode, ex);
-            }
-        }
-
-        // 5. Standard Product Barcode
+        // 4. Standard Product Barcode (fallback for any non-variable code)
         try {
             ProductInfoExt oProduct = byCode.find(barcode);
             if (oProduct != null) {
@@ -167,6 +172,27 @@ public class SalesBarcodeScanCoordinator {
             LOGGER.log(System.Logger.Level.WARNING, "Exception processing standard barcode: " + barcode, ex);
             return new BarcodeScanResult.ScanError(barcode, ex);
         }
+    }
+
+    /**
+     * Backward-compatible overload accepting isUpcMode flag (delegates to automatic detection).
+     */
+    public BarcodeScanResult resolveBarcode(String barcode, boolean isUpcMode, TaxesLogic taxeslogic,
+                                            CustomerInfoExt customer, boolean taxesIncluded) {
+        return resolveBarcode(barcode, taxeslogic, customer, taxesIncluded);
+    }
+
+    /**
+     * Processes a scanned barcode with automatic format identification without requiring a configuration flag.
+     */
+    public void processBarcode(Component parent, String barcode, TaxesLogic taxeslogic,
+                               CustomerInfoExt customer, boolean taxesIncluded,
+                               Consumer<CustomerInfoExt> customerConsumer,
+                               TriConsumer<ProductInfoExt, Double, Double> variableProductConsumer,
+                               Consumer<ProductInfoExt> standardProductConsumer,
+                               Runnable stateReset) {
+        processBarcode(parent, barcode, false, taxeslogic, customer, taxesIncluded,
+                customerConsumer, variableProductConsumer, standardProductConsumer, stateReset);
     }
 
     /**
