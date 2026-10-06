@@ -157,4 +157,34 @@ class SalesStockCoordinatorTest {
         assertTrue(result.isPresent());
         assertEquals(8.0, result.get().units());
     }
+
+    @Test
+    @DisplayName("checkAndShowStock returns empty Optional when ticket is null or index is out of bounds")
+    void testCheckAndShowStock_InvalidIndexOrTicket() {
+        SalesStockCoordinator coordinator = new SalesStockCoordinator(new StubInventoryService((ProductStock) null), null, null);
+
+        assertTrue(coordinator.checkAndShowStock(null, null, 0, "LOC-MAIN", false).isEmpty());
+
+        com.openbravo.pos.ticket.TicketInfo ticket = new com.openbravo.pos.ticket.TicketInfo();
+        assertTrue(coordinator.checkAndShowStock(null, ticket, -1, "LOC-MAIN", false).isEmpty());
+        assertTrue(coordinator.checkAndShowStock(null, ticket, 0, "LOC-MAIN", false).isEmpty());
+    }
+
+    @Test
+    @DisplayName("checkAndShowStock returns stock availability for valid ticket line index")
+    void testCheckAndShowStock_ValidIndex() {
+        ProductStock stock = new ProductStock("PROD-1", "LOC-MAIN", 10.0, 1.0, 20.0, 5.0, 12.0, new Date());
+        SalesStockCoordinator coordinator = new SalesStockCoordinator(new StubInventoryService(stock), null, null);
+
+        com.openbravo.pos.ticket.TicketInfo ticket = new com.openbravo.pos.ticket.TicketInfo();
+        ticket.addLine(new TicketLineInfo("PROD-1", "Product One", "tax-1", 1.0, 12.0, null));
+
+        Optional<Boolean> inStock = coordinator.checkAndShowStock(null, ticket, 0, "LOC-MAIN", false);
+        assertTrue(inStock.isPresent());
+        assertTrue(inStock.get());
+
+        Optional<Boolean> available = coordinator.isStockAvailable(false, ticket, 0, "LOC-MAIN");
+        assertTrue(available.isPresent());
+        assertTrue(available.get());
+    }
 }

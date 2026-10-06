@@ -26,7 +26,9 @@ import com.openbravo.pos.inventory.ProductStock;
 import com.openbravo.pos.pim.DataLogicPIM;
 import com.openbravo.pos.pim.CategoryInfo;
 import com.openbravo.pos.ticket.ProductInfoExt;
+import com.openbravo.pos.ticket.TicketInfo;
 import com.openbravo.pos.ticket.TicketLineInfo;
+import com.openbravo.pos.util.NotifyUtils;
 import java.awt.Component;
 import java.util.Date;
 import java.util.List;
@@ -189,5 +191,46 @@ public class SalesStockCoordinator {
             }
         }
         return details;
+    }
+
+    /**
+     * Checks stock availability for the given ticket line index and optionally displays stock details.
+     * Triggers an audible alert if the ticket or line index is invalid.
+     *
+     * @param parent the parent Swing component (for modals/dialogs, null-safe for tests)
+     * @param ticket the ticket containing lines
+     * @param lineNumber the zero-based index of the line
+     * @param location the active inventory location ID
+     * @param showDialog whether to display the stock details modal or warning dialog
+     * @return an {@link Optional} containing {@code true} if stock is available, {@code false} if out of stock,
+     *         or {@code Optional.empty()} if the line index is invalid
+     */
+    public Optional<Boolean> checkAndShowStock(Component parent, TicketInfo ticket, int lineNumber, String location, boolean showDialog) {
+        if (ticket == null || lineNumber < 0 || lineNumber >= ticket.getLinesCount()) {
+            NotifyUtils.beep();
+            return Optional.empty();
+        }
+
+        TicketLineInfo line = ticket.getLine(lineNumber);
+        boolean inStock = isStockAvailable(line, location);
+
+        if (showDialog) {
+            showStockDetails(parent, line, location);
+        }
+
+        return Optional.of(inStock);
+    }
+
+    /**
+     * Overload for checking stock availability for a ticket line by index.
+     *
+     * @param showDialog whether to display the stock details dialog
+     * @param ticket the ticket
+     * @param lineNumber the index of the line
+     * @param location the inventory location ID
+     * @return an {@link Optional} containing stock availability
+     */
+    public Optional<Boolean> isStockAvailable(boolean showDialog, TicketInfo ticket, int lineNumber, String location) {
+        return checkAndShowStock(null, ticket, lineNumber, location, showDialog);
     }
 }

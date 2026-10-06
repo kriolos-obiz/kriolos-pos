@@ -2124,21 +2124,11 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
             inactivityListener.stop();
         }
 
-        int tckLineNumber = m_ticketlines.getSelectedIndex();
-        if (tckLineNumber >= 0 && m_oTicket != null && tckLineNumber < m_oTicket.getLinesCount()) {
-            TicketLineInfo line = m_oTicket.getLine(tckLineNumber);
+        if (salesStockCoordinator != null) {
+            int tckLineNumber = m_ticketlines.getSelectedIndex();
             String location = m_App != null ? m_App.getInventoryLocation() : null;
-
-            if (salesStockCoordinator != null) {
-                boolean inStock = salesStockCoordinator.isStockAvailable(line, location);
-                updateStockButton(inStock);
-
-                if (showDialog) {
-                    salesStockCoordinator.showStockDetails(this, line, location);
-                }
-            }
-        } else {
-            com.openbravo.pos.util.NotifyUtils.beep();
+            salesStockCoordinator.checkAndShowStock(this, m_oTicket, tckLineNumber, location, showDialog)
+                    .ifPresent(this::updateStockButton);
         }
 
         if (inactivityListener != null) {
