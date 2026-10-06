@@ -1964,35 +1964,13 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     }
 
     /**
-     * Script Argument
+     * Script Argument record.
      */
-    public static class ScriptArg {
-
-        private final String key;
-        private final Object value;
-
-        /**
-         *
-         * @param key
-         * @param value
-         */
-        public ScriptArg(String key, Object value) {
-            this.key = key;
-            this.value = value;
-        }
-
-        /**
-         *
-         * @return
-         */
+    public record ScriptArg(String key, Object value) {
         public String getKey() {
             return key;
         }
 
-        /**
-         *
-         * @return
-         */
         public Object getValue() {
             return value;
         }
