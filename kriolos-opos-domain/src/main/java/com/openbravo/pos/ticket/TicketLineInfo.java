@@ -674,4 +674,8 @@ public class TicketLineInfo implements SerializableWrite, SerializableRead, Seri
         setPropertyWithValidation("ticket.updated", String.valueOf(value));
     }
 
+    public void setProductWarranty(boolean value) {
+        setPropertyWithValidation("product.warranty", String.valueOf(value));
+    }
+
 }

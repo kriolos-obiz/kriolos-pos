@@ -122,6 +122,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     private SalesService salesService;
     private TicketLineController ticketLineController;
     private SalesCustomerController salesCustomerController;
+    private SalesPaymentCoordinator salesPaymentCoordinator;
     private PaymentService paymentService;
     private InventoryService inventoryService;
     private JPaymentSelect paymentdialogreceipt;
@@ -340,6 +341,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         salesService = new SalesServiceImpl(taxeslogic);
         ticketLineController = new TicketLineController(m_App, salesService, dlSales);
         salesCustomerController = new SalesCustomerController(m_App, dlCustomers);
+        salesPaymentCoordinator = new SalesPaymentCoordinator(m_App, dlSales, salesService);
         paymentService = new PaymentServiceImpl();
         inventoryService = new InventoryServiceImpl(dlSales, m_App.getSession());
 
@@ -1107,128 +1109,41 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         if (inactivityListener != null) {
             inactivityListener.stop();
         }
-        boolean resultok = false;
 
-        if (m_App.hasPermission("sales.Total")) {
-
-            try {
-
-                LOGGER.log(System.Logger.Level.INFO,
-                        "TicketInfo type (0:Receipt; 1:Refund) is " + ticket.getTicketType());
-                JPaymentSelect paymentdialog = null;
-                if (ticket.getTicketType() == TicketInfo.RECEIPT_NORMAL) {
-                    paymentdialog = paymentdialogreceipt;
-                } else if (ticket.getTicketType() == TicketInfo.RECEIPT_REFUND) {
-                    paymentdialog = paymentdialogrefund;
-                }
-
-                salesService.calculateTaxes(ticket);
-                if (ticket.getTotal() >= 0.0) {
-                    ticket.resetPayments();
-                }
-
-                if (paymentdialog != null && executeEvent(ticket, ticketext, TicketConstants.EV_TICKET_TOTAL) == null) {
-                    if (inactivityListener != null) {
-                        inactivityListener.stop();
-                    }
-
-                    printTicket("Printer.TicketTotal", ticket, ticketext);
-
-                    paymentdialog.setPrintSelected("true".equals(m_jbtnconfig.getProperty("printselected", "true")));
-
-                    paymentdialog.setTransactionID(ticket.getTransactionID());
-
-                    if (paymentdialog.showDialog(ticket.getTotal(), ticket.getCustomer())) {
-
-                        ticket.setPayments(paymentdialog.getSelectedPayments());
-
-                        String LOG = "Ticket payment Ticket total: " + ticket.getTotal()
-                                + ";Dialog total: " + paymentdialog.getTotal()
-                                + " ;Dialog paid: " + paymentdialog.getPaidTotal()
-                                + " ;Payments Selected: " + paymentdialog.getSelectedPayments().size();
-
-                        LOGGER.log(System.Logger.Level.INFO, LOG);
-
-                        ticket.setUser(m_App.getAppUserView().getUser().getUserInfo());
-                        ticket.setActiveCash(m_App.getActiveCashIndex());
-                        ticket.setDate(new Date());
-
-                        Object scriptResult = executeEvent(ticket, ticketext, TicketConstants.EV_TICKET_SAVE);
-
-                        if (scriptResult == null) {
-                            try {
-                                dlSales.saveTicket(ticket, m_App.getInventoryLocation());
-                            }
-                            catch (BasicException ex) {
-                                LOGGER.log(System.Logger.Level.ERROR, "Exception on save ticket ", ex);
-                                MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE,
-                                        AppLocal.getIntString("message.nosaveticket"), ex);
-                                msg.show(this);
-                            }
-
-                            String eventName = TicketConstants.EV_TICKET_CLOSE;
-                            try {
-                                executeEvent(ticket, ticketext, eventName,
-                                        new ScriptArg("print", paymentdialog.isPrintSelected()),
-                                        new ScriptArg("ticket", ticket));
-                            }
-                            catch (Exception ex) {
-                                LOGGER.log(System.Logger.Level.ERROR, "Exception on executeEvent: " + eventName, ex);
-                            }
-
-                            Boolean warrantyPrint = warrantyCheck(ticket);
-
-                            String scriptName = paymentdialog.isPrintSelected() || warrantyPrint
-                                    ? "Printer.Ticket" //Display and Printer
-                                    : "Printer.Ticket2";    //Display Only
-                            try {
-
-                                printTicket(scriptName, ticket, ticketext);
-                                Notify(AppLocal.getIntString("notify.printing"));
-                            }
-                            catch (Exception ex) {
-                                LOGGER.log(System.Logger.Level.ERROR, "Exception on printTicket: " + scriptName, ex);
-                            }
-
-                            resultok = true;
-
-                            if (isRestaurantMode() && !ticket.getOldTicket()) {
-                                restDB.clearCustomerNameInTable(ticketext);
-                                restDB.clearWaiterNameInTable(ticketext);
-                                restDB.clearTicketIdInTable(ticketext);
-                            }
-                        }
-                    }
-                }
-            }
-            catch (TaxesException ex) {
-                LOGGER.log(System.Logger.Level.WARNING, "Exception on close ticket: ", ex);
-                MessageInf msg = new MessageInf(MessageInf.SGN_WARNING,
-                        AppLocal.getIntString("message.cannotcalculatetaxes"));
-                msg.show(this);
-                resultok = false;
-            }
-
-            m_oTicket.resetTaxes();
-            m_oTicket.resetPayments();
-
+        if (!m_App.hasPermission("sales.Total") || salesPaymentCoordinator == null) {
+            return false;
         }
 
-        return resultok;
+        JPaymentSelect paymentdialog = salesPaymentCoordinator.resolvePaymentDialog(
+                ticket, paymentdialogreceipt, paymentdialogrefund);
+
+        boolean printSelected = "true".equals(m_jbtnconfig.getProperty("printselected", "true"));
+
+        return salesPaymentCoordinator.processPaymentAndClose(
+                this,
+                ticket,
+                ticketext,
+                paymentdialog,
+                printSelected,
+                (eventName, args) -> executeEvent(ticket, ticketext, eventName, args),
+                (scriptName, isPrintSelected) -> {
+                    printTicket(scriptName, ticket, ticketext);
+                    Notify(AppLocal.getIntString("notify.printing"));
+                },
+                () -> {
+                    if (isRestaurantMode() && !ticket.getOldTicket()) {
+                        restDB.clearCustomerNameInTable(ticketext);
+                        restDB.clearWaiterNameInTable(ticketext);
+                        restDB.clearTicketIdInTable(ticketext);
+                    }
+                }
+        );
     }
 
     private boolean warrantyCheck(TicketInfo ticket) {
-
-        Boolean productWarrantyFound = false;
-        int lines = 0;
-        while (lines < ticket.getLinesCount()) {
-            productWarrantyFound = ticket.getLine(lines).isProductWarranty();
-            if (productWarrantyFound) {
-                break;
-            }
-            lines++;
-        }
-        return productWarrantyFound;
+        return salesPaymentCoordinator != null
+                ? salesPaymentCoordinator.hasWarrantyProduct(ticket)
+                : false;
     }
 
     /**
