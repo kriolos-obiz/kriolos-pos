@@ -35,24 +35,21 @@ import javax.swing.JSeparator;
 
 /**
  * LAF-agnostic modal panel displaying customer identification, VIP status,
- * discount privileges, and account limits using a structured record without HTML string concatenation.
+ * discount privileges, and account limits directly from {@link CustomerInfoExt}
+ * without HTML string concatenation.
  */
 public class CustomerDiscountInfoPanel extends JPanel {
 
-    private final CustomerDiscountDetails details;
+    private final CustomerInfoExt customer;
     private PosUIModal modalContext;
 
-    public CustomerDiscountInfoPanel(CustomerDiscountDetails details) {
-        this.details = details != null ? details : CustomerDiscountDetails.of(null, false, 0.0);
+    public CustomerDiscountInfoPanel(CustomerInfoExt customer) {
+        this.customer = customer;
         initUI();
     }
 
-    public CustomerDiscountInfoPanel(CustomerInfoExt customer) {
-        this(CustomerDiscountDetails.fromCustomer(customer));
-    }
-
     public CustomerDiscountInfoPanel(String vipStatus, String discountStatus) {
-        this.details = new CustomerDiscountDetails(null, null, null, "Yes".equalsIgnoreCase(vipStatus) || (vipStatus != null && vipStatus.contains("VIP")), 0.0, null, null, null);
+        this.customer = null;
         initLegacyUI(vipStatus, discountStatus);
     }
 
@@ -71,61 +68,63 @@ public class CustomerDiscountInfoPanel extends JPanel {
         int row = 0;
         boolean hasCustomerInfo = false;
 
-        // Section 1: Customer Identification
-        if (hasValue(details.customerName())) {
-            addRow(contentPanel, gbc, row++, AppLocal.getIntString("label.customer"), details.customerName(), true);
-            hasCustomerInfo = true;
-        }
-
-        if (hasValue(details.card())) {
-            addRow(contentPanel, gbc, row++, AppLocal.getIntString("label.card"), details.card(), false);
-            hasCustomerInfo = true;
-        }
-
-        if (hasValue(details.taxId())) {
-            addRow(contentPanel, gbc, row++, AppLocal.getIntString("label.taxid"), details.taxId(), false);
-            hasCustomerInfo = true;
-        }
-
-        if (hasCustomerInfo) {
-            addSeparator(contentPanel, gbc, row++);
-        }
-
-        // Section 2: VIP & Discount Privileges
-        String vipValue = details.vip()
-                ? AppLocal.getIntString("message.vipyes")
-                : AppLocal.getIntString("message.vipno");
-        addRow(contentPanel, gbc, row++, AppLocal.getIntString("label.vip"), vipValue, true);
-
-        String discountValue;
-        if (details.discountPercent() != null && details.discountPercent() > 0) {
-            discountValue = details.discountPercent() + "%";
-        } else {
-            discountValue = AppLocal.getIntString("message.discno");
-        }
-        addRow(contentPanel, gbc, row++, AppLocal.getIntString("label.discount"), discountValue, true);
-
-        // Section 3: Account & Credit Balances (if available)
-        boolean hasFinancials = false;
-        if (details.maxDebt() != null && details.maxDebt() > 0) {
-            if (!hasFinancials) {
-                addSeparator(contentPanel, gbc, row++);
-                hasFinancials = true;
+        if (customer != null) {
+            // Section 1: Customer Identification
+            if (hasValue(customer.getName())) {
+                addRow(contentPanel, gbc, row++, AppLocal.getIntString("label.customer"), customer.getName(), true);
+                hasCustomerInfo = true;
             }
-            addRow(contentPanel, gbc, row++, AppLocal.getIntString("label.maxdebt"), Formats.CURRENCY.formatValue(details.maxDebt()), false);
-        }
 
-        if (details.currentDebt() != null && details.currentDebt() != 0.0) {
-            if (!hasFinancials) {
-                addSeparator(contentPanel, gbc, row++);
-                hasFinancials = true;
+            if (hasValue(customer.getCard())) {
+                addRow(contentPanel, gbc, row++, AppLocal.getIntString("label.card"), customer.getCard(), false);
+                hasCustomerInfo = true;
             }
-            addRow(contentPanel, gbc, row++, AppLocal.getIntString("label.curdebt"), Formats.CURRENCY.formatValue(details.currentDebt()), false);
-        }
 
-        if (hasValue(details.notes())) {
-            addSeparator(contentPanel, gbc, row++);
-            addRow(contentPanel, gbc, row++, AppLocal.getIntString("label.notes"), details.notes(), false);
+            if (hasValue(customer.getTaxid())) {
+                addRow(contentPanel, gbc, row++, AppLocal.getIntString("label.taxid"), customer.getTaxid(), false);
+                hasCustomerInfo = true;
+            }
+
+            if (hasCustomerInfo) {
+                addSeparator(contentPanel, gbc, row++);
+            }
+
+            // Section 2: VIP & Discount Privileges
+            String vipValue = customer.isVIP()
+                    ? AppLocal.getIntString("message.vipyes")
+                    : AppLocal.getIntString("message.vipno");
+            addRow(contentPanel, gbc, row++, AppLocal.getIntString("label.vip"), vipValue, true);
+
+            String discountValue;
+            if (customer.getDiscount() != null && customer.getDiscount() > 0) {
+                discountValue = customer.getDiscount() + "%";
+            } else {
+                discountValue = AppLocal.getIntString("message.discno");
+            }
+            addRow(contentPanel, gbc, row++, AppLocal.getIntString("label.discount"), discountValue, true);
+
+            // Section 3: Financial & Credit Balances (if available)
+            boolean hasFinancials = false;
+            if (customer.getMaxdebt() != null && customer.getMaxdebt() > 0) {
+                if (!hasFinancials) {
+                    addSeparator(contentPanel, gbc, row++);
+                    hasFinancials = true;
+                }
+                addRow(contentPanel, gbc, row++, AppLocal.getIntString("label.maxdebt"), Formats.CURRENCY.formatValue(customer.getMaxdebt()), false);
+            }
+
+            if (customer.getCurDebt() != null && customer.getCurDebt() != 0.0) {
+                if (!hasFinancials) {
+                    addSeparator(contentPanel, gbc, row++);
+                    hasFinancials = true;
+                }
+                addRow(contentPanel, gbc, row++, AppLocal.getIntString("label.curdebt"), Formats.CURRENCY.formatValue(customer.getCurDebt()), false);
+            }
+
+            if (hasValue(customer.getNotes())) {
+                addSeparator(contentPanel, gbc, row++);
+                addRow(contentPanel, gbc, row++, AppLocal.getIntString("label.notes"), customer.getNotes(), false);
+            }
         }
 
         add(contentPanel, BorderLayout.CENTER);
@@ -209,26 +208,22 @@ public class CustomerDiscountInfoPanel extends JPanel {
         return text != null && !text.isBlank();
     }
 
-    public CustomerDiscountDetails getDetails() {
-        return details;
+    public CustomerInfoExt getCustomer() {
+        return customer;
     }
 
     public void setModalContext(PosUIModal modalContext) {
         this.modalContext = modalContext;
     }
 
-    public static void show(Component parent, CustomerDiscountDetails details) {
-        CustomerDiscountInfoPanel panel = new CustomerDiscountInfoPanel(details);
+    public static void show(Component parent, CustomerInfoExt customer) {
+        CustomerDiscountInfoPanel panel = new CustomerDiscountInfoPanel(customer);
         PosUIModal modal = PosUIModal.create(parent, panel)
                 .setTitle(AppLocal.getIntString("title.editor"))
                 .setModal(true)
                 .setResizable(false);
         panel.setModalContext(modal);
         modal.show();
-    }
-
-    public static void show(Component parent, CustomerInfoExt customer) {
-        show(parent, CustomerDiscountDetails.fromCustomer(customer));
     }
 
     public static void show(Component parent, String vipStatus, String discountStatus) {

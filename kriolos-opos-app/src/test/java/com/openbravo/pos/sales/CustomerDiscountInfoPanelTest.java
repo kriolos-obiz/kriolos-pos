@@ -16,6 +16,7 @@
 
 package com.openbravo.pos.sales;
 
+import com.openbravo.pos.customers.CustomerInfoExt;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -33,25 +34,24 @@ public class CustomerDiscountInfoPanelTest {
     }
 
     @Test
-    @DisplayName("Should initialize CustomerDiscountInfoPanel with CustomerDiscountDetails record")
-    void testPanelInitWithRecord() {
-        CustomerDiscountDetails details = new CustomerDiscountDetails(
-                "Jane Doe",
-                "987654321",
-                "CARD-001",
-                true,
-                15.0,
-                50.0,
-                500.0,
-                "Preferred VIP client"
-        );
+    @DisplayName("Should initialize CustomerDiscountInfoPanel directly from CustomerInfoExt")
+    void testPanelInitWithCustomer() {
+        CustomerInfoExt customer = new CustomerInfoExt("cust-001");
+        customer.setName("Jane Doe");
+        customer.setTaxid("987654321");
+        customer.setCard("CARD-001");
+        customer.setisVIP(true);
+        customer.setDiscount(15.0);
+        customer.setMaxdebt(500.0);
+        customer.setCurDebt(50.0);
+        customer.setNotes("Preferred VIP client");
 
-        CustomerDiscountInfoPanel panel = new CustomerDiscountInfoPanel(details);
+        CustomerDiscountInfoPanel panel = new CustomerDiscountInfoPanel(customer);
         assertEquals("kriolos:sales:customer_discount_info", panel.getName());
-        assertEquals(details, panel.getDetails());
-        assertEquals("Jane Doe", panel.getDetails().customerName());
-        assertEquals(15.0, panel.getDetails().discountPercent());
-        assertTrue(panel.getDetails().vip());
+        assertSame(customer, panel.getCustomer());
+        assertEquals("Jane Doe", panel.getCustomer().getName());
+        assertEquals(15.0, panel.getCustomer().getDiscount());
+        assertTrue(panel.getCustomer().isVIP());
         assertTrue(panel.getComponentCount() > 0);
     }
 }
