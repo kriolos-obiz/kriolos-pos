@@ -123,6 +123,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     private TicketLineController ticketLineController;
     private SalesCustomerController salesCustomerController;
     private SalesPaymentCoordinator salesPaymentCoordinator;
+    private SalesStockCoordinator salesStockCoordinator;
     private PaymentService paymentService;
     private InventoryService inventoryService;
     private JPaymentSelect paymentdialogreceipt;
@@ -344,6 +345,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         salesPaymentCoordinator = new SalesPaymentCoordinator(m_App, dlSales, salesService);
         paymentService = new PaymentServiceImpl();
         inventoryService = new InventoryServiceImpl(dlSales, m_App.getSession());
+        salesStockCoordinator = new SalesStockCoordinator(inventoryService, dataLogicPIM, dlSales);
 
         paymentdialogreceipt = JPaymentSelectReceipt.getDialog(this);
         paymentdialogreceipt.init(m_App, paymentService);
@@ -2125,135 +2127,35 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         return new RemoteOrderDisplay(m_App, m_oTicket, m_oTicketExt, getPickupString(m_oTicket));
     }
 
+    private void updateStockButton(boolean hasStock) {
+        if (!hasStock) {
+            Color errorColor = javax.swing.UIManager.getColor("Component.error.focusedBorderColor");
+            if (errorColor == null) {
+                errorColor = javax.swing.UIManager.getColor("nb.errorForeground");
+            }
+            jCheckStock.setForeground(errorColor != null ? errorColor : javax.swing.UIManager.getColor("Button.foreground"));
+        } else {
+            jCheckStock.setForeground(javax.swing.UIManager.getColor("Button.foreground"));
+        }
+    }
+
     private void checkAndShowStockForLine(boolean showDialog) {
         if (inactivityListener != null) {
             inactivityListener.stop();
         }
 
         int tckLineNumber = m_ticketlines.getSelectedIndex();
-        if (tckLineNumber >= 0) {
-            try {
-                TicketLineInfo line = m_oTicket.getLine(tckLineNumber);
-                String pId = line.getProductID();
-                String location = m_App.getInventoryLocation();
-                ProductStock productStock = null;
-                if (location != null && pId != null) {
-                    productStock = inventoryService.getStock(pId, location);
-                }
+        if (tckLineNumber >= 0 && m_oTicket != null && tckLineNumber < m_oTicket.getLinesCount()) {
+            TicketLineInfo line = m_oTicket.getLine(tckLineNumber);
+            String location = m_App != null ? m_App.getInventoryLocation() : null;
 
-                Double pMin = 0.0;
-                Double pMax = 0.0;
-                Double pUnits = 0.0;
-                Date pMemoDate = null;
-                Double pPriceSell = line.getPrice();
-                boolean validLocation = (productStock != null && location != null && location.equals(productStock.getLocation()));
-
-                if (validLocation) {
-                    if (productStock.getMinimum() != null) {
-                        pMin = productStock.getMinimum();
-                    }
-
-                    if (productStock.getMaximum() != null) {
-                        pMax = productStock.getMaximum();
-                    }
-
-                    if (productStock.getUnits() != null) {
-                        pUnits = productStock.getUnits();
-                    }
-
-                    if (productStock.getMemoDate() != null) {
-                        pMemoDate = productStock.getMemoDate();
-                    }
-
-                    if (productStock.getPriceSell() != null && productStock.getPriceSell() > 0) {
-                        pPriceSell = productStock.getPriceSell();
-                    }
-                }
-
-                if (pUnits <= 0) {
-                    Color errorColor = javax.swing.UIManager.getColor("Component.error.focusedBorderColor");
-                    if (errorColor == null) {
-                        errorColor = javax.swing.UIManager.getColor("nb.errorForeground");
-                    }
-                    jCheckStock.setForeground(errorColor != null ? errorColor : javax.swing.UIManager.getColor("Button.foreground"));
-                } else {
-                    jCheckStock.setForeground(javax.swing.UIManager.getColor("Button.foreground"));
-                }
+            if (salesStockCoordinator != null) {
+                boolean inStock = salesStockCoordinator.isStockAvailable(line, location);
+                updateStockButton(inStock);
 
                 if (showDialog) {
-                    if (validLocation) {
-                        String productName = line.getProductName();
-                        String categoryName = null;
-                        String reference = null;
-                        String barcode = null;
-                        String locationName = location;
-
-                        if (pId != null && dataLogicPIM != null) {
-                            try {
-                                ProductInfoExt prod = dataLogicPIM.getProductInfo(pId);
-                                if (prod != null) {
-                                    if (productName == null || productName.isBlank()) {
-                                        productName = prod.getName();
-                                    }
-                                    reference = prod.getReference();
-                                    barcode = prod.getCode();
-                                    if (prod.getCategoryID() != null) {
-                                        CategoryInfo cat = dataLogicPIM.getCategoryInfo(prod.getCategoryID());
-                                        if (cat != null) {
-                                            categoryName = cat.getName();
-                                        }
-                                    }
-                                }
-                            } catch (BasicException ignored) {
-                            }
-                        }
-
-                        if (categoryName == null && line.getProductCategoryID() != null && dataLogicPIM != null) {
-                            try {
-                                CategoryInfo cat = dataLogicPIM.getCategoryInfo(line.getProductCategoryID());
-                                if (cat != null) {
-                                    categoryName = cat.getName();
-                                }
-                            } catch (BasicException ignored) {
-                            }
-                        }
-
-                        if (dlSales != null && location != null) {
-                            try {
-                                List<LocationInfo> locs = dlSales.getLocationsListAll();
-                                if (locs != null) {
-                                    for (LocationInfo loc : locs) {
-                                        if (location.equals(loc.getID())) {
-                                            locationName = loc.getName();
-                                            break;
-                                        }
-                                    }
-                                }
-                            } catch (Exception ignored) {
-                            }
-                        }
-
-                        ProductStockDetails details = new ProductStockDetails(
-                                productName,
-                                categoryName,
-                                reference,
-                                barcode,
-                                locationName,
-                                pUnits,
-                                pMin,
-                                pMax,
-                                pPriceSell,
-                                pMemoDate
-                        );
-                        ProductStockInfoPanel.show(this, details);
-                    } else {
-                        new MessageInf(MessageInf.SGN_NOTICE, AppLocal.getIntString("message.location.current")).show(this);
-                    }
+                    salesStockCoordinator.showStockDetails(this, line, location);
                 }
-
-            }
-            catch (BasicException ex) {
-                LOGGER.log(System.Logger.Level.WARNING, "Exception on check stock for line number: ", ex);
             }
         } else {
             com.openbravo.pos.util.NotifyUtils.beep();
