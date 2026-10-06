@@ -52,7 +52,7 @@ public class ProductsWarehousePanel extends JPanelTable2 {
      */
     @Override
     protected void init() {
-        dlInventory = (DataLogicInventory) app.getBean("com.openbravo.pos.inventory.DataLogicInventory");
+        dlInventory = app.getBean(DataLogicInventory.class);
 
         m_paramslocation = new JParamsLocation();
         m_paramslocation.init(app);

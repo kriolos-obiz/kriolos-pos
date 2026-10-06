@@ -41,7 +41,7 @@ public class JPanelPayments extends JPanelTable {
      */
     @Override
     protected void init() {
-        m_dlSales = (DataLogicSales) app.getBean("com.openbravo.pos.forms.DataLogicSales");         
+        m_dlSales = app.getBean(DataLogicSales.class);         
         jeditor = new PaymentsEditor(app, dirty);    
     }
     

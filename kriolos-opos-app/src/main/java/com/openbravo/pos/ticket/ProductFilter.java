@@ -59,7 +59,7 @@ public class ProductFilter extends javax.swing.JPanel implements ReportEditorCre
     @Override
     public void init(AppView app) {
          
-        dataLogicPIM = (DataLogicPIM) app.getBean("com.openbravo.pos.pim.DataLogicPIM");
+        dataLogicPIM = app.getBean(DataLogicPIM.class);
 
         m_CategoryModel = new ComboBoxValModel();
          

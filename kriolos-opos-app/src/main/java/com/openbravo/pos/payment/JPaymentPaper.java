@@ -76,9 +76,9 @@ public class JPaymentPaper extends javax.swing.JPanel implements JPaymentInterfa
     private void init(AppView app) {
 
         try {
-            datalogicSales = (DataLogicSales) app.getBean("com.openbravo.pos.forms.DataLogicSales");
-            datalogicCustomers = (DataLogicCustomers) app.getBean("com.openbravo.pos.customers.DataLogicCustomers");
-            dataLogicVouchers = (DataLogicVouchers) app.getBean("com.openbravo.pos.voucher.DataLogicVouchers");
+            datalogicSales = app.getBean(DataLogicSales.class);
+            datalogicCustomers = app.getBean(DataLogicCustomers.class);
+            dataLogicVouchers = app.getBean(DataLogicVouchers.class);
          
 
             initComponents();

@@ -56,7 +56,7 @@ public class ProductFilter4 extends javax.swing.JPanel implements ReportEditorCr
      */
     public void init(AppView app) {
          
-        dataLogicPIM = (DataLogicPIM) app.getBean("com.openbravo.pos.pim.DataLogicPIM");
+        dataLogicPIM = app.getBean(DataLogicPIM.class);
 
         m_CategoryModel = new ComboBoxValModel();          
         m_jCboName.setModel(ListQBFModelNumber.getMandatoryString());      

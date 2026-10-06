@@ -52,7 +52,7 @@ public class PriceImportPanel extends JPanelTable2 implements EditorListener {
      */
     @Override
     protected void init() {   
-        dataLogicPIM = (DataLogicPIM) app.getBean("com.openbravo.pos.pim.DataLogicPIM");
+        dataLogicPIM = app.getBean(DataLogicPIM.class);
         
         // el panel del filtro
         jproductfilter = new ProductFilter();

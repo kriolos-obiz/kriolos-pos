@@ -70,7 +70,7 @@ public final class SuppliersView extends com.openbravo.pos.panels.ValidationPane
         super();
         try {
             setAppView(app);
-            dlSuppliers = (DataLogicSuppliers) app.getBean("com.openbravo.pos.suppliers.DataLogicSuppliers");
+            dlSuppliers = app.getBean(DataLogicSuppliers.class);
 
             initComponents();
             

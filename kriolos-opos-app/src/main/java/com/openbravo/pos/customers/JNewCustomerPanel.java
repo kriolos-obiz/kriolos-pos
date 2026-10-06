@@ -83,8 +83,8 @@ public class JNewCustomerPanel extends JPanel {
 
     private void init(AppView app) {
         try {
-            dlSales = (DataLogicSales) app.getBean("com.openbravo.pos.forms.DataLogicSales");
-            dlCustomer = (DataLogicCustomers) app.getBean("com.openbravo.pos.customers.DataLogicCustomers");
+            dlSales = app.getBean(DataLogicSales.class);
+            dlCustomer = app.getBean(DataLogicCustomers.class);
 
             initComponents();
 

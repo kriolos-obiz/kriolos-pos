@@ -66,7 +66,7 @@ public class JParamsCustomer extends javax.swing.JPanel implements ReportEditorC
      */
     @Override
     public void init(AppView app) {
-        dlCustomers = (DataLogicCustomers) app.getBean("com.openbravo.pos.customers.DataLogicCustomers");
+        dlCustomers = app.getBean(DataLogicCustomers.class);
     }
     
     /**

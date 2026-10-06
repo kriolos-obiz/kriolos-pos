@@ -48,7 +48,7 @@ public class PeoplePanel extends JPanelTable {
      */
     @Override
     protected void init() {      
-        dlAdmin = (DataLogicAdmin) app.getBean("com.openbravo.pos.admin.DataLogicAdmin");        
+        dlAdmin = app.getBean(DataLogicAdmin.class);        
         tpeople = dlAdmin.getTablePeople();           
         jeditor = new PeopleView(dlAdmin, dirty);    
     }

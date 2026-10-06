@@ -48,8 +48,7 @@ public class AttributeFilter extends javax.swing.JPanel implements ReportEditorC
     @Override
     public void init(AppView app) {
 
-        DataLogicAttribute dlAttribute = (DataLogicAttribute) app
-                .getBean("com.openbravo.pos.inventory.DataLogicAttribute");
+        DataLogicAttribute dlAttribute = app.getBean(DataLogicAttribute.class);
         attsent = dlAttribute.attributeListSent;
         attmodel = new ComboBoxValModel();
     }

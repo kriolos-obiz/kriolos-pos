@@ -77,9 +77,9 @@ public class JPaymentVoucher extends javax.swing.JPanel implements JPaymentInter
     private void init(AppView app) {
 
         try {
-            dlSales = (DataLogicSales) app.getBean("com.openbravo.pos.forms.DataLogicSales");
-            dlCustomers = (DataLogicCustomers) app.getBean("com.openbravo.pos.customers.DataLogicCustomers");
-            dataLogicVouchers = (DataLogicVouchers) app.getBean("com.openbravo.pos.voucher.DataLogicVouchers");
+            dlSales = app.getBean(DataLogicSales.class);
+            dlCustomers = app.getBean(DataLogicCustomers.class);
+            dataLogicVouchers = app.getBean(DataLogicVouchers.class);
    
 
             initComponents();

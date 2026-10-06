@@ -65,7 +65,7 @@ public class JTicketsBagRestaurantRes extends javax.swing.JPanel implements Edit
         
         m_restaurantmap = restaurantmap;
         
-        dlCustomers = (DataLogicCustomers) oApp.getBean("com.openbravo.pos.customers.DataLogicCustomers");
+        dlCustomers = oApp.getBean(DataLogicCustomers.class);
 
         m_dcurrentday = null;
         

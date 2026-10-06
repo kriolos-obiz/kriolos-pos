@@ -76,7 +76,7 @@ public class JNewSupplierPanel extends JPanel {
     }
 
     private void init(AppView app) {
-        dlSupplier = (DataLogicSuppliers) app.getBean("com.openbravo.pos.suppliers.DataLogicSuppliers");
+        dlSupplier = app.getBean(DataLogicSuppliers.class);
         tsuppliers = dlSupplier.getTableSuppliers();
 
         initComponents();

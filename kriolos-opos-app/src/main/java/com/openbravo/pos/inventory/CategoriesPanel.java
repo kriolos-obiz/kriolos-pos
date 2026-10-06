@@ -50,7 +50,7 @@ public class CategoriesPanel extends JPanelTable {
      */
     @Override
     protected void init() {   
-        DataLogicPIM dataLogicPIM = (DataLogicPIM) app.getBean("com.openbravo.pos.pim.DataLogicPIM");           
+        DataLogicPIM dataLogicPIM = app.getBean(DataLogicPIM.class);           
         tcategories = dataLogicPIM.getTableCategories();
         jeditor = new CategoriesEditor(app, dirty);    
     }

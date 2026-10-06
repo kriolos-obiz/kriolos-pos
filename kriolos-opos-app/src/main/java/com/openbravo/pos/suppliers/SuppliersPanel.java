@@ -51,7 +51,7 @@ public class SuppliersPanel extends JPanelTable {
      */
     @Override
     protected void init() {        
-        DataLogicSuppliers dlSuppliers  = (DataLogicSuppliers) app.getBean("com.openbravo.pos.suppliers.DataLogicSuppliers");
+        DataLogicSuppliers dlSuppliers  = app.getBean(DataLogicSuppliers.class);
         tsuppliers = dlSuppliers.getTableSuppliers();        
         jeditor = new SuppliersView(app, dirty);    
         

@@ -73,7 +73,7 @@ public class JPanelCloseMoney extends JPanel implements JPanelView, BeanFactoryA
     public void init(AppView app) throws BeanFactoryException {
 
         appView = app;
-        dataLogicSystem = (DataLogicSystem) appView.getBean("com.openbravo.pos.forms.DataLogicSystem");
+        dataLogicSystem = appView.getBean(DataLogicSystem.class);
         ticketParser = appView.createTicketParser();
 
         cashManagementService = new CashManagementServiceImpl(appView.getSession());

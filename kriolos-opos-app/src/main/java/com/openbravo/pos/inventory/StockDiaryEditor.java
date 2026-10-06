@@ -85,10 +85,10 @@ public final class StockDiaryEditor extends javax.swing.JPanel implements Editor
     public StockDiaryEditor(AppView app, DirtyManager dirty) {
         
         m_App = app;
-        m_dlSystem = (DataLogicSystem) m_App.getBean("com.openbravo.pos.forms.DataLogicSystem");
-        m_dlSales = (DataLogicSales) m_App.getBean("com.openbravo.pos.forms.DataLogicSales");
-        m_dlSuppliers = (DataLogicSuppliers) m_App.getBean("com.openbravo.pos.suppliers.DataLogicSuppliers");   
-        dataLogicPIM = (DataLogicPIM) app.getBean("com.openbravo.pos.pim.DataLogicPIM");
+        m_dlSystem = m_App.getBean(DataLogicSystem.class);
+        m_dlSales = m_App.getBean(DataLogicSales.class);
+        m_dlSuppliers = m_App.getBean(DataLogicSuppliers.class);   
+        dataLogicPIM = app.getBean(DataLogicPIM.class);
         m_TTP = m_App.createTicketParser();
         
         initComponents();

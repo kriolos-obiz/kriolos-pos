@@ -66,7 +66,7 @@ public class JParamsUser extends javax.swing.JPanel implements ReportEditorCreat
      */
     @Override
     public void init(AppView app) {
-        dlPeople = (DataLogicAdmin) app.getBean("com.openbravo.pos.admin.DataLogicAdmin");
+        dlPeople = app.getBean(DataLogicAdmin.class);
     }
     
     /**

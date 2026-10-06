@@ -47,7 +47,7 @@ public class MaterialFilter extends javax.swing.JPanel implements EditorCreator 
     public MaterialFilter(AppView app) {
         initComponents();
         
-        DataLogicPIM dataLogicPIM = (DataLogicPIM) app.getBean("com.openbravo.pos.pim.DataLogicPIM");
+        DataLogicPIM dataLogicPIM = app.getBean(DataLogicPIM.class);
         m_sentprods = dataLogicPIM.getProductList();
         m_ProdsModel = new ComboBoxValModel();
          

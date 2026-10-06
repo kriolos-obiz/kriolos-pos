@@ -87,9 +87,9 @@ public class JTicketsBagTicket extends JTicketsBag {
         m_App = app;
 
         m_panelticketedit = panelticket;
-        m_dlSystem = (DataLogicSystem) m_App.getBean("com.openbravo.pos.forms.DataLogicSystem");
-        m_dlSales = (DataLogicSales) m_App.getBean("com.openbravo.pos.forms.DataLogicSales");
-        dlCustomers = (DataLogicCustomers) m_App.getBean("com.openbravo.pos.customers.DataLogicCustomers");
+        m_dlSystem = m_App.getBean(DataLogicSystem.class);
+        m_dlSales = m_App.getBean(DataLogicSales.class);
+        dlCustomers = m_App.getBean(DataLogicCustomers.class);
         AppProperties props = null;
 
         previewDeviceTicket = PosHardwareManager.createPreviewTicketDevice();

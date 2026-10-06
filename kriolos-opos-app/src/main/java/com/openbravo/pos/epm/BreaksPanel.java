@@ -49,7 +49,7 @@ public class BreaksPanel extends JPanelTable {
      */
     @Override
     protected void init() {
-        DataLogicPresenceManagement dlPresenceManagement  = (DataLogicPresenceManagement) app.getBean("com.openbravo.pos.epm.DataLogicPresenceManagement");
+        DataLogicPresenceManagement dlPresenceManagement  = app.getBean(DataLogicPresenceManagement.class);
         tbreaks = dlPresenceManagement.getTableBreaks();
         jeditor = new BreaksView(app, dirty);
     }

@@ -47,7 +47,7 @@ public class ProductFilterSales extends javax.swing.JPanel implements EditorCrea
     public ProductFilterSales(AppView app, JEditorKeys jKeys) {
         initComponents();
 
-        dataLogicPIM = (DataLogicPIM) app.getBean("com.openbravo.pos.pim.DataLogicPIM");
+        dataLogicPIM = app.getBean(DataLogicPIM.class);
         m_CategoryModel = new ComboBoxValModel();           
         
 //        m_jCboPriceBuy.setModel(new ListQBFModelNumber());

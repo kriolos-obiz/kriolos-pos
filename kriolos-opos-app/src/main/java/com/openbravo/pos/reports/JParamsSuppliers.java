@@ -66,7 +66,7 @@ public class JParamsSuppliers extends javax.swing.JPanel implements ReportEditor
      */
     @Override
     public void init(AppView app) {
-        dlSuppliers = (DataLogicSuppliers) app.getBean("com.openbravo.pos.suppliers.DataLogicSuppliers");
+        dlSuppliers = app.getBean(DataLogicSuppliers.class);
     }
     
     /**

@@ -47,7 +47,7 @@ public class JParamsLocation extends javax.swing.JPanel implements ReportEditorC
     @Override
     public void init(AppView app) {
          
-        DataLogicSales dlSales = (DataLogicSales) app.getBean("com.openbravo.pos.forms.DataLogicSales");
+        DataLogicSales dlSales = app.getBean(DataLogicSales.class);
         
         // El modelo de locales
         m_sentlocations = dlSales.getLocationsList();

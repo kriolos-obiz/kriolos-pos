@@ -47,7 +47,7 @@ public class LocationsPanel extends JPanelTable {
      */
     @Override
     protected void init() {   
-        DataLogicSales dlSales = (DataLogicSales) app.getBean("com.openbravo.pos.forms.DataLogicSales");          
+        DataLogicSales dlSales = app.getBean(DataLogicSales.class);          
         tlocations = dlSales.getTableLocations();
         jeditor = new LocationsView(dirty);
     }

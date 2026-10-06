@@ -52,7 +52,7 @@ public class BundleEditor extends javax.swing.JPanel implements EditorRecord {
            
         this.appView = app;
 
-        dataLogicPIM = (DataLogicPIM) app.getBean("com.openbravo.pos.pim.DataLogicPIM");
+        dataLogicPIM = app.getBean(DataLogicPIM.class);
 
         initComponents();
      

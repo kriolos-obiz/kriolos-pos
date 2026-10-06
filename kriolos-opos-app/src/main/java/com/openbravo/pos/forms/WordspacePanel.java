@@ -65,7 +65,7 @@ public class WordspacePanel extends JPanel implements AppUserView {
         appRootPanel = appview;
         appCurrentUser = appuser;
 
-        dataLogicSystem = (DataLogicSystem) appRootPanel.getBean("com.openbravo.pos.forms.DataLogicSystem");
+        dataLogicSystem = appRootPanel.getBean(DataLogicSystem.class);
         AppUserPermissionsLoader aupLoader = new AppUserPermissionsLoader(dataLogicSystem);
         Set<String> userPermissions = aupLoader.getPermissionsForRole(appCurrentUser.getRole());
         appCurrentUser.fillPermissions(userPermissions);

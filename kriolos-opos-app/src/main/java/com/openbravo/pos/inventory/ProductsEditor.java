@@ -97,10 +97,10 @@ public final class ProductsEditor extends com.openbravo.pos.panels.ValidationPan
     public ProductsEditor(AppView app, DirtyManager dirty) {
 
         setAppView(app);
-        dlSales = (DataLogicSales) app.getBean("com.openbravo.pos.forms.DataLogicSales");
-        dlSystem = (DataLogicSystem) app.getBean("com.openbravo.pos.forms.DataLogicSystem");
-        dlSuppliers = (DataLogicSuppliers) app.getBean("com.openbravo.pos.suppliers.DataLogicSuppliers");
-        dataLogicPIM = (DataLogicPIM) app.getBean("com.openbravo.pos.pim.DataLogicPIM");
+        dlSales = app.getBean(DataLogicSales.class);
+        dlSystem = app.getBean(DataLogicSystem.class);
+        dlSuppliers = app.getBean(DataLogicSuppliers.class);
+        dataLogicPIM = app.getBean(DataLogicPIM.class);
 
         initComponents();
         

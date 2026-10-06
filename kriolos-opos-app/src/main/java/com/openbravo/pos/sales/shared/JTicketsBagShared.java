@@ -87,9 +87,9 @@ public class JTicketsBagShared extends JTicketsBag {
 
         super(app, panelticket);
 
-        dlReceipts = (DataLogicReceipts) app.getBean("com.openbravo.pos.sales.DataLogicReceipts");
-        dlSales = (DataLogicSales) app.getBean("com.openbravo.pos.forms.DataLogicSales");
-        dlSystem = (DataLogicSystem) m_App.getBean("com.openbravo.pos.forms.DataLogicSystem");
+        dlReceipts = app.getBean(DataLogicReceipts.class);
+        dlSales = app.getBean(DataLogicSales.class);
+        dlSystem = m_App.getBean(DataLogicSystem.class);
 
         hasPermissionShowSharedList = m_App.hasPermission("sales.ShowList");
 

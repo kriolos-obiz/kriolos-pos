@@ -71,8 +71,8 @@ public final class CategoriesEditor extends JPanel implements EditorRecord {
 
         initComponents();
 
-        dataLogicPIM = (DataLogicPIM) app.getBean("com.openbravo.pos.pim.DataLogicPIM");
-        dlSales = (DataLogicSales) app.getBean("com.openbravo.pos.forms.DataLogicSales");
+        dataLogicPIM = app.getBean(DataLogicPIM.class);
+        dlSales = app.getBean(DataLogicSales.class);
         categoryParentModel = new ComboBoxValModel(); 
 
         categoryNameText.getDocument().addDocumentListener(dirty);

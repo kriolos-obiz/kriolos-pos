@@ -60,7 +60,7 @@ public class OrderCustomerList extends JPanel implements TicketSelector {
         this.application = app;
         this.panelticket = panelticket;
         this.dataLogicCustomers = dlCustomers;
-        this.dataLogicReceipts = (DataLogicReceipts) application.getBean("com.openbravo.pos.sales.DataLogicReceipts");
+        this.dataLogicReceipts = application.getBean(DataLogicReceipts.class);
         this.thumbNailBuilderWithDefault = new ThumbNailBuilder(90, 98, "/com/openbravo/images/no_image.png");
         initComponents();
     }

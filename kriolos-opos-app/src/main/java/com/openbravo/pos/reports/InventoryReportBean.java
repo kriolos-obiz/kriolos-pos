@@ -20,7 +20,7 @@ public class InventoryReportBean extends PanelReportBean {
     @Override
     public void init(AppView app) throws BeanFactoryException {
         super.init(app);
-        reportService = (ReportService) app.getBean("com.openbravo.pos.reports.ReportService");
+        reportService = app.getBean(ReportService.class);
     }
 
     private String sentence;

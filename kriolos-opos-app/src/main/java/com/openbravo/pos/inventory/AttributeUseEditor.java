@@ -49,8 +49,7 @@ public class AttributeUseEditor extends javax.swing.JPanel implements EditorReco
      */
     public AttributeUseEditor(AppView app, DirtyManager dirty) {
 
-        DataLogicAttribute dlAttribute = (DataLogicAttribute) app
-                .getBean("com.openbravo.pos.inventory.DataLogicAttribute");
+        DataLogicAttribute dlAttribute = app.getBean(DataLogicAttribute.class);
         attributesent = dlAttribute.attributeListSent;
         attributemodel = new ComboBoxValModel();
 

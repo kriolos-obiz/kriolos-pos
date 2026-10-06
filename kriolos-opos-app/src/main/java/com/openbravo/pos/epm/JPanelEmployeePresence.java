@@ -55,7 +55,7 @@ public class JPanelEmployeePresence extends javax.swing.JPanel implements JPanel
     @Override
     public void init(AppView app) throws BeanFactoryException {
         this.app = app;
-        dlpresencemanagement = (DataLogicPresenceManagement) app.getBean("com.openbravo.pos.epm.DataLogicPresenceManagement");
+        dlpresencemanagement = app.getBean(DataLogicPresenceManagement.class);
     }
 
     private void listBreaks()

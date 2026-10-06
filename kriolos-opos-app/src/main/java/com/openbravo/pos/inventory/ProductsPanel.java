@@ -51,7 +51,7 @@ public class ProductsPanel extends JPanelTable2 implements EditorListener {
      */
     @Override
     protected void init() {   
-        dataLogicPIM = (DataLogicPIM) app.getBean("com.openbravo.pos.pim.DataLogicPIM");
+        dataLogicPIM = app.getBean(DataLogicPIM.class);
         
         jproductfilter = new ProductFilter();     
         jproductfilter.init(app);

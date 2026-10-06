@@ -45,7 +45,7 @@ public class JPanelPlaces extends JPanelTable {
 
     @Override
     protected void init() {
-        DataLogicSales dlSales = (DataLogicSales) app.getBean("com.openbravo.pos.forms.DataLogicSales");
+        DataLogicSales dlSales = app.getBean(DataLogicSales.class);
 
         tplaces = new TableDefinition(app.getSession(),
                 "places",

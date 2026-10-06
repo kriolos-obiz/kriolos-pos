@@ -82,9 +82,9 @@ public class CustomersPayment extends javax.swing.JPanel implements JPanelView, 
     public void init(AppView app) throws BeanFactoryException {
 
         this.app = app;
-        dlcustomers = (DataLogicCustomers) app.getBean("com.openbravo.pos.customers.DataLogicCustomers");
-        dlsales = (DataLogicSales) app.getBean("com.openbravo.pos.forms.DataLogicSales");
-        dlsystem = (DataLogicSystem) app.getBean("com.openbravo.pos.forms.DataLogicSystem");
+        dlcustomers = app.getBean(DataLogicCustomers.class);
+        dlsales = app.getBean(DataLogicSales.class);
+        dlsystem = app.getBean(DataLogicSystem.class);
         ttp = app.createTicketParser();
     }
 

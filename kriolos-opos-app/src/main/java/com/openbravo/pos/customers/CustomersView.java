@@ -76,7 +76,7 @@ public final class CustomersView extends com.openbravo.pos.panels.ValidationPane
     public CustomersView(AppView app, DirtyManager dirty) {
         try {
             appView = app;
-            dlSales = (DataLogicSales) app.getBean("com.openbravo.pos.forms.DataLogicSales");
+            dlSales = app.getBean(DataLogicSales.class);
 
             initComponents();
 

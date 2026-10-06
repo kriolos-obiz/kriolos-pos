@@ -72,7 +72,7 @@ public abstract class JPanelReport extends JPanel implements JPanelView, BeanFac
 
         m_App = app;
 
-        DataLogicSales dlSales = (DataLogicSales) app.getBean("com.openbravo.pos.forms.DataLogicSales");
+        DataLogicSales dlSales = app.getBean(DataLogicSales.class);
         taxsent = dlSales.getTaxList();
 
         editor = getEditorCreator();

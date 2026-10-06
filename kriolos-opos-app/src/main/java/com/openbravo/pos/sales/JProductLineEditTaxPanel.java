@@ -609,7 +609,7 @@ public class JProductLineEditTaxPanel extends JPanel {
     private void m_jBtnPriceUpdateActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_m_jBtnPriceUpdateActionPerformed
 
         try {
-            DataLogicPIM dataLogicPIM = (DataLogicPIM) appView.getBean("com.openbravo.pos.pim.DataLogicPIM"); 
+            DataLogicPIM dataLogicPIM = appView.getBean(DataLogicPIM.class); 
             dataLogicPIM.updateProductPrice(productID, m_jPrice.getValue());
             m_jBtnPriceUpdate.setEnabled(false);
         } catch (BasicException ex) {

@@ -55,9 +55,9 @@ public final class VoucherEditor extends javax.swing.JPanel implements EditorRec
 
         initComponents();
 
-        dlCustomers = (DataLogicCustomers) app.getBean("com.openbravo.pos.customers.DataLogicCustomers");
-        dlSystem = (DataLogicSystem) app.getBean("com.openbravo.pos.forms.DataLogicSystem");
-        dlVouchers = (DataLogicVouchers) app.getBean("com.openbravo.pos.voucher.DataLogicVouchers");
+        dlCustomers = app.getBean(DataLogicCustomers.class);
+        dlSystem = app.getBean(DataLogicSystem.class);
+        dlVouchers = app.getBean(DataLogicVouchers.class);
         voucherNumberTField.getDocument().addDocumentListener(dirty);
         voucherCustomerTField.getDocument().addDocumentListener(dirty);
         voucherAmountTField.getDocument().addDocumentListener(dirty);

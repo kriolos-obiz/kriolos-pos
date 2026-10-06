@@ -50,7 +50,7 @@ public final class LeavesView extends com.openbravo.pos.panels.ValidationPanel i
      */
     public LeavesView(AppView app, DirtyManager dirty) {
 
-        dlPresenceManagement = (DataLogicPresenceManagement) app.getBean("com.openbravo.pos.epm.DataLogicPresenceManagement");
+        dlPresenceManagement = app.getBean(DataLogicPresenceManagement.class);
         initComponents();
 
         m_Dirty = dirty;

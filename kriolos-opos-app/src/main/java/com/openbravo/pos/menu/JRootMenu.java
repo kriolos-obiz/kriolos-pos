@@ -274,7 +274,7 @@ public class JRootMenu {
                 String sNewPassword = JPasswordPanel.changePassword(parent, m_appuser.getPassword());
  
                 if (sNewPassword != null) {
-                    DataLogicSystem m_dlSystem = (DataLogicSystem) appview.getBean("com.openbravo.pos.forms.DataLogicSystem");
+                    DataLogicSystem m_dlSystem = appview.getBean(DataLogicSystem.class);
                     m_dlSystem.execChangePassword(new Object[]{sNewPassword, m_appuser.getId()});
                     m_appuser.setPassword(sNewPassword);
                 }

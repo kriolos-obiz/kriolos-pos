@@ -62,7 +62,7 @@ public class OrderSupplierList extends JPanel implements TicketSelector {
         this.application = app;
         this.panelticket = panelticket;
         this.dataLogicSuppliers = dlSuppliers;
-        this.dataLogicReceipts = (DataLogicReceipts) application.getBean("com.openbravo.pos.sales.DataLogicReceipts");
+        this.dataLogicReceipts = application.getBean(DataLogicReceipts.class);
 
         initComponents();
     }
