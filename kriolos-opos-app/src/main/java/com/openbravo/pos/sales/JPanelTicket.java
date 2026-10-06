@@ -120,6 +120,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     private ComboBoxValModel taxcategoriesmodel;
     private TaxesLogic taxeslogic;
     private SalesService salesService;
+    private TicketLineController ticketLineController;
     private PaymentService paymentService;
     private InventoryService inventoryService;
     private JPaymentSelect paymentdialogreceipt;
@@ -336,6 +337,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         // Initialize Services
         taxeslogic = new TaxesLogic(taxlist);
         salesService = new SalesServiceImpl(taxeslogic);
+        ticketLineController = new TicketLineController(m_App, salesService, dlSales);
         paymentService = new PaymentServiceImpl();
         inventoryService = new InventoryServiceImpl(dlSales, m_App.getSession());
 
@@ -538,29 +540,22 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         }
     }
 
-    private boolean changeCount() {
-
-        Boolean pinOK = false;
-
-        if (m_oTicket != null) {
-
-            if (getAppProperty("override.check").equals("true")) {
-                String pin = getAppProperty("override.pin");
-                String iValue = JPasswordPanel.show(this, AppLocal.getIntString("title.override.enterpin"));
-
-                if (iValue != null && iValue.equals(pin)) {
-                    pinOK = true;
-                } else {
-                    pinOK = false;
-                    new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.override.badpin")).show(this);
-                }
+    private void applyLineQuantityChange(double amount, boolean isAbsolute) {
+        int i = m_ticketlines.getSelectedIndex();
+        if (i < 0) {
+            com.openbravo.pos.util.NotifyUtils.beep();
+            return;
+        }
+        if (ticketLineController != null) {
+            LineChangeResult res = ticketLineController.changeLineQuantity(this, m_oTicket, i, amount, isAbsolute);
+            if (res.status() == LineChangeResult.Status.UPDATED) {
+                paintTicketLine(i, res.updatedLine());
+            } else if (res.status() == LineChangeResult.Status.REMOVED) {
+                refreshTicket();
+            } else if (res.status() == LineChangeResult.Status.DENIED) {
+                com.openbravo.pos.util.NotifyUtils.beep();
             }
         }
-        return pinOK;
-    }
-
-    private boolean isOverrideCheckEnabled() {
-        return getAppProperty("override.check").equals("true");
     }
 
     private void printPartialTotals() {
@@ -680,49 +675,9 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     }
 
     private void removeTicketLine(int ticketLineNumber) {
-        LOGGER.log(System.Logger.Level.INFO, "Delete Ticket Line number: " + ticketLineNumber);
-
-        if (m_App.hasPermission("sales.DeleteLines")) {
-            int input = JMessagePanel.showConfirmDialog(this,
-                    new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.deletelineyes")));
-            if (input == 0) {
-                removeTicketLineAndAudity(ticketLineNumber);
-            }
-        } else {
-            new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.deletelineno")).show(this);
+        if (ticketLineController != null && ticketLineController.deleteLineWithAudit(this, m_oTicket, ticketLineNumber)) {
+            refreshTicket();
         }
-
-        refreshTicket();
-    }
-
-    private void removeTicketLineAndAudity(int ticketLineNumber) {
-        String ticketID = Integer.toString(m_oTicket.getTicketId());
-        if (m_oTicket.getTicketId() == 0) {
-            //new UUID(0L, 0L).toString();
-            ticketID = "Void";
-        }
-
-        LOGGER.log(System.Logger.Level.INFO, "Delete Ticket Line number: " + ticketLineNumber + "; for TicketId: " + ticketID);
-
-        if (ticketLineNumber < 0 || ticketLineNumber >= m_oTicket.getLinesCount()) {
-            return;
-        }
-
-        //Get TicketLine before remove from ticket
-        final TicketLineInfo ticketLine = m_oTicket.getLine(ticketLineNumber);
-
-        //Removed from ticket
-        salesService.removeLine(m_oTicket, ticketLineNumber);
-
-        //Insert into lineremoved (For Audity) 
-        dlSales.addTicketLineRemoved(
-                m_App.getAppUserView().getUser().getName(),
-                ticketID,
-                ticketLine.getProductID(),
-                ticketLine.getProductName(),
-                ticketLine.getMultiply()
-        );
-
     }
 
     private ProductInfoExt getInputProduct() {
@@ -1081,188 +1036,21 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
             } else if (cTrans == '+'
                     && m_iNumberStatusInput == NUMBERZERO
                     && m_iNumberStatusPor == NUMBERZERO) {
-                int i = m_ticketlines.getSelectedIndex();
-
-                if (i < 0) {
-                    com.openbravo.pos.util.NotifyUtils.beep();
-                } else {
-                    TicketLineInfo newline = new TicketLineInfo(m_oTicket.getLine(i));
-                    // If it's a refund + button means one unit less
-                    if (m_oTicket.getTicketType() == TicketInfo.RECEIPT_REFUND) {
-                        if (isOverrideCheckEnabled()) {
-                            // oCount = count - 1; //increment existing line
-
-                            if (changeCount()) {
-                                newline.setMultiply(newline.getMultiply() - 1.0);
-                                newline.setProperty(TicketConstants.PROP_TICKET_UPDATED, "true");
-                                paintTicketLine(i, newline);
-                            }
-                        } else {
-                            newline.setMultiply(newline.getMultiply() - 1.0);
-                            newline.setProperty(TicketConstants.PROP_TICKET_UPDATED, "true");
-                            paintTicketLine(i, newline);
-                        }
-                    } else {
-                        if (isOverrideCheckEnabled()) {
-                            // oCount = count + 1; //increment existing line
-                            if (changeCount()) {
-                                newline.setMultiply(newline.getMultiply() + 1.0);
-                                newline.setProperty(TicketConstants.PROP_TICKET_UPDATED, "true");
-                                paintTicketLine(i, newline);
-                            }
-                        } else {
-                            newline.setMultiply(newline.getMultiply() + 1.0);
-                            newline.setProperty(TicketConstants.PROP_TICKET_UPDATED, "true");
-                            paintTicketLine(i, newline);
-                        }
-                    }
-                }
+                applyLineQuantityChange(1.0, false);
             } else if (cTrans == '-'
                     && m_iNumberStatusInput == NUMBERZERO
                     && m_iNumberStatusPor == NUMBERZERO
                     && m_App.hasPermission("sales.EditLines")) {
-
-                int i = m_ticketlines.getSelectedIndex();
-
-                LOGGER.log(System.Logger.Level.INFO, "EditLines select line: " + i);
-
-                if (i < 0) {
-                    com.openbravo.pos.util.NotifyUtils.beep();
-                } else {
-                    TicketLineInfo newline = new TicketLineInfo(m_oTicket.getLine(i));
-
-                    if (m_oTicket.getTicketType() == TicketInfo.RECEIPT_REFUND) {
-                        if (isOverrideCheckEnabled()) {
-                            // oCount = count - 1; //increment existing line
-                            if (changeCount()) {
-                                newline.setMultiply(newline.getMultiply() - 1.0);
-                                newline.setProperty(TicketConstants.PROP_TICKET_UPDATED, "true");
-                                paintTicketLine(i, newline);
-                            }
-                        } else {
-                            newline.setMultiply(newline.getMultiply() - 1.0);
-                            newline.setProperty(TicketConstants.PROP_TICKET_UPDATED, "true");
-                            paintTicketLine(i, newline);
-                        }
-
-                        if (newline.getMultiply() >= 0) {
-                            removeTicketLine(i);
-                        } else {
-                            paintTicketLine(i, newline);
-                        }
-                    } else {
-                        if (isOverrideCheckEnabled()) {
-                            // oCount = count - 1; //increment existing line
-
-                            if (changeCount()) {
-                                newline.setMultiply(newline.getMultiply() - 1.0);
-                                newline.setProperty(TicketConstants.PROP_TICKET_UPDATED, "true");
-                                paintTicketLine(i, newline);
-                            }
-                        } else {
-                            newline.setMultiply(newline.getMultiply() - 1.0);
-                            newline.setProperty(TicketConstants.PROP_TICKET_UPDATED, "true");
-                            paintTicketLine(i, newline);
-                        }
-
-                        if (newline.getMultiply() <= 0.0) {
-                            removeTicketLine(i);
-                        } else {
-                            paintTicketLine(i, newline);
-                        }
-                    }
-                }
-
+                applyLineQuantityChange(-1.0, false);
             } else if (cTrans == '+'
                     && m_iNumberStatusInput == NUMBERZERO
                     && m_iNumberStatusPor == NUMBERVALID) {
-                int i = m_ticketlines.getSelectedIndex();
-
-                if (i < 0) {
-                    com.openbravo.pos.util.NotifyUtils.beep();
-                } else {
-                    double dPor = getPorValue();
-                    TicketLineInfo newline = new TicketLineInfo(m_oTicket.getLine(i));
-
-                    if (m_oTicket.getTicketType() == TicketInfo.RECEIPT_REFUND) {
-                        if (isOverrideCheckEnabled()) {
-                            // oCount = count - 1; //increment existing line
-                            if (changeCount()) {
-                                newline.setMultiply(-dPor);
-                                newline.setProperty(TicketConstants.PROP_TICKET_UPDATED, "true");
-                                newline.setPrice(Math.abs(newline.getPrice()));
-                                paintTicketLine(i, newline);
-                            }
-                        } else {
-                            newline.setMultiply(-dPor);
-                            newline.setProperty(TicketConstants.PROP_TICKET_UPDATED, "true");
-                            newline.setPrice(Math.abs(newline.getPrice()));
-                            paintTicketLine(i, newline);
-                        }
-                    } else {
-                        if (isOverrideCheckEnabled()) {
-                            // oCount = count + 1; //increment existing line
-
-                            if (changeCount()) {
-                                newline.setMultiply(dPor);
-                                newline.setProperty(TicketConstants.PROP_TICKET_UPDATED, "true");
-                                newline.setPrice(Math.abs(newline.getPrice()));
-                                paintTicketLine(i, newline);
-                            }
-                        } else {
-                            newline.setMultiply(dPor);
-                            newline.setProperty(TicketConstants.PROP_TICKET_UPDATED, "true");
-                            newline.setPrice(Math.abs(newline.getPrice()));
-                            paintTicketLine(i, newline);
-                        }
-                    }
-                }
+                applyLineQuantityChange(getPorValue(), true);
             } else if (cTrans == '-'
                     && m_iNumberStatusInput == NUMBERZERO
                     && m_iNumberStatusPor == NUMBERVALID
                     && m_App.hasPermission("sales.EditLines")) {
-                int i = m_ticketlines.getSelectedIndex();
-
-                if (i < 0) {
-                    com.openbravo.pos.util.NotifyUtils.beep();
-                } else {
-                    double dPor = getPorValue();
-                    TicketLineInfo newline = new TicketLineInfo(m_oTicket.getLine(i));
-
-                    if (m_oTicket.getTicketType() == TicketInfo.RECEIPT_REFUND) {
-                        if (isOverrideCheckEnabled()) {
-                            // oCount = count - 1; //increment existing line
-
-                            if (changeCount()) {
-                                newline.setMultiply(-dPor);
-                                newline.setProperty(TicketConstants.PROP_TICKET_UPDATED, "true");
-                                newline.setPrice(Math.abs(newline.getPrice()));
-                                paintTicketLine(i, newline);
-                            }
-                        } else {
-                            newline.setMultiply(-dPor);
-                            newline.setProperty(TicketConstants.PROP_TICKET_UPDATED, "true");
-                            newline.setPrice(Math.abs(newline.getPrice()));
-                            paintTicketLine(i, newline);
-                        }
-                    } else {
-                        if (isOverrideCheckEnabled()) {
-                            // oCount = count - 1; //increment existing line
-
-                            if (changeCount()) {
-                                newline.setMultiply(dPor);
-                                newline.setProperty(TicketConstants.PROP_TICKET_UPDATED, "true");
-                                newline.setPrice(Math.abs(newline.getPrice()));
-                                paintTicketLine(i, newline);
-                            }
-                        } else {
-                            newline.setMultiply(dPor);
-                            newline.setProperty(TicketConstants.PROP_TICKET_UPDATED, "true");
-                            newline.setPrice(Math.abs(newline.getPrice()));
-                            paintTicketLine(i, newline);
-                        }
-                    }
-                }
+                applyLineQuantityChange(getPorValue(), true);
             } else if (cTrans == '+'
                     && m_iNumberStatusInput == NUMBERVALID
                     && m_iNumberStatusPor == NUMBERZERO
@@ -2161,16 +1949,8 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         if (i < 0) {
             com.openbravo.pos.util.NotifyUtils.beep(); // no line selected
         } else {
-            try {
-                TicketLineInfo newline = JProductLineEdit.showMessage(this, m_App, m_oTicket.getLine(i));
-                if (newline != null) {
-                    paintTicketLine(i, newline);
-                }
-
-            }
-            catch (BasicException e) {
-                new MessageInf(e).show(this);
-            }
+            ticketLineController.editLine(this, m_oTicket.getLine(i))
+                    .ifPresent(newline -> paintTicketLine(i, newline));
         }
 
     }// GEN-LAST:event_m_jEditLineActionPerformed
@@ -2215,23 +1995,9 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         if (i < 0) {
             com.openbravo.pos.util.NotifyUtils.beep();
         } else {
-            try {
-                TicketLineInfo line = m_oTicket.getLine(i);
-                JProductAttEdit2 attedit = JProductAttEdit2.getAttributesEditor(this, m_App.getSession());
-                if (line.getProductAttSetId() != null) {
-                    attedit.editAttributes(line.getProductAttSetId(), line.getProductAttSetInstId());
-                    attedit.setVisible(true);
-                    if (attedit.isOK()) {
-                        line.setProductAttSetInstId(attedit.getAttributeSetInst());
-                        line.setProductAttSetInstDesc(attedit.getAttributeSetInstDescription());
-                        paintTicketLine(i, line);
-                    }
-                } else {
-                    new MessageInf(MessageInf.SGN_NOTICE, AppLocal.getIntString("message.cannotfindattributes")).show(this);
-                }
-            }
-            catch (BasicException ex) {
-                LOGGER.log(System.Logger.Level.WARNING, "Exception while Open Product Atribute Editor: ", ex);
+            TicketLineInfo line = m_oTicket.getLine(i);
+            if (ticketLineController.editLineAttributes(this, m_App.getSession(), line)) {
+                paintTicketLine(i, line);
             }
         }
 
@@ -2302,22 +2068,12 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     }// GEN-LAST:event_btnReprint1ActionPerformed
 
     private void btnSplitActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_btnSplitActionPerformed
-
-        if (m_oTicket.getLinesCount() > 0) {
-            ReceiptSplit splitdialog = ReceiptSplit.getDialog(this,
-                    dlSystem.getResourceAsXML(TicketConstants.RES_TICKET_LINES), dlSales, dlCustomers, taxeslogic);
-
-            TicketInfo ticket1 = m_oTicket.copyTicket();
-            TicketInfo ticket2 = new TicketInfo();
-            ticket2.setCustomer(m_oTicket.getCustomer());
-
-            if (splitdialog.showDialog(ticket1, ticket2, m_oTicketExt)) {
-                if (closeTicket(ticket2, m_oTicketExt)) { // already checked that number of lines > 0
-                    setActiveTicket(ticket1, m_oTicketExt);// set result ticket
-                }
-            }
+        if (ticketLineController != null) {
+            ticketLineController.splitTicket(
+                    this, m_oTicket, m_oTicketExt, dlSystem, dlCustomers, taxeslogic,
+                    ticket2 -> closeTicket(ticket2, m_oTicketExt))
+                    .ifPresent(remainingTicket -> setActiveTicket(remainingTicket, m_oTicketExt));
         }
-
     }// GEN-LAST:event_btnSplitActionPerformed
 
     private void jCheckStockActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_jCheckStockActionPerformed
