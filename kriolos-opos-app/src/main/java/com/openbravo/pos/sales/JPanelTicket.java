@@ -1003,23 +1003,8 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                 : false;
     }
 
-    /**
-     *
-     * @param pTicket
-     * @return
-     */
     public String getPickupString(TicketInfo pTicket) {
-        if (pTicket == null) {
-            return ("0");
-        }
-        String tmpPickupId = Integer.toString(pTicket.getPickupId());
-        String pickupSize = (getAppProperty("till.pickupsize"));
-        if (pickupSize != null && (Integer.parseInt(pickupSize) >= tmpPickupId.length())) {
-            while (tmpPickupId.length() < (Integer.parseInt(pickupSize))) {
-                tmpPickupId = "0" + tmpPickupId;
-            }
-        }
-        return (tmpPickupId);
+        return SalesPeripheralCoordinator.formatPickupId(pTicket, getAppProperty("till.pickupsize"));
     }
 
     private void printTicket(String sresourcename, TicketInfo ticket, String ticketext) {

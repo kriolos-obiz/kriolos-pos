@@ -173,4 +173,24 @@ class SalesPeripheralCoordinatorTest {
         TicketInfo ticketPickup = new TicketInfo();
         assertEquals("Pick-99", coordinator.resolveRemoteOrderId(ticketPickup, null, "Pick-99"));
     }
+
+    @Test
+    @DisplayName("formatPickupId correctly pads pickup ID and handles invalid configurations gracefully")
+    void testFormatPickupId() {
+        assertEquals("0", SalesPeripheralCoordinator.formatPickupId(null, "3"));
+
+        TicketInfo ticket = new TicketInfo();
+        ticket.setPickupId(5);
+
+        assertEquals("5", SalesPeripheralCoordinator.formatPickupId(ticket, null));
+        assertEquals("5", SalesPeripheralCoordinator.formatPickupId(ticket, ""));
+        assertEquals("5", SalesPeripheralCoordinator.formatPickupId(ticket, "  "));
+        assertEquals("5", SalesPeripheralCoordinator.formatPickupId(ticket, "invalid"));
+
+        assertEquals("005", SalesPeripheralCoordinator.formatPickupId(ticket, "3"));
+        assertEquals("00005", SalesPeripheralCoordinator.formatPickupId(ticket, "5"));
+
+        ticket.setPickupId(12345);
+        assertEquals("12345", SalesPeripheralCoordinator.formatPickupId(ticket, "3"));
+    }
 }

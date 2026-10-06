@@ -241,6 +241,31 @@ public class SalesPeripheralCoordinator {
         return createRemoteOrderDisplay(ticket, ticketExt, pickupString).remoteOrderId();
     }
 
+    /**
+     * Formats a ticket's pickup ID string according to the configured till pickup size.
+     *
+     * @param ticket the ticket
+     * @param pickupSizeConfig configured till pickup size
+     * @return padded pickup ID string, or "0" if ticket is null
+     */
+    public static String formatPickupId(TicketInfo ticket, String pickupSizeConfig) {
+        if (ticket == null) {
+            return "0";
+        }
+        String tmpPickupId = Integer.toString(ticket.getPickupId());
+        if (pickupSizeConfig != null && !pickupSizeConfig.isBlank()) {
+            try {
+                int size = Integer.parseInt(pickupSizeConfig.trim());
+                if (size >= tmpPickupId.length()) {
+                    return String.format("%0" + size + "d", ticket.getPickupId());
+                }
+            } catch (NumberFormatException ignored) {
+                // Return unpadded pickup ID if configuration is invalid
+            }
+        }
+        return tmpPickupId;
+    }
+
     protected RemoteOrderDisplay createRemoteOrderDisplay(TicketInfo ticket, String ticketExt, String pickupString) {
         return new RemoteOrderDisplay(app, ticket, ticketExt, pickupString);
     }
