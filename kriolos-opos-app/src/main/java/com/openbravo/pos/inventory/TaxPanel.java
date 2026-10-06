@@ -26,7 +26,7 @@ import com.openbravo.data.user.ListProvider;
 import com.openbravo.data.user.ListProviderCreator;
 import com.openbravo.data.user.DefaultSaveProvider;
 import com.openbravo.pos.forms.AppLocal;
-import com.openbravo.pos.forms.DataLogicSales;
+import com.openbravo.pos.sales.DataLogicTax;
 import com.openbravo.pos.panels.JPanelTable;
 import javax.swing.ListCellRenderer;
 
@@ -48,8 +48,8 @@ public class TaxPanel extends JPanelTable {
      */
     @Override
     protected void init() {
-        DataLogicSales dlSales = app.getBean(DataLogicSales.class);        
-        ttaxes = dlSales.getTableTaxes();
+        DataLogicTax dlTax = app.getBean(DataLogicTax.class);        
+        ttaxes = dlTax.getTableTaxes();
         jeditor = new TaxEditor(app, dirty);
     }
     

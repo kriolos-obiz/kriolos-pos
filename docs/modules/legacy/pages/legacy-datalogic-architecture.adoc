@@ -180,10 +180,11 @@ To transform the legacy monolith into clean, modular components, the 13 `DataLog
 3. **Eliminate Ad-Hoc Instantiations:** Replace `new DataLogicCustomers()` inside `DataLogicSales` with type-safe `app.getBean(DataLogicCustomers.class)`.
 
 === Phase 2: Domain Extraction & Backwards-Compatible Facades
-1. **Extract Inventory Logic:** Move `saveStockDiary`, `getProductStockState`, `getProductStockList`, and `findProductStock` from `DataLogicSales` into `DataLogicInventory`.
-2. **Preserve Delegating Facades:** Keep `@Deprecated` proxy methods on `DataLogicSales` that delegate to `DataLogicInventory`, allowing callers in UI panels to migrate gradually.
-3. **Extract Tax Logic:** Move tax queries and table definitions out of `DataLogicSales` into a dedicated tax service.
+1. **Extract Inventory Logic (Completed):** Moved `saveStockDiary`, `getProductStockState`, `getProductStockList`, and `findProductStock` from `DataLogicSales` into `DataLogicInventory`. Migrated `LocationsPanel`, `StockDiaryPanel`, `StockDiaryEditor`, `StockManagement`, `ProductsEditor`, and `StockQtyImport` to `DataLogicInventory`.
+2. **Extract Tax Logic (Completed):** Extracted tax queries (`getTaxList`, `getTaxCategoriesList`, `getTaxCustCategoriesList`) and table definitions (`getTableTaxes`, `getTableTaxCategories`, `getTableTaxCustCategories`) into dedicated `DataLogicTax` (`com.openbravo.pos.sales.DataLogicTax`). Migrated `TaxPanel`, `TaxCategoriesPanel`, `TaxCustCategoriesPanel`, and `TaxEditor` to `DataLogicTax`.
+3. **Preserve Delegating Facades:** Retained `@Deprecated` proxy methods on `DataLogicSales` that delegate to `DataLogicInventory` and `DataLogicTax`, ensuring legacy callers remain backwards-compatible.
 4. **Extract Hospitality:** Move `floors`, `places`, and `reservations` out of `DataLogicSales` and `DataLogicCustomers` into a dedicated restaurant service.
+5. **Consolidate CRM / Customer Debts:** Move customer debt transactions from `DataLogicSales` into `DataLogicCustomers`.
 
 === Phase 3: Pure Domain Services (Hexagonal Ports)
 1. Define pure Java interfaces (Ports) in domain API modules.

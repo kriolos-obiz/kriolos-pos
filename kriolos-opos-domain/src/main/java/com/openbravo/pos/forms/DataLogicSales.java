@@ -19,6 +19,7 @@ import com.openbravo.pos.ticket.TicketTaxInfo;
 import com.openbravo.pos.ticket.TicketInfo;
 import com.openbravo.pos.ticket.TicketLineInfo;
 import com.openbravo.pos.ticket.TaxInfo;
+import com.openbravo.pos.sales.DataLogicTax;
 import com.openbravo.pos.ticket.ProductInfoExt;
 import com.openbravo.pos.ticket.FindTicketsInfo;
 import com.openbravo.pos.inventory.UomInfo;
@@ -166,6 +167,18 @@ public class DataLogicSales extends BeanFactoryDataSingle {
         return fallback;
     }
 
+    public DataLogicTax getDataLogicTax() {
+        if (app != null) {
+            try {
+                return app.getBean(DataLogicTax.class);
+            } catch (BeanFactoryException ignored) {
+            }
+        }
+        DataLogicTax fallback = new DataLogicTax();
+        fallback.init(sessionDB);
+        return fallback;
+    }
+
     /**
      * @deprecated Use {@link DataLogicInventory#getProductStockState(String, String)} instead.
      */
@@ -293,70 +306,36 @@ public class DataLogicSales extends BeanFactoryDataSingle {
                 new SerializerReadClass(FindTicketsInfo.class));
     }
 
-    // User list
     /**
-     *
-     * @return
+     * @deprecated Use {@link DataLogicTax#getTaxCategoryInfoList()} instead.
      */
+    @Deprecated
     public final SentenceList<TaxCategoryInfo> getTaxCategoryInfoList() {
-        return getTaxCategoriesList();
+        return getDataLogicTax().getTaxCategoryInfoList();
     }
 
     /**
-     * @deprecated since Nov/2025
-     * @return
+     * @deprecated Use {@link DataLogicTax#getTaxList()} instead.
      */
+    @Deprecated
     public final SentenceList<TaxInfo> getTaxList() {
-        return new StaticSentence(sessionDB,
-                "SELECT "
-                + "ID, "
-                + "NAME, "
-                + "CATEGORY, "
-                + "CUSTCATEGORY, "
-                + "PARENTID, "
-                + "RATE, "
-                + "RATECASCADE, "
-                + "RATEORDER "
-                + "FROM taxes "
-                + "ORDER BY NAME",
-                null,
-                (DataRead dr) -> new TaxInfo(
-                        dr.getString(1),
-                        dr.getString(2),
-                        dr.getString(3),
-                        dr.getString(4),
-                        dr.getString(5),
-                        dr.getDouble(6),
-                        dr.getBoolean(7),
-                        dr.getInt(8)));
-    }
-
-    public final List<TaxInfo> getTaxListAll() {
-        List<TaxInfo> list = null;
-        try {
-            list = this.getTaxList().list();
-        }
-        catch (BasicException ex) {
-            LOGGER.log(Level.WARNING, "Cannot get Tax list", ex);
-        }
-        return list;
+        return getDataLogicTax().getTaxList();
     }
 
     /**
-     *
-     * @return
+     * @deprecated Use {@link DataLogicTax#getTaxListAll()} instead.
      */
+    @Deprecated
+    public final List<TaxInfo> getTaxListAll() {
+        return getDataLogicTax().getTaxListAll();
+    }
+
+    /**
+     * @deprecated Use {@link DataLogicTax#getTaxCustCategoriesList()} instead.
+     */
+    @Deprecated
     public final SentenceList<TaxCustCategoryInfo> getTaxCustCategoriesList() {
-        return new StaticSentence<>(sessionDB,
-                "SELECT "
-                + "ID, "
-                + "NAME "
-                + "FROM taxcustcategories "
-                + "ORDER BY NAME",
-                null,
-                (DataRead dr) -> new TaxCustCategoryInfo(
-                        dr.getString(1),
-                        dr.getString(2)));
+        return getDataLogicTax().getTaxCustCategoriesList();
     }
 
     /**
@@ -399,33 +378,19 @@ public class DataLogicSales extends BeanFactoryDataSingle {
     }
 
     /**
-     * @deprecated Since Nov/2025
-     * @return
+     * @deprecated Use {@link DataLogicTax#getTaxCategoriesList()} instead.
      */
+    @Deprecated
     public final SentenceList<TaxCategoryInfo> getTaxCategoriesList() {
-        return new StaticSentence<>(sessionDB,
-                "SELECT "
-                + "ID, "
-                + "NAME "
-                + "FROM taxcategories "
-                + "ORDER BY NAME",
-                null,
-                (DataRead dr) -> new TaxCategoryInfo(dr.getString(1), dr.getString(2)));
+        return getDataLogicTax().getTaxCategoriesList();
     }
 
     /**
-     *
-     * @return
+     * @deprecated Use {@link DataLogicTax#getTaxCategoriesListAll()} instead.
      */
+    @Deprecated
     public final List<TaxCategoryInfo> getTaxCategoriesListAll() {
-        List<TaxCategoryInfo> list = null;
-        try {
-            list = this.getTaxCategoriesList().list();
-        }
-        catch (BasicException ex) {
-            LOGGER.log(Level.WARNING, "Cannot get TaxCategoryInfo list", ex);
-        }
-        return list;
+        return getDataLogicTax().getTaxCategoriesListAll();
     }
 
     /**
@@ -1124,50 +1089,28 @@ public class DataLogicSales extends BeanFactoryDataSingle {
         return sentence.exec(categoryId);
     }
 
+    /**
+     * @deprecated Use {@link DataLogicTax#getTableTaxes()} instead.
+     */
+    @Deprecated
     public final TableDefinition getTableTaxes() {
-        return new TableDefinition(sessionDB,
-                "taxes",
-                new String[]{"ID", "NAME", "CATEGORY", "CUSTCATEGORY", "PARENTID", "RATE",
-                    "RATECASCADE",
-                    "RATEORDER"},
-                new String[]{"ID", AppLocal.getIntString("label.name"),
-                    AppLocal.getIntString("label.taxcategory"),
-                    AppLocal.getIntString("label.custtaxcategory"),
-                    AppLocal.getIntString("label.taxparent"),
-                    AppLocal.getIntString("label.dutyrate"),
-                    AppLocal.getIntString("label.cascade"),
-                    AppLocal.getIntString("label.order")},
-                new Datas[]{Datas.STRING, Datas.STRING, Datas.STRING, Datas.STRING, Datas.STRING,
-                    Datas.DOUBLE,
-                    Datas.BOOLEAN, Datas.INT},
-                new Formats[]{Formats.STRING, Formats.STRING, Formats.STRING, Formats.STRING,
-                    Formats.STRING,
-                    Formats.PERCENT, Formats.BOOLEAN, Formats.INT},
-                new int[]{0});
-    }
-
-    public final TableDefinition getTableTaxCustCategories() {
-        return new TableDefinition(sessionDB,
-                "taxcustcategories",
-                new String[]{"ID", "NAME"},
-                new String[]{"ID", AppLocal.getIntString("label.name")},
-                new Datas[]{Datas.STRING, Datas.STRING},
-                new Formats[]{Formats.STRING, Formats.STRING},
-                new int[]{0});
+        return getDataLogicTax().getTableTaxes();
     }
 
     /**
-     *
-     * @return
+     * @deprecated Use {@link DataLogicTax#getTableTaxCustCategories()} instead.
      */
+    @Deprecated
+    public final TableDefinition getTableTaxCustCategories() {
+        return getDataLogicTax().getTableTaxCustCategories();
+    }
+
+    /**
+     * @deprecated Use {@link DataLogicTax#getTableTaxCategories()} instead.
+     */
+    @Deprecated
     public final TableDefinition getTableTaxCategories() {
-        return new TableDefinition(sessionDB,
-                "taxcategories",
-                new String[]{"ID", "NAME"},
-                new String[]{"ID", AppLocal.getIntString("label.name")},
-                new Datas[]{Datas.STRING, Datas.STRING},
-                new Formats[]{Formats.STRING, Formats.STRING},
-                new int[]{0});
+        return getDataLogicTax().getTableTaxCategories();
     }
 
     /**
