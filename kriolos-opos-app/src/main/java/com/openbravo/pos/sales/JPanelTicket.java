@@ -1085,35 +1085,9 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     }
 
     private void printReport(String resourcefile, TicketInfo ticket, String ticketext) {
-
-        try {
-
-            Map<String, Object> reportParams = new HashMap<>();
-
-            String reportBundleName = resourcefile + ".properties";
-            try {
-                reportParams.put("REPORT_RESOURCE_BUNDLE", ResourceBundle.getBundle(reportBundleName));
-            }
-            catch (MissingResourceException ex) {
-                LOGGER.log(System.Logger.Level.WARNING, "Exception on set report bundle file: " + reportBundleName, ex);
-            }
-            reportParams.put("TAXESLOGIC", taxeslogic);
-
-            Map<String, Object> reportFields = new HashMap<>();
-            reportFields.put("TICKET", ticket);
-            reportFields.put("PLACE", ticketext);
-
+        if (peripheralCoordinator != null) {
             String printerName = getAppProperty("machine.printername");
-
-            PrintReportUtils.printReport(printerName, resourcefile, reportParams, reportFields);
-
-        }
-        catch (Exception ex) {
-            LOGGER.log(System.Logger.Level.WARNING, "Exception on print report with resource file: " + resourcefile,
-                    ex);
-            MessageInf msg = new MessageInf(MessageInf.SGN_WARNING,
-                    AppLocal.getIntString("message.cannotloadreport") + "\n" + resourcefile, ex);
-            msg.show(this);
+            peripheralCoordinator.printReport(printerName, resourcefile, ticket, ticketext, taxeslogic, this);
         }
     }
 
@@ -1808,28 +1782,14 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     }// GEN-LAST:event_j_btnRemotePrtActionPerformed
 
     private void btnReprint1ActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_btnReprint1ActionPerformed
-
-        try {
-            int ticketType = 0;
-            TicketInfo ticketInfo = dlSales.loadLastTicket(ticketType);
-            if (ticketInfo == null) {
-                new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.notexiststicket")).show(this);
-            } else {
-                try {
-                    taxeslogic.calculateTaxes(ticketInfo);
-                    printTicket("Printer.ReprintTicket", ticketInfo, null);
-                    Notify("'Printer.reprint.last.ticket'");
-                }
-                catch (TaxesException ex) {
-                    LOGGER.log(System.Logger.Level.WARNING, "Exception on: ", ex);
-                }
-            }
-        }
-        catch (BasicException ex) {
-            LOGGER.log(System.Logger.Level.WARNING, "Exception on: ", ex);
-            MessageInf msg = new MessageInf(MessageInf.SGN_WARNING,
-                    AppLocal.getIntString("message.cannotloadticket"), ex);
-            msg.show(this);
+        if (peripheralCoordinator != null) {
+            peripheralCoordinator.reprintLastTicket(
+                    this,
+                    dlSales,
+                    taxeslogic,
+                    (res, tck) -> printTicket(res, tck, null),
+                    this::Notify
+            );
         }
     }// GEN-LAST:event_btnReprint1ActionPerformed
 

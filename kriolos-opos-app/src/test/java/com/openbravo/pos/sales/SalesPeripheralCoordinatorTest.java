@@ -90,4 +90,65 @@ class SalesPeripheralCoordinatorTest {
         boolean result = coordinator.sendRemoteOrder(ticket, "Table 1", null, true, false, "01", this);
         assertTrue(result);
     }
+
+    @Test
+    @DisplayName("reprintLastTicket returns empty when loader is null or ticket not found")
+    void testReprintLastTicket_NullOrNotFound() {
+        AppView app = createMockAppView(false, null);
+        SalesPeripheralCoordinator coordinator = new SalesPeripheralCoordinator(app, null, null, key -> null, key -> null);
+
+        var resultNullLoader = coordinator.reprintLastTicket(null, (SalesPeripheralCoordinator.TicketLoader) null, null, null, null);
+        assertTrue(resultNullLoader.isEmpty());
+
+        var resultNotFound = coordinator.reprintLastTicket(null, type -> null, null, null, null);
+        assertTrue(resultNotFound.isEmpty());
+    }
+
+    @Test
+    @DisplayName("reprintLastTicket invokes printer and notifier when ticket is found")
+    void testReprintLastTicket_Success() {
+        AppView app = createMockAppView(false, null);
+        SalesPeripheralCoordinator coordinator = new SalesPeripheralCoordinator(app, null, null, key -> null, key -> null);
+        TicketInfo ticket = new TicketInfo();
+
+        boolean[] printed = new boolean[]{false};
+        boolean[] notified = new boolean[]{false};
+
+        var result = coordinator.reprintLastTicket(
+                null,
+                type -> ticket,
+                null,
+                (res, tck) -> {
+                    assertEquals("Printer.ReprintTicket", res);
+                    assertSame(ticket, tck);
+                    printed[0] = true;
+                },
+                msg -> {
+                    assertEquals("'Printer.reprint.last.ticket'", msg);
+                    notified[0] = true;
+                }
+        );
+
+        assertTrue(result.isPresent());
+        assertSame(ticket, result.get());
+        assertTrue(printed[0]);
+        assertTrue(notified[0]);
+    }
+
+    @Test
+    @DisplayName("reprintLastTicket handles BasicException gracefully and returns empty")
+    void testReprintLastTicket_Exception() {
+        AppView app = createMockAppView(false, null);
+        SalesPeripheralCoordinator coordinator = new SalesPeripheralCoordinator(app, null, null, key -> null, key -> null);
+
+        var result = coordinator.reprintLastTicket(
+                null,
+                type -> { throw new com.openbravo.basic.BasicException("Database error"); },
+                null,
+                null,
+                null
+        );
+
+        assertTrue(result.isEmpty());
+    }
 }

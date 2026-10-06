@@ -20,10 +20,12 @@ import com.openbravo.basic.BasicException;
 import com.openbravo.data.gui.MessageInf;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
+import com.openbravo.pos.forms.DataLogicSales;
 import com.openbravo.pos.forms.DataLogicSystem;
 import com.openbravo.pos.hardware.PosHardwareManager;
 import com.openbravo.pos.printer.TicketParser;
 import com.openbravo.pos.printer.TicketPrinterException;
+import com.openbravo.pos.reports.PrintReportUtils;
 import com.openbravo.pos.scripting.ScriptEngine;
 import com.openbravo.pos.scripting.ScriptException;
 import com.openbravo.pos.scripting.ScriptFactory;
@@ -36,7 +38,14 @@ import java.awt.EventQueue;
 import java.awt.Font;
 import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.MissingResourceException;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.ResourceBundle;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import javax.swing.event.ListSelectionEvent;
@@ -206,6 +215,116 @@ public class SalesPeripheralCoordinator {
         } catch (ScriptException ex) {
             LOGGER.log(Level.WARNING, "Exception on executing script: " + scriptId, ex);
             return false;
+        }
+    }
+
+    /**
+     * Renders and dispatches a Jasper report for the given ticket.
+     *
+     * @param printerName printer device name
+     * @param resourcefile Jasper report resource file
+     * @param ticket the active ticket
+     * @param ticketext ticket place / table extension
+     * @param taxeslogic active taxes calculation logic
+     * @param parent parent UI component for alerts
+     * @return true if report was dispatched successfully
+     */
+    public boolean printReport(String printerName, String resourcefile, TicketInfo ticket, String ticketext,
+                               TaxesLogic taxeslogic, Component parent) {
+        try {
+            Map<String, Object> reportParams = new HashMap<>();
+            String reportBundleName = resourcefile + ".properties";
+            try {
+                reportParams.put("REPORT_RESOURCE_BUNDLE", ResourceBundle.getBundle(reportBundleName));
+            } catch (MissingResourceException ex) {
+                LOGGER.log(Level.WARNING, "Exception on set report bundle file: " + reportBundleName, ex);
+            }
+            reportParams.put("TAXESLOGIC", taxeslogic);
+
+            Map<String, Object> reportFields = new HashMap<>();
+            reportFields.put("TICKET", ticket);
+            reportFields.put("PLACE", ticketext);
+
+            PrintReportUtils.printReport(printerName, resourcefile, reportParams, reportFields);
+            return true;
+        } catch (Exception ex) {
+            LOGGER.log(Level.WARNING, "Exception on print report with resource file: " + resourcefile, ex);
+            if (parent != null) {
+                new MessageInf(MessageInf.SGN_WARNING,
+                        AppLocal.getIntString("message.cannotloadreport") + "\n" + resourcefile, ex).show(parent);
+            }
+            return false;
+        }
+    }
+
+    @FunctionalInterface
+    public interface TicketLoader {
+        TicketInfo load(int ticketType) throws BasicException;
+    }
+
+    /**
+     * Loads the last completed ticket, recalculates taxes, and dispatches it to the receipt printer.
+     *
+     * @param parent parent UI component for alerts
+     * @param dlSales data logic sales for ticket retrieval
+     * @param taxeslogic active taxes calculation logic
+     * @param ticketPrinter consumer to print the retrieved ticket
+     * @param notifier consumer to notify user
+     * @return an {@link Optional} containing the reprinted ticket if successful
+     */
+    public Optional<TicketInfo> reprintLastTicket(Component parent, DataLogicSales dlSales, TaxesLogic taxeslogic,
+                                                  BiConsumer<String, TicketInfo> ticketPrinter,
+                                                  Consumer<String> notifier) {
+        return reprintLastTicket(parent, dlSales != null ? dlSales::loadLastTicket : null, taxeslogic, ticketPrinter, notifier);
+    }
+
+    /**
+     * Loads the last completed ticket using the provided loader, recalculates taxes, and dispatches it to the receipt printer.
+     *
+     * @param parent parent UI component for alerts
+     * @param ticketLoader loader for ticket retrieval
+     * @param taxeslogic active taxes calculation logic
+     * @param ticketPrinter consumer to print the retrieved ticket
+     * @param notifier consumer to notify user
+     * @return an {@link Optional} containing the reprinted ticket if successful
+     */
+    public Optional<TicketInfo> reprintLastTicket(Component parent, TicketLoader ticketLoader, TaxesLogic taxeslogic,
+                                                  BiConsumer<String, TicketInfo> ticketPrinter,
+                                                  Consumer<String> notifier) {
+        if (ticketLoader == null) {
+            return Optional.empty();
+        }
+        try {
+            int ticketType = 0;
+            TicketInfo ticketInfo = ticketLoader.load(ticketType);
+            if (ticketInfo == null) {
+                if (parent != null) {
+                    new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.notexiststicket")).show(parent);
+                }
+                return Optional.empty();
+            }
+
+            if (taxeslogic != null) {
+                try {
+                    taxeslogic.calculateTaxes(ticketInfo);
+                } catch (TaxesException ex) {
+                    LOGGER.log(Level.WARNING, "Exception on calculate taxes for reprint: ", ex);
+                }
+            }
+
+            if (ticketPrinter != null) {
+                ticketPrinter.accept("Printer.ReprintTicket", ticketInfo);
+            }
+            if (notifier != null) {
+                notifier.accept("'Printer.reprint.last.ticket'");
+            }
+            return Optional.of(ticketInfo);
+        } catch (BasicException ex) {
+            LOGGER.log(Level.WARNING, "Exception on load last ticket for reprint: ", ex);
+            if (parent != null) {
+                new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.cannotloadticket"), ex).show(parent);
+            }
+            return Optional.empty();
         }
     }
 
