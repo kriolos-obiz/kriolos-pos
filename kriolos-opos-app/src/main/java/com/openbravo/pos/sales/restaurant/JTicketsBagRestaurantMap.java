@@ -15,164 +15,379 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package com.openbravo.pos.sales.restaurant;
 
-import javax.swing.Timer;
-import java.awt.BorderLayout;
-import java.awt.CardLayout;
-import java.awt.Insets;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.swing.Icon;
-import javax.swing.ImageIcon;
-import javax.swing.JComponent;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTabbedPane;
-import com.openbravo.basic.BasicException;
-import com.openbravo.data.gui.MessageInf;
-import com.openbravo.data.gui.NullIcon;
 import com.openbravo.pos.customers.CustomerInfo;
 import com.openbravo.pos.forms.AppConfig;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
-import com.openbravo.pos.forms.DataLogicSystem;
-import com.openbravo.pos.sales.DataLogicReceipts;
 import com.openbravo.pos.sales.JTicketsBag;
 import com.openbravo.pos.sales.TicketsEditor;
 import com.openbravo.pos.ticket.TicketInfo;
+import java.awt.BorderLayout;
+import java.awt.CardLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.ResourceBundle;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
+import javax.swing.SwingConstants;
+import javax.swing.Timer;
+import javax.swing.border.EmptyBorder;
 
 /**
- *
- * @author JG uniCenta
+ * Pure-code Swing view for the restaurant table map.
+ * Business logic and ticket persistence are delegated to {@link RestaurantMapController},
+ * while button formatting is handled by {@link PlaceButtonRenderer}.
  */
 public class JTicketsBagRestaurantMap extends JTicketsBag {
 
-    private java.util.List<Place> placeList;
-    private java.util.List<Floor> floorList;
+    private static final System.Logger LOGGER = System.getLogger(JTicketsBagRestaurantMap.class.getName());
 
-    private JTicketsBagRestaurant ticketsBagRestaurant;
+    private final RestaurantMapController controller;
+    private final JTicketsBagRestaurant ticketsBagRestaurant;
     private final JTicketsBagRestaurantRes restaurantReservation;
+
+    // UI Components
+    private final CardLayout cardLayout = new CardLayout();
+    private final JPanel mapPanel = new JPanel(new BorderLayout());
     private final JTabbedPane restaurantFloorsJTabbedPane = new JTabbedPane();
+    private final JLabel lblInfo = new JLabel();
+    private final JLabel lblAutoRefreshTimer = new JLabel();
+    private final JButton btnReservations = new JButton();
+    private final JButton btnRefresh = new JButton();
+    private final JButton btnLayout = new JButton();
+    private final JButton btnSaveLayout = new JButton();
+
+    private final Map<String, PlaceButton> placeButtons = new HashMap<>();
+
     private int currentSelectedTabIndex = 0;
-    private Place placeCurrent;
-    private Place placeClipboard;
-    private CustomerInfo customerInfo;
-
-    private PlaceServiceImpl placeService; // Commented out as per instruction
-
-    private DataLogicReceipts dlReceipts = null;
-    private DataLogicSystem dlSystem = null;
-    private static final Icon ICO_OCU_SM = new ImageIcon(
-            Place.class.getResource("/com/openbravo/images/edit_group_sm.png"));
-    private static final Icon ICO_WAITER = new NullIcon(1, 1);
-    private static final Icon ICO_FRE = new NullIcon(22, 22);
-    private static final String LOCKED_STATE = "locked";
-    private String waiterDetails;
-    private String customerDetails;
-    private String tableName;
     private boolean transBtns;
     private boolean actionEnabled = true;
-    private boolean showLayout = false;
     private Timer autoRefreshTimer = null;
 
-    /**
-     * Creates new form JTicketsBagRestaurant
-     *
-     * @param app
-     * @param panelticket
-     */
     public JTicketsBagRestaurantMap(AppView app, TicketsEditor panelticket) {
-
         super(app, panelticket);
 
-        dlReceipts = getAppView().getBean(DataLogicReceipts.class);
-        dlSystem = getAppView().getBean(DataLogicSystem.class);
+        this.controller = new RestaurantMapController(app, panelticket);
+        this.ticketsBagRestaurant = new JTicketsBagRestaurant(app, this);
+        this.restaurantReservation = new JTicketsBagRestaurantRes(app, this);
+        this.transBtns = AppConfig.getInstance().getBoolean("table.transbtn");
 
-        placeService = new PlaceServiceImpl(app.getSession());
-        ticketsBagRestaurant = new JTicketsBagRestaurant(app, this);
-        restaurantReservation = new JTicketsBagRestaurantRes(app, this);
-
-        transBtns = AppConfig.getInstance().getBoolean("table.transbtn");
-
-        initComponents();
-
-        m_jPanelMap.add(restaurantFloorsJTabbedPane, BorderLayout.CENTER);
-        add(restaurantReservation, "res");
-
-        if (getAppView().getProperties().getProperty("till.autoRefreshTableMap").equals("true")) {
-            webLblautoRefresh.setText(java.util.ResourceBundle.getBundle("pos_messages")
-                    .getString("label.autoRefreshTableMapTimerON"));
-
-            int refeshTimer = Integer.parseInt(getAppView().getProperties().getProperty("till.autoRefreshTimer"));
-            if (refeshTimer < 10) {
-                refeshTimer = 10;
-            }
-            refeshTimer = refeshTimer * 1000;
-
-            this.autoRefreshTimer = new Timer(refeshTimer, new TableMapRefreshActionListener());
-        } else {
-            webLblautoRefresh.setText(java.util.ResourceBundle.getBundle("pos_messages")
-                    .getString("label.autoRefreshTableMapTimerOFF"));
-        }
+        initUI();
+        initAutoRefreshTimer();
 
         loadData();
         printState();
-
     }
 
-    class TableMapRefreshActionListener implements ActionListener {
+    private void initUI() {
+        setLayout(cardLayout);
 
-        public TableMapRefreshActionListener() {
-            LOGGER.log(System.Logger.Level.DEBUG, "Table Map Refresh ActionListener create at: " + new Date());
+        // Top Toolbar
+        JPanel topBarPanel = new JPanel(new BorderLayout());
+        JPanel leftToolBar = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 2));
+
+        configureToolbarButton(btnReservations, AppLocal.getIntString("button.reservations"),
+                "/com/openbravo/images/date.png", "Open Reservations screen", e -> {
+            showView("res");
+            restaurantReservation.activate();
+        });
+        leftToolBar.add(btnReservations);
+
+        configureToolbarButton(btnRefresh, AppLocal.getIntString("button.reloadticket"),
+                "/com/openbravo/images/reload.png", "Reload table information", e -> {
+            controller.setPlaceClipboard(null);
+            controller.setCustomerInfo(null);
+            loadData();
+            printState();
+        });
+        leftToolBar.add(btnRefresh);
+
+        lblInfo.setFont(new Font("Arial", Font.PLAIN, 14));
+        leftToolBar.add(lblInfo);
+
+        configureToolbarButton(btnLayout, AppLocal.getIntString("button.layout"),
+                "/com/openbravo/images/movetable.png", null, e -> toggleLayoutMode());
+        leftToolBar.add(btnLayout);
+
+        configureToolbarButton(btnSaveLayout, AppLocal.getIntString("button.save"),
+                "/com/openbravo/images/filesave.png", null, e -> controller.savePlacesLayout());
+        btnSaveLayout.setVisible(false);
+        leftToolBar.add(btnSaveLayout);
+
+        topBarPanel.add(leftToolBar, BorderLayout.LINE_START);
+
+        lblAutoRefreshTimer.setHorizontalAlignment(SwingConstants.RIGHT);
+        lblAutoRefreshTimer.setFont(new Font("Arial", Font.PLAIN, 14));
+        topBarPanel.add(lblAutoRefreshTimer, BorderLayout.CENTER);
+
+        mapPanel.add(topBarPanel, BorderLayout.NORTH);
+
+        // Tabbed pane for restaurant floors
+        restaurantFloorsJTabbedPane.applyComponentOrientation(getComponentOrientation());
+        restaurantFloorsJTabbedPane.setBorder(new EmptyBorder(new Insets(5, 5, 5, 5)));
+        restaurantFloorsJTabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
+        restaurantFloorsJTabbedPane.setFocusable(false);
+        restaurantFloorsJTabbedPane.setRequestFocusEnabled(false);
+        mapPanel.add(restaurantFloorsJTabbedPane, BorderLayout.CENTER);
+
+        add(mapPanel, "map");
+        add(restaurantReservation, "res");
+    }
+
+    private void configureToolbarButton(JButton button, String text, String iconPath, String tooltip, ActionListener listener) {
+        button.setFont(new Font("Arial", Font.PLAIN, 12));
+        if (iconPath != null) {
+            button.setIcon(new ImageIcon(getClass().getResource(iconPath)));
         }
+        button.setText(text);
+        if (tooltip != null) {
+            button.setToolTipText(tooltip);
+        }
+        button.setFocusPainted(false);
+        button.setFocusable(false);
+        button.setPreferredSize(new Dimension(100, 45));
+        if (listener != null) {
+            button.addActionListener(listener);
+        }
+    }
 
+    private void initAutoRefreshTimer() {
+        ResourceBundle bundle = ResourceBundle.getBundle("pos_messages");
+        String autoRefreshProp = getAppView().getProperties().getProperty("till.autoRefreshTableMap");
+
+        if ("true".equalsIgnoreCase(autoRefreshProp)) {
+            lblAutoRefreshTimer.setText(bundle.getString("label.autoRefreshTableMapTimerON"));
+
+            int refreshSeconds = 10;
+            try {
+                String timerProp = getAppView().getProperties().getProperty("till.autoRefreshTimer");
+                if (timerProp != null && !timerProp.isBlank()) {
+                    refreshSeconds = Math.max(10, Integer.parseInt(timerProp));
+                }
+            }
+            catch (NumberFormatException ignored) {
+                refreshSeconds = 10;
+            }
+
+            this.autoRefreshTimer = new Timer(refreshSeconds * 1000, new TableMapRefreshActionListener());
+        } else {
+            lblAutoRefreshTimer.setText(bundle.getString("label.autoRefreshTableMapTimerOFF"));
+        }
+    }
+
+    private class TableMapRefreshActionListener implements ActionListener {
         @Override
         public void actionPerformed(ActionEvent e) {
+            // Guard: never refresh or disturb state if a table is currently open
+            if (controller.getPlaceCurrent() != null) {
+                return;
+            }
             LOGGER.log(System.Logger.Level.INFO, "Table Map Refresh at: " + new Date());
             loadData();
             printState();
         }
     }
 
-    private void ensurePermissionSalesLayout() {
-        showLayout = getAppView().hasPermission("sales.Layout");
-        if (showLayout) {
-            m_jbtnLayout.setVisible(true);
-            m_jbtnSave.setVisible(false);
-        } else {
-            m_jbtnLayout.setVisible(false);
-            m_jbtnSave.setVisible(false);
-        }
-    }
-
     private void ensureTimerStart() {
-        LOGGER.log(System.Logger.Level.INFO, "Table Refredh timer start");
+        LOGGER.log(System.Logger.Level.INFO, "Table Refresh timer start");
         if (this.autoRefreshTimer != null && !this.autoRefreshTimer.isRunning()) {
             this.autoRefreshTimer.start();
         }
     }
 
     private void ensureTimerStop() {
-        LOGGER.log(System.Logger.Level.INFO, "Table Refredh timer stop");
-        if (autoRefreshTimer != null && this.autoRefreshTimer.isRunning()) {
+        LOGGER.log(System.Logger.Level.INFO, "Table Refresh timer stop");
+        if (this.autoRefreshTimer != null && this.autoRefreshTimer.isRunning()) {
             this.autoRefreshTimer.stop();
         }
     }
 
+    private void ensurePermissionSalesLayout() {
+        boolean showLayout = getAppView().hasPermission("sales.Layout");
+        btnLayout.setVisible(showLayout);
+        btnSaveLayout.setVisible(false);
+    }
+
+    private void toggleLayoutMode() {
+        ResourceBundle bundle = ResourceBundle.getBundle("pos_messages");
+        if (bundle.getString("button.layout").equals(btnLayout.getText())) {
+            actionEnabled = false;
+            btnSaveLayout.setVisible(true);
+            btnLayout.setText(bundle.getString("button.disablelayout"));
+
+            for (PlaceButton btn : placeButtons.values()) {
+                if (transBtns) {
+                    btn.setOpaque(true);
+                    btn.setContentAreaFilled(true);
+                    btn.setBorderPainted(true);
+                }
+            }
+            ensureTimerStop();
+        } else {
+            actionEnabled = true;
+            btnSaveLayout.setVisible(false);
+            btnLayout.setText(bundle.getString("button.layout"));
+
+            for (PlaceButton btn : placeButtons.values()) {
+                if (transBtns) {
+                    btn.setOpaque(false);
+                    btn.setContentAreaFilled(false);
+                    btn.setBorderPainted(false);
+                }
+            }
+            ensureTimerStart();
+        }
+    }
+
+    private void loadData() {
+        currentSelectedTabIndex = restaurantFloorsJTabbedPane.getSelectedIndex();
+
+        ensurePermissionSalesLayout();
+        controller.loadData(this);
+
+        restaurantFloorsJTabbedPane.removeAll();
+
+        Map<String, Floor> floorMap = new HashMap<>();
+        for (Floor floor : controller.getFloorList()) {
+            floorMap.put(floor.getID(), floor);
+            floor.getContainer().applyComponentOrientation(getComponentOrientation());
+
+            JScrollPane scrollPane = new JScrollPane();
+            scrollPane.applyComponentOrientation(getComponentOrientation());
+
+            JPanel contentPanel = new JPanel();
+            contentPanel.applyComponentOrientation(getComponentOrientation());
+
+            restaurantFloorsJTabbedPane.addTab(floor.getName(), floor.getIcon(), scrollPane);
+            scrollPane.setViewportView(contentPanel);
+            contentPanel.add(floor.getContainer());
+        }
+
+        if (currentSelectedTabIndex >= restaurantFloorsJTabbedPane.getTabCount()) {
+            currentSelectedTabIndex = 0;
+        }
+        if (restaurantFloorsJTabbedPane.getTabCount() > 0) {
+            restaurantFloorsJTabbedPane.setSelectedIndex(currentSelectedTabIndex);
+        }
+
+        // Attach tables to their corresponding floor container
+        placeButtons.clear();
+        for (Place pl : controller.getPlaceList()) {
+            Floor floor = floorMap.get(pl.getFloor());
+            PlaceButton btn = new PlaceButton(pl);
+            placeButtons.put(pl.getId(), btn);
+
+            if (floor != null) {
+                floor.getContainer().add(btn);
+                btn.updateBounds();
+            }
+
+            if (transBtns) {
+                btn.setOpaque(false);
+                btn.setContentAreaFilled(false);
+                btn.setBorderPainted(false);
+            }
+
+            // Drag-and-drop listener for layout mode
+            btn.addMouseMotionListener(new MouseAdapter() {
+                @Override
+                public void mouseDragged(MouseEvent e) {
+                    if (!actionEnabled) {
+                        if (btn.getDiffX() == 0) {
+                            btn.setDiffX(btn.getX() - pl.getX());
+                            btn.setDiffY(btn.getY() - pl.getY());
+                        }
+                        int newX = e.getX() + btn.getX();
+                        int newY = e.getY() + btn.getY();
+                        btn.setBounds(newX + btn.getDiffX(), newY + btn.getDiffY(),
+                                btn.getWidth(), btn.getHeight());
+                        pl.setX(newX);
+                        pl.setY(newY);
+                    }
+                }
+            });
+
+            btn.addActionListener(e -> onPlaceSelection(pl));
+        }
+
+        java.awt.EventQueue.invokeLater(() -> {
+            mapPanel.revalidate();
+            mapPanel.repaint();
+        });
+    }
+
+    private void onPlaceSelection(Place place) {
+        if (!actionEnabled) {
+            PlaceButton btn = placeButtons.get(place.getId());
+            if (btn != null) {
+                btn.setDiffX(0);
+                btn.setDiffY(0);
+            }
+            return;
+        }
+
+        boolean opened = controller.handleTableSelection(place, this);
+        if (opened) {
+            ensureTimerStop();
+        }
+        printState();
+    }
+
+    private void printState() {
+        Place clipboard = controller.getPlaceClipboard();
+        CustomerInfo cust = controller.getCustomerInfo();
+
+        if (clipboard == null) {
+            if (cust == null) {
+                lblInfo.setText(null);
+                for (PlaceButton btn : placeButtons.values()) {
+                    PlaceButtonRenderer.renderButton(btn, controller.getPlaceService(), getAppView());
+                }
+                btnReservations.setEnabled(true);
+            } else {
+                lblInfo.setText(AppLocal.getIntString("label.restaurantcustomer", new Object[]{cust.getName()}));
+                for (PlaceButton btn : placeButtons.values()) {
+                    btn.setEnabled(!btn.getPlace().hasPeople());
+                }
+                btnReservations.setEnabled(false);
+            }
+        } else {
+            lblInfo.setText(AppLocal.getIntString("label.restaurantmove", new Object[]{clipboard.getName()}));
+            for (PlaceButton btn : placeButtons.values()) {
+                btn.setEnabled(true);
+            }
+            btnReservations.setEnabled(false);
+        }
+    }
+
+    private void showView(String view) {
+        cardLayout.show(this, view);
+    }
+
+    // -------------------------------------------------------------
+    // JTicketsBag contract methods
+    // -------------------------------------------------------------
+
     @Override
     public void activate() {
-        LOGGER.log(System.Logger.Level.INFO, "Active");
-
-        placeClipboard = null;
-        customerInfo = null;
+        LOGGER.log(System.Logger.Level.INFO, "Activate restaurant map");
+        controller.setPlaceClipboard(null);
+        controller.setCustomerInfo(null);
         ensurePermissionSalesLayout();
         loadData();
         printState();
@@ -181,828 +396,96 @@ public class JTicketsBagRestaurantMap extends JTicketsBag {
         ticketsBagRestaurant.activate();
 
         showView("map");
-
         ensureTimerStart();
     }
 
-    /**
-     *
-     * @return
-     */
     @Override
     public boolean deactivate() {
-
-        LOGGER.log(System.Logger.Level.INFO, "deactivate");
+        LOGGER.log(System.Logger.Level.INFO, "Deactivate restaurant map");
         ensureTimerStop();
+
         if (viewTables()) {
-            placeClipboard = null;
-            customerInfo = null;
+            controller.setPlaceClipboard(null);
+            controller.setCustomerInfo(null);
 
+            Place placeCurrent = controller.getPlaceCurrent();
             if (placeCurrent != null) {
-
-                try {
-                    dlReceipts.updateSharedTicket(placeCurrent.getId(),
-                            m_panelticket.getActiveTicket(),
-                            m_panelticket.getActiveTicket().getPickupId());
-                    dlReceipts.unlockSharedTicket(placeCurrent.getId(), null);
-                }
-                catch (BasicException ex) {
-                    LOGGER.log(System.Logger.Level.WARNING, "Exception update shared ticket: ", ex);
-                    new MessageInf(ex).show(this);
-                }
-
-                placeCurrent = null;
-
+                controller.releaseCurrentTicket(this);
             }
             printState();
             m_panelticket.setActiveTicket(null, null);
-
             return true;
-        } else {
-            return false;
         }
+        return false;
     }
 
-    /**
-     *
-     * @return
-     */
+    @Override
+    public void deleteTicket() {
+        controller.deleteCurrentTicket(this);
+        printState();
+        m_panelticket.setActiveTicket(null, null);
+        ensureTimerStart();
+    }
+
     @Override
     protected JComponent getBagComponent() {
         return ticketsBagRestaurant;
     }
 
-    /**
-     *
-     * @return
-     */
     @Override
     protected JComponent getNullComponent() {
         return this;
     }
 
-    /**
-     *
-     * @return
-     */
     public TicketInfo getActiveTicket() {
         return m_panelticket.getActiveTicket();
     }
 
-    /**
-     *
-     */
     public void moveTicket() {
-        if (placeCurrent != null) {
-
-            try {
-                dlReceipts.updateRSharedTicket(placeCurrent.getId(),
-                        m_panelticket.getActiveTicket(), m_panelticket.getActiveTicket().getPickupId());
-            }
-            catch (BasicException ex) {
-                LOGGER.log(System.Logger.Level.WARNING, "Exception: ", ex);
-                new MessageInf(ex).show(this);
-            }
-
-            placeClipboard = placeCurrent;
-
-            customerInfo = null;
-            placeCurrent = null;
-        }
-
+        controller.moveCurrentTicket(this);
         printState();
         m_panelticket.setActiveTicket(null, null);
     }
 
-    /**
-     *
-     * @param c
-     * @return
-     */
     public boolean viewTables(CustomerInfo c) {
         if (restaurantReservation.deactivate()) {
             showView("map");
-            placeClipboard = null;
-            customerInfo = c;
+            controller.setPlaceClipboard(null);
+            controller.setCustomerInfo(c);
             printState();
             return true;
-        } else {
-            return false;
         }
+        return false;
     }
 
-    /**
-     *
-     * @return
-     */
     public boolean viewTables() {
         return viewTables(null);
     }
 
     public void newTicket() {
-
-        if (placeCurrent != null) {
-
-            try {
-                String m_lockState = null;
-                m_lockState = dlReceipts.getLockState(placeCurrent.getId(), m_lockState);
-                dlReceipts.getSharedTicket(placeCurrent.getId());
-
-                if ("override".equals(m_lockState)
-                        || LOCKED_STATE.equals(m_lockState)) {
-                    dlReceipts.updateSharedTicket(placeCurrent.getId(),
-                            m_panelticket.getActiveTicket(),
-                            m_panelticket.getActiveTicket().getPickupId());
-                    dlReceipts.unlockSharedTicket(placeCurrent.getId(), null);
-                    placeCurrent = null;
-                } else {
-                    JOptionPane.showMessageDialog(this,
-                            AppLocal.getIntString("message.sharedticketlockoverriden"),
-                            AppLocal.getIntString("title.editor"),
-                            JOptionPane.INFORMATION_MESSAGE);
-                }
-            }
-            catch (BasicException ex) {
-                LOGGER.log(System.Logger.Level.WARNING, "Exception: ", ex);
-            }
-        }
-
+        controller.releaseCurrentTicket(this);
         printState();
         m_panelticket.setActiveTicket(null, null);
+        ensureTimerStart();
     }
 
-    /**
-     *
-     * @return
-     */
     public String getTable() {
-        String id = null;
-        if (placeCurrent != null) {
-            id = placeCurrent.getId();
-        }
-        return (id);
+        Place current = controller.getPlaceCurrent();
+        return current != null ? current.getId() : null;
     }
 
-    /**
-     *
-     * @return
-     */
     public String getTableName() {
-        String stableName = null;
-        if (placeCurrent != null) {
-            stableName = placeCurrent.getName();
-        }
-        return (stableName);
+        Place current = controller.getPlaceCurrent();
+        return current != null ? current.getName() : null;
     }
 
-    /**
-     *
-     */
-    @Override
-    public void deleteTicket() {
-
-        if (placeCurrent != null) {
-            String id = placeCurrent.getId();
-            try {
-                dlReceipts.deleteSharedTicket(id);
-            }
-            catch (BasicException ex) {
-                LOGGER.log(System.Logger.Level.WARNING, "Exception: ", ex);
-                new MessageInf(ex).show(this);
-            }
-
-            placeCurrent.setPeople(false);
-            placeCurrent = null;
-        }
-
-        printState();
-        m_panelticket.setActiveTicket(null, null);
-    }
-
-    private void loadData() {
-        
-        currentSelectedTabIndex = restaurantFloorsJTabbedPane.getSelectedIndex();
-
-        placeCurrent = null;
-        placeClipboard = null;
-        customerInfo = null;
-
-        ensurePermissionSalesLayout();
-
-        Set<String> listOfTicketsPlaceIds = new HashSet<>();
-
-        try {
-            dlReceipts.getSharedTicketList().stream().forEach((ticket) -> {
-                listOfTicketsPlaceIds.add(ticket.getId());
-            });
-        }
-        catch (BasicException ex) {
-            LOGGER.log(System.Logger.Level.WARNING, "Exception get shared tickets: ", ex);
-        }
-
-        try {
-            floorList = placeService.getFloors();
-        }
-        catch (Exception e) {
-            MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE, AppLocal.getIntString("message.cannotloadfloors"), e);
-            msg.show(this);
-            floorList = new java.util.ArrayList();
-        }
-        try {
-            placeList = placeService.getPlaces();
-        }
-        catch (BasicException ex) {
-            LOGGER.log(System.Logger.Level.WARNING, "Exception: ", ex);
-            placeList = new ArrayList<>();
-        }
-
-        restaurantFloorsJTabbedPane.removeAll();
-        restaurantFloorsJTabbedPane.applyComponentOrientation(getComponentOrientation());
-        restaurantFloorsJTabbedPane.setBorder(new javax.swing.border.EmptyBorder(new Insets(5, 5, 5, 5)));
-        restaurantFloorsJTabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
-        restaurantFloorsJTabbedPane.setFocusable(false);
-        restaurantFloorsJTabbedPane.setRequestFocusEnabled(false);
-
-        floorList.stream().map((floor) -> {
-            floor.getContainer().applyComponentOrientation(getComponentOrientation());
-            return floor;
-        }).forEach((floor) -> {
-            JScrollPane jScrCont = new JScrollPane();
-            jScrCont.applyComponentOrientation(getComponentOrientation());
-            JPanel jPanCont = new JPanel();
-            jPanCont.applyComponentOrientation(getComponentOrientation());
-
-            restaurantFloorsJTabbedPane.addTab(floor.getName(), floor.getIcon(), jScrCont);
-            jScrCont.setViewportView(jPanCont);
-            jPanCont.add(floor.getContainer());
-        });
-        
-        if(currentSelectedTabIndex >= restaurantFloorsJTabbedPane.getTabCount()){
-            currentSelectedTabIndex = 0;
-        }
-        restaurantFloorsJTabbedPane.setSelectedIndex(currentSelectedTabIndex);
-
-        Floor currfloor = null;
-
-        for (Place pl : placeList) {
-
-            pl.setPeople(listOfTicketsPlaceIds.contains(pl.getId()));
-
-            int iFloor = 0;
-
-            if (currfloor == null || !currfloor.getID().equals(pl.getFloor())) {
-                do {
-                    currfloor = floorList.get(iFloor++);
-                } while (!currfloor.getID().equals(pl.getFloor()));
-            }
-
-            currfloor.getContainer().add(pl.getButton());
-            pl.setButtonBounds();
-
-            if (transBtns) {
-                pl.getButton().setOpaque(false);
-                pl.getButton().setContentAreaFilled(false);
-                pl.getButton().setBorderPainted(false);
-            }
-
-            pl.getButton().addMouseMotionListener(new MouseAdapter() {
-                @Override
-                public void mouseDragged(MouseEvent E) {
-                    if (!actionEnabled) {
-                        if (pl.getDiffX() == 0) {
-                            pl.setDiffX(pl.getButton().getX() - pl.getX());
-                            pl.setDiffY(pl.getButton().getY() - pl.getY());
-                        }
-                        int newX = E.getX() + pl.getButton().getX();
-                        int newY = E.getY() + pl.getButton().getY();
-                        pl.getButton().setBounds(newX + pl.getDiffX(), newY + pl.getDiffY(),
-                                pl.getButton().getWidth(), pl.getButton().getHeight());
-                        pl.setX(newX);
-                        pl.setY(newY);
-                    }
-                }
-            });
-
-            pl.getButton().addActionListener(new PlaceActionListener(pl));
-        }
-
-        // Preserve selected tab index and rebuild UI if floors changed
-        java.awt.EventQueue.invokeLater(() -> {
-            // Revalidate/repaint
-            m_jPanelMap.revalidate();
-            m_jPanelMap.repaint();
-        });
-
-    }
-
-    private void ensureTicketUser(TicketInfo ticket) {
-        if (ticket != null && ticket.getUser() == null) {
-            if (getAppView() != null && getAppView().getAppUserView() != null && getAppView().getAppUserView().getUser() != null) {
-                ticket.setUser(getAppView().getAppUserView().getUser().getUserInfo());
-            }
-        }
-    }
-
-    /*
-     * Populate the floor plans and tables
-     */
-    private void printState() {
-
-        if (placeClipboard == null) {
-            if (customerInfo == null) {
-                m_jText.setText(null);
-
-                placeList.stream().map((place) -> {
-                    place.getButton().setEnabled(true);
-                    return place;
-                }).map((place) -> {
-                    if (getAppView().getProperties().getProperty("table.tablecolour") == null) {
-                        tableName = "<style=font-size:9px;font-weight:bold;><font color = black>"
-                                + place.getName() + "</font></style>";
-                    } else {
-                        tableName = "<style=font-size:9px;font-weight:bold;><font color ="
-                                + getAppView().getProperties().getProperty("table.tablecolour") + ">"
-                                + place.getName() + "</font></style>";
-                    }
-                    return place;
-                }).map((place) -> {
-                    if (Boolean.parseBoolean(getAppView().getProperties().getProperty("table.showwaiterdetails"))) {
-                        if (getAppView().getProperties().getProperty("table.waitercolour") == null) {
-                            waiterDetails = (placeService.getWaiterNameInTable(place.getName()) == null) ? ""
-                                    : "<style=font-size:9px;font-weight:bold;><font color = red>"
-                                    + placeService.getWaiterNameInTableById(place.getId())
-                                    + "</font></style><br>";
-                        } else {
-                            waiterDetails = (placeService.getWaiterNameInTable(place.getName()) == null) ? ""
-                                    : "<style=font-size:9px;font-weight:bold;><font color ="
-                                    + getAppView().getProperties().getProperty("table.waitercolour") + ">"
-                                    + placeService.getWaiterNameInTableById(place.getId())
-                                    + "</font></style><br>";
-                        }
-                        place.getButton().setIcon(ICO_OCU_SM);
-                    } else {
-                        waiterDetails = "";
-                    }
-                    return place;
-                }).map((place) -> {
-                    if (Boolean.parseBoolean(getAppView().getProperties().getProperty("table.showcustomerdetails"))) {
-                        place.getButton().setIcon(
-                                (Boolean.parseBoolean(getAppView().getProperties().getProperty("table.showwaiterdetails"))
-                                && (placeService.getCustomerNameInTable(place.getName()) != null))
-                                ? ICO_WAITER
-                                : ICO_OCU_SM);
-                        if (getAppView().getProperties().getProperty("table.customercolour") == null) {
-                            customerDetails = (placeService.getCustomerNameInTable(place.getName()) == null) ? ""
-                                    : "<style=font-size:9px;font-weight:bold;><font color = blue>"
-                                    + placeService.getCustomerNameInTableById(place.getId())
-                                    + "</font></style><br>";
-                        } else {
-                            customerDetails = (placeService.getCustomerNameInTable(place.getName()) == null) ? ""
-                                    : "<style=font-size:9px;font-weight:bold;><font color ="
-                                    + getAppView().getProperties().getProperty("table.customercolour") + ">"
-                                    + placeService.getCustomerNameInTableById(place.getId())
-                                    + "</font></style><br>";
-                        }
-                    } else {
-                        customerDetails = "";
-                    }
-                    return place;
-                }).map((place) -> {
-                    if ((Boolean.parseBoolean(getAppView().getProperties().getProperty("table.showwaiterdetails")))
-                            || (Boolean.parseBoolean(getAppView().getProperties().getProperty("table.showcustomerdetails")))) {
-                        place.getButton().setText("<html><center>"
-                                + customerDetails + waiterDetails + tableName + "</html>");
-                    } else {
-                        if (getAppView().getProperties().getProperty("table.tablecolour") == null) {
-                            tableName = "<style=font-size:10px;font-weight:bold;><font color = black>"
-                                    + place.getName() + "</font></style>";
-                        } else {
-                            tableName = "<style=font-size:10px;font-weight:bold;><font color ="
-                                    + getAppView().getProperties().getProperty("table.tablecolour") + ">"
-                                    + place.getName() + "</font></style>";
-                        }
-
-                        place.getButton().setText("<html><center>" + tableName + "</html>");
-                    }
-                    return place;
-                }).filter((place) -> (!place.hasPeople())).forEach((place) -> {
-                    place.getButton().setIcon(ICO_FRE);
-                });
-
-                m_jbtnReservations.setEnabled(true);
-            } else {
-                m_jText.setText(AppLocal.getIntString("label.restaurantcustomer",
-                        new Object[]{customerInfo.getName()
-                        }));
-
-                placeList.stream().forEach((place) -> {
-                    place.getButton().setEnabled(!place.hasPeople());
-                });
-                m_jbtnReservations.setEnabled(false);
-            }
-        } else {
-            m_jText.setText(AppLocal.getIntString("label.restaurantmove",
-                    new Object[]{placeClipboard.getName()
-                    }));
-
-            placeList.stream().forEach((place) -> {
-                place.getButton().setEnabled(true);
-            });
-
-            m_jbtnReservations.setEnabled(false);
-        }
-    }
-
-    private TicketInfo getTicketInfo(Place place) {
-        TicketInfo ticketInfo = null;
-
-        try {
-            ticketInfo = dlReceipts.getSharedTicket(place.getId());
-        }
-        catch (BasicException ex) {
-            LOGGER.log(System.Logger.Level.WARNING, "Exception: ", ex);
-            new MessageInf(ex).show(JTicketsBagRestaurantMap.this);
-        }
-
-        return ticketInfo;
-    }
-
-    private void setActivePlace(Place place, TicketInfo ticket) {
-        placeCurrent = place;
-        m_panelticket.setActiveTicket(ticket, placeCurrent.getName());
-
-        try {
-            dlReceipts.lockSharedTicket(placeCurrent.getId(), LOCKED_STATE);
-        }
-        catch (BasicException ex) {
-            Logger.getLogger(JTicketsBagRestaurantMap.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }
-
-    private void showView(String view) {
-        CardLayout cl = (CardLayout) (getLayout());
-        cl.show(this, view);
-    }
-
-    private class PlaceActionListener implements ActionListener {
-
-        private final Place place;
-
-        public PlaceActionListener(Place place) {
-            this.place = place;
-        }
-
-        @Override
-        public void actionPerformed(ActionEvent evt) {
-            onPlaceSelection(place);
-        }
-    }
-
-    private void onPlaceSelection(Place place) {
-        if (!actionEnabled) {
-            place.setDiffX(0);
-        } else {
-
-            if (placeClipboard == null) {
-                TicketInfo ticket = getTicketInfo(place);
-                if (ticket == null) {
-                    ticket = new TicketInfo();
-                    ensureTicketUser(ticket);
-                    try {
-                        dlReceipts.insertSharedTicket(place.getId(), ticket, ticket.getPickupId());
-                    }
-                    catch (BasicException ex) {
-                        LOGGER.log(System.Logger.Level.WARNING, "Exception: ", ex);
-                        new MessageInf(ex).show(JTicketsBagRestaurantMap.this);
-                    }
-                    place.setPeople(true);
-                    setActivePlace(place, ticket);
-                } else {
-                    String m_lockState = null;
-                    try {
-                        m_lockState = dlReceipts.getLockState(place.getId(), m_lockState);
-                        if (LOCKED_STATE.equals(m_lockState)) {
-                            JOptionPane.showMessageDialog(JTicketsBagRestaurantMap.this,
-                                    AppLocal.getIntString("message.sharedticketlock"));
-                            if (getAppView().hasPermission("sales.Override")) {
-                                int res = JOptionPane.showConfirmDialog(null,
-                                        AppLocal.getIntString("message.sharedticketlockoverride"),
-                                        AppLocal.getIntString("title.editor"),
-                                        JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-                                if (res == JOptionPane.YES_OPTION) {
-                                    place.setPeople(true);
-                                    placeClipboard = null;
-                                    setActivePlace(place, ticket);
-                                    dlReceipts.lockSharedTicket(placeCurrent.getId(), LOCKED_STATE);
-                                }
-                            }
-                        } else {
-                            String m_user = getAppView().getAppUserView().getUser().getName();
-                            String ticketuser = place.getWaiter();
-                            if (m_user.equals(ticketuser)
-                                    || getAppView().hasPermission("sales.Override")) {
-                                place.setPeople(true);
-                                placeClipboard = null;
-                                m_lockState = LOCKED_STATE;
-                                setActivePlace(place, ticket);
-                            } else {
-                                JOptionPane.showMessageDialog(JTicketsBagRestaurantMap.this,
-                                        AppLocal.getIntString("message.sharedticket"),
-                                        AppLocal.getIntString("title.editor"),
-                                        JOptionPane.OK_OPTION);
-                            }
-                        }
-                    }
-                    catch (BasicException ex) {
-                        LOGGER.log(System.Logger.Level.WARNING, "Exception: ", ex);
-                    }
-                }
-            }
-            // This block handles Merge
-            if (placeClipboard != null) {
-                TicketInfo ticketclip = getTicketInfo(placeClipboard);
-                if (ticketclip != null) {
-                    if (placeClipboard == place) {
-                        Place placeclip = placeClipboard;
-                        placeClipboard = null;
-                        customerInfo = null;
-                        printState();
-                        setActivePlace(placeclip, ticketclip);
-                    }
-                    if (place.hasPeople()) {
-                        TicketInfo ticket = getTicketInfo(place);
-                        if (ticket != null) {
-                            if (JOptionPane.showConfirmDialog(JTicketsBagRestaurantMap.this,
-                                    AppLocal.getIntString("message.mergetablequestion"),
-                                    AppLocal.getIntString("message.mergetable"),
-                                    JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
-                                try {
-                                    placeClipboard.setPeople(false);
-                                    if (ticket.getCustomer() == null) {
-                                        ticket.setCustomer(ticketclip.getCustomer());
-                                    }
-                                    ticketclip.getLines().stream().forEach((line) -> {
-                                        ticket.addLine(line);
-                                    });
-                                    dlReceipts.updateRSharedTicket(place.getId(), ticket, ticket.getPickupId());
-                                    dlReceipts.deleteSharedTicket(placeClipboard.getId());
-                                }
-                                catch (BasicException ex) {
-                                    LOGGER.log(System.Logger.Level.WARNING, "Exception: ", ex);
-                                    new MessageInf(ex).show(JTicketsBagRestaurantMap.this);
-                                }
-                                placeClipboard = null;
-                                customerInfo = null;
-                                placeService
-                                        .clearCustomerNameInTable(placeService.getTableDetails(ticketclip.getId()));
-                                placeService
-                                        .clearWaiterNameInTable(placeService.getTableDetails(ticketclip.getId()));
-                                placeService.clearTableMovedFlag(placeService.getTableDetails(ticketclip.getId()));
-                                placeService.clearTicketIdInTable(placeService.getTableDetails(ticketclip.getId()));
-                                printState();
-                                setActivePlace(place, ticket);
-                            } else {
-                                Place placeclip = placeClipboard;
-                                placeClipboard = null;
-                                customerInfo = null;
-                                printState();
-                                setActivePlace(placeclip, ticketclip);
-                            }
-                        } else {
-                            new MessageInf(MessageInf.SGN_WARNING,
-                                    AppLocal.getIntString("message.tableempty"))
-                                    .show(JTicketsBagRestaurantMap.this);
-                            place.setPeople(false);
-                        }
-                    } else {
-                        TicketInfo ticket = getTicketInfo(place);
-                        if (ticket == null) {
-                            try {
-                                dlReceipts.insertRSharedTicket(place.getId(),
-                                        ticketclip, ticketclip.getPickupId());
-                                place.setPeople(true);
-                                dlReceipts.deleteSharedTicket(placeClipboard.getId());
-                                placeClipboard.setPeople(false);
-                            }
-                            catch (BasicException ex) {
-                                LOGGER.log(System.Logger.Level.WARNING, "Exception: ", ex);
-                                new MessageInf(ex).show(JTicketsBagRestaurantMap.this);
-                            }
-                            placeClipboard = null;
-                            customerInfo = null;
-                            printState();
-                            setActivePlace(place, ticketclip);
-                        } else {
-                            new MessageInf(MessageInf.SGN_WARNING,
-                                    AppLocal.getIntString("message.tablefull"))
-                                    .show(JTicketsBagRestaurantMap.this);
-                            placeClipboard.setPeople(true);
-                            printState();
-                        }
-                    }
-                } else {
-                    new MessageInf(MessageInf.SGN_WARNING,
-                            AppLocal.getIntString("message.tableempty")).show(JTicketsBagRestaurantMap.this);
-                    placeClipboard.setPeople(false);
-                    placeClipboard = null;
-                    customerInfo = null;
-                    printState();
-                }
-            }
-        }
-    }
-
-    /**
-     *
-     * @param btnText
-     */
     public void setButtonTextBags(String btnText) {
-        placeClipboard.setButtonText(btnText);
+        Place clipboard = controller.getPlaceClipboard();
+        if (clipboard != null) {
+            PlaceButton btn = placeButtons.get(clipboard.getId());
+            if (btn != null) {
+                btn.setText(btnText);
+            }
+        }
     }
-
-    /**
-     * This method is called from within the constructor to initialize the form.
-     * WARNING: Do NOT modify this code. The content of this method is always
-     * regenerated by the Form Editor.
-     */
-    // <editor-fold defaultstate="collapsed" desc="Generated
-    // Code">//GEN-BEGIN:initComponents
-    private void initComponents() {
-
-        m_jPanelMap = new javax.swing.JPanel();
-        jPanel1 = new javax.swing.JPanel();
-        jPanel2 = new javax.swing.JPanel();
-        m_jbtnReservations = new javax.swing.JButton();
-        m_jbtnRefresh = new javax.swing.JButton();
-        m_jText = new javax.swing.JLabel();
-        m_jbtnLayout = new javax.swing.JButton();
-        m_jbtnSave = new javax.swing.JButton();
-        webLblautoRefresh = new javax.swing.JLabel();
-
-        setLayout(new java.awt.CardLayout());
-
-        m_jPanelMap.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
-        m_jPanelMap.setLayout(new java.awt.BorderLayout());
-
-        jPanel1.setLayout(new java.awt.BorderLayout());
-
-        jPanel2.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
-        jPanel2.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT));
-
-        m_jbtnReservations.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
-        m_jbtnReservations.setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/openbravo/images/date.png"))); // NOI18N
-        m_jbtnReservations.setText(AppLocal.getIntString("button.reservations")); // NOI18N
-        m_jbtnReservations.setToolTipText("Open Reservations screen");
-        m_jbtnReservations.setFocusPainted(false);
-        m_jbtnReservations.setFocusable(false);
-        m_jbtnReservations.setMargin(new java.awt.Insets(8, 14, 8, 14));
-        m_jbtnReservations.setMaximumSize(new java.awt.Dimension(133, 40));
-        m_jbtnReservations.setMinimumSize(new java.awt.Dimension(133, 40));
-        m_jbtnReservations.setPreferredSize(new java.awt.Dimension(133, 45));
-        m_jbtnReservations.setRequestFocusEnabled(false);
-        m_jbtnReservations.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                m_jbtnReservationsActionPerformed(evt);
-            }
-        });
-        jPanel2.add(m_jbtnReservations);
-
-        m_jbtnRefresh.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
-        m_jbtnRefresh.setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/openbravo/images/reload.png"))); // NOI18N
-        m_jbtnRefresh.setText(AppLocal.getIntString("button.reloadticket")); // NOI18N
-        m_jbtnRefresh.setToolTipText("Reload table information");
-        m_jbtnRefresh.setFocusPainted(false);
-        m_jbtnRefresh.setFocusable(false);
-        m_jbtnRefresh.setMargin(new java.awt.Insets(8, 14, 8, 14));
-        m_jbtnRefresh.setMaximumSize(new java.awt.Dimension(100, 40));
-        m_jbtnRefresh.setMinimumSize(new java.awt.Dimension(100, 40));
-        m_jbtnRefresh.setPreferredSize(new java.awt.Dimension(100, 45));
-        m_jbtnRefresh.setRequestFocusEnabled(false);
-        m_jbtnRefresh.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                m_jbtnRefreshActionPerformed(evt);
-            }
-        });
-        jPanel2.add(m_jbtnRefresh);
-
-        m_jText.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
-        jPanel2.add(m_jText);
-
-        m_jbtnLayout.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
-        m_jbtnLayout.setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/openbravo/images/movetable.png"))); // NOI18N
-        m_jbtnLayout.setText(AppLocal.getIntString("button.layout")); // NOI18N
-        m_jbtnLayout.setToolTipText("");
-        m_jbtnLayout.setFocusPainted(false);
-        m_jbtnLayout.setFocusable(false);
-        m_jbtnLayout.setMargin(new java.awt.Insets(8, 14, 8, 14));
-        m_jbtnLayout.setMaximumSize(new java.awt.Dimension(100, 40));
-        m_jbtnLayout.setMinimumSize(new java.awt.Dimension(100, 40));
-        m_jbtnLayout.setPreferredSize(new java.awt.Dimension(100, 45));
-        m_jbtnLayout.setRequestFocusEnabled(false);
-        m_jbtnLayout.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                m_jbtnLayoutActionPerformed(evt);
-            }
-        });
-        jPanel2.add(m_jbtnLayout);
-
-        m_jbtnSave.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
-        m_jbtnSave.setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/openbravo/images/filesave.png"))); // NOI18N
-        m_jbtnSave.setText(AppLocal.getIntString("button.save")); // NOI18N
-        m_jbtnSave.setToolTipText("");
-        m_jbtnSave.setFocusPainted(false);
-        m_jbtnSave.setFocusable(false);
-        m_jbtnSave.setMargin(new java.awt.Insets(8, 14, 8, 14));
-        m_jbtnSave.setMaximumSize(new java.awt.Dimension(100, 40));
-        m_jbtnSave.setMinimumSize(new java.awt.Dimension(100, 40));
-        m_jbtnSave.setPreferredSize(new java.awt.Dimension(100, 45));
-        m_jbtnSave.setRequestFocusEnabled(false);
-        m_jbtnSave.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                m_jbtnSaveActionPerformed(evt);
-            }
-        });
-        jPanel2.add(m_jbtnSave);
-
-        jPanel1.add(jPanel2, java.awt.BorderLayout.LINE_START);
-
-        webLblautoRefresh.setBackground(new java.awt.Color(255, 51, 51));
-        webLblautoRefresh.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
-        java.util.ResourceBundle bundle = java.util.ResourceBundle.getBundle("pos_messages"); // NOI18N
-        webLblautoRefresh.setText(bundle.getString("label.autoRefreshTableMapTimerON")); // NOI18N
-        webLblautoRefresh.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
-        jPanel1.add(webLblautoRefresh, java.awt.BorderLayout.CENTER);
-
-        m_jPanelMap.add(jPanel1, java.awt.BorderLayout.NORTH);
-
-        add(m_jPanelMap, "map");
-    }// </editor-fold>//GEN-END:initComponents
-
-    private void m_jbtnRefreshActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_m_jbtnRefreshActionPerformed
-        placeClipboard = null;
-        customerInfo = null;
-        loadData();
-        printState();
-    }// GEN-LAST:event_m_jbtnRefreshActionPerformed
-
-    private void m_jbtnReservationsActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_m_jbtnReservationsActionPerformed
-        showView("res");
-        restaurantReservation.activate();
-    }// GEN-LAST:event_m_jbtnReservationsActionPerformed
-
-    private void m_jbtnLayoutActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_m_jbtnLayoutActionPerformed
-        if (java.util.ResourceBundle.getBundle("pos_messages").getString("button.layout").equals(m_jbtnLayout.getText())) {
-            actionEnabled = false;
-            m_jbtnSave.setVisible(true);
-            m_jbtnLayout.setText(java.util.ResourceBundle.getBundle("pos_messages").getString("button.disablelayout"));
-
-            for (Place pl : placeList) {
-                if (transBtns) {
-                    pl.getButton().setOpaque(true);
-                    pl.getButton().setContentAreaFilled(true);
-                    pl.getButton().setBorderPainted(true);
-                }
-            }
-
-            ensureTimerStop();
-        } else {
-            actionEnabled = true;
-            m_jbtnSave.setVisible(false);
-            m_jbtnLayout.setText(java.util.ResourceBundle.getBundle("pos_messages").getString("button.layout"));
-
-            for (Place pl : placeList) {
-                if (transBtns) {
-                    pl.getButton().setOpaque(false);
-                    pl.getButton().setContentAreaFilled(false);
-                    pl.getButton().setBorderPainted(false);
-                }
-            }
-
-            ensureTimerStart();
-        }
-    }// GEN-LAST:event_m_jbtnLayoutActionPerformed
-
-    private void m_jbtnSaveActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_m_jbtnSaveActionPerformed
-        for (Place pl : placeList) {
-            try {
-                dlSystem.updatePlaces(pl.getX(), pl.getY(), pl.getId());
-            }
-            catch (BasicException ex) {
-                LOGGER.log(System.Logger.Level.WARNING, "Exception: ", ex);
-            }
-        }
-    }// GEN-LAST:event_m_jbtnSaveActionPerformed
-
-    // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JPanel jPanel1;
-    private javax.swing.JPanel jPanel2;
-    private javax.swing.JPanel m_jPanelMap;
-    private javax.swing.JLabel m_jText;
-    private javax.swing.JButton m_jbtnLayout;
-    private javax.swing.JButton m_jbtnRefresh;
-    private javax.swing.JButton m_jbtnReservations;
-    private javax.swing.JButton m_jbtnSave;
-    private javax.swing.JLabel webLblautoRefresh;
-    // End of variables declaration//GEN-END:variables
-
 }
