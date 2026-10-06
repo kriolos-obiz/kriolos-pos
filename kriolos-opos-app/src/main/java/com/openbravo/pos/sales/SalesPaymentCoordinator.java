@@ -83,7 +83,7 @@ public class SalesPaymentCoordinator {
             String ticketExt,
             JPaymentSelect paymentDialog,
             boolean printSelectedConfig,
-            BiFunction<String, JPanelTicket.ScriptArg[], Object> eventExecutor,
+            BiFunction<String, ScriptArg[], Object> eventExecutor,
             BiConsumer<String, Boolean> ticketPrinter,
             Runnable onSettlementSuccess) {
 
@@ -99,7 +99,7 @@ public class SalesPaymentCoordinator {
                 ticket.resetPayments();
             }
 
-            Object totalEventResult = eventExecutor.apply(TicketConstants.EV_TICKET_TOTAL, new JPanelTicket.ScriptArg[0]);
+            Object totalEventResult = eventExecutor.apply(TicketConstants.EV_TICKET_TOTAL, new ScriptArg[0]);
             if (totalEventResult != null) {
                 return false;
             }
@@ -125,7 +125,7 @@ public class SalesPaymentCoordinator {
             ticket.setActiveCash(app.getActiveCashIndex());
             ticket.setDate(new Date());
 
-            Object saveEventResult = eventExecutor.apply(TicketConstants.EV_TICKET_SAVE, new JPanelTicket.ScriptArg[0]);
+            Object saveEventResult = eventExecutor.apply(TicketConstants.EV_TICKET_SAVE, new ScriptArg[0]);
             if (saveEventResult != null) {
                 return false;
             }
@@ -140,9 +140,9 @@ public class SalesPaymentCoordinator {
 
             String eventName = TicketConstants.EV_TICKET_CLOSE;
             try {
-                eventExecutor.apply(eventName, new JPanelTicket.ScriptArg[]{
-                        new JPanelTicket.ScriptArg("print", paymentDialog.isPrintSelected()),
-                        new JPanelTicket.ScriptArg("ticket", ticket)
+                eventExecutor.apply(eventName, new ScriptArg[]{
+                        new ScriptArg("print", paymentDialog.isPrintSelected()),
+                        new ScriptArg("ticket", ticket)
                 });
             } catch (Exception ex) {
                 LOGGER.log(Level.ERROR, "Exception on executeEvent: " + eventName, ex);

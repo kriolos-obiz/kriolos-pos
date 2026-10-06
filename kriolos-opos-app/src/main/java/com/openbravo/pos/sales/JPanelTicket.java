@@ -111,6 +111,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     private SalesPaymentCoordinator salesPaymentCoordinator;
     private SalesStockCoordinator salesStockCoordinator;
     private SalesBarcodeScanCoordinator salesBarcodeScanCoordinator;
+    private SalesScriptCoordinator salesScriptCoordinator;
     private PaymentService paymentService;
     private InventoryService inventoryService;
     private JPaymentSelect paymentdialogreceipt;
@@ -334,6 +335,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         inventoryService = new InventoryServiceImpl(dlSales, m_App.getSession());
         salesStockCoordinator = new SalesStockCoordinator(inventoryService, dataLogicPIM, dlSales);
         salesBarcodeScanCoordinator = new SalesBarcodeScanCoordinator(dataLogicPIM, dlCustomers);
+        salesScriptCoordinator = new SalesScriptCoordinator(dlSystem, () -> m_jbtnconfig);
 
         paymentdialogreceipt = JPaymentSelectReceipt.getDialog(this);
         paymentdialogreceipt.init(m_App, paymentService);
@@ -995,53 +997,61 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         peripheralCoordinator.updateCustomerDisplay(oLine, this);
     }
 
-    private Object evalScript(ScriptObject scr, String resource, ScriptArg... args) {
-
-        // resource here is guaranteed to be not null
-        try {
-            scr.setSelectedIndex(m_ticketlines.getSelectedIndex());
-            return scr.evalScript(dlSystem.getResourceAsXML(resource), args);
+    private Object evalScript(String resource, ScriptArg... args) {
+        if (salesScriptCoordinator == null) {
+            return null;
         }
-        catch (ScriptException ex) {
-            LOGGER.log(System.Logger.Level.WARNING, "Exception on executing script with resource id: " + resource, ex);
-            MessageInf msg = new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.cannotexecute"), ex);
-            msg.show(this);
-            return msg;
-        }
+        return salesScriptCoordinator.evalScript(this, resource, args);
     }
 
     private void evalScriptForExternalButtons(String resource) {
-        ScriptArg sa1 = new ScriptArg("ticket", m_oTicket);
-        ScriptArg sa2 = new ScriptArg("user", m_App.getAppUserView().getUser());
-        ScriptArg sa3 = new ScriptArg("sales", this);
-
-        evalScriptAndRefresh(resource, sa1, sa2, sa3);
+        if (salesScriptCoordinator != null) {
+            int prevIndex = m_ticketlines.getSelectedIndex();
+            salesScriptCoordinator.evalScriptForExternalButton(
+                    this,
+                    resource,
+                    m_oTicket,
+                    m_App.getAppUserView().getUser(),
+                    this,
+                    () -> {
+                        refreshTicket();
+                        setSelectedIndex(prevIndex);
+                    }
+            );
+        }
     }
 
     private void evalScriptAndRefresh(String resource, ScriptArg... args) {
-
-        if (resource == null) {
-            MessageInf msg = new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.cannotexecute"));
-            msg.show(this);
-        } else {
-            ScriptObject scr = new ScriptObject(m_oTicket, m_oTicketExt);
-            scr.setSelectedIndex(m_ticketlines.getSelectedIndex());
-            evalScript(scr, resource, args);
+        if (salesScriptCoordinator != null) {
+            int prevIndex = m_ticketlines.getSelectedIndex();
+            salesScriptCoordinator.evalScript(this, resource, args);
             refreshTicket();
-
-            setSelectedIndex(scr.getSelectedIndex());
+            setSelectedIndex(prevIndex);
         }
     }
 
     private Object executeEvent(TicketInfo ticket, String ticketExt, String eventKey, ScriptArg... args) {
-
-        String resource = m_jbtnconfig.getEvent(eventKey);
-        if (resource == null) {
+        if (salesScriptCoordinator == null) {
             return null;
-        } else {
-            ScriptObject scr = new ScriptObject(ticket, ticketExt);
-            return evalScript(scr, resource, args);
         }
+        boolean hasTicketArg = false;
+        if (args != null) {
+            for (ScriptArg a : args) {
+                if (a != null && "ticket".equals(a.key())) {
+                    hasTicketArg = true;
+                    break;
+                }
+            }
+        }
+        if (!hasTicketArg && ticket != null) {
+            ScriptArg[] extendedArgs = new ScriptArg[(args != null ? args.length : 0) + 1];
+            if (args != null && args.length > 0) {
+                System.arraycopy(args, 0, extendedArgs, 0, args.length);
+            }
+            extendedArgs[extendedArgs.length - 1] = new ScriptArg("ticket", ticket);
+            return salesScriptCoordinator.executeEvent(this, eventKey, extendedArgs);
+        }
+        return salesScriptCoordinator.executeEvent(this, eventKey, args);
     }
 
     public String getResourceAsXML(String sresourcename) {
@@ -1052,7 +1062,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         return dlSystem.getResourceAsImage(sresourcename);
     }
 
-    private void setSelectedIndex(int i) {
+    public void setSelectedIndex(int i) {
 
         if (i >= 0 && i < m_oTicket.getLinesCount()) {
             m_ticketlines.setSelectedIndex(i);
@@ -1901,91 +1911,6 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                 deactivate();
                 ((ApplicationShell) m_App).closeAppView();
             }
-        }
-    }
-
-    /**
-     * Script Argument record.
-     */
-    public record ScriptArg(String key, Object value) {
-        public String getKey() {
-            return key;
-        }
-
-        public Object getValue() {
-            return value;
-        }
-    }
-
-    /**
-     * Script Object
-     */
-    public class ScriptObject {
-
-        private final TicketInfo ticket;
-        private final String ticketext;
-
-        private int selectedindex;
-
-        private ScriptObject(TicketInfo ticket, String ticketext) {
-            this.ticket = ticket;
-            this.ticketext = ticketext;
-        }
-
-        /**
-         *
-         * @return
-         */
-        public double getInputValue() {
-            if (keypadStateMachine.isInputValid() && keypadStateMachine.isPorZero()) {
-                return JPanelTicket.this.getInputValue();
-            } else {
-                return 0.0;
-            }
-        }
-
-        /**
-         *
-         * @return
-         */
-        public int getSelectedIndex() {
-            return selectedindex;
-        }
-
-        /**
-         *
-         * @param i
-         */
-        public void setSelectedIndex(int i) {
-            selectedindex = i;
-        }
-
-        /**
-         *
-         * @param resourcefile
-         */
-        public void printReport(String resourcefile) {
-            JPanelTicket.this.printReport(resourcefile, ticket, ticketext);
-        }
-
-        /**
-         *
-         * @param sresourcename
-         */
-        public void printTicket(String sresourcename) {
-            JPanelTicket.this.printTicket(sresourcename, ticket, ticketext);
-            j_btnRemotePrt.setEnabled(false);
-        }
-
-        public Object evalScript(String code, ScriptArg... args) throws ScriptException {
-
-            ScriptEngine script = ScriptFactory.getScriptEngine(ScriptFactory.BEANSHELL);
-
-            for (ScriptArg arg : args) {
-                script.put(arg.getKey(), arg.getValue());
-            }
-
-            return script.eval(code);
         }
     }
 }
