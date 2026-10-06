@@ -151,9 +151,9 @@ public class ProductFilterSales extends javax.swing.JPanel implements EditorCrea
         jBtnReset = new javax.swing.JButton();
 
         setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
-        setMaximumSize(new java.awt.Dimension(480, 200));
-        setMinimumSize(new java.awt.Dimension(430, 200));
-        setPreferredSize(new java.awt.Dimension(430, 200));
+        setMaximumSize(new java.awt.Dimension(480, 250));
+        setMinimumSize(new java.awt.Dimension(430, 235));
+        setPreferredSize(new java.awt.Dimension(430, 235));
 
         jLabel5.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
         jLabel5.setText(AppLocal.getIntString("label.prodname")); // NOI18N

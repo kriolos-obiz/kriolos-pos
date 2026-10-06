@@ -39,7 +39,6 @@ import com.openbravo.pos.inventory.LocationInfo;
 import com.openbravo.pos.inventory.ProductStock;
 import com.openbravo.pos.inventory.TaxCategoryInfo;
 import com.openbravo.pos.pim.CategoryInfo;
-import com.openbravo.pos.panels.JProductFinder;
 import com.openbravo.pos.payment.JPaymentSelect;
 import com.openbravo.pos.payment.JPaymentSelectReceipt;
 import com.openbravo.pos.payment.JPaymentSelectRefund;
@@ -56,6 +55,7 @@ import com.openbravo.pos.payment.PaymentService;
 import com.openbravo.pos.payment.PaymentServiceImpl;
 import com.openbravo.pos.inventory.InventoryService;
 import com.openbravo.pos.inventory.InventoryServiceImpl;
+import com.openbravo.pos.panels.JProductFinderPanel;
 import com.openbravo.pos.pim.DataLogicPIM;
 import com.openbravo.pos.reports.PrintReportUtils;
 import java.awt.*;
@@ -1192,7 +1192,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     }
 
     private void findProduct() {
-        ProductInfoExt prod = JProductFinder.showMessage(this, m_App);
+        ProductInfoExt prod = JProductFinderPanel.showMessage(this, m_App);
         if (prod != null && m_oTicket != null) {
             buttonTransition(prod);
         } else {

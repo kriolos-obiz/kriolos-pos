@@ -49,10 +49,13 @@ public class JCustomerFinderPanel extends javax.swing.JPanel implements EditorCr
 
     public JCustomerFinderPanel() {
         initComponents();
+        setPreferredSize(new Dimension(758, 634));
         initDomainAdapters();
     }
 
     public JCustomerFinderPanel(DataLogicCustomers dlCustomers) {
+        initComponents();
+        setPreferredSize(new Dimension(758, 634));
         init(dlCustomers);
         initDomainAdapters();
         cleanSearch();
@@ -82,6 +85,7 @@ public class JCustomerFinderPanel extends javax.swing.JPanel implements EditorCr
         }
         PosUIModal modal = PosUIModal.create(parent, panel)
                 .setTitle(AppLocal.getIntString("form.customertitle"))
+                .setPreferredSize(new Dimension(758, 634))
                 .setModal(true)
                 .setResizable(true);
         panel.setModalContext(modal);

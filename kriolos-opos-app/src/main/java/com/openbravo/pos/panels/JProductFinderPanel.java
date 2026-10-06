@@ -50,11 +50,13 @@ public class JProductFinderPanel extends JPanel {
 
     public JProductFinderPanel() {
         initComponents();
+        setPreferredSize(new Dimension(758, 634));
         initDomainAdapters();
     }
 
     public JProductFinderPanel(AppView app, int productsType) {
         initComponents();
+        setPreferredSize(new Dimension(758, 634));
         init(app, productsType);
         initDomainAdapters();
     }
@@ -86,6 +88,7 @@ public class JProductFinderPanel extends JPanel {
 
         PosUIModal modal = PosUIModal.create(parent, panel)
                 .setTitle(AppLocal.getIntString("form.productslist"))
+                .setPreferredSize(new Dimension(758, 634))
                 .setModal(true)
                 .setResizable(true);
 
@@ -97,14 +100,17 @@ public class JProductFinderPanel extends JPanel {
 
     private void init(AppView app, int productsType) {
 
-        dataLogicPIM = (DataLogicPIM) app.getBean("com.openbravo.pos.pim.DataLogicPIM");
+        dataLogicPIM = (DataLogicPIM) app.getBean(DataLogicPIM.class);
 
         jScrollPane1.getVerticalScrollBar().setPreferredSize(new Dimension(35, 35));
         jScrollPane1.getHorizontalScrollBar().setPreferredSize(new Dimension(35, 35));
 
         ProductFilterSales jproductfilter = new ProductFilterSales(app, m_jKeys);
         jproductfilter.activate();
+        jproductfilter.setPreferredSize(new Dimension(440, 240));
         m_jProductSelect.add(jproductfilter, BorderLayout.CENTER);
+        m_jProductSelect.revalidate();
+        m_jProductSelect.repaint();
         switch (productsType) {
             case PRODUCT_NORMAL:
                 lpr = new ListProviderCreator(dataLogicPIM.getProductListNormal(), jproductfilter);
@@ -122,6 +128,8 @@ public class JProductFinderPanel extends JPanel {
             getRootPane().setDefaultButton(jcmdOK);
         }
         m_ReturnProduct = null;
+        revalidate();
+        repaint();
     }
 
     private static class MyListData extends javax.swing.AbstractListModel {
@@ -267,7 +275,7 @@ public class JProductFinderPanel extends JPanel {
             jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel6Layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jImageViewerProduct, javax.swing.GroupLayout.DEFAULT_SIZE, 280, Short.MAX_VALUE)
+                .addComponent(jImageViewerProduct, javax.swing.GroupLayout.DEFAULT_SIZE, 288, Short.MAX_VALUE)
                 .addContainerGap())
         );
         jPanel6Layout.setVerticalGroup(

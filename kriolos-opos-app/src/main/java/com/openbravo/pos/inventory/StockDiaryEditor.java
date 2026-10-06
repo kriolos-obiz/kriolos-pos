@@ -23,7 +23,6 @@ import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.forms.DataLogicSales;
 import com.openbravo.pos.forms.DataLogicSystem;
 import com.openbravo.pos.suppliers.DataLogicSuppliers;
-import com.openbravo.pos.panels.JProductFinder;
 import java.awt.Component;
 import com.openbravo.basic.BasicException;
 import com.openbravo.beans.DateUtils;
@@ -34,6 +33,7 @@ import com.openbravo.data.loader.SentenceList;
 import com.openbravo.format.Formats;
 import com.openbravo.pos.catalog.CatalogSelector;
 import com.openbravo.pos.catalog.JCatalog;
+import com.openbravo.pos.panels.JProductFinderPanel;
 import com.openbravo.pos.pim.DataLogicPIM;
 import com.openbravo.pos.printer.TicketParser;
 import com.openbravo.pos.sales.JProductAttEdit;
@@ -924,7 +924,7 @@ public final class StockDiaryEditor extends javax.swing.JPanel implements Editor
 
     private void jEditProductActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jEditProductActionPerformed
         
-        assignProduct(JProductFinder.showMessage(this, m_App));
+        assignProduct(JProductFinderPanel.showMessage(this, m_App));
 
 }//GEN-LAST:event_jEditProductActionPerformed
 

@@ -51,8 +51,12 @@ public class NativeDialogModalStrategy implements ModalStrategy {
         dialog.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         dialog.setResizable(modal.isResizable());
 
-        if (modal.getPreferredSize() != null) {
-            dialog.setPreferredSize(modal.getPreferredSize());
+        java.awt.Dimension preferredSize = modal.getPreferredSize();
+        if (preferredSize == null && modal.getContent() != null && modal.getContent().isPreferredSizeSet()) {
+            preferredSize = modal.getContent().getPreferredSize();
+        }
+        if (preferredSize != null) {
+            dialog.setPreferredSize(preferredSize);
         }
 
         dialog.getContentPane().add(modal.getContent());

@@ -28,7 +28,7 @@ import com.openbravo.format.Formats;
 import com.openbravo.pos.catalog.CatalogSelector;
 import com.openbravo.pos.catalog.JCatalog;
 import com.openbravo.pos.forms.*;
-import com.openbravo.pos.panels.JProductFinder;
+import com.openbravo.pos.panels.JProductFinderPanel;
 import com.openbravo.pos.pim.DataLogicPIM;
 import com.openbravo.pos.printer.TicketParser;
 import com.openbravo.pos.printer.TicketPrinterException;
@@ -1291,7 +1291,7 @@ public class StockManagement extends JPanel implements JPanelView {
 
     private void m_jListActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_m_jListActionPerformed
 
-        ProductInfoExt prod = JProductFinder.showMessage(StockManagement.this, m_App);
+        ProductInfoExt prod = JProductFinderPanel.showMessage(StockManagement.this, m_App);
         if (prod != null) {
             buttonTransition(prod);
         }

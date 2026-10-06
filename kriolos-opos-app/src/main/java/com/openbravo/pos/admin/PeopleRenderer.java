@@ -1,5 +1,5 @@
 //    KriolOS POS
-//    Copyright (c) 2019-2023 KriolOS
+//    Copyright (c) 2019-2026 KriolOS
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -17,31 +17,109 @@
 package com.openbravo.pos.admin;
 
 import com.openbravo.pos.resources.ImageResources;
-
+import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Component;
-import javax.swing.DefaultListCellRenderer;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.GridLayout;
+import javax.swing.BorderFactory;
 import javax.swing.Icon;
+import javax.swing.JLabel;
 import javax.swing.JList;
+import javax.swing.JPanel;
+import javax.swing.ListCellRenderer;
+import javax.swing.SwingConstants;
+import javax.swing.UIManager;
 
 /**
+ * Modern touch-friendly list cell renderer for User / People items.
  *
- * @author JG uniCenta
+ * @author JG uniCenta, KriolOS Team
  */
-public class PeopleRenderer extends DefaultListCellRenderer {
-                
-    private final Icon icopeople;
+public class PeopleRenderer extends JPanel implements ListCellRenderer<Object> {
 
-    /** Creates a new instance of PeopleRenderer */
+    private static final long serialVersionUID = 1L;
+    private static final int ICON_SIZE = 32;
+
+    private transient final Icon icoPeople;
+    private final JLabel lblIcon = new JLabel();
+    private final JLabel lblName = new JLabel();
+    private final JLabel lblSubtitle = new JLabel();
+    private final JPanel pnlCenter = new JPanel();
+
     public PeopleRenderer() {
+        super(new BorderLayout(10, 0));
+        setOpaque(true);
 
-        icopeople = ImageResources.getIcon("com/openbravo/images/user_sml.png");
+        icoPeople = ImageResources.ICON_USER.getIcon(ICON_SIZE, ICON_SIZE);
+
+        lblIcon.setPreferredSize(new Dimension(ICON_SIZE, ICON_SIZE));
+        lblIcon.setMinimumSize(new Dimension(ICON_SIZE, ICON_SIZE));
+        lblIcon.setHorizontalAlignment(SwingConstants.CENTER);
+        lblIcon.setVerticalAlignment(SwingConstants.CENTER);
+        lblIcon.setIcon(icoPeople);
+
+        pnlCenter.setLayout(new GridLayout(2, 1, 0, 2));
+        pnlCenter.setOpaque(false);
+
+        pnlCenter.add(lblName);
+        pnlCenter.add(lblSubtitle);
+
+        add(lblIcon, BorderLayout.LINE_START);
+        add(pnlCenter, BorderLayout.CENTER);
     }
 
     @Override
-    public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-        super.getListCellRendererComponent(list, null, index, isSelected, cellHasFocus);
-        setText(value.toString());
-        setIcon(icopeople);
+    public Component getListCellRendererComponent(
+            JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+
+        applyComponentOrientation(list.getComponentOrientation());
+
+        Font baseFont = list.getFont() != null ? list.getFont() : new Font("Arial", Font.PLAIN, 12);
+        lblName.setFont(baseFont.deriveFont(Font.BOLD, 13f));
+        lblSubtitle.setFont(baseFont.deriveFont(Font.PLAIN, 11f));
+
+        if (value instanceof PeopleInfo people) {
+            lblName.setText(people.getName() != null ? people.getName() : "");
+            lblSubtitle.setText(people.getID() != null ? "ID: " + people.getID() : "");
+            setToolTipText(people.getName());
+        } else {
+            lblName.setText(value != null ? value.toString() : "");
+            lblSubtitle.setText("");
+            setToolTipText(null);
+        }
+
+        if (isSelected) {
+            setBackground(list.getSelectionBackground());
+            lblName.setForeground(list.getSelectionForeground());
+            lblSubtitle.setForeground(list.getSelectionForeground());
+        } else {
+            Color alt = UIManager.getColor("List.alternateRowColor");
+            if (alt == null) {
+                alt = UIManager.getColor("Table.alternateRowColor");
+            }
+            Color bg = (index % 2 == 1 && alt != null) ? alt : list.getBackground();
+            setBackground(bg != null ? bg : Color.WHITE);
+
+            lblName.setForeground(list.getForeground());
+
+            Color muted = UIManager.getColor("Label.disabledForeground");
+            lblSubtitle.setForeground(muted != null ? muted : new Color(128, 128, 128));
+        }
+
+        Color sepColor = UIManager.getColor("Component.borderColor");
+        if (sepColor == null) {
+            sepColor = UIManager.getColor("Separator.foreground");
+        }
+        if (sepColor == null) {
+            sepColor = new Color(225, 225, 225);
+        }
+        setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 0, 1, 0, sepColor),
+                BorderFactory.createEmptyBorder(6, 10, 6, 12)
+        ));
+
         return this;
-    }      
+    }
 }

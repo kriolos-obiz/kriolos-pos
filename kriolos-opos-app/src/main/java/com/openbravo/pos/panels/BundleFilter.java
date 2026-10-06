@@ -281,7 +281,7 @@ public class BundleFilter extends javax.swing.JPanel implements ReportEditorCrea
 
     private void searchActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_searchActionPerformed
         
-        assignProduct(JProductFinder.showMessage(this, this.appView, JProductFinder.PRODUCT_NORMAL));       
+        assignProduct(JProductFinderPanel.showMessage(this, this.appView, JProductFinderPanel.PRODUCT_NORMAL));       
         
 }//GEN-LAST:event_searchActionPerformed
 
