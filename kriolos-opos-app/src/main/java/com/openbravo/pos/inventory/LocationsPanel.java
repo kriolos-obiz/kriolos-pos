@@ -25,7 +25,6 @@ import com.openbravo.data.user.ListProvider;
 import com.openbravo.data.user.ListProviderCreator;
 import com.openbravo.data.user.DefaultSaveProvider;
 import com.openbravo.pos.forms.AppLocal;
-import com.openbravo.pos.forms.DataLogicSales;
 import com.openbravo.pos.panels.JPanelTable;
 import javax.swing.ListCellRenderer;
 
@@ -47,8 +46,8 @@ public class LocationsPanel extends JPanelTable {
      */
     @Override
     protected void init() {   
-        DataLogicSales dlSales = app.getBean(DataLogicSales.class);          
-        tlocations = dlSales.getTableLocations();
+        DataLogicInventory dlInventory = app.getBean(DataLogicInventory.class);          
+        tlocations = dlInventory.getTableLocations();
         jeditor = new LocationsView(dirty);
     }
     

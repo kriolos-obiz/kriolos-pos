@@ -457,27 +457,20 @@ public class DataLogicSales extends BeanFactoryDataSingle {
     /**
      * @deprecated Since Nov/2025
      * @return
+    /**
+     * @deprecated Use {@link DataLogicInventory#getLocationsList()} instead.
      */
+    @Deprecated
     public final SentenceList<LocationInfo> getLocationsList() {
-        return new StaticSentence(sessionDB,
-                "SELECT "
-                + "ID, "
-                + "NAME, "
-                + "ADDRESS FROM locations "
-                + "ORDER BY NAME",
-                null,
-                new SerializerReadClass(LocationInfo.class));
+        return getDataLogicInventory().getLocationsList();
     }
 
+    /**
+     * @deprecated Use {@link DataLogicInventory#getLocationsListAll()} instead.
+     */
+    @Deprecated
     public final List<LocationInfo> getLocationsListAll() {
-        List<LocationInfo> list = null;
-        try {
-            list = this.getLocationsList().list();
-        }
-        catch (BasicException ex) {
-            LOGGER.log(Level.WARNING, "Cannot get AttributeSetInfo list", ex);
-        }
-        return list;
+        return getDataLogicInventory().getLocationsListAll();
     }
 
     /**
@@ -1178,18 +1171,11 @@ public class DataLogicSales extends BeanFactoryDataSingle {
     }
 
     /**
-     *
-     * @return
+     * @deprecated Use {@link DataLogicInventory#getTableLocations()} instead.
      */
+    @Deprecated
     public final TableDefinition getTableLocations() {
-        return new TableDefinition(sessionDB,
-                "locations",
-                new String[]{"ID", "NAME", "ADDRESS"},
-                new String[]{"ID", AppLocal.getIntString("label.locationname"),
-                    AppLocal.getIntString("label.locationaddress")},
-                new Datas[]{Datas.STRING, Datas.STRING, Datas.STRING},
-                new Formats[]{Formats.STRING, Formats.STRING, Formats.STRING},
-                new int[]{0});
+        return getDataLogicInventory().getTableLocations();
     }
 
     public final UomInfo getUomInfoById(String id) throws BasicException {

@@ -14,10 +14,18 @@ import com.openbravo.data.loader.SerializerWriteString;
 import com.openbravo.data.loader.Session;
 import com.openbravo.pos.forms.BeanFactoryDataSingle;
 import com.openbravo.pos.pim.DataLogicPIM;
+import com.openbravo.format.Formats;
+import com.openbravo.pos.forms.AppLocal;
+import com.openbravo.data.loader.TableDefinition;
+import com.openbravo.data.loader.StaticSentence;
+import com.openbravo.data.loader.SerializerReadClass;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class DataLogicInventory extends BeanFactoryDataSingle {
     
+    private static final Logger LOGGER = Logger.getLogger(DataLogicInventory.class.getName());
     protected Session sessionDB;
 
     public static final Datas[] STOCK_DIARY_DATAS = new Datas[]{
@@ -82,6 +90,38 @@ public class DataLogicInventory extends BeanFactoryDataSingle {
         return new PreparedSentence(sessionDB,
                 "INSERT INTO stockcurrent ( LOCATION, PRODUCT, UNITS) VALUES (?, ?, ?)",
                 new SerializerWriteBasic(new Datas[]{Datas.STRING, Datas.STRING, Datas.DOUBLE}));
+    }
+
+    public final SentenceList<LocationInfo> getLocationsList() {
+        return new StaticSentence(sessionDB,
+                "SELECT ID, "
+                + "NAME, "
+                + "ADDRESS FROM locations "
+                + "ORDER BY NAME",
+                null,
+                new SerializerReadClass(LocationInfo.class));
+    }
+
+    public final List<LocationInfo> getLocationsListAll() {
+        List<LocationInfo> list = null;
+        try {
+            list = this.getLocationsList().list();
+        }
+        catch (BasicException ex) {
+            LOGGER.log(Level.WARNING, "Cannot get LocationInfo list", ex);
+        }
+        return list;
+    }
+
+    public final TableDefinition getTableLocations() {
+        return new TableDefinition(sessionDB,
+                "locations",
+                new String[]{"ID", "NAME", "ADDRESS"},
+                new String[]{"ID", AppLocal.getIntString("label.locationname"),
+                    AppLocal.getIntString("label.locationaddress")},
+                new Datas[]{Datas.STRING, Datas.STRING, Datas.STRING},
+                new Formats[]{Formats.STRING, Formats.STRING, Formats.STRING},
+                new int[]{0});
     }
 
     public final ProductStock getProductStockState(String pId, String location) throws BasicException {
