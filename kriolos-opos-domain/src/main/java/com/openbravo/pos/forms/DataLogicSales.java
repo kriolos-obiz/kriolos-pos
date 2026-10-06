@@ -154,83 +154,32 @@ public class DataLogicSales extends BeanFactoryDataSingle {
         return customersRow;
     }
 
-    /**
-     * JG Oct 2016 Called from JPanelTicket
-     *
-     * @param pId
-     * @param location
-     * @return
-     * @throws BasicException
-     */
-    public final ProductStock getProductStockState(String pId, String location) throws BasicException {
-
-        PreparedSentence preparedSentence = new PreparedSentence(sessionDB,
-                "SELECT "
-                + "products.id, "
-                + "locations.id as Location, "
-                + "stockcurrent.units AS Current, "
-                + "stocklevel.stocksecurity AS Minimum, "
-                + "stocklevel.stockmaximum AS Maximum, "
-                + "products.pricebuy, "
-                + "products.pricesell, "
-                + "products.memodate "
-                + "FROM locations "
-                + "INNER JOIN ((products "
-                + "INNER JOIN stockcurrent "
-                + "ON products.id = stockcurrent.product) "
-                + "LEFT JOIN stocklevel ON products.id = stocklevel.product) "
-                + "ON locations.id = stockcurrent.location "
-                + "WHERE products.id = ? "
-                + "AND locations.id = ?",
-                SerializerWriteString.INSTANCE,
-                ProductStock.getSerializerRead());
-
-        ProductStock productStock = (ProductStock) preparedSentence.find(pId, location);
-
-        return productStock;
+    private DataLogicInventory getDataLogicInventory() {
+        if (app != null) {
+            try {
+                return app.getBean(DataLogicInventory.class);
+            } catch (BeanFactoryException ignored) {
+            }
+        }
+        DataLogicInventory fallback = new DataLogicInventory();
+        fallback.init(sessionDB);
+        return fallback;
     }
 
     /**
-     * JG May 2016 Called from StockManagement
-     *
-     * @param pId
-     * @return
-     * @throws BasicException
+     * @deprecated Use {@link DataLogicInventory#getProductStockState(String, String)} instead.
      */
-    public final List<ProductStock> getProductStockList(String pId) throws BasicException {
+    @Deprecated
+    public final ProductStock getProductStockState(String pId, String location) throws BasicException {
+        return getDataLogicInventory().getProductStockState(pId, location);
+    }
 
-        String SQL_STOCK = """
-                                SELECT
-                                    P.ID AS product_id,
-                                    L.name AS location_name,
-                                    COALESCE(MAX(SC.units), 0) AS current_stock,
-                                    MAX(SL.stocksecurity) AS minimum_stock,
-                                    MAX(SL.stockmaximum) AS maximum_stock,
-                                    ROUND(P.pricebuy, 2) AS price_buy,
-                                    -- Standard calculation for price sell + tax
-                                    ROUND((P.pricesell * MAX(T.rate)) + P.pricesell, 2) AS price_sell,
-                                    P.memodate
-                                FROM
-                                    products P
-                                INNER JOIN
-                                    taxcategories TC ON P.TAXCAT = TC.ID
-                                INNER JOIN
-                                    taxes T ON TC.ID = T.category
-                                LEFT OUTER JOIN
-                                    stocklevel SL ON SL.product = P.ID
-                                LEFT OUTER JOIN
-                                    stockcurrent SC ON P.ID = SC.product
-                                INNER JOIN
-                                    locations L ON SC.location = L.ID
-                                WHERE
-                                    P.ID = ?
-                                GROUP BY
-                                    P.ID, L.name, P.pricebuy, P.pricesell, P.memodate;
-                                """;
-        return new PreparedSentence(sessionDB,
-                SQL_STOCK,
-                SerializerWriteString.INSTANCE,
-                ProductStock.getSerializerRead()).list(pId);
+    /**
+     * @deprecated Use {@link DataLogicInventory#getProductStockList(String)} instead.
+     */
+    @Deprecated
+    public final List<ProductStock> getProductStockList(String pId) throws BasicException {
+        return getDataLogicInventory().getProductStockList(pId);
     }
 
     /**
@@ -1058,189 +1007,36 @@ public class DataLogicSales extends BeanFactoryDataSingle {
      *
      * @return
      */
+    /**
+     * @deprecated Use {@link DataLogicInventory#getStockDiaryInsert()} instead.
+     */
+    @Deprecated
     public final SentenceExec getStockDiaryInsert() {
-        return new SentenceExecTransaction(sessionDB) {
-            @Override
-            /**
-             * @param params[0] String STOCKDIARY.ID
-             * @param params[1] Date Timestamp
-             * @param params[2] Integer Reason
-             * @param params[3] String Location
-             * @param params[4] String Product ID
-             * @param params[5] String Attribute instance ID
-             * @param params[6] Double Units
-             * @param params[7] Double Price
-             * @param params[8] String Application User
-             */
-            public int execInTransaction(Object[] params) throws BasicException {
-
-                Object[] adjustParams = new Object[4];
-                Object[] paramsArray = (Object[]) params;
-                adjustParams[0] = paramsArray[4]; // product ->Location
-                adjustParams[1] = paramsArray[3]; // location -> Product
-                adjustParams[2] = paramsArray[5]; // attributesetinstance
-                adjustParams[3] = paramsArray[6]; // units
-                adjustStock(adjustParams);
-
-                return new PreparedSentence(sessionDB,
-                        "INSERT INTO stockdiary (ID, DATENEW, REASON, LOCATION, "
-                        + "PRODUCT, ATTRIBUTESETINSTANCE_ID, "
-                        + "UNITS, PRICE, AppUser) "
-                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                        new SerializerWriteBasicExt(stockdiaryDatas,
-                                new int[]{0, 1, 2, 3, 4, 5, 6, 7, 8}))
-                        .exec(params);
-            }
-        };
+        return getDataLogicInventory().getStockDiaryInsert();
     }
 
     /**
-     *
-     * @return
+     * @deprecated Use {@link DataLogicInventory#getStockDiaryInsert1()} instead.
      */
+    @Deprecated
     public final SentenceExec getStockDiaryInsert1() {
-        return new SentenceExecTransaction(sessionDB) {
-            @Override
-            public int execInTransaction(Object[] params) throws BasicException {
-                int updateresult = params[5] == null
-                        ? new PreparedSentence(sessionDB,
-                                "UPDATE stockcurrent SET UNITS = (UNITS + ?) "
-                                + "WHERE LOCATION = ? AND PRODUCT = ? "
-                                + "AND ATTRIBUTESETINSTANCE_ID IS NULL",
-                                new SerializerWriteBasicExt(stockdiaryDatas,
-                                        new int[]{6, 3, 4}))
-                                .exec(params)
-                        : new PreparedSentence(sessionDB,
-                                "UPDATE stockcurrent SET UNITS = (UNITS + ?) "
-                                + "WHERE LOCATION = ? AND PRODUCT = ? "
-                                + "AND ATTRIBUTESETINSTANCE_ID = ?",
-                                new SerializerWriteBasicExt(stockdiaryDatas,
-                                        new int[]{6, 3, 4, 5}))
-                                .exec(params);
-
-                if (updateresult == 0) {
-                    new PreparedSentence(sessionDB,
-                            "INSERT INTO stockcurrent (LOCATION, PRODUCT, "
-                            + "ATTRIBUTESETINSTANCE_ID, UNITS) "
-                            + "VALUES (?, ?, ?, ?)",
-                            new SerializerWriteBasicExt(stockdiaryDatas,
-                                    new int[]{3, 4, 5, 6}))
-                            .exec(params);
-                }
-                return new PreparedSentence(sessionDB,
-                        "INSERT INTO stockdiary (ID, DATENEW, REASON, LOCATION, PRODUCT, "
-                        + "ATTRIBUTESETINSTANCE_ID, UNITS, PRICE, AppUser, "
-                        + "SUPPLIER, SUPPLIERDOC) "
-                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                        new SerializerWriteBasicExt(stockdiaryDatas,
-                                new int[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10}))
-                        .exec(params);
-
-            }
-        };
-    }
-
-    public final void saveStockDiary(ProductStockTransaction prodStock) throws BasicException {
-
-        getStockDiaryInsert1().exec(new Object[]{
-            prodStock.getId(),
-            prodStock.getTransactionDate(),
-            prodStock.getReasonId(),
-            prodStock.getLocationId(),
-            prodStock.getProductId(),
-            prodStock.getProductAttribSetId(),
-            prodStock.getUnits(),
-            prodStock.getPrice(),
-            prodStock.getUserId(),
-            prodStock.getSupplierId(),
-            prodStock.getSupplierDoc()
-        });
+        return getDataLogicInventory().getStockDiaryInsert1();
     }
 
     /**
-     *
-     * @return
+     * @deprecated Use {@link DataLogicInventory#saveStockDiary(ProductStockTransaction)} instead.
      */
-    public final SentenceExec getStockDiaryDelete() {
-        return new SentenceExecTransaction(sessionDB) {
-            @Override
-            public int execInTransaction(Object[] params) throws BasicException {
-                int updateresult = ((Object[]) params)[5] == null // if ATTRIBUTESETINSTANCE_ID is null
-                        ? new PreparedSentence(sessionDB,
-                                "UPDATE stockcurrent SET UNITS = (UNITS - ?) "
-                                + "WHERE LOCATION = ? AND PRODUCT = ? "
-                                + "AND ATTRIBUTESETINSTANCE_ID IS NULL",
-                                new SerializerWriteBasicExt(stockdiaryDatas,
-                                        new int[]{6, 3, 4}))
-                                .exec(params)
-                        : new PreparedSentence(sessionDB,
-                                "UPDATE stockcurrent SET UNITS = (UNITS - ?) "
-                                + "WHERE LOCATION = ? AND PRODUCT = ? "
-                                + "AND ATTRIBUTESETINSTANCE_ID = ?",
-                                new SerializerWriteBasicExt(stockdiaryDatas,
-                                        new int[]{6, 3, 4, 5}))
-                                .exec(params);
-
-                if (updateresult == 0) {
-                    new PreparedSentence(sessionDB,
-                            "INSERT INTO stockcurrent (LOCATION, PRODUCT, "
-                            + "ATTRIBUTESETINSTANCE_ID, UNITS) "
-                            + "VALUES (?, ?, ?, -(?))",
-                            new SerializerWriteBasicExt(stockdiaryDatas,
-                                    new int[]{3, 4, 5, 6}))
-                            .exec(params);
-                }
-                return new PreparedSentence(sessionDB,
-                        "DELETE FROM stockdiary WHERE ID = ?",
-                        new SerializerWriteBasicExt(stockdiaryDatas, new int[]{0}))
-                        .exec(params);
-            }
-        };
+    @Deprecated
+    public final void saveStockDiary(ProductStockTransaction prodStock) throws BasicException {
+        getDataLogicInventory().saveStockDiary(prodStock);
     }
 
-    private void adjustStock(Object[] params) throws BasicException {
-
-        List<ProductsBundleInfo> bundle = getProductsBundle((String) params[0]);
-
-        if (bundle.size() > 0) {
-
-            for (ProductsBundleInfo component : bundle) {
-                Object[] adjustParams = new Object[4];
-                adjustParams[0] = component.getProductBundleId();
-                adjustParams[1] = ((Object[]) params)[1];
-                adjustParams[2] = ((Object[]) params)[2];
-                adjustParams[3] = ((Double) ((Object[]) params)[3]) * component.getQuantity();
-                adjustStock(adjustParams);
-            }
-        } else {
-
-            int updateresult = ((Object[]) params)[2] == null
-                    ? new PreparedSentence(sessionDB,
-                            "UPDATE stockcurrent SET UNITS = (UNITS + ?) "
-                            + "WHERE LOCATION = ? AND PRODUCT = ? "
-                            + "AND ATTRIBUTESETINSTANCE_ID IS NULL",
-                            new SerializerWriteBasicExt(stockAdjustDatas,
-                                    new int[]{3, 1, 0}))
-                            .exec(params)
-                    : new PreparedSentence(sessionDB,
-                            "UPDATE stockcurrent SET UNITS = (UNITS + ?) "
-                            + "WHERE LOCATION = ? AND PRODUCT = ? "
-                            + "AND ATTRIBUTESETINSTANCE_ID = ?",
-                            new SerializerWriteBasicExt(stockAdjustDatas,
-                                    new int[]{3, 1, 0, 2}))
-                            .exec(params);
-
-            if (updateresult == 0) {
-
-                new PreparedSentence(sessionDB,
-                        "INSERT INTO stockcurrent (LOCATION, PRODUCT, "
-                        + "ATTRIBUTESETINSTANCE_ID, UNITS) "
-                        + "VALUES (?, ?, ?, ?)",
-                        new SerializerWriteBasicExt(stockAdjustDatas,
-                                new int[]{1, 0, 2, 3}))
-                        .exec(params);
-            }
-        }
+    /**
+     * @deprecated Use {@link DataLogicInventory#getStockDiaryDelete()} instead.
+     */
+    @Deprecated
+    public final SentenceExec getStockDiaryDelete() {
+        return getDataLogicInventory().getStockDiaryDelete();
     }
 
     /**
@@ -1299,27 +1095,11 @@ public class DataLogicSales extends BeanFactoryDataSingle {
     }
 
     /**
-     *
-     * @param warehouse
-     * @param id
-     * @param attsetinstid
-     * @return
-     * @throws BasicException
+     * @deprecated Use {@link DataLogicInventory#findProductStock(String, String, String)} instead.
      */
+    @Deprecated
     public final double findProductStock(String warehouse, String id, String attsetinstid) throws BasicException {
-
-        PreparedSentence p = attsetinstid == null
-                ? new PreparedSentence(sessionDB, "SELECT UNITS FROM stockcurrent "
-                        + "WHERE LOCATION = ? AND PRODUCT = ? AND ATTRIBUTESETINSTANCE_ID IS NULL",
-                        new SerializerWriteBasic(Datas.STRING, Datas.STRING),
-                        SerializerReadDouble.INSTANCE)
-                : new PreparedSentence(sessionDB, "SELECT UNITS FROM stockcurrent "
-                        + "WHERE LOCATION = ? AND PRODUCT = ? AND ATTRIBUTESETINSTANCE_ID = ?",
-                        new SerializerWriteBasic(Datas.STRING, Datas.STRING, Datas.STRING),
-                        SerializerReadDouble.INSTANCE);
-
-        Double d = (Double) p.find(warehouse, id, attsetinstid);
-        return d == null ? 0.0 : d;
+        return getDataLogicInventory().findProductStock(warehouse, id, attsetinstid);
     }
 
     /**
