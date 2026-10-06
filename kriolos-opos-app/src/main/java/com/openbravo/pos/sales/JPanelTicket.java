@@ -81,17 +81,6 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
 
     protected final static System.Logger LOGGER = System.getLogger(JPanelTicket.class.getName());
 
-    private final static int NUMBERZERO = 0;
-    private final static int NUMBERVALID = 1;
-
-    private final static int NUMBER_INPUTZERO = 0;
-    private final static int NUMBER_INPUTZERODEC = 1;
-    private final static int NUMBER_INPUTINT = 2;
-    private final static int NUMBER_INPUTDEC = 3;
-    private final static int NUMBER_PORZERO = 4;
-    private final static int NUMBER_PORZERODEC = 5;
-    private final static int NUMBER_PORINT = 6;
-    private final static int NUMBER_PORDEC = 7;
     private final static long serialVersionUID = 1L;
 
     private JTicketLines m_ticketlines;
@@ -106,9 +95,6 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     private String m_oTicketExt;
 
     private final SalesKeypadStateMachine keypadStateMachine = new SalesKeypadStateMachine();
-    private int m_iNumberStatus;
-    private int m_iNumberStatusInput;
-    private int m_iNumberStatusPor;
     private StringBuffer m_sBarcode;
 
     private JTicketsBag m_ticketsbag;
@@ -738,10 +724,6 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         m_jPor.setText("");
         m_jPrice.setText("");
         m_sBarcode = new StringBuffer();
-
-        m_iNumberStatus = NUMBER_INPUTZERO;
-        m_iNumberStatusInput = NUMBERZERO;
-        m_iNumberStatusPor = NUMBERZERO;
         repaint();
     }
 
@@ -841,12 +823,9 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
             } else if (keypadStateMachine.processKeypadChar(cTrans)) {
                 m_jPrice.setText(keypadStateMachine.getPriceText());
                 m_jPor.setText(keypadStateMachine.getPorText());
-                m_iNumberStatus = keypadStateMachine.getNumberStatus();
-                m_iNumberStatusInput = keypadStateMachine.getNumberStatusInput();
-                m_iNumberStatusPor = keypadStateMachine.getNumberStatusPor();
             } else if (cTrans == '\u00a7'
-                    && m_iNumberStatusInput == NUMBERVALID
-                    && m_iNumberStatusPor == NUMBERZERO) {
+                    && keypadStateMachine.isInputValid()
+                    && keypadStateMachine.isPorZero()) {
 
                 if (m_App.hasPermission("sales.EditLines")) {
                     Double value = peripheralCoordinator.readWeight(this);
@@ -860,8 +839,8 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                     com.openbravo.pos.util.NotifyUtils.beep();
                 }
             } else if (cTrans == '\u00a7'
-                    && m_iNumberStatusInput == NUMBERZERO
-                    && m_iNumberStatusPor == NUMBERZERO) {
+                    && keypadStateMachine.isInputZero()
+                    && keypadStateMachine.isPorZero()) {
 
                 int i = m_ticketlines.getSelectedIndex();
                 if (i < 0) {
@@ -879,49 +858,49 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                 }
 
             } else if (cTrans == '+'
-                    && m_iNumberStatusInput == NUMBERZERO
-                    && m_iNumberStatusPor == NUMBERZERO) {
+                    && keypadStateMachine.isInputZero()
+                    && keypadStateMachine.isPorZero()) {
                 applyLineQuantityChange(1.0, false);
             } else if (cTrans == '-'
-                    && m_iNumberStatusInput == NUMBERZERO
-                    && m_iNumberStatusPor == NUMBERZERO
+                    && keypadStateMachine.isInputZero()
+                    && keypadStateMachine.isPorZero()
                     && m_App.hasPermission("sales.EditLines")) {
                 applyLineQuantityChange(-1.0, false);
             } else if (cTrans == '+'
-                    && m_iNumberStatusInput == NUMBERZERO
-                    && m_iNumberStatusPor == NUMBERVALID) {
+                    && keypadStateMachine.isInputZero()
+                    && keypadStateMachine.isPorValid()) {
                 applyLineQuantityChange(getPorValue(), true);
             } else if (cTrans == '-'
-                    && m_iNumberStatusInput == NUMBERZERO
-                    && m_iNumberStatusPor == NUMBERVALID
+                    && keypadStateMachine.isInputZero()
+                    && keypadStateMachine.isPorValid()
                     && m_App.hasPermission("sales.EditLines")) {
                 applyLineQuantityChange(getPorValue(), true);
             } else if (cTrans == '+'
-                    && m_iNumberStatusInput == NUMBERVALID
-                    && m_iNumberStatusPor == NUMBERZERO
+                    && keypadStateMachine.isInputValid()
+                    && keypadStateMachine.isPorZero()
                     && m_App.hasPermission("sales.EditLines")) {
                 ProductInfoExt product = getInputProduct();
                 addTicketLine(product, 1.0, product.getPriceSell());
                 m_jEditLine.doClick();
 
             } else if (cTrans == '-'
-                    && m_iNumberStatusInput == NUMBERVALID
-                    && m_iNumberStatusPor == NUMBERZERO
+                    && keypadStateMachine.isInputValid()
+                    && keypadStateMachine.isPorZero()
                     && m_App.hasPermission("sales.EditLines")) {
                 ProductInfoExt product = getInputProduct();
                 addTicketLine(product, 1.0, -product.getPriceSell());
                 m_jEditLine.doClick();
 
             } else if (cTrans == '+'
-                    && m_iNumberStatusInput == NUMBERVALID
-                    && m_iNumberStatusPor == NUMBERVALID
+                    && keypadStateMachine.isInputValid()
+                    && keypadStateMachine.isPorValid()
                     && m_App.hasPermission("sales.EditLines")) {
                 ProductInfoExt product = getInputProduct();
                 addTicketLine(product, getPorValue(), product.getPriceSell());
 
             } else if (cTrans == '-'
-                    && m_iNumberStatusInput == NUMBERVALID
-                    && m_iNumberStatusPor == NUMBERVALID
+                    && keypadStateMachine.isInputValid()
+                    && keypadStateMachine.isPorValid()
                     && m_App.hasPermission("sales.EditLines")) {
                 ProductInfoExt product = getInputProduct();
                 addTicketLine(product, getPorValue(), -product.getPriceSell());
@@ -1996,7 +1975,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
          * @return
          */
         public double getInputValue() {
-            if (m_iNumberStatusInput == NUMBERVALID && m_iNumberStatusPor == NUMBERZERO) {
+            if (keypadStateMachine.isInputValid() && keypadStateMachine.isPorZero()) {
                 return JPanelTicket.this.getInputValue();
             } else {
                 return 0.0;
