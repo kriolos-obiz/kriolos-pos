@@ -26,6 +26,7 @@ import com.openbravo.pos.ticket.ProductInfoExt;
 
 import com.openbravo.pos.inventory.InventoryService;
 import com.openbravo.pos.inventory.InventoryServiceImpl;
+import com.openbravo.pos.inventory.DataLogicInventory;
 import com.openbravo.pos.pim.DataLogicPIM;
 
 import javax.swing.*;
@@ -55,7 +56,7 @@ public class StockQtyImport extends JPanel implements JPanelView {
 
   // the db connection session
   private Session dbSession;
-  private DataLogicSales m_dlSales;
+  private DataLogicInventory m_dlInventory;
   private DataLogicSystem m_dlSystem;
   private DataLogicImport m_dlImport;
   private InventoryService invService;
@@ -101,15 +102,15 @@ public class StockQtyImport extends JPanel implements JPanelView {
     dataLogicPIM.init(dbSession);
 
     // Set db tables
-    m_dlSales = new DataLogicSales();
-    m_dlSales.init(dbSession);
+    m_dlInventory = new DataLogicInventory();
+    m_dlInventory.init(dbSession);
     m_dlSystem = new DataLogicSystem();
     m_dlSystem.init(dbSession);
 
     m_dlImport = new DataLogicImport();
     m_dlImport.init(dbSession);
 
-    invService = new InventoryServiceImpl(m_dlSales, dbSession);
+    invService = new InventoryServiceImpl(m_dlInventory, dbSession);
 
     // Get terminal'dbSession current resource property settings
     Properties m_propsdb = m_dlSystem.getResourceAsProperties(m_props.getHost() + "/properties");
@@ -341,7 +342,7 @@ public class StockQtyImport extends JPanel implements JPanelView {
       prodInfo = dataLogicPIM.getProductInfoByCode(sCode);
 
       if (prodInfo != null) {
-        prodStock = m_dlSales.getProductStockState(prodInfo.getID(), m_sInventoryLocation);
+        prodStock = m_dlInventory.getProductStockState(prodInfo.getID(), m_sInventoryLocation);
         productBarcode = products.get(0);
         oldQty = prodStock.getUnits();
         newQty = Double.valueOf(products.get(1));
@@ -370,7 +371,7 @@ public class StockQtyImport extends JPanel implements JPanelView {
       prodInfo = dataLogicPIM.getProductInfoByCode(sCode);
 
       if (prodInfo != null) {
-        prodStock = m_dlSales.getProductStockState(prodInfo.getID(), m_sInventoryLocation);
+        prodStock = m_dlInventory.getProductStockState(prodInfo.getID(), m_sInventoryLocation);
         productQty = 0.;
 
         deleteStockCurrent(m_sInventoryLocation, prodInfo.getID(), productQty);

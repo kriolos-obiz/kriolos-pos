@@ -20,7 +20,6 @@ import com.openbravo.data.user.DirtyManager;
 import com.openbravo.data.user.EditorRecord;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
-import com.openbravo.pos.forms.DataLogicSales;
 import com.openbravo.pos.forms.DataLogicSystem;
 import com.openbravo.pos.suppliers.DataLogicSuppliers;
 import java.awt.Component;
@@ -50,7 +49,7 @@ public final class StockDiaryEditor extends javax.swing.JPanel implements Editor
     
     private final AppView m_App;
     private final DataLogicSystem m_dlSystem;    
-    private final DataLogicSales m_dlSales;
+    private final DataLogicInventory m_dlInventory;
     private final DataLogicSuppliers m_dlSuppliers;    
     private DataLogicPIM dataLogicPIM;
     private final TicketParser m_TTP;
@@ -86,7 +85,7 @@ public final class StockDiaryEditor extends javax.swing.JPanel implements Editor
         
         m_App = app;
         m_dlSystem = m_App.getBean(DataLogicSystem.class);
-        m_dlSales = m_App.getBean(DataLogicSales.class);
+        m_dlInventory = m_App.getBean(DataLogicInventory.class);
         m_dlSuppliers = m_App.getBean(DataLogicSuppliers.class);   
         dataLogicPIM = app.getBean(DataLogicPIM.class);
         m_TTP = m_App.createTicketParser();
@@ -94,7 +93,7 @@ public final class StockDiaryEditor extends javax.swing.JPanel implements Editor
         initComponents();
         
         user = m_App.getAppUserView().getUser().getName();        
-        m_sentlocations = m_dlSales.getLocationsList();
+        m_sentlocations = m_dlInventory.getLocationsList();
         m_LocationsModel = new ComboBoxValModel();
         m_LocationsModel =  new ComboBoxValModel();        
         m_LocationsModelDes = new ComboBoxValModel();  

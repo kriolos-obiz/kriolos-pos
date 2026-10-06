@@ -21,7 +21,6 @@ import com.openbravo.data.user.EditorRecord;
 import com.openbravo.data.user.ListProvider;
 import com.openbravo.data.user.DefaultSaveProvider;
 import com.openbravo.pos.forms.AppLocal;
-import com.openbravo.pos.forms.DataLogicSales;
 //import com.openbravo.pos.suppliers.DataLogicSuppliers;
 import com.openbravo.pos.panels.JPanelTable;
 import com.openbravo.pos.suppliers.DataLogicSuppliers;
@@ -33,7 +32,7 @@ import com.openbravo.pos.suppliers.DataLogicSuppliers;
 public class StockDiaryPanel extends JPanelTable {
     
     private StockDiaryEditor jeditor;    
-    private DataLogicSales m_dlSales;
+    private DataLogicInventory m_dlInventory;
 //    private DataLogicSuppliers m_dlSuppliers;
     
     /** Creates a new instance of JPanelDiaryEditor */
@@ -45,7 +44,7 @@ public class StockDiaryPanel extends JPanelTable {
      */
     @Override
     protected void init() {
-        m_dlSales = app.getBean(DataLogicSales.class);
+        m_dlInventory = app.getBean(DataLogicInventory.class);
 //        DataLogicSuppliers m_dlSuppliers = app.getBean(DataLogicSuppliers.class);        
         jeditor = new StockDiaryEditor(app, dirty); 
        
@@ -67,8 +66,8 @@ public class StockDiaryPanel extends JPanelTable {
     @Override
     public DefaultSaveProvider getSaveProvider() {
         return  new DefaultSaveProvider(null
-                , m_dlSales.getStockDiaryInsert()
-                , m_dlSales.getStockDiaryDelete());      
+                , m_dlInventory.getStockDiaryInsert()
+                , m_dlInventory.getStockDiaryDelete());      
     }
     
     /**

@@ -83,6 +83,7 @@ public final class ProductsEditor extends com.openbravo.pos.panels.ValidationPan
     private TaxesLogic taxeslogic;
     private DirtyManager m_Dirty;
     private DataLogicSales dlSales;
+    private DataLogicInventory dlInventory;
     private DataLogicSuppliers dlSuppliers;
     private DataLogicPIM dataLogicPIM;
     private DataLogicSystem dlSystem; 
@@ -98,6 +99,7 @@ public final class ProductsEditor extends com.openbravo.pos.panels.ValidationPan
 
         setAppView(app);
         dlSales = app.getBean(DataLogicSales.class);
+        dlInventory = app.getBean(DataLogicInventory.class);
         dlSystem = app.getBean(DataLogicSystem.class);
         dlSuppliers = app.getBean(DataLogicSuppliers.class);
         dataLogicPIM = app.getBean(DataLogicPIM.class);
@@ -668,7 +670,7 @@ public final class ProductsEditor extends com.openbravo.pos.panels.ValidationPan
 
         List<ProductStock> productStockList = new ArrayList<>();
         try {
-            productStockList = dlSales.getProductStockList(pId);
+            productStockList = dlInventory.getProductStockList(pId);
         }
         catch (BasicException ex) {
             LOGGER.log(Level.SEVERE, "ProductStock for PID: " + pId, ex);

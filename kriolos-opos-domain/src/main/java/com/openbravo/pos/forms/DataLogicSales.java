@@ -154,7 +154,7 @@ public class DataLogicSales extends BeanFactoryDataSingle {
         return customersRow;
     }
 
-    private DataLogicInventory getDataLogicInventory() {
+    public DataLogicInventory getDataLogicInventory() {
         if (app != null) {
             try {
                 return app.getBean(DataLogicInventory.class);

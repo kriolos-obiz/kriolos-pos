@@ -53,6 +53,7 @@ import com.openbravo.pos.util.InactivityListener;
 
 import com.openbravo.pos.payment.PaymentService;
 import com.openbravo.pos.payment.PaymentServiceImpl;
+import com.openbravo.pos.inventory.DataLogicInventory;
 import com.openbravo.pos.inventory.InventoryService;
 import com.openbravo.pos.inventory.InventoryServiceImpl;
 import com.openbravo.pos.panels.JProductFinderPanel;
@@ -87,6 +88,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     private AppView m_App;
     private DataLogicSystem dlSystem;
     private DataLogicSales dlSales;
+    private DataLogicInventory dlInventory;
     private DataLogicCustomers dlCustomers;
     private DataLogicPIM dataLogicPIM;
     private TicketsEditor m_panelticket;
@@ -136,6 +138,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
 
         dlSystem = m_App.getBean(DataLogicSystem.class);
         dlSales = m_App.getBean(DataLogicSales.class);
+        dlInventory = m_App.getBean(DataLogicInventory.class);
         dlCustomers = m_App.getBean(DataLogicCustomers.class);
         dlReceipts = app.getBean(DataLogicReceipts.class);
         dataLogicPIM = app.getBean(DataLogicPIM.class);
@@ -323,8 +326,8 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         salesCustomerController = new SalesCustomerController(m_App, dlCustomers);
         salesPaymentCoordinator = new SalesPaymentCoordinator(m_App, dlSales, salesService);
         paymentService = new PaymentServiceImpl();
-        inventoryService = new InventoryServiceImpl(dlSales, m_App.getSession());
-        salesStockCoordinator = new SalesStockCoordinator(inventoryService, dataLogicPIM, dlSales);
+        inventoryService = new InventoryServiceImpl(dlInventory, m_App.getSession());
+        salesStockCoordinator = new SalesStockCoordinator(inventoryService, dataLogicPIM, dlInventory);
         salesBarcodeScanCoordinator = new SalesBarcodeScanCoordinator(dataLogicPIM, dlCustomers);
         salesScriptCoordinator = new SalesScriptCoordinator(dlSystem, () -> m_jbtnconfig);
 

@@ -12,20 +12,28 @@ import com.openbravo.data.loader.Session;
  */
 public class InventoryServiceImpl implements InventoryService {
 
-    private final DataLogicSales dlSales;
+    private final DataLogicInventory dlInventory;
     private final Session session;
 
-    public InventoryServiceImpl(DataLogicSales dlSales, Session session) {
-        this.dlSales = dlSales;
+    public InventoryServiceImpl(DataLogicInventory dlInventory, Session session) {
+        this.dlInventory = dlInventory;
         this.session = session;
+    }
+
+    /**
+     * @deprecated Use {@link #InventoryServiceImpl(DataLogicInventory, Session)} instead.
+     */
+    @Deprecated
+    public InventoryServiceImpl(DataLogicSales dlSales, Session session) {
+        this(dlSales != null ? dlSales.getDataLogicInventory() : null, session);
     }
 
     @Override
     public ProductStock getStock(String productId, String locationId) throws BasicException {
-        if (productId == null || locationId == null) {
+        if (productId == null || locationId == null || dlInventory == null) {
             return null;
         }
-        return dlSales.getProductStockState(productId, locationId);
+        return dlInventory.getProductStockState(productId, locationId);
     }
 
     @Override

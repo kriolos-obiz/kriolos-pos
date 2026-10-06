@@ -16,7 +16,6 @@
 package com.openbravo.pos.inventory;
 
 import com.openbravo.pos.forms.JPanelView;
-import com.openbravo.pos.forms.DataLogicSales;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.basic.BasicException;
 import com.openbravo.beans.DateUtils;
@@ -70,7 +69,7 @@ public class StockManagement extends JPanel implements JPanelView {
     private final String user;
 
     private final DataLogicSystem m_dlSystem;
-    private final DataLogicSales m_dlSales;
+    private final DataLogicInventory m_dlInventory;
     private final DataLogicSuppliers m_dlSuppliers;
     private DataLogicPIM dataLogicPIM;
     private final TicketParser m_TTP;
@@ -120,7 +119,7 @@ public class StockManagement extends JPanel implements JPanelView {
 
         m_App = app;
         m_dlSystem = m_App.getBean(DataLogicSystem.class);
-        m_dlSales = m_App.getBean(DataLogicSales.class);
+        m_dlInventory = m_App.getBean(DataLogicInventory.class);
         m_dlSuppliers = m_App.getBean(DataLogicSuppliers.class);
         dataLogicPIM = app.getBean(DataLogicPIM.class);
         m_TTP = m_App.createTicketParser();
@@ -196,7 +195,7 @@ public class StockManagement extends JPanel implements JPanelView {
     public void activate() throws BasicException {
         m_cat.loadCatalog();
 
-        java.util.List<LocationInfo> l = m_dlSales.getLocationsListAll();
+        java.util.List<LocationInfo> l = m_dlInventory.getLocationsListAll();
 
         m_LocationsModel = new ComboBoxValModel<LocationInfo>(l);
         m_jLocation.setModel(m_LocationsModel);
@@ -303,7 +302,7 @@ public class StockManagement extends JPanel implements JPanelView {
 
         List<ProductStock> productList = new ArrayList<>();
         try {
-            productStockList = m_dlSales.getProductStockList(pId);
+            productStockList = m_dlInventory.getProductStockList(pId);
             productStockList.stream().forEach((productStock) -> {
                 String productId = productStock.getProductId();
                 if (productId.equals(pId)) {
@@ -594,7 +593,7 @@ public class StockManagement extends JPanel implements JPanelView {
             pst.setUserId(rec.getUser());
             pst.setSupplierId(rec.getSupplier().getId());
             pst.setSupplierDoc(rec.getSupplierDoc());
-            m_dlSales.saveStockDiary(pst);
+            m_dlInventory.saveStockDiary(pst);
         }
 
         clearStockTable();

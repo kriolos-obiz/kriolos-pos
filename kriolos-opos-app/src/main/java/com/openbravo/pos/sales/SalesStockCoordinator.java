@@ -19,7 +19,7 @@ package com.openbravo.pos.sales;
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.gui.MessageInf;
 import com.openbravo.pos.forms.AppLocal;
-import com.openbravo.pos.forms.DataLogicSales;
+import com.openbravo.pos.inventory.DataLogicInventory;
 import com.openbravo.pos.inventory.InventoryService;
 import com.openbravo.pos.inventory.LocationInfo;
 import com.openbravo.pos.inventory.ProductStock;
@@ -44,12 +44,12 @@ public class SalesStockCoordinator {
 
     private final InventoryService inventoryService;
     private final DataLogicPIM dataLogicPIM;
-    private final DataLogicSales dlSales;
+    private final DataLogicInventory dlInventory;
 
-    public SalesStockCoordinator(InventoryService inventoryService, DataLogicPIM dataLogicPIM, DataLogicSales dlSales) {
+    public SalesStockCoordinator(InventoryService inventoryService, DataLogicPIM dataLogicPIM, DataLogicInventory dlInventory) {
         this.inventoryService = inventoryService;
         this.dataLogicPIM = dataLogicPIM;
-        this.dlSales = dlSales;
+        this.dlInventory = dlInventory;
     }
 
     /**
@@ -138,9 +138,9 @@ public class SalesStockCoordinator {
                 }
             }
 
-            if (dlSales != null) {
+            if (dlInventory != null) {
                 try {
-                    List<LocationInfo> locs = dlSales.getLocationsListAll();
+                    List<LocationInfo> locs = dlInventory.getLocationsListAll();
                     if (locs != null) {
                         for (LocationInfo loc : locs) {
                             if (location.equals(loc.getID())) {
