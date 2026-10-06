@@ -106,6 +106,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     private TicketInfo m_oTicket;
     private String m_oTicketExt;
 
+    private final SalesKeypadStateMachine keypadStateMachine = new SalesKeypadStateMachine();
     private int m_iNumberStatus;
     private int m_iNumberStatusInput;
     private int m_iNumberStatusPor;
@@ -165,6 +166,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         }
 
         priceWith00 = ("true".equals(getAppProperty("till.pricewith00")));
+        keypadStateMachine.setPriceWith00(priceWith00);
 
         if (priceWith00) {
             m_jNumberKeys.dotIs00(true);
@@ -795,6 +797,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     }
 
     private void stateToZero() {
+        keypadStateMachine.reset();
         m_jPor.setText("");
         m_jPrice.setText("");
         m_sBarcode = new StringBuffer();
@@ -889,9 +892,9 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
      */
     protected void buttonTransition(ProductInfoExt prod) {
 
-        if (m_iNumberStatusInput == NUMBERZERO && m_iNumberStatusPor == NUMBERZERO) {
+        if (keypadStateMachine.isInputZero() && keypadStateMachine.isPorZero()) {
             incProduct(prod);
-        } else if (m_iNumberStatusInput == NUMBERVALID && m_iNumberStatusPor == NUMBERZERO) {
+        } else if (keypadStateMachine.isInputValid() && keypadStateMachine.isPorZero()) {
             incProduct(prod, getInputValue());
         } else if (prod.isVprice()) {
             addTicketLine(prod, getPorValue(), getInputValue());
@@ -966,168 +969,23 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                      * 012 34567 89012 K Human
                      * 
                      */
-                } else if ("EAN".equals(sCodetype)
-                        && ((sCode.startsWith("2")) || (sCode.startsWith("02"))) // check code prefix
-                        && ((sCode.length() == 13) || (sCode.length() == 12))) { // check code length variances
+                } else if (EmbeddedBarcodeDecoder.isEanVariableBarcode(sCode) && "EAN".equals(sCodetype)) {
 
                     try {
-                        ProductInfoExt oProduct // get product(s) with PMMMMM
-                                = dataLogicPIM.getProductInfoByShortCode(sCode);
+                        ProductInfoExt oProduct = dataLogicPIM.getProductInfoByShortCode(sCode);
 
-                        if (oProduct == null) { // nothing returned so display message to user
+                        if (oProduct == null) {
                             com.openbravo.pos.util.NotifyUtils.beep();
                             JOptionPane.showMessageDialog(this,
                                     sCode + " - "
                                     + AppLocal.getIntString("message.noproduct"),
                                     "Check", JOptionPane.WARNING_MESSAGE);
-                            stateToZero(); // clear the user input
+                            stateToZero();
 
-                        } else if ("EAN-13".equals(oProduct.getCodetype())) { // have a valid barcode
-                            oProduct.setProperty("product.barcode", sCode); // set the screen's barcode from input
-                            double dPriceSell = oProduct.getPriceSell(); // default price for product
-                            double weight = 0; // used if barcode includes weight of product
-                            double dUnits = 0; // used for pro-rata unit
-                            String sVariableTypePrefix = sCode.substring(0, 2); // get first two PPP digits
-                            String sVariableNum; // CCCCC variable value of barcode
-
-                            if (sCode.length() == 13) { // full barcode from scanner
-                                sVariableNum = sCode.substring(8, 12); // get the 5 CCCCC digits
-                            } else { // barcode can be any length
-                                sVariableNum = sCode.substring(7, 11); // get the 5 CCCCC digits
-                            } // scanner has dropped 1st digit so shift get to left
-
-                            // PRICE - SET value decimals
-                            switch (sVariableTypePrefix) { // Use CCCCC value of 01049 as example
-                                case "02": // first 2 PPP digits determine decimal position
-                                    dUnits = (Double.parseDouble(sVariableNum) // position decimal in CCC.CC
-                                            / 100) / oProduct.getPriceSell(); // 2 decimal = 010.49
-                                    break;
-                                case "20":
-                                    dUnits = (Double.parseDouble(sVariableNum) // position decimal in CCC.CC
-                                            / 100) / oProduct.getPriceSell(); // 2 decimal = 010.49
-                                    break;
-                                case "21":
-                                    dUnits = (Double.parseDouble(sVariableNum) // position decimal in CC.CCC
-                                            / 10) / oProduct.getPriceSell(); // 2 decimal = 0104.9
-                                    break;
-                                case "22":
-                                    dUnits = Double.parseDouble(sVariableNum) // position decimal in CCCC.C
-                                            / oProduct.getPriceSell(); // Price = 01049.
-                                    break;
-
-                                // WEIGHT - SET value decimals
-                                case "23": // Use CCCCC 01049kg as example
-                                    weight = Double.parseDouble(sVariableNum)
-                                            / 1000; // Weight = 01.049
-                                    dUnits = weight; // set Units for price calculation
-                                    break;
-                                case "24":
-                                    weight = Double.parseDouble(sVariableNum)
-                                            / 100; // Weight = 010.49
-                                    dUnits = weight; // set Units for price calculation
-                                    break;
-                                case "25":
-                                    weight = Double.parseDouble(sVariableNum)
-                                            / 10; // Weight = 0104.9
-                                    dUnits = weight; // set Units for price calculation
-                                    break;
-                                default:
-                                    break;
-                            }
-
-                            TaxInfo tax = taxeslogic // get the TaxRate for the product
-                                    .getTaxInfo(oProduct.getTaxCategoryID(),
-                                            m_oTicket.getCustomer()); // calculate if ticket has a Customer
-
-                            switch (sVariableTypePrefix) {
-                                // PRICE - Assign var's
-                                case "02": // now we need to calculate some values
-                                    dPriceSell = AmountCalculatorUtil.calcPriceWithoutTax(oProduct.getPriceSellTax(tax),
-                                            tax);
-                                    dUnits = (Double.parseDouble(sVariableNum)
-                                            / 100) / oProduct.getPriceSellTax(tax); // Units as proportion of selling
-                                    // price
-                                    oProduct.setProperty("product.price",
-                                            Double.toString(oProduct.getPriceSell())); // push to screen
-                                    break;
-                                case "20": // as above
-                                    dPriceSell = AmountCalculatorUtil.calcPriceWithoutTax(oProduct.getPriceSellTax(tax),
-                                            tax);
-                                    dUnits = (Double.parseDouble(sVariableNum)
-                                            / 100) / oProduct.getPriceSellTax(tax);
-                                    oProduct.setProperty("product.price",
-                                            Double.toString(oProduct.getPriceSellTax(tax)));
-                                    break;
-                                case "21":
-                                    dPriceSell = AmountCalculatorUtil.calcPriceWithoutTax(oProduct.getPriceSellTax(tax),
-                                            tax);
-                                    dUnits = (Double.parseDouble(sVariableNum)
-                                            / 10) / oProduct.getPriceSellTax(tax);
-                                    oProduct.setProperty("product.price",
-                                            Double.toString(oProduct.getPriceSell()));
-                                    break;
-                                case "22":
-                                    dPriceSell = AmountCalculatorUtil.calcPriceWithoutTax(oProduct.getPriceSellTax(tax),
-                                            tax);
-                                    dUnits = (Double.parseDouble(sVariableNum)
-                                            / 1) / oProduct.getPriceSellTax(tax);
-                                    oProduct.setProperty("product.price",
-                                            Double.toString(oProduct.getPriceSell()));
-                                    break;
-
-                                // WEIGHT - Assign variable to Unit
-                                case "23":
-                                    weight = Double.parseDouble(sVariableNum)
-                                            / 1000; // 3 decimals = 01.049 kg
-                                    dUnits = weight; // which represents 1gramme Units
-                                    oProduct.setProperty("product.weight",
-                                            Double.toString(weight));
-                                    oProduct.setProperty("product.price",
-                                            Double.toString(dPriceSell));
-                                    break;
-                                case "24":
-                                    weight = Double.parseDouble(sVariableNum)
-                                            / 100; // 2 decimals = 010.49 kg
-                                    dUnits = weight; // which represents 10gramme Units
-                                    oProduct.setProperty("product.weight",
-                                            Double.toString(weight));
-                                    oProduct.setProperty("product.price",
-                                            Double.toString(dPriceSell));
-                                    break;
-                                case "25":
-                                    weight = Double.parseDouble(sVariableNum)
-                                            / 10; // 1 decimal = 0104.9 kg
-                                    dUnits = weight; // which represents 100gramme Units
-                                    oProduct.setProperty("product.weight",
-                                            Double.toString(weight));
-                                    oProduct.setProperty("product.price",
-                                            Double.toString(dPriceSell));
-                                    break;
-
-                                /*
-                                 * Some countries use different barcode prefix 26-29 or 250 etc.
-                                 * Use this section to add more case statements but these are not mandatory
-                                 * If you have your own internal or other barcode schema then...
-                                 * Example:
-                                 * case "28":
-                                 * {
-                                 * // price has tax. Remove it from sPriceSell
-                                 * TaxInfo tax = taxeslogic.getTaxInfo(oProduct.getTaxCategoryID(),
-                                 * m_oTicket.getCustomer());
-                                 * dPriceSell = AmountCalculatorUtil.calcPriceWithoutTax(dPriceSell, tax);
-                                 * oProduct.setProperty("product.price", Double.toString(dPriceSell));
-                                 * weight = -1.0;
-                                 * break;
-                                 */
-                                default:
-                                    break;
-                            }
-
-                            if (m_jaddtax.isSelected()) {
-                                dPriceSell = oProduct.getPriceSellTax(tax);
-                            }
-
-                            addTicketLine(oProduct, dUnits, dPriceSell);
+                        } else if ("EAN-13".equals(oProduct.getCodetype())) {
+                            TaxInfo tax = taxeslogic.getTaxInfo(oProduct.getTaxCategoryID(), m_oTicket.getCustomer());
+                            EmbeddedBarcodeDecoder.DecodedBarcode decoded = EmbeddedBarcodeDecoder.decodeEan(sCode, oProduct, tax, m_jaddtax.isSelected());
+                            addTicketLine(oProduct, decoded.getUnits(), decoded.getPriceSell());
                         }
                     }
                     catch (BasicException ex) {
@@ -1158,9 +1016,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                      * 8 = Reserved
                      * 9 = Reserved
                      */
-                } else if ("UPC".equals(sCodetype)
-                        && (sCode.startsWith("2"))
-                        && (sCode.length() == 12)) {
+                } else if (EmbeddedBarcodeDecoder.isUpcVariableBarcode(sCode) && "UPC".equals(sCodetype)) {
 
                     try {
                         ProductInfoExt oProduct = dataLogicPIM.getProductInfoByUShortCode(sCode); // Return only UPC product
@@ -1173,43 +1029,9 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                                     "Check", JOptionPane.WARNING_MESSAGE);
                             stateToZero();
                         } else if ("Upc-A".equals(oProduct.getCodetype())) {
-                            oProduct.setProperty("product.barcode", sCode);
-                            double dPriceSell = oProduct.getPriceSell(); // default price for product
-                            double weight = 0; // used if barcode includes weight of product
-                            double dUnits = 0; // used for pro-rata unit
-                            String sVariableNum = sCode.substring(7, 11); // grab the value from the code only using 4
-                            // digit price
-
-                            TaxInfo tax = taxeslogic // get the TaxRate for the product
-                                    .getTaxInfo(oProduct.getTaxCategoryID(),
-                                            m_oTicket.getCustomer());
-
-                            if (oProduct.getPriceSell() != 0.0) { // we have a weight barcode
-                                weight = Double.parseDouble(sVariableNum) / 100; // 2 decimals (e.g. 10.49 kg)
-                                dUnits = weight; // Units is now transformed to weight
-
-                                oProduct.setProperty("product.weight" // catch-all for weight
-                                        ,
-                                         Double.toString(weight));
-                                oProduct.setProperty("product.price" // get the prod sellprice
-                                        ,
-                                         Double.toString(oProduct.getPriceSell()));
-                                dPriceSell = oProduct.getPriceSellTax(tax); // calculate the tax on sellprice
-                                dUnits = (Double.parseDouble(sVariableNum) // calculate Units in sellprice with Tax
-                                        / 100)
-                                        / oProduct.getPriceSellTax(tax);
-
-                            } else { // no sellprice so we have a price barcode
-                                dPriceSell = (Double.parseDouble(sVariableNum) / 100);
-                                dUnits = 1; // no sellprice to calculate so must be 1 Unit
-                            }
-
-                            if (m_jaddtax.isSelected()) {
-                                addTicketLine(oProduct, dUnits, dPriceSell);
-                            } else {
-                                double priceExcludeTax = AmountCalculatorUtil.calcPriceWithoutTax(dPriceSell, tax);
-                                addTicketLine(oProduct, dUnits, priceExcludeTax);
-                            }
+                            TaxInfo tax = taxeslogic.getTaxInfo(oProduct.getTaxCategoryID(), m_oTicket.getCustomer());
+                            EmbeddedBarcodeDecoder.DecodedBarcode decoded = EmbeddedBarcodeDecoder.decodeUpcA(sCode, oProduct, tax, m_jaddtax.isSelected());
+                            addTicketLine(oProduct, decoded.getUnits(), decoded.getPriceSell());
                         }
                     }
                     catch (BasicException ex) {
@@ -1234,139 +1056,12 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
 
             if (cTrans == '\u007f') {
                 stateToZero();
-
-            } else if ((cTrans == '0') && (m_iNumberStatus == NUMBER_INPUTZERO)) {
-                m_jPrice.setText(Character.toString('0'));
-
-            } else if ((cTrans == '1' || cTrans == '2' || cTrans == '3'
-                    || cTrans == '4' || cTrans == '5' || cTrans == '6'
-                    || cTrans == '7' || cTrans == '8' || cTrans == '9')
-                    && (m_iNumberStatus == NUMBER_INPUTZERO)) {
-
-                if (!priceWith00) {
-                    m_jPrice.setText(m_jPrice.getText() + cTrans);
-                } else {
-                    m_jPrice.setText(setTempjPrice(m_jPrice.getText() + cTrans));
-                }
-
-                m_iNumberStatus = NUMBER_INPUTINT;
-                m_iNumberStatusInput = NUMBERVALID;
-
-            } else if ((cTrans == '0' || cTrans == '1' || cTrans == '2'
-                    || cTrans == '3' || cTrans == '4' || cTrans == '5'
-                    || cTrans == '6' || cTrans == '7' || cTrans == '8'
-                    || cTrans == '9')
-                    && (m_iNumberStatus == NUMBER_INPUTINT)) {
-
-                if (!priceWith00) {
-                    m_jPrice.setText(m_jPrice.getText() + cTrans);
-                } else {
-                    m_jPrice.setText(setTempjPrice(m_jPrice.getText() + cTrans));
-                }
-
-            } else if (cTrans == '.'
-                    && m_iNumberStatus == NUMBER_INPUTZERO && !priceWith00) {
-                m_jPrice.setText("0.");
-                m_iNumberStatus = NUMBER_INPUTZERODEC;
-            } else if (cTrans == '.'
-                    && m_iNumberStatus == NUMBER_INPUTZERO) {
-                m_jPrice.setText("");
-                m_iNumberStatus = NUMBER_INPUTZERO;
-            } else if (cTrans == '.'
-                    && m_iNumberStatus == NUMBER_INPUTINT && !priceWith00) {
-                m_jPrice.setText(m_jPrice.getText() + ".");
-                m_iNumberStatus = NUMBER_INPUTDEC;
-            } else if (cTrans == '.'
-                    && m_iNumberStatus == NUMBER_INPUTINT) {
-
-                if (!priceWith00) {
-                    m_jPrice.setText(m_jPrice.getText() + "00");
-                } else {
-                    m_jPrice.setText(setTempjPrice(m_jPrice.getText() + "00"));
-                }
-
-                m_iNumberStatus = NUMBER_INPUTINT;
-
-            } else if ((cTrans == '0')
-                    && (m_iNumberStatus == NUMBER_INPUTZERODEC
-                    || m_iNumberStatus == NUMBER_INPUTDEC)) {
-
-                if (!priceWith00) {
-                    m_jPrice.setText(m_jPrice.getText() + cTrans);
-                } else {
-                    m_jPrice.setText(setTempjPrice(m_jPrice.getText() + cTrans));
-                }
-
-            } else if ((cTrans == '1' || cTrans == '2' || cTrans == '3'
-                    || cTrans == '4' || cTrans == '5' || cTrans == '6'
-                    || cTrans == '7' || cTrans == '8' || cTrans == '9')
-                    && (m_iNumberStatus == NUMBER_INPUTZERODEC
-                    || m_iNumberStatus == NUMBER_INPUTDEC)) {
-
-                m_jPrice.setText(m_jPrice.getText() + cTrans);
-                m_iNumberStatus = NUMBER_INPUTDEC;
-                m_iNumberStatusInput = NUMBERVALID;
-
-            } else if (cTrans == '*'
-                    && (m_iNumberStatus == NUMBER_INPUTINT
-                    || m_iNumberStatus == NUMBER_INPUTDEC)) {
-                m_jPor.setText("x");
-                m_iNumberStatus = NUMBER_PORZERO;
-            } else if (cTrans == '*'
-                    && (m_iNumberStatus == NUMBER_INPUTZERO
-                    || m_iNumberStatus == NUMBER_INPUTZERODEC)) {
-                m_jPrice.setText("0");
-                m_jPor.setText("x");
-                m_iNumberStatus = NUMBER_PORZERO;
-
-            } else if ((cTrans == '0')
-                    && (m_iNumberStatus == NUMBER_PORZERO)) {
-                m_jPor.setText("x0");
-            } else if ((cTrans == '1' || cTrans == '2' || cTrans == '3'
-                    || cTrans == '4' || cTrans == '5' || cTrans == '6'
-                    || cTrans == '7' || cTrans == '8' || cTrans == '9')
-                    && (m_iNumberStatus == NUMBER_PORZERO)) {
-
-                m_jPor.setText("x" + Character.toString(cTrans));
-                m_iNumberStatus = NUMBER_PORINT;
-                m_iNumberStatusPor = NUMBERVALID;
-            } else if ((cTrans == '0' || cTrans == '1' || cTrans == '2'
-                    || cTrans == '3' || cTrans == '4' || cTrans == '5'
-                    || cTrans == '6' || cTrans == '7' || cTrans == '8'
-                    || cTrans == '9') && (m_iNumberStatus == NUMBER_PORINT)) {
-
-                m_jPor.setText(m_jPor.getText() + cTrans);
-
-            } else if (cTrans == '.'
-                    && m_iNumberStatus == NUMBER_PORZERO && !priceWith00) {
-                m_jPor.setText("x0.");
-                m_iNumberStatus = NUMBER_PORZERODEC;
-            } else if (cTrans == '.'
-                    && m_iNumberStatus == NUMBER_PORZERO) {
-                m_jPor.setText("x");
-                m_iNumberStatus = NUMBERVALID;
-            } else if (cTrans == '.'
-                    && m_iNumberStatus == NUMBER_PORINT && !priceWith00) {
-                m_jPor.setText(m_jPor.getText() + ".");
-                m_iNumberStatus = NUMBER_PORDEC;
-            } else if (cTrans == '.'
-                    && m_iNumberStatus == NUMBER_PORINT) {
-                m_jPor.setText(m_jPor.getText() + "00");
-                m_iNumberStatus = NUMBERVALID;
-
-            } else if ((cTrans == '0')
-                    && (m_iNumberStatus == NUMBER_PORZERODEC
-                    || m_iNumberStatus == NUMBER_PORDEC)) {
-                m_jPor.setText(m_jPor.getText() + cTrans);
-            } else if ((cTrans == '1' || cTrans == '2' || cTrans == '3'
-                    || cTrans == '4' || cTrans == '5' || cTrans == '6'
-                    || cTrans == '7' || cTrans == '8' || cTrans == '9')
-                    && (m_iNumberStatus == NUMBER_PORZERODEC || m_iNumberStatus == NUMBER_PORDEC)) {
-
-                m_jPor.setText(m_jPor.getText() + cTrans);
-                m_iNumberStatus = NUMBER_PORDEC;
-                m_iNumberStatusPor = NUMBERVALID;
-
+            } else if (keypadStateMachine.processKeypadChar(cTrans)) {
+                m_jPrice.setText(keypadStateMachine.getPriceText());
+                m_jPor.setText(keypadStateMachine.getPorText());
+                m_iNumberStatus = keypadStateMachine.getNumberStatus();
+                m_iNumberStatusInput = keypadStateMachine.getNumberStatusInput();
+                m_iNumberStatusPor = keypadStateMachine.getNumberStatusPor();
             } else if (cTrans == '\u00a7'
                     && m_iNumberStatusInput == NUMBERVALID
                     && m_iNumberStatusPor == NUMBERZERO) {
@@ -2063,17 +1758,6 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         }
     }
 
-    private String setTempjPrice(String jPrice) {
-        jPrice = jPrice.replace(".", "");
-        // remove all leading zeros from the string
-        long tempL = Long.parseLong(jPrice);
-        jPrice = Long.toString(tempL);
-
-        while (jPrice.length() < 3) {
-            jPrice = "0" + jPrice;
-        }
-        return (jPrice.length() <= 2) ? jPrice : (new StringBuffer(jPrice).insert(jPrice.length() - 2, ".").toString());
-    }
 
     public void checkStock() {
         checkAndShowStockForLine(false);
