@@ -16,7 +16,6 @@
 
 package com.openbravo.pos.sales.restaurant;
 
-import com.openbravo.pos.forms.AppLocal;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.beans.*;
@@ -24,7 +23,6 @@ import java.util.*;
 
 import com.openbravo.beans.*;
 import com.openbravo.data.gui.*;
-import com.openbravo.data.loader.*;
 import com.openbravo.data.user.*;
 
 import com.openbravo.pos.forms.AppLocal;

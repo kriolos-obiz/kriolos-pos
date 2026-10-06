@@ -235,9 +235,7 @@ public class ModernOne extends JPanel implements JPanelView, TicketsEditor {
         this.activeTicketExt = oTicketExt;
         if (activeTicket != null) {
             ensureTicketUser(activeTicket);
-            if (activeTicket.getCustomer() != null) {
-                this.activeCustomer = activeTicket.getCustomer();
-            }
+            this.activeCustomer = activeTicket.getCustomer();
         }
         refreshTicket();
     }
@@ -465,25 +463,25 @@ public class ModernOne extends JPanel implements JPanelView, TicketsEditor {
         }
     }
 
-    private void saveOrUpdateSharedTicket(TicketInfo ticket) {
-        if (ticket != null && ticket.getLinesCount() > 0 && dlReceipts != null) {
-            ensureTicketUser(ticket);
-            if (ticket.getUser() == null) {
+    private void saveOrUpdateSharedTicket(TicketInfo ticketInfo) {
+        if (ticketInfo != null && ticketInfo.getLinesCount() > 0 && dlReceipts != null) {
+            ensureTicketUser(ticketInfo);
+            if (ticketInfo.getUser() == null) {
                 LOGGER.log(Level.WARNING, "Cannot save shared ticket: authenticated user is not available.");
                 return;
             }
             try {
                 
-                String ticketUniqueId = ticket.getId();
-                int pickupId = ticket.getPickupId();
+                String ticketID = ticketInfo.getId();
+                int pickupId = ticketInfo.getPickupId();
                 
-                LOGGER.log(Level.INFO, "Save shared ticket: "+ticketUniqueId);
+                LOGGER.log(Level.INFO, "Save shared ticket: "+ticketID);
                 
-                TicketInfo foundTicket = dlReceipts.getSharedTicket(ticketUniqueId);
+                TicketInfo foundTicket = dlReceipts.getSharedTicket(ticketID);
                 if(foundTicket == null){
-                    dlReceipts.insertSharedTicket(ticketUniqueId, ticket, pickupId);
+                    dlReceipts.insertSharedTicket(ticketID, ticketInfo, pickupId);
                 }else {
-                    dlReceipts.updateSharedTicket(ticketUniqueId, ticket, pickupId);
+                    dlReceipts.updateSharedTicket(ticketID, ticketInfo, pickupId);
                 }
                 
             } catch (Exception e) {

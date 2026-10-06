@@ -16,13 +16,11 @@
 package com.openbravo.pos.sales.shared;
 
 import com.openbravo.basic.BasicException;
-import com.openbravo.beans.JIntegerPanel;
 import com.openbravo.beans.JPasswordPanel;
 import com.openbravo.data.gui.MessageInf;
 import com.openbravo.pos.forms.*;
 import com.openbravo.pos.sales.DataLogicReceipts;
 import com.openbravo.pos.sales.JTicketsBag;
-import com.openbravo.pos.sales.ReprintTicketInfo;
 import com.openbravo.pos.sales.SharedTicketInfo;
 import com.openbravo.pos.sales.TicketsEditor;
 import com.openbravo.pos.ticket.TicketInfo;
@@ -164,33 +162,45 @@ public class JTicketsBagShared extends JTicketsBag {
     protected JComponent getNullComponent() {
         return new JPanel();
     }
+    
+    private void ensureTicketUser(TicketInfo ticket) {
+        if (ticket != null && ticket.getUser() == null) {
+            if (getAppView() != null && getAppView().getAppUserView() != null && getAppView().getAppUserView().getUser() != null) {
+                ticket.setUser(getAppView().getAppUserView().getUser().getUserInfo());
+            }
+        }
+    }
 
+    private void saveOrUpdateSharedTicket(TicketInfo ticketInfo) {
+        if (ticketInfo != null && ticketInfo.getLinesCount() > 0 && dlReceipts != null) {
+            ensureTicketUser(ticketInfo);
+            if (ticketInfo.getUser() == null) {
+                LOGGER.log(System.Logger.Level.WARNING, "Cannot save shared ticket: authenticated user is not available.");
+                return;
+            }
+            try {
+                
+                String ticketID = ticketInfo.getId();
+                int pickupId = ticketInfo.getPickupId();
+                
+                LOGGER.log(System.Logger.Level.INFO, "Save shared ticket: "+ticketID);
+                
+                TicketInfo foundTicket = dlReceipts.getSharedTicket(ticketID);
+                if(foundTicket == null){
+                    dlReceipts.insertSharedTicket(ticketID, ticketInfo, pickupId);
+                }else {
+                    dlReceipts.updateSharedTicket(ticketID, ticketInfo, pickupId);
+                }
+                
+            } catch (Exception e) {
+                LOGGER.log(System.Logger.Level.WARNING, "Failed to save or update shared ticket", e);
+            }
+        }
+    }
     private void saveCurrentTicket() {
 
-        TicketInfo ticketInfo = m_panelticket.getActiveTicket();
-        if (ticketInfo != null) {
-            String ticketID = m_panelticket.getActiveTicket().getId();
-            int pickupId = m_panelticket.getActiveTicket().getPickupId();
-            try {
-                //SAVE Ticket with at less One line
-                if (ticketInfo.getLinesCount() >= 1) {
-                    dlReceipts.insertSharedTicket(ticketID, m_panelticket.getActiveTicket(), pickupId);
-
-                    m_jListTickets.setText("*");
-                    LOGGER.log(System.Logger.Level.INFO, "SAVED Current Ticket ID: " + ticketID);
-                } else {
-                    LOGGER.log(System.Logger.Level.INFO, "NOT SAVED Current Ticket because has no line/item, Ticket ID: " + ticketID);
-                    //new MessageInf(new BasicException("Cannot save current Ticket because has no line/item")).show(this);
-                }
-            }
-            catch (BasicException e) {
-                LOGGER.log(System.Logger.Level.WARNING, "Exception saveCurrentTicket: " + ticketID, e);
-                new MessageInf(e).show(this);
-            }
-        } else {
-            LOGGER.log(System.Logger.Level.INFO, "NOT SAVED Current Ticket because ActiveTicket is NULL");
-        }
-
+        m_jListTickets.setText("?");
+        saveOrUpdateSharedTicket(m_panelticket.getActiveTicket());
         updateCount();
     }
 

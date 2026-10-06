@@ -34,8 +34,6 @@ import com.openbravo.pos.scripting.ScriptEngine;
 import com.openbravo.pos.scripting.ScriptException;
 import com.openbravo.pos.scripting.ScriptFactory;
 import com.openbravo.pos.ticket.TicketInfo;
-import com.openbravo.pos.ticket.TicketLineInfo;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.*;
@@ -53,7 +51,7 @@ public class JTicketsBagRestaurant extends javax.swing.JPanel {
     private final DataLogicSystem dataLogicSystem;
     private final DataLogicSales dataLogicSales;
     private final TicketParser ticketParser;
-    private final RestaurantDBUtils restDB;
+    private final PlaceServiceImpl restDB;
 
     public JTicketsBagRestaurant(AppView app, JTicketsBagRestaurantMap restaurant) {
         appView = app;
@@ -61,10 +59,10 @@ public class JTicketsBagRestaurant extends javax.swing.JPanel {
 
         initComponents();
 
-        restDB = new RestaurantDBUtils(appView);
+        restDB = new PlaceServiceImpl(appView.getSession());
 
-        dataLogicSystem = (DataLogicSystem) appView.getBean("com.openbravo.pos.forms.DataLogicSystem");
-        dataLogicSales = (DataLogicSales) appView.getBean("com.openbravo.pos.forms.DataLogicSales");
+        dataLogicSystem = appView.getBean(DataLogicSystem.class);
+        dataLogicSales = appView.getBean(DataLogicSales.class);
 
         ticketParser = appView.createTicketParser();
         j_btnKitchen.setVisible(true);

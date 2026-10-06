@@ -42,7 +42,7 @@ import com.openbravo.pos.payment.JPaymentSelectRefund;
 import com.openbravo.pos.printer.TicketParser;
 import com.openbravo.pos.printer.TicketPrinterException;
 import com.openbravo.pos.hardware.PosHardwareManager;
-import com.openbravo.pos.sales.restaurant.RestaurantDBUtils;
+import com.openbravo.pos.sales.restaurant.PlaceServiceImpl;
 import com.openbravo.pos.scripting.ScriptEngine;
 import com.openbravo.pos.scripting.ScriptException;
 import com.openbravo.pos.scripting.ScriptFactory;
@@ -127,7 +127,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     private InactivityListener inactivityListener;
     private DataLogicReceipts dlReceipts = null;
     private Boolean priceWith00;
-    private RestaurantDBUtils restDB;
+    private PlaceServiceImpl restDB;
     private AppProperties m_config;
     // private Integer count = 0;
     // private Integer oCount = 0;
@@ -143,7 +143,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         m_config = app.getProperties();
 
         m_App = app;
-        restDB = new RestaurantDBUtils(m_App);
+        restDB = new PlaceServiceImpl(m_App.getSession());
 
         dlSystem = m_App.getBean(DataLogicSystem.class);
         dlSales = m_App.getBean(DataLogicSales.class);
