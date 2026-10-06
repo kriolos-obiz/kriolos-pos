@@ -151,4 +151,26 @@ class SalesPeripheralCoordinatorTest {
 
         assertTrue(result.isEmpty());
     }
+
+    @Test
+    @DisplayName("resolveRemoteOrderId prioritizes customer name, then ticketExt, then pickupString")
+    void testResolveRemoteOrderId() {
+        AppView app = createMockAppView(false, null);
+        SalesPeripheralCoordinator coordinator = new SalesPeripheralCoordinator(app, null, null, key -> null, key -> null);
+
+        // 1. With customer
+        TicketInfo ticketWithCust = new TicketInfo();
+        com.openbravo.pos.customers.CustomerInfoExt cust = new com.openbravo.pos.customers.CustomerInfoExt("c1");
+        cust.setName("Alice");
+        ticketWithCust.setCustomer(cust);
+        assertEquals("Alice", coordinator.resolveRemoteOrderId(ticketWithCust, "Table 10", "Pick-99"));
+
+        // 2. Without customer, with ticketExt
+        TicketInfo ticketTable = new TicketInfo();
+        assertEquals("Table 10", coordinator.resolveRemoteOrderId(ticketTable, "Table 10", "Pick-99"));
+
+        // 3. Without customer, without ticketExt, with pickupString
+        TicketInfo ticketPickup = new TicketInfo();
+        assertEquals("Pick-99", coordinator.resolveRemoteOrderId(ticketPickup, null, "Pick-99"));
+    }
 }

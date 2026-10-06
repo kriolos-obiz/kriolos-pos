@@ -764,32 +764,6 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         }
     }
 
-    private void incProductByCodePrice(String sCode, double dPriceSell) {
-
-        try {
-            ProductInfoExt oProduct = dataLogicPIM.getProductInfoByCode(sCode);
-            if (oProduct == null) {
-                com.openbravo.pos.util.NotifyUtils.beep();
-                new MessageInf(MessageInf.SGN_WARNING, AppLocal
-                        .getIntString("message.noproduct")).show(this);
-                stateToZero();
-            } else {
-                if (m_jaddtax.isSelected()) {
-                    TaxInfo tax = taxeslogic.getTaxInfo(oProduct.getTaxCategoryID(), m_oTicket.getCustomer());
-                    double price = AmountCalculatorUtil.calcPriceWithoutTax(dPriceSell, tax);
-                    addTicketLine(oProduct, 1.0, price);
-                } else {
-                    addTicketLine(oProduct, 1.0, dPriceSell);
-                }
-            }
-        }
-        catch (BasicException ex) {
-            LOGGER.log(System.Logger.Level.WARNING, "Exception on increment product by code price: ", ex);
-            stateToZero();
-            new MessageInf(ex).show(this);
-        }
-    }
-
     private void incProduct(ProductInfoExt prod) {
         incProduct(prod, 1.0);
     }
@@ -1920,32 +1894,37 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
 
     /* Remote Orders Display - Utils methods */
     public void remoteOrderDisplay() {
-        getRemoteOrderDisplay().remoteOrderDisplay(1, true);
+        if (peripheralCoordinator != null) {
+            peripheralCoordinator.displayRemoteOrder(m_oTicket, m_oTicketExt, getPickupString(m_oTicket));
+        }
     }
 
     /* Remote Orders Display - Utils methods */
     public void remoteOrderDisplay(String orderId) {
-        remoteOrderDisplay(orderId, 1, true);
+        if (peripheralCoordinator != null) {
+            peripheralCoordinator.displayRemoteOrder(m_oTicket, m_oTicketExt, getPickupString(m_oTicket), orderId);
+        }
     }
 
     /* Remote Orders Display - Utils methods */
     public void remoteOrderDisplay(int display) {
-        getRemoteOrderDisplay().remoteOrderDisplay(display, false);
+        if (peripheralCoordinator != null) {
+            peripheralCoordinator.displayRemoteOrder(m_oTicket, m_oTicketExt, getPickupString(m_oTicket), display);
+        }
     }
 
     /* Remote Orders Display - Utils methods */
     public String remoteOrderId() {
-        return getRemoteOrderDisplay().remoteOrderId();
+        return peripheralCoordinator != null
+                ? peripheralCoordinator.resolveRemoteOrderId(m_oTicket, m_oTicketExt, getPickupString(m_oTicket))
+                : "";
     }
 
     /* Remote Orders Display - Utils methods */
     public void remoteOrderDisplay(String orderId, int display, boolean primary) {
-        getRemoteOrderDisplay().remoteOrderDisplay(orderId, display, primary);
-    }
-
-    /* Remote Orders Display - Utils methods */
-    private RemoteOrderDisplay getRemoteOrderDisplay() {
-        return new RemoteOrderDisplay(m_App, m_oTicket, m_oTicketExt, getPickupString(m_oTicket));
+        if (peripheralCoordinator != null) {
+            peripheralCoordinator.displayRemoteOrder(m_oTicket, m_oTicketExt, getPickupString(m_oTicket), orderId, display, primary);
+        }
     }
 
     private void updateStockButton(boolean hasStock) {

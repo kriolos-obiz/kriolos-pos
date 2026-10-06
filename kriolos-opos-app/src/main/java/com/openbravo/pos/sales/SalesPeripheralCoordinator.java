@@ -219,6 +219,33 @@ public class SalesPeripheralCoordinator {
     }
 
     /**
+     * Dispatches remote order display updates to Kitchen/Bar video display systems.
+     */
+    public void displayRemoteOrder(TicketInfo ticket, String ticketExt, String pickupString) {
+        createRemoteOrderDisplay(ticket, ticketExt, pickupString).remoteOrderDisplay(1, true);
+    }
+
+    public void displayRemoteOrder(TicketInfo ticket, String ticketExt, String pickupString, String orderId) {
+        createRemoteOrderDisplay(ticket, ticketExt, pickupString).remoteOrderDisplay(orderId, 1, true);
+    }
+
+    public void displayRemoteOrder(TicketInfo ticket, String ticketExt, String pickupString, int display) {
+        createRemoteOrderDisplay(ticket, ticketExt, pickupString).remoteOrderDisplay(display, false);
+    }
+
+    public void displayRemoteOrder(TicketInfo ticket, String ticketExt, String pickupString, String orderId, int display, boolean primary) {
+        createRemoteOrderDisplay(ticket, ticketExt, pickupString).remoteOrderDisplay(orderId, display, primary);
+    }
+
+    public String resolveRemoteOrderId(TicketInfo ticket, String ticketExt, String pickupString) {
+        return createRemoteOrderDisplay(ticket, ticketExt, pickupString).remoteOrderId();
+    }
+
+    protected RemoteOrderDisplay createRemoteOrderDisplay(TicketInfo ticket, String ticketExt, String pickupString) {
+        return new RemoteOrderDisplay(app, ticket, ticketExt, pickupString);
+    }
+
+    /**
      * Renders and dispatches a Jasper report for the given ticket.
      *
      * @param printerName printer device name
