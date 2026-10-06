@@ -23,7 +23,9 @@ import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.basic.BasicException;
 import com.openbravo.beans.JPasswordPanel;
 import com.openbravo.data.gui.ComboBoxValModel;
+import com.openbravo.data.gui.JMessagePanel;
 import com.openbravo.data.gui.MessageInf;
+import com.openbravo.data.gui.modal.PosUIModal;
 import com.openbravo.data.loader.SentenceList;
 import com.openbravo.pos.customers.CustomerInfo;
 import com.openbravo.pos.customers.CustomerInfoExt;
@@ -69,8 +71,6 @@ import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
-import javax.swing.JFrame;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.event.ListSelectionEvent;
 
@@ -553,7 +553,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                     pinOK = true;
                 } else {
                     pinOK = false;
-                    JOptionPane.showMessageDialog(this, AppLocal.getIntString("message.override.badpin"));
+                    new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.override.badpin")).show(this);
                 }
             }
         }
@@ -684,16 +684,13 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         LOGGER.log(System.Logger.Level.INFO, "Delete Ticket Line number: " + ticketLineNumber);
 
         if (m_App.hasPermission("sales.DeleteLines")) {
-            int input = JOptionPane.showConfirmDialog(this,
-                    AppLocal.getIntString("message.deletelineyes"),
-                    AppLocal.getIntString("label.deleteline"), JOptionPane.YES_NO_OPTION);
+            int input = JMessagePanel.showConfirmDialog(this,
+                    new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.deletelineyes")));
             if (input == 0) {
                 removeTicketLineAndAudity(ticketLineNumber);
             }
         } else {
-            JOptionPane.showMessageDialog(this,
-                    AppLocal.getIntString("message.deletelineno"),
-                    AppLocal.getIntString("label.deleteline"), JOptionPane.WARNING_MESSAGE);
+            new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.deletelineno")).show(this);
         }
 
         refreshTicket();
@@ -815,9 +812,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
 
             if (oProduct == null) {
                 com.openbravo.pos.util.NotifyUtils.beep();
-                JOptionPane.showMessageDialog(this,
-                        sCode + " - " + AppLocal.getIntString("message.noproduct"),
-                        "Check", JOptionPane.WARNING_MESSAGE);
+                new MessageInf(MessageInf.SGN_WARNING, sCode + " - " + AppLocal.getIntString("message.noproduct")).show(this);
                 stateToZero();
             } else {
                 incProduct(oProduct);
@@ -976,10 +971,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
 
                         if (oProduct == null) {
                             com.openbravo.pos.util.NotifyUtils.beep();
-                            JOptionPane.showMessageDialog(this,
-                                    sCode + " - "
-                                    + AppLocal.getIntString("message.noproduct"),
-                                    "Check", JOptionPane.WARNING_MESSAGE);
+                            new MessageInf(MessageInf.SGN_WARNING, sCode + " - " + AppLocal.getIntString("message.noproduct")).show(this);
                             stateToZero();
 
                         } else if ("EAN-13".equals(oProduct.getCodetype())) {
@@ -1023,10 +1015,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
 
                         if (oProduct == null) {
                             com.openbravo.pos.util.NotifyUtils.beep();
-                            JOptionPane.showMessageDialog(this,
-                                    sCode + " - "
-                                    + AppLocal.getIntString("message.noproduct"),
-                                    "Check", JOptionPane.WARNING_MESSAGE);
+                            new MessageInf(MessageInf.SGN_WARNING, sCode + " - " + AppLocal.getIntString("message.noproduct")).show(this);
                             stateToZero();
                         } else if ("Upc-A".equals(oProduct.getCodetype())) {
                             TaxInfo tax = taxeslogic.getTaxInfo(oProduct.getTaxCategoryID(), m_oTicket.getCustomer());
@@ -1764,32 +1753,22 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     }
 
     public void checkCustomer() {
-        if (m_oTicket.getCustomer().isVIP() == true) {
+        if (m_oTicket.getCustomer() != null && m_oTicket.getCustomer().isVIP()) {
 
-            String content;
-            String vip;
+            String vip = AppLocal.getIntString("message.vipyes");
             String discount;
 
-            if (m_oTicket.getCustomer().isVIP() == true) {
-                vip = AppLocal.getIntString("message.vipyes");
-            } else {
-                vip = AppLocal.getIntString("message.vipno");
-            }
             if (m_oTicket.getCustomer().getDiscount() > 0) {
                 discount = AppLocal.getIntString("message.discyes") + m_oTicket.getCustomer().getDiscount() + "%";
             } else {
                 discount = AppLocal.getIntString("message.discno");
             }
 
-            content = "<html>"
+            String content = "<html>"
                     + "<b>" + AppLocal.getIntString("label.vip") + " : " + "</b>" + vip + "<br>"
                     + "<b>" + AppLocal.getIntString("label.discount") + " : " + "</b>" + discount + "<br>" + "</html>";
 
-            JFrame frame = new JFrame();
-            JOptionPane.showMessageDialog(frame,
-                    content,
-                    "Customer Discount Info",
-                    JOptionPane.INFORMATION_MESSAGE);
+            new MessageInf(MessageInf.SGN_NOTICE, content).show(this);
         }
     }
 
@@ -2383,10 +2362,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                         paintTicketLine(i, line);
                     }
                 } else {
-                    JOptionPane.showMessageDialog(this,
-                            AppLocal.getIntString("message.cannotfindattributes"),
-                            AppLocal.getIntString("message.title"),
-                            JOptionPane.INFORMATION_MESSAGE);
+                    new MessageInf(MessageInf.SGN_NOTICE, AppLocal.getIntString("message.cannotfindattributes")).show(this);
                 }
             }
             catch (BasicException ex) {
@@ -2440,11 +2416,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
             int ticketType = 0;
             TicketInfo ticketInfo = dlSales.loadLastTicket(ticketType);
             if (ticketInfo == null) {
-                JFrame frame = new JFrame();
-                JOptionPane.showMessageDialog(frame,
-                        AppLocal.getIntString("message.notexiststicket"),
-                        AppLocal.getIntString("message.notexiststickettitle"),
-                        JOptionPane.WARNING_MESSAGE);
+                new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.notexiststicket")).show(this);
             } else {
                 try {
                     taxeslogic.calculateTaxes(ticketInfo);
@@ -2504,19 +2476,34 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         if (inactivityListener != null) {
             inactivityListener.stop();
         }
-        Object[] options = {
-            AppLocal.getIntString("cboption.create"),
-            AppLocal.getIntString("cboption.find"),
-            AppLocal.getIntString("label.cancel")};
+        final int[] choice = new int[]{-1};
+        JPanel optPanel = new JPanel(new BorderLayout(15, 15));
+        optPanel.setBorder(javax.swing.BorderFactory.createEmptyBorder(20, 24, 20, 24));
+        javax.swing.JLabel lbl = new javax.swing.JLabel(AppLocal.getIntString("message.customeradd"));
+        lbl.setFont(lbl.getFont().deriveFont(Font.BOLD, 14f));
+        optPanel.add(lbl, BorderLayout.NORTH);
 
-        int n = JOptionPane.showOptionDialog(this,
-                AppLocal.getIntString("message.customeradd"),
-                AppLocal.getIntString("label.customer"),
-                JOptionPane.YES_NO_CANCEL_OPTION,
-                JOptionPane.QUESTION_MESSAGE,
-                null,
-                options,
-                options[2]);
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        javax.swing.JButton btnCreate = new javax.swing.JButton(AppLocal.getIntString("cboption.create"));
+        javax.swing.JButton btnFind = new javax.swing.JButton(AppLocal.getIntString("cboption.find"));
+        javax.swing.JButton btnCancel = new javax.swing.JButton(AppLocal.getIntString("label.cancel"));
+
+        btnPanel.add(btnCreate);
+        btnPanel.add(btnFind);
+        btnPanel.add(btnCancel);
+        optPanel.add(btnPanel, BorderLayout.SOUTH);
+
+        PosUIModal modal = PosUIModal.create(this, optPanel)
+                .setTitle(AppLocal.getIntString("label.customer"))
+                .setModal(true)
+                .setResizable(false);
+
+        btnCreate.addActionListener(e -> { choice[0] = 0; modal.close(); });
+        btnFind.addActionListener(e -> { choice[0] = 1; modal.close(); });
+        btnCancel.addActionListener(e -> { choice[0] = 2; modal.close(); });
+
+        modal.show();
+        int n = choice[0];
 
         if (n == 0) {
             JDialogNewCustomer dialog = JDialogNewCustomer.getDialog(this, m_App);
@@ -2572,10 +2559,8 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                 }
 
             } else {
-                if (JOptionPane.showConfirmDialog(this,
-                        AppLocal.getIntString("message.customerchange"),
-                        AppLocal.getIntString("title.editor"),
-                        JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+                if (JMessagePanel.showConfirmDialog(this,
+                        new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.customerchange"))) == 0) {
 
                     finder.setAppView(m_App);
                     finder.search(m_oTicket.getCustomer());
@@ -2778,11 +2763,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                 }
 
                 if (showDialog) {
-                    JFrame frame = new JFrame();
-                    JOptionPane.showMessageDialog(frame,
-                            content,
-                            "Info",
-                            JOptionPane.INFORMATION_MESSAGE);
+                    new MessageInf(MessageInf.SGN_NOTICE, content).show(this);
                 }
 
             }
