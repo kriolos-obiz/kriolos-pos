@@ -499,6 +499,19 @@ public class JTicketsBagRestaurantMap extends JTicketsBag {
         placeList.stream().forEach((table) -> {
             table.setPeople(atickets.contains(table.getId()));
         });
+        // Refresh UI to ensure correct tab display after auto‑refresh
+        java.awt.EventQueue.invokeLater(() -> {
+            m_jPanelMap.revalidate();
+            m_jPanelMap.repaint();
+            java.util.Optional<JTabbedPane> optTabs = java.util.Arrays.stream(m_jPanelMap.getComponents())
+                    .filter(c -> c instanceof JTabbedPane)
+                    .map(c -> (JTabbedPane) c)
+                    .findFirst();
+            optTabs.ifPresent(t -> {
+                t.revalidate();
+                t.repaint();
+            });
+        });
     }
 
     private void ensureTicketUser(TicketInfo ticket) {
