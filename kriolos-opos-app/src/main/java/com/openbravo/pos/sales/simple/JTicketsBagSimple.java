@@ -41,6 +41,10 @@ import com.openbravo.pos.sales.shared.JTicketsBagShared;
  * @see com.openbravo.pos.sales.shared.JTicketsBagShared
  * @see com.openbravo.pos.sales.JTicketsBag
  */
+@Deprecated
+/**
+ * Deprecated: Use {@link com.openbravo.pos.sales.JTicketsBagMode} with {@link com.openbravo.pos.sales.BagMode#SIMPLE}.
+ */
 public class JTicketsBagSimple extends JTicketsBagShared {
 
     /**

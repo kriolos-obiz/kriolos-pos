@@ -19,11 +19,13 @@ package com.openbravo.pos.sales;
 import com.openbravo.pos.customers.CustomerInfoExt;
 import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.forms.DataLogicSales;
-import com.openbravo.pos.sales.simple.JTicketsBagSimple;
+import com.openbravo.pos.sales.BagMode;
+import com.openbravo.pos.sales.JTicketsBagMode;
 import com.openbravo.pos.ticket.TicketInfo;
-import com.openbravo.pos.ui.api.sales.SaleLayoutManager;
-import javax.swing.JComponent;
+
+
 import javax.swing.JPanel;
+import javax.swing.JComponent;
 
 /**
  * Abstract controller and container for managing active sales tickets within the POS system.
@@ -135,10 +137,7 @@ public abstract class JTicketsBag extends JPanel {
      * @return
      */
     public static JTicketsBag createTicketsBag(String sName, AppView app, TicketsEditor panelticket) {
-        JComponent comp = SaleLayoutManager.createLayout(sName, app, panelticket);
-        if (comp instanceof JTicketsBag bag) {
-            return bag;
-        }
-        return new JTicketsBagSimple(app, panelticket);
+        BagMode mode = sName != null && sName.equalsIgnoreCase("simple") ? BagMode.SIMPLE : BagMode.SHARED;
+        return new JTicketsBagMode(app, panelticket, mode);
     }   
 }

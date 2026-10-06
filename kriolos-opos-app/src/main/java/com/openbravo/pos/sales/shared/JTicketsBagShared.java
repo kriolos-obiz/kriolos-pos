@@ -66,6 +66,10 @@ import javax.swing.SwingUtilities;
  * @see com.openbravo.pos.sales.shared.JTicketsBagSharedList
  * @see javax.swing.JPanel
  */
+@Deprecated
+/**
+ * Deprecated: Use {@link com.openbravo.pos.sales.JTicketsBagMode} with {@link com.openbravo.pos.sales.BagMode#SHARED}.
+ */
 public class JTicketsBagShared extends JTicketsBag {
 
     private DataLogicReceipts dlReceipts = null;
