@@ -793,23 +793,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         if ((cTrans == '\n') || (cTrans == '?')) {
 
             if (m_sBarcode.length() > 0) {
-                String sCode = m_sBarcode.toString();
-                if (salesBarcodeScanCoordinator != null) {
-                    salesBarcodeScanCoordinator.processBarcode(
-                            this,
-                            sCode,
-                            taxeslogic,
-                            m_oTicket != null ? m_oTicket.getCustomer() : null,
-                            m_jaddtax.isSelected(),
-                            customer -> {
-                                m_oTicket.setCustomer(customer);
-                                m_jTicketId.setText(m_oTicket.getName(m_oTicketExt));
-                            },
-                            (prod, units, price) -> addTicketLine(prod, units, price),
-                            this::incProduct,
-                            this::stateToZero
-                    );
-                }
+                incProductByCode(m_sBarcode.toString());
             } else {
                 com.openbravo.pos.util.NotifyUtils.beep();
             }
@@ -857,53 +841,26 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                     }
                 }
 
-            } else if (cTrans == '+'
-                    && keypadStateMachine.isInputZero()
-                    && keypadStateMachine.isPorZero()) {
-                applyLineQuantityChange(1.0, false);
-            } else if (cTrans == '-'
-                    && keypadStateMachine.isInputZero()
-                    && keypadStateMachine.isPorZero()
-                    && m_App.hasPermission("sales.EditLines")) {
-                applyLineQuantityChange(-1.0, false);
-            } else if (cTrans == '+'
-                    && keypadStateMachine.isInputZero()
-                    && keypadStateMachine.isPorValid()) {
-                applyLineQuantityChange(getPorValue(), true);
-            } else if (cTrans == '-'
-                    && keypadStateMachine.isInputZero()
-                    && keypadStateMachine.isPorValid()
-                    && m_App.hasPermission("sales.EditLines")) {
-                applyLineQuantityChange(getPorValue(), true);
-            } else if (cTrans == '+'
+            } else if ((cTrans == '+' || cTrans == '-')
+                    && keypadStateMachine.isInputZero()) {
+                if (cTrans == '-' && !m_App.hasPermission("sales.EditLines")) {
+                    com.openbravo.pos.util.NotifyUtils.beep();
+                } else if (keypadStateMachine.isPorZero()) {
+                    applyLineQuantityChange(cTrans == '-' ? -1.0 : 1.0, false);
+                } else if (keypadStateMachine.isPorValid()) {
+                    applyLineQuantityChange(getPorValue(), true);
+                }
+            } else if ((cTrans == '+' || cTrans == '-')
                     && keypadStateMachine.isInputValid()
-                    && keypadStateMachine.isPorZero()
                     && m_App.hasPermission("sales.EditLines")) {
+                double sign = (cTrans == '-') ? -1.0 : 1.0;
                 ProductInfoExt product = getInputProduct();
-                addTicketLine(product, 1.0, product.getPriceSell());
-                m_jEditLine.doClick();
-
-            } else if (cTrans == '-'
-                    && keypadStateMachine.isInputValid()
-                    && keypadStateMachine.isPorZero()
-                    && m_App.hasPermission("sales.EditLines")) {
-                ProductInfoExt product = getInputProduct();
-                addTicketLine(product, 1.0, -product.getPriceSell());
-                m_jEditLine.doClick();
-
-            } else if (cTrans == '+'
-                    && keypadStateMachine.isInputValid()
-                    && keypadStateMachine.isPorValid()
-                    && m_App.hasPermission("sales.EditLines")) {
-                ProductInfoExt product = getInputProduct();
-                addTicketLine(product, getPorValue(), product.getPriceSell());
-
-            } else if (cTrans == '-'
-                    && keypadStateMachine.isInputValid()
-                    && keypadStateMachine.isPorValid()
-                    && m_App.hasPermission("sales.EditLines")) {
-                ProductInfoExt product = getInputProduct();
-                addTicketLine(product, getPorValue(), -product.getPriceSell());
+                if (keypadStateMachine.isPorZero()) {
+                    addTicketLine(product, 1.0, sign * product.getPriceSell());
+                    m_jEditLine.doClick();
+                } else if (keypadStateMachine.isPorValid()) {
+                    addTicketLine(product, getPorValue(), sign * product.getPriceSell());
+                }
 
             } else if (cTrans == ' ' || cTrans == '=') {
                 if (m_oTicket != null && m_oTicket.getLinesCount() > 0) {
@@ -1541,13 +1498,14 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         });
 
         m_jPor.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
-        m_jPor.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        m_jPor.setText("AS");
+        m_jPor.setText("..");
+        m_jPor.setHorizontalTextPosition(javax.swing.SwingConstants.LEADING);
         m_jPor.setRequestFocusEnabled(false);
 
         m_jKeyFactory.setEditable(false);
         m_jKeyFactory.setFont(new java.awt.Font("Arial", 0, 11)); // NOI18N
         m_jKeyFactory.setForeground(javax.swing.UIManager.getDefaults().getColor("Panel.background"));
+        m_jKeyFactory.setText("..");
         m_jKeyFactory.setAutoscrolls(false);
         m_jKeyFactory.setBorder(null);
         m_jKeyFactory.setCaretColor(javax.swing.UIManager.getDefaults().getColor("Panel.background"));
@@ -1580,17 +1538,21 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         jPanelScannerLayout.setHorizontalGroup(
             jPanelScannerLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanelScannerLayout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(jPanelScannerLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanelScannerLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                        .addComponent(m_jPor, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 9, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addComponent(m_jKeyFactory, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 8, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addComponent(m_jaddtax))
                 .addGroup(jPanelScannerLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanelScannerLayout.createSequentialGroup()
-                        .addComponent(m_jPrice, javax.swing.GroupLayout.PREFERRED_SIZE, 187, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 2, Short.MAX_VALUE))
-                    .addComponent(m_jTax, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addContainerGap()
+                        .addGroup(jPanelScannerLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(m_jPor, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(m_jaddtax)))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanelScannerLayout.createSequentialGroup()
+                        .addGap(7, 7, 7)
+                        .addComponent(m_jKeyFactory, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanelScannerLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(m_jTax, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addGroup(jPanelScannerLayout.createSequentialGroup()
+                        .addComponent(m_jPrice, javax.swing.GroupLayout.PREFERRED_SIZE, 177, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(0, 0, Short.MAX_VALUE)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(m_jEnter, javax.swing.GroupLayout.PREFERRED_SIZE, 64, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
@@ -1605,7 +1567,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                 .addGroup(jPanelScannerLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(m_jEnter, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addGroup(jPanelScannerLayout.createSequentialGroup()
-                        .addComponent(m_jPor)
+                        .addComponent(m_jPor, javax.swing.GroupLayout.PREFERRED_SIZE, 17, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(m_jKeyFactory, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
