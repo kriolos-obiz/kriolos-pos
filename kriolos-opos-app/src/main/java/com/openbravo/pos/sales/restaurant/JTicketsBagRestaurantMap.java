@@ -43,7 +43,6 @@ import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.forms.DataLogicSystem;
 import com.openbravo.pos.sales.DataLogicReceipts;
 import com.openbravo.pos.sales.JTicketsBag;
-import com.openbravo.pos.sales.SharedTicketInfo;
 import com.openbravo.pos.sales.TicketsEditor;
 import com.openbravo.pos.ticket.TicketInfo;
 import java.awt.event.MouseAdapter;
@@ -61,6 +60,8 @@ public class JTicketsBagRestaurantMap extends JTicketsBag {
 
     private JTicketsBagRestaurant ticketsBagRestaurant;
     private final JTicketsBagRestaurantRes restaurantReservation;
+    private final JTabbedPane restaurantFloorsJTabbedPane = new JTabbedPane();
+    private int currentSelectedTabIndex = 0;
     private Place placeCurrent;
     private Place placeClipboard;
     private CustomerInfo customerInfo;
@@ -91,6 +92,7 @@ public class JTicketsBagRestaurantMap extends JTicketsBag {
     public JTicketsBagRestaurantMap(AppView app, TicketsEditor panelticket) {
 
         super(app, panelticket);
+
         dlReceipts = getAppView().getBean(DataLogicReceipts.class);
         dlSystem = getAppView().getBean(DataLogicSystem.class);
 
@@ -101,7 +103,28 @@ public class JTicketsBagRestaurantMap extends JTicketsBag {
         transBtns = AppConfig.getInstance().getBoolean("table.transbtn");
 
         initComponents();
-        init();
+
+        m_jPanelMap.add(restaurantFloorsJTabbedPane, BorderLayout.CENTER);
+        add(restaurantReservation, "res");
+
+        if (getAppView().getProperties().getProperty("till.autoRefreshTableMap").equals("true")) {
+            webLblautoRefresh.setText(java.util.ResourceBundle.getBundle("pos_messages")
+                    .getString("label.autoRefreshTableMapTimerON"));
+
+            int refeshTimer = Integer.parseInt(getAppView().getProperties().getProperty("till.autoRefreshTimer"));
+            if (refeshTimer < 10) {
+                refeshTimer = 10;
+            }
+            refeshTimer = refeshTimer * 1000;
+
+            this.autoRefreshTimer = new Timer(refeshTimer, new TableMapRefreshActionListener());
+        } else {
+            webLblautoRefresh.setText(java.util.ResourceBundle.getBundle("pos_messages")
+                    .getString("label.autoRefreshTableMapTimerOFF"));
+        }
+
+        loadData();
+        printState();
 
     }
 
@@ -114,138 +137,9 @@ public class JTicketsBagRestaurantMap extends JTicketsBag {
         @Override
         public void actionPerformed(ActionEvent e) {
             LOGGER.log(System.Logger.Level.INFO, "Table Map Refresh at: " + new Date());
-            loadTickets();
+            loadData();
             printState();
         }
-    }
-
-    private void init() {
-
-        placeCurrent = null;
-        placeClipboard = null;
-        customerInfo = null;
-
-        ensurePermissionSalesLayout();
-
-        try {
-            floorList = placeService.getFloors();
-        }
-        catch (Exception e) {
-            MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE, AppLocal.getIntString("message.cannotloadfloors"), e);
-            msg.show(this);
-            floorList = new java.util.ArrayList();
-        }
-        try {
-            placeList = placeService.getPlaces();
-        }
-        catch (BasicException ex) {
-            LOGGER.log(System.Logger.Level.WARNING, "Exception: ", ex);
-            placeList = new ArrayList<>();
-        }
-
-        if (floorList.size() > 1) {
-            JTabbedPane jTabFloors = new JTabbedPane();
-            jTabFloors.applyComponentOrientation(getComponentOrientation());
-            jTabFloors.setBorder(new javax.swing.border.EmptyBorder(new Insets(5, 5, 5, 5)));
-            jTabFloors.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
-            jTabFloors.setFocusable(false);
-            jTabFloors.setRequestFocusEnabled(false);
-            m_jPanelMap.add(jTabFloors, BorderLayout.CENTER);
-
-            floorList.stream().map((f) -> {
-                f.getContainer().applyComponentOrientation(getComponentOrientation());
-                return f;
-            }).forEach((f) -> {
-                JScrollPane jScrCont = new JScrollPane();
-                jScrCont.applyComponentOrientation(getComponentOrientation());
-                JPanel jPanCont = new JPanel();
-                jPanCont.applyComponentOrientation(getComponentOrientation());
-
-                jTabFloors.addTab(f.getName(), f.getIcon(), jScrCont);
-                jScrCont.setViewportView(jPanCont);
-                jPanCont.add(f.getContainer());
-            });
-        } else if (floorList.size() == 1) {
-            Floor f = floorList.get(0);
-            f.getContainer().applyComponentOrientation(getComponentOrientation());
-
-            JPanel jPlaces = new JPanel();
-            jPlaces.applyComponentOrientation(getComponentOrientation());
-            jPlaces.setLayout(new BorderLayout());
-            jPlaces.setBorder(new javax.swing.border.CompoundBorder(
-                    new javax.swing.border.EmptyBorder(new Insets(5, 5, 5, 5)),
-                    new javax.swing.border.TitledBorder(f.getName())));
-
-            JScrollPane jScrCont = new JScrollPane();
-            jScrCont.applyComponentOrientation(getComponentOrientation());
-            JPanel jPanCont = new JPanel();
-            jPanCont.applyComponentOrientation(getComponentOrientation());
-
-            m_jPanelMap.add(jPlaces, BorderLayout.CENTER);
-            jPlaces.add(jScrCont, BorderLayout.CENTER);
-            jScrCont.setViewportView(jPanCont);
-            jPanCont.add(f.getContainer());
-        }
-
-        Floor currfloor = null;
-
-        for (Place pl : placeList) {
-            int iFloor = 0;
-
-            if (currfloor == null || !currfloor.getID().equals(pl.getFloor())) {
-                do {
-                    currfloor = floorList.get(iFloor++);
-                } while (!currfloor.getID().equals(pl.getFloor()));
-            }
-
-            currfloor.getContainer().add(pl.getButton());
-            pl.setButtonBounds();
-
-            if (transBtns) {
-                pl.getButton().setOpaque(false);
-                pl.getButton().setContentAreaFilled(false);
-                pl.getButton().setBorderPainted(false);
-            }
-
-            pl.getButton().addMouseMotionListener(new MouseAdapter() {
-                @Override
-                public void mouseDragged(MouseEvent E) {
-                    if (!actionEnabled) {
-                        if (pl.getDiffX() == 0) {
-                            pl.setDiffX(pl.getButton().getX() - pl.getX());
-                            pl.setDiffY(pl.getButton().getY() - pl.getY());
-                        }
-                        int newX = E.getX() + pl.getButton().getX();
-                        int newY = E.getY() + pl.getButton().getY();
-                        pl.getButton().setBounds(newX + pl.getDiffX(), newY + pl.getDiffY(),
-                                pl.getButton().getWidth(), pl.getButton().getHeight());
-                        pl.setX(newX);
-                        pl.setY(newY);
-                    }
-                }
-            });
-
-            pl.getButton().addActionListener(new PlaceActionListener(pl));
-        }
-
-        add(restaurantReservation, "res");
-
-        if (getAppView().getProperties().getProperty("till.autoRefreshTableMap").equals("true")) {
-            webLblautoRefresh.setText(java.util.ResourceBundle.getBundle("pos_messages")
-                    .getString("label.autoRefreshTableMapTimerON"));
-
-            int refeshTimer = Integer.parseInt(getAppView().getProperties().getProperty("till.autoRefreshTimer"));
-            if (refeshTimer < 2) {
-                refeshTimer = 2;
-            }
-            refeshTimer = refeshTimer * 1000;
-
-            this.autoRefreshTimer = new Timer(refeshTimer, new TableMapRefreshActionListener());
-        } else {
-            webLblautoRefresh.setText(java.util.ResourceBundle.getBundle("pos_messages")
-                    .getString("label.autoRefreshTableMapTimerOFF"));
-        }
-
     }
 
     private void ensurePermissionSalesLayout() {
@@ -259,9 +153,20 @@ public class JTicketsBagRestaurantMap extends JTicketsBag {
         }
     }
 
-    /**
-     *
-     */
+    private void ensureTimerStart() {
+        LOGGER.log(System.Logger.Level.INFO, "Table Refredh timer start");
+        if (this.autoRefreshTimer != null && !this.autoRefreshTimer.isRunning()) {
+            this.autoRefreshTimer.start();
+        }
+    }
+
+    private void ensureTimerStop() {
+        LOGGER.log(System.Logger.Level.INFO, "Table Refredh timer stop");
+        if (autoRefreshTimer != null && this.autoRefreshTimer.isRunning()) {
+            this.autoRefreshTimer.stop();
+        }
+    }
+
     @Override
     public void activate() {
         LOGGER.log(System.Logger.Level.INFO, "Active");
@@ -269,16 +174,15 @@ public class JTicketsBagRestaurantMap extends JTicketsBag {
         placeClipboard = null;
         customerInfo = null;
         ensurePermissionSalesLayout();
-        loadTickets();
+        loadData();
         printState();
-        if (this.autoRefreshTimer != null && !this.autoRefreshTimer.isRunning()) {
-            this.autoRefreshTimer.start();
-        }
 
         m_panelticket.setActiveTicket(new TicketInfo(), null);
         ticketsBagRestaurant.activate();
 
         showView("map");
+
+        ensureTimerStart();
     }
 
     /**
@@ -289,10 +193,7 @@ public class JTicketsBagRestaurantMap extends JTicketsBag {
     public boolean deactivate() {
 
         LOGGER.log(System.Logger.Level.INFO, "deactivate");
-
-        if (autoRefreshTimer != null && this.autoRefreshTimer.isRunning()) {
-            this.autoRefreshTimer.stop();
-        }
+        ensureTimerStop();
         if (viewTables()) {
             placeClipboard = null;
             customerInfo = null;
@@ -478,40 +379,120 @@ public class JTicketsBagRestaurantMap extends JTicketsBag {
         m_panelticket.setActiveTicket(null, null);
     }
 
-    /**
-     *
-     */
-    public void loadTickets() {
+    private void loadData() {
+        
+        currentSelectedTabIndex = restaurantFloorsJTabbedPane.getSelectedIndex();
 
-        Set<String> atickets = new HashSet<>();
+        placeCurrent = null;
+        placeClipboard = null;
+        customerInfo = null;
+
+        ensurePermissionSalesLayout();
+
+        Set<String> listOfTicketsPlaceIds = new HashSet<>();
 
         try {
-            java.util.List<SharedTicketInfo> l = dlReceipts.getSharedTicketList();
-            l.stream().forEach((ticket) -> {
-                atickets.add(ticket.getId());
+            dlReceipts.getSharedTicketList().stream().forEach((ticket) -> {
+                listOfTicketsPlaceIds.add(ticket.getId());
             });
         }
         catch (BasicException ex) {
-            LOGGER.log(System.Logger.Level.WARNING, "Exception: ", ex);
-            new MessageInf(ex).show(this);
+            LOGGER.log(System.Logger.Level.WARNING, "Exception get shared tickets: ", ex);
         }
 
-        placeList.stream().forEach((table) -> {
-            table.setPeople(atickets.contains(table.getId()));
+        try {
+            floorList = placeService.getFloors();
+        }
+        catch (Exception e) {
+            MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE, AppLocal.getIntString("message.cannotloadfloors"), e);
+            msg.show(this);
+            floorList = new java.util.ArrayList();
+        }
+        try {
+            placeList = placeService.getPlaces();
+        }
+        catch (BasicException ex) {
+            LOGGER.log(System.Logger.Level.WARNING, "Exception: ", ex);
+            placeList = new ArrayList<>();
+        }
+
+        restaurantFloorsJTabbedPane.removeAll();
+        restaurantFloorsJTabbedPane.applyComponentOrientation(getComponentOrientation());
+        restaurantFloorsJTabbedPane.setBorder(new javax.swing.border.EmptyBorder(new Insets(5, 5, 5, 5)));
+        restaurantFloorsJTabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
+        restaurantFloorsJTabbedPane.setFocusable(false);
+        restaurantFloorsJTabbedPane.setRequestFocusEnabled(false);
+
+        floorList.stream().map((floor) -> {
+            floor.getContainer().applyComponentOrientation(getComponentOrientation());
+            return floor;
+        }).forEach((floor) -> {
+            JScrollPane jScrCont = new JScrollPane();
+            jScrCont.applyComponentOrientation(getComponentOrientation());
+            JPanel jPanCont = new JPanel();
+            jPanCont.applyComponentOrientation(getComponentOrientation());
+
+            restaurantFloorsJTabbedPane.addTab(floor.getName(), floor.getIcon(), jScrCont);
+            jScrCont.setViewportView(jPanCont);
+            jPanCont.add(floor.getContainer());
         });
-        // Refresh UI to ensure correct tab display after auto‑refresh
+        
+        if(currentSelectedTabIndex >= restaurantFloorsJTabbedPane.getTabCount()){
+            currentSelectedTabIndex = 0;
+        }
+        restaurantFloorsJTabbedPane.setSelectedIndex(currentSelectedTabIndex);
+
+        Floor currfloor = null;
+
+        for (Place pl : placeList) {
+
+            pl.setPeople(listOfTicketsPlaceIds.contains(pl.getId()));
+
+            int iFloor = 0;
+
+            if (currfloor == null || !currfloor.getID().equals(pl.getFloor())) {
+                do {
+                    currfloor = floorList.get(iFloor++);
+                } while (!currfloor.getID().equals(pl.getFloor()));
+            }
+
+            currfloor.getContainer().add(pl.getButton());
+            pl.setButtonBounds();
+
+            if (transBtns) {
+                pl.getButton().setOpaque(false);
+                pl.getButton().setContentAreaFilled(false);
+                pl.getButton().setBorderPainted(false);
+            }
+
+            pl.getButton().addMouseMotionListener(new MouseAdapter() {
+                @Override
+                public void mouseDragged(MouseEvent E) {
+                    if (!actionEnabled) {
+                        if (pl.getDiffX() == 0) {
+                            pl.setDiffX(pl.getButton().getX() - pl.getX());
+                            pl.setDiffY(pl.getButton().getY() - pl.getY());
+                        }
+                        int newX = E.getX() + pl.getButton().getX();
+                        int newY = E.getY() + pl.getButton().getY();
+                        pl.getButton().setBounds(newX + pl.getDiffX(), newY + pl.getDiffY(),
+                                pl.getButton().getWidth(), pl.getButton().getHeight());
+                        pl.setX(newX);
+                        pl.setY(newY);
+                    }
+                }
+            });
+
+            pl.getButton().addActionListener(new PlaceActionListener(pl));
+        }
+
+        // Preserve selected tab index and rebuild UI if floors changed
         java.awt.EventQueue.invokeLater(() -> {
+            // Revalidate/repaint
             m_jPanelMap.revalidate();
             m_jPanelMap.repaint();
-            java.util.Optional<JTabbedPane> optTabs = java.util.Arrays.stream(m_jPanelMap.getComponents())
-                    .filter(c -> c instanceof JTabbedPane)
-                    .map(c -> (JTabbedPane) c)
-                    .findFirst();
-            optTabs.ifPresent(t -> {
-                t.revalidate();
-                t.repaint();
-            });
         });
+
     }
 
     private void ensureTicketUser(TicketInfo ticket) {
@@ -960,8 +941,7 @@ public class JTicketsBagRestaurantMap extends JTicketsBag {
     private void m_jbtnRefreshActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_m_jbtnRefreshActionPerformed
         placeClipboard = null;
         customerInfo = null;
-        init();
-        loadTickets();
+        loadData();
         printState();
     }// GEN-LAST:event_m_jbtnRefreshActionPerformed
 
@@ -983,6 +963,8 @@ public class JTicketsBagRestaurantMap extends JTicketsBag {
                     pl.getButton().setBorderPainted(true);
                 }
             }
+
+            ensureTimerStop();
         } else {
             actionEnabled = true;
             m_jbtnSave.setVisible(false);
@@ -995,6 +977,8 @@ public class JTicketsBagRestaurantMap extends JTicketsBag {
                     pl.getButton().setBorderPainted(false);
                 }
             }
+
+            ensureTimerStart();
         }
     }// GEN-LAST:event_m_jbtnLayoutActionPerformed
 
