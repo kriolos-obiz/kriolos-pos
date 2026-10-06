@@ -22,6 +22,8 @@ import com.openbravo.data.user.SaveProvider;
 import com.openbravo.format.Formats;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.BeanFactoryDataSingle;
+import com.openbravo.pos.forms.BeanFactoryException;
+import com.openbravo.pos.sales.restaurant.DataLogicRestaurant;
 
 /**
  * @author JG uniCenta
@@ -94,73 +96,49 @@ public class DataLogicCustomers extends BeanFactoryDataSingle {
         });
     }
 
+    public DataLogicRestaurant getDataLogicRestaurant() {
+        if (app != null) {
+            try {
+                return app.getBean(DataLogicRestaurant.class);
+            } catch (BeanFactoryException ignored) {
+            }
+        }
+        DataLogicRestaurant fallback = new DataLogicRestaurant();
+        fallback.init(s);
+        return fallback;
+    }
+
     // <editor-fold defaultstate="collapsed" desc="Reservation">
+    /**
+     * @deprecated Use {@link DataLogicRestaurant#getReservationsList()} instead.
+     */
+    @Deprecated
     public final SentenceList getReservationsList() {
-        return new PreparedSentence(s,
-                "SELECT "
-                + "R.ID, R.CREATED, R.DATENEW, C.CUSTOMER, customers.TAXID, customers.SEARCHKEY, "
-                + "COALESCE(customers.NAME, R.TITLE),  R.CHAIRS, R.ISDONE, R.DESCRIPTION "
-                + "FROM reservations R "
-                + "LEFT OUTER JOIN reservation_customers C ON R.ID = C.ID "
-                + "LEFT OUTER JOIN customers ON C.CUSTOMER = customers.ID "
-                + "WHERE R.DATENEW >= ? AND R.DATENEW < ?",
-                new SerializerWriteBasic(new Datas[]{Datas.TIMESTAMP, Datas.TIMESTAMP}),
-                new SerializerReadBasic(RESERVATION_DATA));
+        return getDataLogicRestaurant().getReservationsList();
     }
 
+    /**
+     * @deprecated Use {@link DataLogicRestaurant#getReservationsUpdate()} instead.
+     */
+    @Deprecated
     public final SentenceExec getReservationsUpdate() {
-        return new SentenceExecTransaction(s) {
-            @Override
-            public int execInTransaction(Object[] params) throws BasicException {
-
-                new PreparedSentence(s,
-                        "DELETE FROM reservation_customers WHERE ID = ?",
-                        new SerializerWriteBasicExt(RESERVATION_DATA, new int[]{0})).exec(params);
-
-                if (params[3] != null) {
-                    new PreparedSentence(s,
-                            "INSERT INTO reservation_customers (ID, CUSTOMER) VALUES (?, ?)",
-                            new SerializerWriteBasicExt(RESERVATION_DATA, new int[]{0, 3})).exec(params);
-                }
-                return new PreparedSentence(s,
-                        "UPDATE reservations SET ID = ?, CREATED = ?, DATENEW = ?, TITLE = ?, CHAIRS = ?, ISDONE = ?, DESCRIPTION = ? WHERE ID = ?",
-                        new SerializerWriteBasicExt(RESERVATION_DATA, new int[]{0, 1, 2, 6, 7, 8, 9, 0})).exec(params);
-            }
-        };
+        return getDataLogicRestaurant().getReservationsUpdate();
     }
 
+    /**
+     * @deprecated Use {@link DataLogicRestaurant#getReservationsDelete()} instead.
+     */
+    @Deprecated
     public final SentenceExec getReservationsDelete() {
-        return new SentenceExecTransaction(s) {
-            @Override
-            public int execInTransaction(Object[] params) throws BasicException {
-
-                new PreparedSentence(s,
-                        "DELETE FROM reservation_customers WHERE ID = ?",
-                        new SerializerWriteBasicExt(RESERVATION_DATA, new int[]{0})).exec(params);
-                return new PreparedSentence(s,
-                        "DELETE FROM reservations WHERE ID = ?",
-                        new SerializerWriteBasicExt(RESERVATION_DATA, new int[]{0})).exec(params);
-            }
-        };
+        return getDataLogicRestaurant().getReservationsDelete();
     }
 
+    /**
+     * @deprecated Use {@link DataLogicRestaurant#getReservationsInsert()} instead.
+     */
+    @Deprecated
     public final SentenceExec getReservationsInsert() {
-        return new SentenceExecTransaction(s) {
-            @Override
-            public int execInTransaction(Object[] params) throws BasicException {
-
-                int i = new PreparedSentence(s,
-                        "INSERT INTO reservations (ID, CREATED, DATENEW, TITLE, CHAIRS, ISDONE, DESCRIPTION) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                        new SerializerWriteBasicExt(RESERVATION_DATA, new int[]{0, 1, 2, 6, 7, 8, 9})).exec(params);
-
-                if (params[3] != null) {
-                    new PreparedSentence(s,
-                            "INSERT INTO reservation_customers (ID, CUSTOMER) VALUES (?, ?)",
-                            new SerializerWriteBasicExt(RESERVATION_DATA, new int[]{0, 3})).exec(params);
-                }
-                return i;
-            }
-        };
+        return getDataLogicRestaurant().getReservationsInsert();
     }
     // </editor-fold>
 

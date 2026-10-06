@@ -39,6 +39,7 @@ import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.BeanFactoryDataSingle;
 import com.openbravo.pos.inventory.*;
 import com.openbravo.pos.sales.restaurant.FloorsInfo;
+import com.openbravo.pos.sales.restaurant.DataLogicRestaurant;
 import com.openbravo.pos.payment.PaymentInfo;
 import com.openbravo.pos.payment.PaymentInfoTicket;
 import com.openbravo.pos.pim.DataLogicPIM;
@@ -175,6 +176,18 @@ public class DataLogicSales extends BeanFactoryDataSingle {
             }
         }
         DataLogicTax fallback = new DataLogicTax();
+        fallback.init(sessionDB);
+        return fallback;
+    }
+
+    public DataLogicRestaurant getDataLogicRestaurant() {
+        if (app != null) {
+            try {
+                return app.getBean(DataLogicRestaurant.class);
+            } catch (BeanFactoryException ignored) {
+            }
+        }
+        DataLogicRestaurant fallback = new DataLogicRestaurant();
         fallback.init(sessionDB);
         return fallback;
     }
@@ -439,25 +452,19 @@ public class DataLogicSales extends BeanFactoryDataSingle {
     }
 
     /**
-     *
-     * @return
+     * @deprecated Use {@link DataLogicRestaurant#getFloorsList()} instead.
      */
+    @Deprecated
     public final SentenceList<FloorsInfo> getFloorsList() {
-        return new StaticSentence(sessionDB,
-                "SELECT ID, NAME FROM floors ORDER BY NAME",
-                null,
-                new SerializerReadClass(FloorsInfo.class));
+        return getDataLogicRestaurant().getFloorsList();
     }
 
     /**
-     *
-     * @return
+     * @deprecated Use {@link DataLogicRestaurant#getFloorTablesList()} instead.
      */
+    @Deprecated
     public final SentenceList<FloorsInfo> getFloorTablesList() {
-        return new StaticSentence(sessionDB,
-                "SELECT ID, NAME, SEATS FROM places ORDER BY NAME",
-                null,
-                new SerializerReadClass(FloorsInfo.class));
+        return getDataLogicRestaurant().getFloorTablesList();
     }
 
     /**

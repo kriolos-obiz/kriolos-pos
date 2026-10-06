@@ -40,12 +40,12 @@ public final class PlacesEditor extends JPanel implements EditorRecord {
     private String m_sID;
     
     /** Creates new form PlacesEditor
-     * @param dlSales
+     * @param dlRestaurant
      * @param dirty */
-    public PlacesEditor(DataLogicSales dlSales, DirtyManager dirty) {
+    public PlacesEditor(DataLogicRestaurant dlRestaurant, DirtyManager dirty) {
         initComponents();
         
-        m_sentfloor = dlSales.getFloorsList();
+        m_sentfloor = dlRestaurant != null ? dlRestaurant.getFloorsList() : null;
         m_FloorModel = new ComboBoxValModel();
         
         m_jName.getDocument().addDocumentListener(dirty);
@@ -55,6 +55,14 @@ public final class PlacesEditor extends JPanel implements EditorRecord {
         m_jY.getDocument().addDocumentListener(dirty);
         
         writeValueEOF();
+    }
+
+    /**
+     * @deprecated Use {@link #PlacesEditor(DataLogicRestaurant, DirtyManager)} instead.
+     */
+    @Deprecated
+    public PlacesEditor(DataLogicSales dlSales, DirtyManager dirty) {
+        this(dlSales != null ? dlSales.getDataLogicRestaurant() : null, dirty);
     }
     
     /**

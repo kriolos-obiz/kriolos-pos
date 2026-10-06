@@ -26,7 +26,6 @@ import com.openbravo.data.user.ListProviderCreator;
 import com.openbravo.data.user.DefaultSaveProvider;
 import com.openbravo.format.Formats;
 import com.openbravo.pos.forms.AppLocal;
-import com.openbravo.pos.forms.DataLogicSales;
 import com.openbravo.pos.panels.JPanelTable;
 import javax.swing.ListCellRenderer;
 
@@ -45,20 +44,9 @@ public class JPanelPlaces extends JPanelTable {
 
     @Override
     protected void init() {
-        DataLogicSales dlSales = app.getBean(DataLogicSales.class);
-
-        tplaces = new TableDefinition(app.getSession(),
-                "places",
-                 new String[]{"ID", "NAME", "SEATS", "X", "Y", "FLOOR"},
-                 new String[]{"ID", AppLocal.getIntString("label.name"),
-                    AppLocal.getIntString("label.seats"),
-                    "X", "Y",
-                    AppLocal.getIntString("label.placefloor")},
-                 new Datas[]{Datas.STRING, Datas.STRING, Datas.STRING, Datas.INT, Datas.INT, Datas.STRING},
-                 new Formats[]{Formats.STRING, Formats.STRING, Formats.STRING, Formats.INT, Formats.INT, Formats.NULL},
-                 new int[]{0}
-        );
-        jeditor = new PlacesEditor(dlSales, dirty);
+        DataLogicRestaurant dlRestaurant = app.getBean(DataLogicRestaurant.class);
+        tplaces = dlRestaurant.getTablePlaces();
+        jeditor = new PlacesEditor(dlRestaurant, dirty);
     }
 
     @Override

@@ -42,6 +42,7 @@ public class JTicketsBagRestaurantRes extends javax.swing.JPanel implements Edit
     private final JTicketsBagRestaurantMap m_restaurantmap;
     
     private DataLogicCustomers dlCustomers = null;
+    private DataLogicRestaurant dlRestaurant = null;
     
     private final DirtyManager m_Dirty;
     private String m_sID;
@@ -66,6 +67,7 @@ public class JTicketsBagRestaurantRes extends javax.swing.JPanel implements Edit
         m_restaurantmap = restaurantmap;
         
         dlCustomers = oApp.getBean(DataLogicCustomers.class);
+        dlRestaurant = oApp.getBean(DataLogicRestaurant.class);
 
         m_dcurrentday = null;
         
@@ -105,9 +107,9 @@ public class JTicketsBagRestaurantRes extends javax.swing.JPanel implements Edit
         
         writeValueEOF();
         
-        ListProvider lpr = new ListProviderCreator(dlCustomers.getReservationsList(), new MyDateFilter());            
-        DefaultSaveProvider spr = new DefaultSaveProvider(dlCustomers.getReservationsUpdate(), 
-            dlCustomers.getReservationsInsert(), dlCustomers.getReservationsDelete());        
+        ListProvider lpr = new ListProviderCreator(dlRestaurant.getReservationsList(), new MyDateFilter());            
+        DefaultSaveProvider spr = new DefaultSaveProvider(dlRestaurant.getReservationsUpdate(), 
+            dlRestaurant.getReservationsInsert(), dlRestaurant.getReservationsDelete());        
         
         m_bd = new BrowsableEditableData(lpr, spr, new CompareReservations(), this, m_Dirty);           
         
