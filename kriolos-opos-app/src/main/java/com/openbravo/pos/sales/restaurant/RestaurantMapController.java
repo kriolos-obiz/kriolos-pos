@@ -56,11 +56,20 @@ public class RestaurantMapController {
     private CustomerInfo customerInfo;
 
     public RestaurantMapController(AppView appView, TicketsEditor panelTicket) {
+        this(appView, panelTicket,
+                appView != null ? appView.getBean(DataLogicReceipts.class) : null,
+                appView != null ? appView.getBean(DataLogicSystem.class) : null,
+                appView != null && appView.getSession() != null ? new PlaceServiceImpl(appView.getSession()) : null);
+    }
+
+    RestaurantMapController(AppView appView, TicketsEditor panelTicket,
+                            DataLogicReceipts dlReceipts, DataLogicSystem dlSystem,
+                            PlaceServiceImpl placeService) {
         this.appView = appView;
         this.panelTicket = panelTicket;
-        this.dlReceipts = appView.getBean(DataLogicReceipts.class);
-        this.dlSystem = appView.getBean(DataLogicSystem.class);
-        this.placeService = new PlaceServiceImpl(appView.getSession());
+        this.dlReceipts = dlReceipts;
+        this.dlSystem = dlSystem;
+        this.placeService = placeService;
     }
 
     public PlaceServiceImpl getPlaceService() {
@@ -148,6 +157,7 @@ public class RestaurantMapController {
 
     public void setActivePlace(Place place, TicketInfo ticket) {
         this.placeCurrent = place;
+        syncTableDetails(place, ticket);
         panelTicket.setActiveTicket(ticket, placeCurrent.getName());
 
         try {
@@ -155,6 +165,50 @@ public class RestaurantMapController {
         }
         catch (BasicException ex) {
             Logger.getLogger(RestaurantMapController.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    public void syncTableDetails(Place place, TicketInfo ticket) {
+        if (place == null || ticket == null) {
+            return;
+        }
+        String tableName = place.getName();
+        if (!ticket.getOldTicket()) {
+            placeService.setTicketIdInTable(ticket.getId(), tableName);
+        }
+
+        if (Boolean.parseBoolean(appView.getProperties().getProperty("table.showcustomerdetails"))) {
+            String custname = placeService.getCustomerNameInTable(tableName);
+            if (ticket.getCustomer() != null && (custname == null || custname.isBlank())) {
+                placeService.setCustomerNameInTable(ticket.getCustomer().getName(), tableName);
+            }
+        }
+
+        if (Boolean.parseBoolean(appView.getProperties().getProperty("table.showwaiterdetails"))) {
+            String waiter = placeService.getWaiterNameInTable(tableName);
+            if (waiter == null || waiter.isBlank()) {
+                if (appView.getAppUserView() != null && appView.getAppUserView().getUser() != null) {
+                    placeService.setWaiterNameInTable(appView.getAppUserView().getUser().getName(), tableName);
+                }
+            }
+        }
+
+        if (Boolean.TRUE.equals(placeService.getTableMovedFlag(ticket.getId()))) {
+            placeService.moveCustomer(tableName, ticket.getId());
+        }
+    }
+
+    public void syncCustomerInTable(String customerName, String ticketId) {
+        if (ticketId != null) {
+            placeService.setCustomerNameInTableByTicketId(customerName, ticketId);
+        }
+    }
+
+    public void clearTable(String tableName) {
+        if (tableName != null) {
+            placeService.clearCustomerNameInTable(tableName);
+            placeService.clearWaiterNameInTable(tableName);
+            placeService.clearTicketIdInTable(tableName);
         }
     }
 

@@ -16,6 +16,7 @@
 package com.openbravo.pos.sales.restaurant;
 
 import com.openbravo.pos.customers.CustomerInfo;
+import com.openbravo.pos.customers.CustomerInfoExt;
 import com.openbravo.pos.forms.AppConfig;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
@@ -425,6 +426,18 @@ public class JTicketsBagRestaurantMap extends JTicketsBag {
         printState();
         m_panelticket.setActiveTicket(null, null);
         ensureTimerStart();
+    }
+
+    @Override
+    public void customerUpdated(CustomerInfoExt customer, String ticketId) {
+        controller.syncCustomerInTable(customer != null ? customer.getName() : null, ticketId);
+    }
+
+    @Override
+    public void ticketClosed(TicketInfo ticket, String ticketExt) {
+        if (ticket != null && !ticket.getOldTicket() && ticketExt != null) {
+            controller.clearTable(ticketExt);
+        }
     }
 
     @Override

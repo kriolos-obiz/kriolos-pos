@@ -43,7 +43,6 @@ import com.openbravo.pos.panels.JProductFinder;
 import com.openbravo.pos.payment.JPaymentSelect;
 import com.openbravo.pos.payment.JPaymentSelectReceipt;
 import com.openbravo.pos.payment.JPaymentSelectRefund;
-import com.openbravo.pos.sales.restaurant.PlaceServiceImpl;
 import com.openbravo.pos.scripting.ScriptEngine;
 import com.openbravo.pos.scripting.ScriptException;
 import com.openbravo.pos.scripting.ScriptFactory;
@@ -119,7 +118,6 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     private InactivityListener inactivityListener;
     private DataLogicReceipts dlReceipts = null;
     private Boolean priceWith00;
-    private PlaceServiceImpl restDB;
     private AppProperties m_config;
     // private Integer count = 0;
     // private Integer oCount = 0;
@@ -135,7 +133,6 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         m_config = app.getProperties();
 
         m_App = app;
-        restDB = new PlaceServiceImpl(m_App.getSession());
 
         dlSystem = m_App.getBean(DataLogicSystem.class);
         dlSales = m_App.getBean(DataLogicSales.class);
@@ -415,28 +412,6 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
 
                 ticketHeaderPane.setRemoteOrderVisible(m_App.hasPermission("sales.PrintRemote"));
                 ticketHeaderPane.setRemoteOrderEnabled(m_App.hasPermission("sales.PrintRemote"));
-
-                if (!m_oTicket.getOldTicket()) {
-                    restDB.setTicketIdInTable(m_oTicket.getId(), m_oTicketExt);
-                }
-
-                if (Boolean.parseBoolean(getAppProperty("table.showcustomerdetails"))) {
-                    String custname = restDB.getCustomerNameInTable(m_oTicketExt);
-                    if (m_oTicket.getCustomer() != null && (custname == null || custname.isBlank())) {
-                        restDB.setCustomerNameInTable(m_oTicket.getCustomer().getName(), m_oTicketExt);
-                    }
-                }
-
-                if (Boolean.parseBoolean(getAppProperty("table.showwaiterdetails"))) {
-                    String waiter = restDB.getWaiterNameInTable(m_oTicketExt);
-                    if (waiter == null || waiter.isBlank()) {
-                        restDB.setWaiterNameInTable(m_App.getAppUserView().getUser().getName(), m_oTicketExt);
-                    }
-                }
-
-                if (restDB.getTableMovedFlag(m_oTicket.getId())) {
-                    restDB.moveCustomer(m_oTicketExt, m_oTicket.getId());
-                }
             }
 
             executeEvent(m_oTicket, m_oTicketExt, TicketConstants.EV_TICKET_SHOW);
@@ -903,10 +878,8 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                     Notify(AppLocal.getIntString("notify.printing"));
                 },
                 () -> {
-                    if (isRestaurantMode() && !ticket.getOldTicket()) {
-                        restDB.clearCustomerNameInTable(ticketext);
-                        restDB.clearWaiterNameInTable(ticketext);
-                        restDB.clearTicketIdInTable(ticketext);
+                    if (m_ticketsbag != null) {
+                        m_ticketsbag.ticketClosed(ticket, ticketext);
                     }
                 }
         );
@@ -1145,16 +1118,16 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
             if (chosenCustomer.isPresent()) {
                 CustomerInfoExt customerExt = chosenCustomer.get();
                 m_oTicket.setCustomer(customerExt);
-                if (isRestaurantMode()) {
-                    restDB.setCustomerNameInTableByTicketId(customerExt.getName(), m_oTicket.getId());
+                if (m_ticketsbag != null) {
+                    m_ticketsbag.customerUpdated(customerExt, m_oTicket.getId());
                 }
                 checkCustomer();
                 ticketSummaryPane.setTicketName(m_oTicket.getName(m_oTicketExt));
             } else if (currentCustomer != null) {
                 // Customer removed or cleared
                 m_oTicket.setCustomer(null);
-                if (isRestaurantMode()) {
-                    restDB.setCustomerNameInTableByTicketId(null, m_oTicket.getId());
+                if (m_ticketsbag != null) {
+                    m_ticketsbag.customerUpdated(null, m_oTicket.getId());
                 }
                 Notify("notify.customerremove");
             }
