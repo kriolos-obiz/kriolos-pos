@@ -109,37 +109,7 @@ public class DataLogicSales extends BeanFactoryDataSingle {
             Datas.STRING, Datas.STRING, Datas.STRING,
             Datas.STRING, Datas.STRING, Datas.STRING};
 
-        // creating customers object here for now for future global reuse
-        // LOYALTY, MEMBERSHIP & etc as will be more system centric than customer
-        customersRow = new Row(
-                new Field("ID", Datas.STRING, Formats.STRING),
-                new Field("SEARCHKEY", Datas.STRING, Formats.STRING),
-                new Field("TAXID", Datas.STRING, Formats.STRING),
-                new Field("NAME", Datas.STRING, Formats.STRING),
-                new Field("TAXCATEGORY", Datas.STRING, Formats.STRING),
-                new Field("CARD", Datas.STRING, Formats.STRING),
-                new Field("MAXDEBT", Datas.DOUBLE, Formats.CURRENCY),
-                new Field("ADDRESS", Datas.STRING, Formats.STRING),
-                new Field("ADDRESS2", Datas.STRING, Formats.STRING),
-                new Field("POSTAL", Datas.STRING, Formats.STRING),
-                new Field("CITY", Datas.STRING, Formats.STRING),
-                new Field("REGION", Datas.STRING, Formats.STRING),
-                new Field("COUNTRY", Datas.STRING, Formats.STRING),
-                new Field("FIRSTNAME", Datas.STRING, Formats.STRING),
-                new Field("LASTNAME", Datas.STRING, Formats.STRING),
-                new Field("EMAIL", Datas.STRING, Formats.STRING),
-                new Field("PHONE", Datas.STRING, Formats.STRING),
-                new Field("PHONE2", Datas.STRING, Formats.STRING),
-                new Field("FAX", Datas.STRING, Formats.STRING),
-                new Field("NOTES", Datas.STRING, Formats.STRING),
-                new Field("VISIBLE", Datas.BOOLEAN, Formats.BOOLEAN),
-                new Field("CURDATE", Datas.STRING, Formats.TIMESTAMP),
-                new Field("CURDEBT", Datas.DOUBLE, Formats.CURRENCY),
-                new Field("IMAGE", Datas.BYTES, Formats.NULL),
-                new Field("ISVIP", Datas.BOOLEAN, Formats.BOOLEAN),
-                new Field("DISCOUNT", Datas.DOUBLE, Formats.CURRENCY),
-                new Field("MEMODATE", Datas.STRING, Formats.TIMESTAMP));
-
+        customersRow = null;
     }
 
     /**
@@ -151,9 +121,12 @@ public class DataLogicSales extends BeanFactoryDataSingle {
         this.sessionDB = s;
     }
 
-    // End Import Creates
+    /**
+     * @deprecated Use {@link DataLogicCustomers#getCustomersRow()} instead.
+     */
+    @Deprecated
     public final Row getCustomersRow() {
-        return customersRow;
+        return getCustomerDataLogic().getCustomersRow();
     }
 
     public DataLogicInventory getDataLogicInventory() {
@@ -357,37 +330,11 @@ public class DataLogicSales extends BeanFactoryDataSingle {
      * @param cId
      * @return
      * @throws BasicException
+     * @deprecated Use {@link DataLogicCustomers#getCustomersTransactionList(String)} instead.
      */
+    @Deprecated
     public final List<CustomerTransaction> getCustomersTransactionList(String cId) throws BasicException {
-
-        // TODO: TICKETLINE MUST STORE: _tax_value, _line_amount(Qty x price)
-        // _line_total (Price x Qty x Tax), line_prod_name
-        // TODO: CALCULATION MUST BE DONE Java using BigDecimal
-        return new PreparedSentence<>(sessionDB, """
-            SELECT 
-                tickets.TICKETID, 
-                products.NAME AS PNAME, 
-                SUM(ticketlines.UNITS) AS UNITS, 
-                SUM(ticketlines.UNITS * ticketlines.PRICE) AS AMOUNT, 
-                SUM(ticketlines.UNITS * ticketlines.PRICE * (1.0 + taxes.RATE)) AS TOTAL, 
-                receipts.DATENEW, 
-                customers.ID AS CID 
-            FROM ticketlines ticketlines 
-            INNER JOIN taxes taxes ON ticketlines.TAXID = taxes.ID 
-            INNER JOIN tickets tickets ON tickets.ID = ticketlines.TICKET 
-            INNER JOIN customers customers ON customers.ID = tickets.CUSTOMER 
-            INNER JOIN receipts receipts ON tickets.ID = receipts.ID 
-            LEFT OUTER JOIN products products ON ticketlines.PRODUCT = products.ID 
-            WHERE tickets.CUSTOMER = ? 
-            GROUP BY 
-                customers.ID, 
-                receipts.DATENEW, 
-                tickets.TICKETID, 
-                products.NAME
-            ORDER BY receipts.DATENEW DESC
-            """,
-                SerializerWriteString.INSTANCE,
-                CustomerTransaction.getSerializerRead()).list(cId);
+        return getDataLogicCustomers().getCustomersTransactionList(cId);
     }
 
     /**
@@ -542,7 +489,7 @@ public class DataLogicSales extends BeanFactoryDataSingle {
         return ticket;
     }
 
-    private DataLogicCustomers getCustomerDataLogic() {
+    public DataLogicCustomers getDataLogicCustomers() {
         if (app != null) {
             try {
                 return app.getBean(DataLogicCustomers.class);
@@ -552,6 +499,10 @@ public class DataLogicSales extends BeanFactoryDataSingle {
         DataLogicCustomers fallback = new DataLogicCustomers();
         fallback.init(sessionDB);
         return fallback;
+    }
+
+    public DataLogicCustomers getCustomerDataLogic() {
+        return getDataLogicCustomers();
     }
 
     private void setTicketData(TicketInfo ticket) throws BasicException {
@@ -952,19 +903,11 @@ public class DataLogicSales extends BeanFactoryDataSingle {
     /**
      *
      * @return
+     * @deprecated Use {@link DataLogicCustomers#updateCustomerDebt(String, Double, Date)} instead.
      */
+    @Deprecated
     public final int updateCustomerDebt(String customerId, Double accDebt, Date date) throws BasicException {
-
-        return new PreparedSentence(sessionDB,
-                "UPDATE customers SET CURDEBT = ?, CURDATE = ? WHERE ID = ?",
-                SerializerWriteParams.INSTANCE).exec(new DataParams() {
-            @Override
-            public void writeValues() throws BasicException {
-                setDouble(1, accDebt);
-                setTimestamp(2, date);
-                setString(3, customerId);
-            }
-        });
+        return getDataLogicCustomers().updateCustomerDebt(customerId, accDebt, date);
     }
 
     /**
@@ -1169,123 +1112,29 @@ public class DataLogicSales extends BeanFactoryDataSingle {
     /**
      *
      * @return
+     * @deprecated Use {@link DataLogicCustomers#getCustomerInsert()} instead.
      */
+    @Deprecated
     public final SentenceExec getCustomerInsert() {
-        return new SentenceExecTransaction(sessionDB) {
-            @Override
-            public int execInTransaction(Object[] params) throws BasicException {
-                int i = new PreparedSentence(sessionDB,
-                        "INSERT INTO customers ("
-                        + "ID, "
-                        + "SEARCHKEY, "
-                        + "TAXID, "
-                        + "NAME, "
-                        + "TAXCATEGORY, "
-                        + "CARD, "
-                        + "MAXDEBT, "
-                        + "ADDRESS, "
-                        + "ADDRESS2, "
-                        + "POSTAL, "
-                        + "CITY, "
-                        + "REGION, "
-                        + "COUNTRY, "
-                        + "FIRSTNAME, "
-                        + "LASTNAME, "
-                        + "EMAIL, "
-                        + "PHONE, "
-                        + "PHONE2, "
-                        + "FAX, "
-                        + "NOTES, "
-                        + "VISIBLE, "
-                        + "CURDATE, "
-                        + "CURDEBT, "
-                        + "IMAGE, "
-                        + "ISVIP, "
-                        + "DISCOUNT, "
-                        + "MEMODATE ) "
-                        + "VALUES ("
-                        + "?, ?, ?, ?, ?, ?, "
-                        + "?, ?, ?, ?, ?, ?, "
-                        + "?, ?, ?, ?, ?, ?, "
-                        + "?, ?, ?, ?, ?, ?, "
-                        + "?, ?, ?)",
-                        new SerializerWriteBasicExt(customersRow.getDatas(),
-                                new int[]{0,
-                                    1, 2, 3, 4, 5, 6,
-                                    7, 8, 9, 10, 11, 12,
-                                    13, 14, 15, 16, 17, 18,
-                                    19, 20, 21, 22, 23, 24,
-                                    25, 26}))
-                        .exec(params);
-                return i;
-            }
-        };
+        return getDataLogicCustomers().getCustomerInsert();
     }
 
     /**
      *
      * @return
+     * @deprecated Use {@link DataLogicCustomers#getCustomerUpdate()} instead.
      */
+    @Deprecated
     public final SentenceExec getCustomerUpdate() {
-        return new SentenceExecTransaction(sessionDB) {
-            @Override
-            public int execInTransaction(Object[] params) throws BasicException {
-
-                int i = new PreparedSentence(sessionDB,
-                        "UPDATE customers SET "
-                        + "ID = ?, "
-                        + "SEARCHKEY = ?, "
-                        + "TAXID = ?, "
-                        + "NAME = ?, "
-                        + "TAXCATEGORY = ?, "
-                        + "CARD = ?, "
-                        + "MAXDEBT = ?, "
-                        + "ADDRESS = ?, "
-                        + "ADDRESS2 = ?, "
-                        + "POSTAL = ?, "
-                        + "CITY = ?, "
-                        + "REGION = ?, "
-                        + "COUNTRY = ?, "
-                        + "FIRSTNAME = ?, "
-                        + "LASTNAME = ?, "
-                        + "EMAIL = ?, "
-                        + "PHONE = ?, "
-                        + "PHONE2 = ?, "
-                        + "FAX = ?,  "
-                        + "NOTES = ?,"
-                        + "VISIBLE = ?, "
-                        + "CURDATE = ?, "
-                        + "CURDEBT = ?, "
-                        + "IMAGE = ?, "
-                        + "ISVIP = ?, "
-                        + "DISCOUNT = ?, "
-                        + "MEMODATE = ? "
-                        + "WHERE ID = ?",
-                        new SerializerWriteBasicExt(customersRow.getDatas(),
-                                new int[]{0,
-                                    1, 2, 3, 4, 5,
-                                    6, 7, 8, 9, 10,
-                                    11, 12, 13, 14, 15,
-                                    16, 17, 18, 19, 20,
-                                    21, 22, 23, 24, 25,
-                                    26, 0}))
-                        .exec(params);
-                return i;
-            }
-        };
+        return getDataLogicCustomers().getCustomerUpdate();
     }
 
+    /**
+     * @deprecated Use {@link DataLogicCustomers#getCustomerDelete()} instead.
+     */
+    @Deprecated
     public final SentenceExec getCustomerDelete() {
-        return new SentenceExecTransaction(sessionDB) {
-            @Override
-            public int execInTransaction(Object[] params) throws BasicException {
-                return new PreparedSentence(sessionDB,
-                        "DELETE FROM customers WHERE ID = ?",
-                        new SerializerWriteBasicExt(customersRow.getDatas(),
-                                new int[]{0}))
-                        .exec(params);
-            }
-        };
+        return getDataLogicCustomers().getCustomerDelete();
     }
 
     public final void addTicketLineRemoved(String username, String ticketId, String productId, String productName, double quantity) {

@@ -58,7 +58,6 @@ public class CustomerCSVImport extends JPanel implements JPanelView {
     private String last_folder;
     private File config_file;
 
-    private DataLogicSales m_dlSales;
     private DataLogicSystem m_dlSystem;
     private DataLogicImport m_dlImport;
     private DataLogicCustomers m_dlCustomer;
@@ -109,9 +108,6 @@ public class CustomerCSVImport extends JPanel implements JPanelView {
         m_dlCustomer = new DataLogicCustomers();
         m_dlCustomer.init(dbSession);
 
-        m_dlSales = new DataLogicSales();
-        m_dlSales.init(dbSession);
-
         m_dlSystem = new DataLogicSystem();
         m_dlSystem.init(dbSession);
 
@@ -119,9 +115,9 @@ public class CustomerCSVImport extends JPanel implements JPanelView {
         m_dlImport.init(dbSession);
 
         spr = new DefaultSaveProvider(
-                m_dlSales.getCustomerUpdate(),
-                m_dlSales.getCustomerInsert(),
-                m_dlSales.getCustomerDelete());
+                m_dlCustomer.getCustomerUpdate(),
+                m_dlCustomer.getCustomerInsert(),
+                m_dlCustomer.getCustomerDelete());
 
         last_folder = props.getProperty("CSV.last_folder");
         config_file = props.getConfigFile();

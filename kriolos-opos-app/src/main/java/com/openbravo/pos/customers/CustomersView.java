@@ -24,7 +24,7 @@ import com.openbravo.format.Formats;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.forms.BeanFactoryException;
-import com.openbravo.pos.forms.DataLogicSales;
+import com.openbravo.pos.sales.DataLogicTax;
 import com.openbravo.pos.util.StringUtils;
 import java.awt.Component;
 import java.awt.Desktop;
@@ -61,7 +61,8 @@ public final class CustomersView extends com.openbravo.pos.panels.ValidationPane
     private ComboBoxValModel m_CategoryModel;
 
     private DirtyManager m_Dirty;
-    private DataLogicSales dlSales;
+    private DataLogicCustomers dlCustomers;
+    private DataLogicTax dlTax;
 
     //HS updates to get last added Customer 06.03.2014
     private AppView appView;
@@ -76,11 +77,12 @@ public final class CustomersView extends com.openbravo.pos.panels.ValidationPane
     public CustomersView(AppView app, DirtyManager dirty) {
         try {
             appView = app;
-            dlSales = app.getBean(DataLogicSales.class);
+            dlCustomers = app.getBean(DataLogicCustomers.class);
+            dlTax = app.getBean(DataLogicTax.class);
 
             initComponents();
 
-            m_sentcat = dlSales.getTaxCustCategoriesList();
+            m_sentcat = dlTax.getTaxCustCategoriesList();
             m_CategoryModel = new ComboBoxValModel();
 
             m_Dirty = dirty;
@@ -515,7 +517,7 @@ public final class CustomersView extends com.openbravo.pos.panels.ValidationPane
 
         List<CustomerTransaction> customerTransactionList = new ArrayList<>();
         try {
-            customerTransactionList = dlSales.getCustomersTransactionList(cId);
+            customerTransactionList = dlCustomers.getCustomersTransactionList(cId);
             for (CustomerTransaction customerTransaction : customerTransactionList) {
                 String customerId = customerTransaction.getCustomerId();
                 if (!customerId.equals(cId)) {
