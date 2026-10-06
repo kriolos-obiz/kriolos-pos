@@ -124,6 +124,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     private SalesCustomerController salesCustomerController;
     private SalesPaymentCoordinator salesPaymentCoordinator;
     private SalesStockCoordinator salesStockCoordinator;
+    private SalesBarcodeScanCoordinator salesBarcodeScanCoordinator;
     private PaymentService paymentService;
     private InventoryService inventoryService;
     private JPaymentSelect paymentdialogreceipt;
@@ -346,6 +347,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         paymentService = new PaymentServiceImpl();
         inventoryService = new InventoryServiceImpl(dlSales, m_App.getSession());
         salesStockCoordinator = new SalesStockCoordinator(inventoryService, dataLogicPIM, dlSales);
+        salesBarcodeScanCoordinator = new SalesBarcodeScanCoordinator(dataLogicPIM, dlCustomers);
 
         paymentdialogreceipt = JPaymentSelectReceipt.getDialog(this);
         paymentdialogreceipt.init(m_App, paymentService);
@@ -750,22 +752,23 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     }
 
     private void incProductByCode(String sCode) {
-
-        try {
-            ProductInfoExt oProduct = dataLogicPIM.getProductInfoByCode(sCode);
-
-            if (oProduct == null) {
-                com.openbravo.pos.util.NotifyUtils.beep();
-                new MessageInf(MessageInf.SGN_WARNING, sCode + " - " + AppLocal.getIntString("message.noproduct")).show(this);
-                stateToZero();
-            } else {
-                incProduct(oProduct);
-            }
-        }
-        catch (BasicException ex) {
-            LOGGER.log(System.Logger.Level.WARNING, "Exception on increment product by code: ", ex);
-            stateToZero();
-            new MessageInf(ex).show(this);
+        if (salesBarcodeScanCoordinator != null) {
+            boolean isUpc = "true".equals(getAppProperty("machine.barcodetype"));
+            salesBarcodeScanCoordinator.processBarcode(
+                    this,
+                    sCode,
+                    isUpc,
+                    taxeslogic,
+                    m_oTicket != null ? m_oTicket.getCustomer() : null,
+                    m_jaddtax.isSelected(),
+                    customer -> {
+                        m_oTicket.setCustomer(customer);
+                        m_jTicketId.setText(m_oTicket.getName(m_oTicketExt));
+                    },
+                    (prod, units, price) -> addTicketLine(prod, units, price),
+                    this::incProduct,
+                    this::stateToZero
+            );
         }
     }
 
@@ -842,137 +845,25 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         if ((cTrans == '\n') || (cTrans == '?')) {
 
             if (m_sBarcode.length() > 0) {
-
                 String sCode = m_sBarcode.toString();
-                String sCodetype = "EAN"; // Declare EAN. It's default
-
-                if ("true".equals(getAppProperty("machine.barcodetype"))) {
-                    sCodetype = "UPC";
-                } else {
-                    sCodetype = "EAN"; // Ensure not null
+                boolean isUpc = "true".equals(getAppProperty("machine.barcodetype"));
+                if (salesBarcodeScanCoordinator != null) {
+                    salesBarcodeScanCoordinator.processBarcode(
+                            this,
+                            sCode,
+                            isUpc,
+                            taxeslogic,
+                            m_oTicket != null ? m_oTicket.getCustomer() : null,
+                            m_jaddtax.isSelected(),
+                            customer -> {
+                                m_oTicket.setCustomer(customer);
+                                m_jTicketId.setText(m_oTicket.getName(m_oTicketExt));
+                            },
+                            (prod, units, price) -> addTicketLine(prod, units, price),
+                            this::incProduct,
+                            this::stateToZero
+                    );
                 }
-
-                if (sCode.startsWith("C") || sCode.startsWith("c")) {
-                    try {
-                        String card = sCode;
-                        CustomerInfoExt newcustomer = dlCustomers.findCustomerInfoExtByCard(card);
-
-                        if (newcustomer == null) {
-                            com.openbravo.pos.util.NotifyUtils.beep();
-                            new MessageInf(MessageInf.SGN_WARNING, AppLocal
-                                    .getIntString("message.nocustomer")).show(this);
-                        } else {
-                            m_oTicket.setCustomer(newcustomer);
-                            m_jTicketId.setText(m_oTicket.getName(m_oTicketExt));
-                        }
-                    }
-                    catch (BasicException ex) {
-                        LOGGER.log(System.Logger.Level.WARNING, "Exception on process state transition 'C': ", ex);
-                        com.openbravo.pos.util.NotifyUtils.beep();
-                        new MessageInf(MessageInf.SGN_WARNING, AppLocal
-                                .getIntString("message.nocustomer"), ex).show(this);
-                    }
-                    stateToZero();
-
-                } else if (sCode.startsWith(";")) {
-                    stateToZero();
-
-                    // START OF BARCODE PARSING
-                    /*
-                     * This block is deliberately verbose and is base for future scanner handling
-                     * Some scanners inject a CR+LF... some don't...
-                     * stateTransition() must allow for this as these add characters to .length()
-                     * First 3 digits are GS1 CountryCode OR Retailer internal use
-                     * 
-                     * Prefix ManCodeProdCode CheckCode
-                     * PPP MMMMMCCCCC K
-                     * 012 3456789012 K
-                     * Barcode CCCCC must be unique
-                     * Notes:
-                     * ManufacturerCode and ProductCode must be exactly 10 digits
-                     * If code begins with 0 then is actually a UPC-A with prepended 0
-                     * 
-                     * KriolOS POS Retailer instore uses these RULES
-                     * Prefixes 020 to 029 are set aside for Retailer internal use
-                     * This means that CCCC becomes price/weight values
-                     * Prefixes 978 and 979 are set aside for ISBN - Future use
-                     * 
-                     * Prefix ManCode ProdCode CheckCode
-                     * PPP MMMMM CCCCC K Format
-                     * 012 34567 89012 K Human
-                     * 
-                     */
-                } else if (EmbeddedBarcodeDecoder.isEanVariableBarcode(sCode) && "EAN".equals(sCodetype)) {
-
-                    try {
-                        ProductInfoExt oProduct = dataLogicPIM.getProductInfoByShortCode(sCode);
-
-                        if (oProduct == null) {
-                            com.openbravo.pos.util.NotifyUtils.beep();
-                            new MessageInf(MessageInf.SGN_WARNING, sCode + " - " + AppLocal.getIntString("message.noproduct")).show(this);
-                            stateToZero();
-
-                        } else if ("EAN-13".equals(oProduct.getCodetype())) {
-                            TaxInfo tax = taxeslogic.getTaxInfo(oProduct.getTaxCategoryID(), m_oTicket.getCustomer());
-                            EmbeddedBarcodeDecoder.DecodedBarcode decoded = EmbeddedBarcodeDecoder.decodeEan(sCode, oProduct, tax, m_jaddtax.isSelected());
-                            addTicketLine(oProduct, decoded.getUnits(), decoded.getPriceSell());
-                        }
-                    }
-                    catch (BasicException ex) {
-                        LOGGER.log(System.Logger.Level.WARNING,
-                                "Exception on process state transition for 'EAN' barcode: ", ex);
-                        stateToZero();
-                        new MessageInf(ex).show(this);
-                    }
-
-                    // UPC-A
-                    /*
-                     * Note: if begins 02 then its a standard
-                     * // UPC-A max value limitation is 4 digit price
-                     * // UPC-A Extended uses State digit to give 5 digit price
-                     * // KriolOS POS does not support UPC-A Extended at this time
-                     * // Identifier Prod State Cost CheckCode
-                     * // I PPPPP S CCCC K
-                     * // 1 23456 7 8901 2
-                     * 
-                     * 0 = Standard UPC number (must have a zero to do zero-suppressed numbers)
-                     * 1 = Reserved
-                     * 2 = Random-weight items (fruits, vegetables, meats, etc.)
-                     * 3 = Pharmaceuticals
-                     * 4 = In-store marketing for retailers (Other stores will not understand)
-                     * 5 = Coupons
-                     * 6 = Standard UPC number
-                     * 7 = Standard UPC number
-                     * 8 = Reserved
-                     * 9 = Reserved
-                     */
-                } else if (EmbeddedBarcodeDecoder.isUpcVariableBarcode(sCode) && "UPC".equals(sCodetype)) {
-
-                    try {
-                        ProductInfoExt oProduct = dataLogicPIM.getProductInfoByUShortCode(sCode); // Return only UPC product
-
-                        if (oProduct == null) {
-                            com.openbravo.pos.util.NotifyUtils.beep();
-                            new MessageInf(MessageInf.SGN_WARNING, sCode + " - " + AppLocal.getIntString("message.noproduct")).show(this);
-                            stateToZero();
-                        } else if ("Upc-A".equals(oProduct.getCodetype())) {
-                            TaxInfo tax = taxeslogic.getTaxInfo(oProduct.getTaxCategoryID(), m_oTicket.getCustomer());
-                            EmbeddedBarcodeDecoder.DecodedBarcode decoded = EmbeddedBarcodeDecoder.decodeUpcA(sCode, oProduct, tax, m_jaddtax.isSelected());
-                            addTicketLine(oProduct, decoded.getUnits(), decoded.getPriceSell());
-                        }
-                    }
-                    catch (BasicException ex) {
-                        LOGGER.log(System.Logger.Level.WARNING,
-                                "Exception on process state transition for 'UPC' barcode: ", ex);
-                        stateToZero();
-                        new MessageInf(ex).show(this);
-                    }
-
-                } else {
-                    incProductByCode(sCode); // returned is standard so go get it
-                }
-                // END OF BARCODE
-
             } else {
                 com.openbravo.pos.util.NotifyUtils.beep();
             }
