@@ -627,30 +627,14 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                 m_oTicket.addLine(oLine);
                 m_ticketlines.addTicketLine(oLine);
 
-                try {
-                    int i = m_ticketlines.getSelectedIndex();
+                int i = m_ticketlines.getSelectedIndex();
+                if (i >= 0) {
                     TicketLineInfo line = m_oTicket.getLine(i);
-
-                    if (line.isProductVerpatrib()) {
-
-                        JProductAttEdit2 attedit = JProductAttEdit2.getAttributesEditor(this, m_App.getSession());
-                        attedit.editAttributes(line.getProductAttSetId(), line.getProductAttSetInstId());
-                        attedit.setVisible(true);
-
-                        if (attedit.isOK()) {
-                            line.setProductAttSetInstId(attedit.getAttributeSetInst());
-                            line.setProductAttSetInstDesc(attedit.getAttributeSetInstDescription());
+                    if (line.isProductVerpatrib() && ticketLineController != null) {
+                        if (ticketLineController.editLineAttributes(this, m_App.getSession(), line)) {
+                            paintTicketLine(i, line);
                         }
-
-                        paintTicketLine(i, line);
                     }
-
-                }
-                catch (Exception ex) {
-                    LOGGER.log(System.Logger.Level.WARNING, "Exception on add ticket line: ", ex);
-                    MessageInf msg = new MessageInf(MessageInf.SGN_WARNING,
-                            AppLocal.getIntString("message.cannotfindattributes"), ex);
-                    msg.show(this);
                 }
             }
 
@@ -1328,7 +1312,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
             LOGGER.log(System.Logger.Level.WARNING, "Exception on print report with resource file: " + resourcefile,
                     ex);
             MessageInf msg = new MessageInf(MessageInf.SGN_WARNING,
-                    AppLocal.getIntString("message.cannotloadreport") + "<br>" + resourcefile, ex);
+                    AppLocal.getIntString("message.cannotloadreport") + "\n" + resourcefile, ex);
             msg.show(this);
         }
     }
@@ -2371,9 +2355,13 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                 }
 
                 if (pUnits <= 0) {
-                    jCheckStock.setForeground(Color.magenta);
+                    Color errorColor = javax.swing.UIManager.getColor("Component.error.focusedBorderColor");
+                    if (errorColor == null) {
+                        errorColor = javax.swing.UIManager.getColor("nb.errorForeground");
+                    }
+                    jCheckStock.setForeground(errorColor != null ? errorColor : javax.swing.UIManager.getColor("Button.foreground"));
                 } else {
-                    jCheckStock.setForeground(Color.darkGray);
+                    jCheckStock.setForeground(javax.swing.UIManager.getColor("Button.foreground"));
                 }
 
                 if (showDialog) {
