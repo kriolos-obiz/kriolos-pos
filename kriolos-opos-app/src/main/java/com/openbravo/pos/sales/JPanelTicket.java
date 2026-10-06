@@ -121,6 +121,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     private TaxesLogic taxeslogic;
     private SalesService salesService;
     private TicketLineController ticketLineController;
+    private SalesCustomerController salesCustomerController;
     private PaymentService paymentService;
     private InventoryService inventoryService;
     private JPaymentSelect paymentdialogreceipt;
@@ -338,6 +339,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         taxeslogic = new TaxesLogic(taxlist);
         salesService = new SalesServiceImpl(taxeslogic);
         ticketLineController = new TicketLineController(m_App, salesService, dlSales);
+        salesCustomerController = new SalesCustomerController(m_App, dlCustomers);
         paymentService = new PaymentServiceImpl();
         inventoryService = new InventoryServiceImpl(dlSales, m_App.getSession());
 
@@ -1115,15 +1117,9 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                         "TicketInfo type (0:Receipt; 1:Refund) is " + ticket.getTicketType());
                 JPaymentSelect paymentdialog = null;
                 if (ticket.getTicketType() == TicketInfo.RECEIPT_NORMAL) {
-                    paymentdialog = JPaymentSelectReceipt.getDialog(this);
+                    paymentdialog = paymentdialogreceipt;
                 } else if (ticket.getTicketType() == TicketInfo.RECEIPT_REFUND) {
-                    paymentdialog = JPaymentSelectRefund.getDialog(this);
-                }
-
-                if (paymentdialog != null) {
-                    paymentdialog.init(m_App, paymentService);
-                } else {
-                    // SHOULD THROW EXCEPTION HERE
+                    paymentdialog = paymentdialogrefund;
                 }
 
                 salesService.calculateTaxes(ticket);
@@ -1404,7 +1400,9 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     }
 
     public void checkCustomer() {
-        if (m_oTicket.getCustomer() != null && m_oTicket.getCustomer().isVIP()) {
+        if (salesCustomerController != null) {
+            salesCustomerController.checkAndShowCustomerDiscount(this, m_oTicket);
+        } else if (m_oTicket != null && m_oTicket.getCustomer() != null && m_oTicket.getCustomer().isVIP()) {
             CustomerDiscountInfoPanel.show(this, m_oTicket.getCustomer());
         }
     }
@@ -2081,122 +2079,25 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         if (inactivityListener != null) {
             inactivityListener.stop();
         }
-        final int[] choice = new int[]{-1};
-        JPanel optPanel = new JPanel(new BorderLayout(15, 15));
-        optPanel.setBorder(javax.swing.BorderFactory.createEmptyBorder(20, 24, 20, 24));
-        javax.swing.JLabel lbl = new javax.swing.JLabel(AppLocal.getIntString("message.customeradd"));
-        lbl.setFont(lbl.getFont().deriveFont(Font.BOLD, 14f));
-        optPanel.add(lbl, BorderLayout.NORTH);
+        if (salesCustomerController != null && m_oTicket != null) {
+            CustomerInfoExt currentCustomer = m_oTicket.getCustomer();
+            Optional<CustomerInfoExt> chosenCustomer = salesCustomerController.selectCustomer(this, m_oTicket);
 
-        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
-        javax.swing.JButton btnCreate = new javax.swing.JButton(AppLocal.getIntString("cboption.create"));
-        javax.swing.JButton btnFind = new javax.swing.JButton(AppLocal.getIntString("cboption.find"));
-        javax.swing.JButton btnCancel = new javax.swing.JButton(AppLocal.getIntString("label.cancel"));
-
-        btnPanel.add(btnCreate);
-        btnPanel.add(btnFind);
-        btnPanel.add(btnCancel);
-        optPanel.add(btnPanel, BorderLayout.SOUTH);
-
-        PosUIModal modal = PosUIModal.create(this, optPanel)
-                .setTitle(AppLocal.getIntString("label.customer"))
-                .setModal(true)
-                .setResizable(false);
-
-        btnCreate.addActionListener(e -> { choice[0] = 0; modal.close(); });
-        btnFind.addActionListener(e -> { choice[0] = 1; modal.close(); });
-        btnCancel.addActionListener(e -> { choice[0] = 2; modal.close(); });
-
-        modal.show();
-        int n = choice[0];
-
-        if (n == 0) {
-            JDialogNewCustomer dialog = JDialogNewCustomer.getDialog(this, m_App);
-            dialog.setVisible(true);
-
-            CustomerInfoExt m_customerInfo = dialog.getSelectedCustomer();
-            if (m_customerInfo != null) {
-                try {
-                    m_oTicket.setCustomer(m_customerInfo);
+            if (chosenCustomer.isPresent()) {
+                CustomerInfoExt customerExt = chosenCustomer.get();
+                m_oTicket.setCustomer(customerExt);
+                if (isRestaurantMode()) {
+                    restDB.setCustomerNameInTableByTicketId(customerExt.getName(), m_oTicket.getId());
                 }
-                catch (Exception ex) {
-                    LOGGER.log(System.Logger.Level.WARNING, "Exception on Create new Customer: ", ex);
+                checkCustomer();
+                m_jTicketId.setText(m_oTicket.getName(m_oTicketExt));
+            } else if (currentCustomer != null) {
+                // Customer removed or cleared
+                m_oTicket.setCustomer(null);
+                if (isRestaurantMode()) {
+                    restDB.setCustomerNameInTableByTicketId(null, m_oTicket.getId());
                 }
-            }
-        }
-
-        if (n == 1) {
-            JCustomerFinder finder = JCustomerFinder.getCustomerFinder(this, dlCustomers);
-
-            if (m_oTicket.getCustomerId() == null) {
-                finder.setAppView(m_App);
-                finder.search(m_oTicket.getCustomer());
-                finder.executeSearch();
-                finder.setVisible(true);
-
-                CustomerInfo customerInfo = finder.getSelectedCustomer();
-                if (customerInfo != null) {
-
-                    try {
-                        CustomerInfoExt customerExt = dlCustomers.findCustomerInfoExtById(customerInfo.getId());
-                        m_oTicket.setCustomer(customerExt);
-                        if (isRestaurantMode()) {
-                            restDB.setCustomerNameInTableByTicketId(customerExt.getName(), m_oTicket.getId());
-                        }
-
-                        checkCustomer();
-
-                        m_jTicketId.setText(m_oTicket.getName(m_oTicketExt));
-
-                    }
-                    catch (BasicException ex) {
-                        LOGGER.log(System.Logger.Level.WARNING, "Exception on Select Customer: ", ex);
-                        MessageInf msg = new MessageInf(MessageInf.SGN_WARNING,
-                                AppLocal.getIntString("message.cannotfindcustomer"), ex);
-                        msg.show(this);
-                    }
-                } else {
-                    m_oTicket.setCustomer(null);
-                    if (isRestaurantMode()) {
-                        restDB.setCustomerNameInTableByTicketId(null, m_oTicket.getId());
-                    }
-                    Notify("notify.customerremove");
-                }
-
-            } else {
-                if (JMessagePanel.showConfirmDialog(this,
-                        new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.customerchange"))) == 0) {
-
-                    finder.setAppView(m_App);
-                    finder.search(m_oTicket.getCustomer());
-                    finder.executeSearch();
-                    finder.setVisible(true);
-
-                    if (finder.getSelectedCustomer() != null) {
-                        try {
-                            m_oTicket.setCustomer(dlCustomers.findCustomerInfoExtById(finder.getSelectedCustomer().getId()));
-                            if (isRestaurantMode()) {
-                                restDB.setCustomerNameInTableByTicketId(
-                                        dlCustomers.findCustomerInfoExtById(finder.getSelectedCustomer().getId()).toString(),
-                                        m_oTicket.getId());
-                            }
-
-                            checkCustomer();
-
-                            m_jTicketId.setText(m_oTicket.getName());
-
-                        }
-                        catch (BasicException ex) {
-                            LOGGER.log(System.Logger.Level.WARNING, "Exception on change customer: ", ex);
-                            MessageInf msg = new MessageInf(MessageInf.SGN_WARNING,
-                                    AppLocal.getIntString("message.cannotfindcustomer"), ex);
-                            msg.show(this);
-                        }
-                    } else {
-                        restDB.setCustomerNameInTableByTicketId(null, m_oTicket.getId());
-                        m_oTicket.setCustomer(null);
-                    }
-                }
+                Notify("notify.customerremove");
             }
         }
 
