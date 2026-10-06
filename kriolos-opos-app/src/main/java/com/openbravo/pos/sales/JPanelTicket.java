@@ -615,15 +615,9 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     protected void addTicketLine(TicketLineInfo oLine) {
         if (m_oTicket != null) {
             if (oLine.isProductCom()) {
-                int i = m_ticketlines.getSelectedIndex();
-
-                if (i >= 0 && !m_oTicket.getLine(i).isProductCom()) {
-                    i++;
-                }
-
-                while (i >= 0 && i < m_oTicket.getLinesCount() && m_oTicket.getLine(i).isProductCom()) {
-                    i++;
-                }
+                int i = ticketLineController != null
+                        ? ticketLineController.calculateAuxiliaryInsertIndex(m_oTicket, m_ticketlines.getSelectedIndex())
+                        : -1;
 
                 if (i >= 0) {
                     m_oTicket.insertLine(i, oLine);

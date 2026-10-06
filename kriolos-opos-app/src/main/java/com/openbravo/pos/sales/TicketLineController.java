@@ -217,6 +217,31 @@ public class TicketLineController {
         return Optional.empty();
     }
 
+    /**
+     * Calculates the insertion index for an auxiliary (composition) product line.
+     * Auxiliary lines are grouped immediately after their parent product and existing auxiliary items.
+     *
+     * @param ticket the active ticket
+     * @param selectedIndex the currently selected line index in the ticket
+     * @return the target 0-based insertion index, or -1 if no line is selected or out of bounds
+     */
+    public int calculateAuxiliaryInsertIndex(TicketInfo ticket, int selectedIndex) {
+        if (ticket == null || selectedIndex < 0 || selectedIndex >= ticket.getLinesCount()) {
+            return -1;
+        }
+
+        int i = selectedIndex;
+        if (!ticket.getLine(i).isProductCom()) {
+            i++;
+        }
+
+        while (i >= 0 && i < ticket.getLinesCount() && ticket.getLine(i).isProductCom()) {
+            i++;
+        }
+
+        return i;
+    }
+
     public boolean isOverrideCheckEnabled() {
         return "true".equals(getAppProperty("override.check"));
     }

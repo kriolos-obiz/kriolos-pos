@@ -92,4 +92,42 @@ public class TicketLineControllerTest {
         assertEquals(LineChangeResult.Status.UPDATED, result.status());
         assertEquals(-2.0, result.updatedLine().getMultiply());
     }
+
+    @Test
+    @DisplayName("calculateAuxiliaryInsertIndex should return -1 for invalid arguments")
+    void testCalculateAuxiliaryInsertIndex_InvalidArgs() {
+        assertEquals(-1, controller.calculateAuxiliaryInsertIndex(null, 0));
+        assertEquals(-1, controller.calculateAuxiliaryInsertIndex(ticket, -1));
+        assertEquals(-1, controller.calculateAuxiliaryInsertIndex(ticket, 0)); // empty ticket
+    }
+
+    @Test
+    @DisplayName("calculateAuxiliaryInsertIndex should position auxiliary lines after parent and existing auxiliaries")
+    void testCalculateAuxiliaryInsertIndex_Grouping() {
+        TaxInfo tax = new TaxInfo("tax-01", "Standard", "1", "cat-01", null, 0.10, false, 0);
+
+        TicketLineInfo parentItem = new TicketLineInfo("Pizza", "cat-01", 1.0, 12.00, tax);
+        parentItem.setProperty("product.com", "false");
+        ticket.addLine(parentItem);
+
+        // When parent item selected, first aux should go right after parent (index 1)
+        assertEquals(1, controller.calculateAuxiliaryInsertIndex(ticket, 0));
+
+        // Add first topping (com)
+        TicketLineInfo topping1 = new TicketLineInfo("Extra Cheese", "cat-01", 1.0, 1.50, tax);
+        topping1.setProperty("product.com", "true");
+        ticket.addLine(topping1);
+
+        // Add another unrelated product B
+        TicketLineInfo drink = new TicketLineInfo("Cola", "cat-01", 1.0, 2.00, tax);
+        drink.setProperty("product.com", "false");
+        ticket.addLine(drink);
+
+        // Active ticket now: [0: Pizza, 1: Cheese (com), 2: Cola]
+        // Adding topping to Pizza (selected 0) should insert at index 2 (between Cheese and Cola)
+        assertEquals(2, controller.calculateAuxiliaryInsertIndex(ticket, 0));
+
+        // Adding topping while selecting Cheese (selected 1) should also insert at index 2
+        assertEquals(2, controller.calculateAuxiliaryInsertIndex(ticket, 1));
+    }
 }
