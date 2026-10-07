@@ -41,14 +41,14 @@ public final class PlaceButtonRenderer {
      * @param placeService service providing waiter/customer table details
      * @param appView      application context for properties
      */
-    public static void renderButton(PlaceButton btn, PlaceServiceImpl placeService, AppView appView) {
+    public static void renderButton(PlaceButton btn, PlaceService placeService, AppView appView) {
         if (btn == null) {
             return;
         }
         renderButton(btn, btn.getPlace(), placeService, appView);
     }
 
-    public static void renderButton(JButton btn, Place place, PlaceServiceImpl placeService, AppView appView) {
+    public static void renderButton(JButton btn, Place place, PlaceService placeService, AppView appView) {
         if (btn == null || place == null) {
             return;
         }
@@ -75,7 +75,7 @@ public final class PlaceButtonRenderer {
         btn.setIcon(ICO_FRE);
     }
 
-    private static void renderOccupiedPlace(Place place, JButton btn, PlaceServiceImpl placeService, AppView appView) {
+    private static void renderOccupiedPlace(Place place, JButton btn, PlaceService placeService, AppView appView) {
         boolean showWaiter = Boolean.parseBoolean(appView.getProperties().getProperty("table.showwaiterdetails"));
         boolean showCustomer = Boolean.parseBoolean(appView.getProperties().getProperty("table.showcustomerdetails"));
 

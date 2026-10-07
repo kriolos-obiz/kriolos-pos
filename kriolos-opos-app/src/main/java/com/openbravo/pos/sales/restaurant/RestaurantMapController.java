@@ -46,7 +46,7 @@ public class RestaurantMapController {
     private final TicketsEditor panelTicket;
     private final DataLogicReceipts dlReceipts;
     private final DataLogicSystem dlSystem;
-    private final PlaceServiceImpl placeService;
+    private final PlaceService placeService;
 
     private List<Floor> floorList = Collections.emptyList();
     private List<Place> placeList = Collections.emptyList();
@@ -64,7 +64,7 @@ public class RestaurantMapController {
 
     RestaurantMapController(AppView appView, TicketsEditor panelTicket,
                             DataLogicReceipts dlReceipts, DataLogicSystem dlSystem,
-                            PlaceServiceImpl placeService) {
+                            PlaceService placeService) {
         this.appView = appView;
         this.panelTicket = panelTicket;
         this.dlReceipts = dlReceipts;
@@ -72,7 +72,7 @@ public class RestaurantMapController {
         this.placeService = placeService;
     }
 
-    public PlaceServiceImpl getPlaceService() {
+    public PlaceService getPlaceService() {
         return placeService;
     }
 

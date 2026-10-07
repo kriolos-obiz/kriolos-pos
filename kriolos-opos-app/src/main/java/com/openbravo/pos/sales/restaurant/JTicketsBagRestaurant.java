@@ -51,7 +51,7 @@ public class JTicketsBagRestaurant extends javax.swing.JPanel {
     private final DataLogicSystem dataLogicSystem;
     private final DataLogicSales dataLogicSales;
     private final TicketParser ticketParser;
-    private final PlaceServiceImpl restDB;
+    private final PlaceService restDB;
 
     public JTicketsBagRestaurant(AppView app, JTicketsBagRestaurantMap restaurant) {
         appView = app;
