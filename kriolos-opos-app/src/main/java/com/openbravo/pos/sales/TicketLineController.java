@@ -45,11 +45,25 @@ public class TicketLineController {
     private final AppView app;
     private final SalesService salesService;
     private final DataLogicSales dlSales;
+    private final DataLogicAudit dlAudit;
 
     public TicketLineController(AppView app, SalesService salesService, DataLogicSales dlSales) {
+        this(app, salesService, dlSales, app != null ? safeGetAudit(app) : null);
+    }
+
+    public TicketLineController(AppView app, SalesService salesService, DataLogicSales dlSales, DataLogicAudit dlAudit) {
         this.app = app;
         this.salesService = salesService;
         this.dlSales = dlSales;
+        this.dlAudit = dlAudit;
+    }
+
+    private static DataLogicAudit safeGetAudit(AppView app) {
+        try {
+            return app.getBean(DataLogicAudit.class);
+        } catch (Exception ignored) {
+            return null;
+        }
     }
 
     /**
@@ -88,15 +102,25 @@ public class TicketLineController {
 
         salesService.removeLine(ticket, lineIndex);
 
-        if (dlSales != null && app != null && app.getAppUserView() != null && app.getAppUserView().getUser() != null) {
+        if (app != null && app.getAppUserView() != null && app.getAppUserView().getUser() != null) {
             try {
-                dlSales.addTicketLineRemoved(
-                        app.getAppUserView().getUser().getName(),
-                        ticketID,
-                        ticketLine.getProductID(),
-                        ticketLine.getProductName(),
-                        ticketLine.getMultiply()
-                );
+                if (dlAudit != null) {
+                    dlAudit.addTicketLineRemoved(
+                            app.getAppUserView().getUser().getName(),
+                            ticketID,
+                            ticketLine.getProductID(),
+                            ticketLine.getProductName(),
+                            ticketLine.getMultiply()
+                    );
+                } else if (dlSales != null) {
+                    dlSales.addTicketLineRemoved(
+                            app.getAppUserView().getUser().getName(),
+                            ticketID,
+                            ticketLine.getProductID(),
+                            ticketLine.getProductName(),
+                            ticketLine.getMultiply()
+                    );
+                }
             } catch (Exception ex) {
                 LOGGER.log(Logger.Level.WARNING, "Exception recording line removal audit: ", ex);
             }

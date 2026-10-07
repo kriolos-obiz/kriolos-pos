@@ -40,6 +40,7 @@ import com.openbravo.pos.forms.BeanFactoryDataSingle;
 import com.openbravo.pos.inventory.*;
 import com.openbravo.pos.sales.restaurant.FloorsInfo;
 import com.openbravo.pos.sales.restaurant.DataLogicRestaurant;
+import com.openbravo.pos.sales.DataLogicAudit;
 import com.openbravo.pos.payment.DataLogicPayments;
 import com.openbravo.pos.payment.PaymentInfo;
 import com.openbravo.pos.payment.PaymentInfoTicket;
@@ -183,6 +184,18 @@ public class DataLogicSales extends BeanFactoryDataSingle {
             }
         }
         DataLogicPayments fallback = new DataLogicPayments();
+        fallback.init(sessionDB);
+        return fallback;
+    }
+
+    public DataLogicAudit getDataLogicAudit() {
+        if (app != null) {
+            try {
+                return app.getBean(DataLogicAudit.class);
+            } catch (BeanFactoryException ignored) {
+            }
+        }
+        DataLogicAudit fallback = new DataLogicAudit();
         fallback.init(sessionDB);
         return fallback;
     }
@@ -1116,46 +1129,20 @@ public class DataLogicSales extends BeanFactoryDataSingle {
         return getDataLogicCustomers().getCustomerDelete();
     }
 
+    /**
+     * @deprecated Use {@link DataLogicAudit#addTicketLineRemoved(String, String, String, String, double)} instead.
+     */
+    @Deprecated
     public final void addTicketLineRemoved(String username, String ticketId, String productId, String productName, double quantity) {
-
-        final SentenceExec m_lineremoved = new StaticSentence(this.sessionDB,
-                """
-                INSERT INTO lineremoved (NAME, TICKETID, PRODUCTID, PRODUCTNAME, UNITS, REMOVEDDATE)
-                    VALUES (?, ?, ?, ?, ?, ?)
-                """,
-                new SerializerWriteBasic(new Datas[]{
-            Datas.STRING, Datas.STRING,
-            Datas.STRING, Datas.STRING,
-            Datas.DOUBLE, Datas.TIMESTAMP
-        }));
-
-        try {
-            Object[] line = new Object[]{username, ticketId, productId, productName, quantity, new Date()};
-
-            m_lineremoved.exec(line);
-        }
-        catch (BasicException e) {
-            LOGGER.log(Level.SEVERE, "Exception on execute line removed: ", e);
-        }
+        getDataLogicAudit().addTicketLineRemoved(username, ticketId, productId, productName, quantity);
     }
 
+    /**
+     * @deprecated Use {@link DataLogicAudit#addTicketDeleted(String)} instead.
+     */
+    @Deprecated
     public final void addTicketDeleted(String username) {
-        final SentenceExec m_ticketremoved = new StaticSentence(this.sessionDB,
-                """
-                INSERT INTO lineremoved (NAME, TICKETID, PRODUCTNAME, UNITS, REMOVEDDATE)
-                    VALUES (?, ?, ?, ?, ?)
-                """,
-                new SerializerWriteBasic(new Datas[]{
-            Datas.STRING, Datas.STRING,
-            Datas.STRING, Datas.DOUBLE, Datas.TIMESTAMP
-        }));
-        try {
-            Object[] ticketDeleted = new Object[]{username, "Void", "Ticket Deleted", 0.0, new Date()};
-            m_ticketremoved.exec(ticketDeleted);
-        }
-        catch (BasicException e) {
-            LOGGER.log(Level.SEVERE, "Exception on execute ticket removed: ", e);
-        }
+        getDataLogicAudit().addTicketDeleted(username);
     }
 
 }
