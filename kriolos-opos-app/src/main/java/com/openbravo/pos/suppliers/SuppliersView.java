@@ -55,7 +55,7 @@ public final class SuppliersView extends com.openbravo.pos.panels.ValidationPane
     private static final long serialVersionUID = 1L;
     private String m_oId;
 
-    private DataLogicSuppliers dlSuppliers;
+    private SupplierService dlSuppliers;
 
     private AppView appView;
     private SupplierInfo supplierInfo;
@@ -70,7 +70,7 @@ public final class SuppliersView extends com.openbravo.pos.panels.ValidationPane
         super();
         try {
             setAppView(app);
-            dlSuppliers = app.getBean(DataLogicSuppliers.class);
+            dlSuppliers = app.getBean(SupplierService.class);
 
             initComponents();
             

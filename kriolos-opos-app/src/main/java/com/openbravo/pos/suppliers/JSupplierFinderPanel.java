@@ -60,9 +60,17 @@ public class JSupplierFinderPanel extends JPanel implements EditorCreator {
         initDomainAdapters();
     }
 
-    public JSupplierFinderPanel(DataLogicSuppliers dlSuppliers) {
-        init(dlSuppliers);
+    public JSupplierFinderPanel(SupplierService supplierService) {
+        init(supplierService);
         initDomainAdapters();
+    }
+
+    /**
+     * @deprecated Use {@link #JSupplierFinderPanel(SupplierService)} instead.
+     */
+    @Deprecated
+    public JSupplierFinderPanel(DataLogicSuppliers dlSuppliers) {
+        this((SupplierService) dlSuppliers);
     }
 
     private void initDomainAdapters() {
@@ -78,12 +86,12 @@ public class JSupplierFinderPanel extends JPanel implements EditorCreator {
         this.modalContext = modalContext;
     }
 
-    public static SupplierInfo show(Component parent, DataLogicSuppliers dlSuppliers) {
-        return show(parent, dlSuppliers, null);
+    public static SupplierInfo show(Component parent, SupplierService supplierService) {
+        return show(parent, supplierService, null);
     }
 
-    public static SupplierInfo show(Component parent, DataLogicSuppliers dlSuppliers, SupplierInfo initialSupplier) {
-        JSupplierFinderPanel panel = new JSupplierFinderPanel(dlSuppliers);
+    public static SupplierInfo show(Component parent, SupplierService supplierService, SupplierInfo initialSupplier) {
+        JSupplierFinderPanel panel = new JSupplierFinderPanel(supplierService);
         if (initialSupplier != null) {
             panel.search(initialSupplier);
         }
@@ -94,6 +102,22 @@ public class JSupplierFinderPanel extends JPanel implements EditorCreator {
         panel.setModalContext(modal);
         modal.show();
         return panel.getSelectedSupplier();
+    }
+
+    /**
+     * @deprecated Use {@link #show(Component, SupplierService)} instead.
+     */
+    @Deprecated
+    public static SupplierInfo show(Component parent, DataLogicSuppliers dlSuppliers) {
+        return show(parent, (SupplierService) dlSuppliers, null);
+    }
+
+    /**
+     * @deprecated Use {@link #show(Component, SupplierService, SupplierInfo)} instead.
+     */
+    @Deprecated
+    public static SupplierInfo show(Component parent, DataLogicSuppliers dlSuppliers, SupplierInfo initialSupplier) {
+        return show(parent, (SupplierService) dlSuppliers, initialSupplier);
     }
 
     public void searchKey() {
@@ -123,7 +147,7 @@ public class JSupplierFinderPanel extends JPanel implements EditorCreator {
         return m_ReturnSupplier;
     }
 
-    private void init(DataLogicSuppliers dlSuppliers) {
+    private void init(SupplierService dlSuppliers) {
         initComponents();
 
         jImageViewerSupplier.setVisible(false);

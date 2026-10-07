@@ -38,7 +38,7 @@ public class JNewSupplierPanel extends JPanel {
 
     private static final long serialVersionUID = 1L;
 
-    private DataLogicSuppliers dlSupplier;
+    private SupplierService dlSupplier;
     private TableDefinition tsuppliers;
     private SupplierInfoExt selectedSupplier;
     private SuppliersView suppliersView;
@@ -76,7 +76,7 @@ public class JNewSupplierPanel extends JPanel {
     }
 
     private void init(AppView app) {
-        dlSupplier = app.getBean(DataLogicSuppliers.class);
+        dlSupplier = app.getBean(SupplierService.class);
         tsuppliers = dlSupplier.getTableSuppliers();
 
         initComponents();

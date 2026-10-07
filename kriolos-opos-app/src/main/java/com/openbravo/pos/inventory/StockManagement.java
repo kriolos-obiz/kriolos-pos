@@ -26,8 +26,8 @@ import com.openbravo.pos.sales.JProductAttEdit2;
 import com.openbravo.pos.scripting.ScriptEngine;
 import com.openbravo.pos.scripting.ScriptException;
 import com.openbravo.pos.scripting.ScriptFactory;
-import com.openbravo.pos.suppliers.DataLogicSuppliers;
 import com.openbravo.pos.suppliers.SupplierInfo;
+import com.openbravo.pos.suppliers.SupplierService;
 import com.openbravo.pos.ticket.ProductInfoExt;
 
 import java.awt.BorderLayout;
@@ -80,7 +80,7 @@ public class StockManagement extends JPanel implements JPanelView {
 
     private final DataLogicSystem m_dlSystem;
     private final DataLogicInventory m_dlInventory;
-    private final DataLogicSuppliers m_dlSuppliers;
+    private final SupplierService m_dlSuppliers;
     private DataLogicPIM dataLogicPIM;
     private final TicketParser m_TTP;
 
@@ -125,7 +125,7 @@ public class StockManagement extends JPanel implements JPanelView {
         m_App = app;
         m_dlSystem = m_App.getBean(DataLogicSystem.class);
         m_dlInventory = m_App.getBean(DataLogicInventory.class);
-        m_dlSuppliers = m_App.getBean(DataLogicSuppliers.class);
+        m_dlSuppliers = m_App.getBean(SupplierService.class);
         dataLogicPIM = app.getBean(DataLogicPIM.class);
         m_TTP = m_App.createTicketParser();
         stockModel = new ProductStockTableModel(new ArrayList<>());

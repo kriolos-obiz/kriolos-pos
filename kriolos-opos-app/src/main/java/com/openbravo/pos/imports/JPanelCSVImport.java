@@ -28,7 +28,7 @@ import com.openbravo.pos.inventory.TaxCategoryInfo;
 import com.openbravo.pos.pim.DataLogicPIM;
 import com.openbravo.pos.sales.DataLogicTax;
 import com.openbravo.pos.sales.TaxesLogic;
-import com.openbravo.pos.suppliers.DataLogicSuppliers;
+import com.openbravo.pos.suppliers.SupplierService;
 import com.openbravo.pos.ticket.ProductInfoExt;
 import org.apache.commons.lang3.StringUtils;
 
@@ -81,7 +81,7 @@ public class JPanelCSVImport extends JPanel implements JPanelView {
     private DataLogicSystem m_dlSystem;
     private DataLogicInventory m_dlInventory;
     private DataLogicImport m_dlImport;
-    private DataLogicSuppliers supplierDataLogic;
+    private SupplierService supplierDataLogic;
     private DataLogicPIM dataLogicPIM;
 
     protected SaveProvider spr;
@@ -147,8 +147,7 @@ public class JPanelCSVImport extends JPanel implements JPanelView {
         this.dataLogicPIM = new DataLogicPIM();
         this.dataLogicPIM.init(dbSession);
         
-        this.supplierDataLogic = new DataLogicSuppliers();
-        this.supplierDataLogic.init(dbSession);
+        this.supplierDataLogic = oApp.getBean(SupplierService.class);
 
         m_dlTax = new DataLogicTax();
         m_dlTax.init(dbSession);

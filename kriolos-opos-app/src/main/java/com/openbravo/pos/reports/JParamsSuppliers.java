@@ -22,7 +22,7 @@ import com.openbravo.data.loader.QBFCompareEnum;
 import com.openbravo.data.loader.SerializerWrite;
 import com.openbravo.data.loader.SerializerWriteBasic;
 import com.openbravo.pos.suppliers.SupplierInfo;
-import com.openbravo.pos.suppliers.DataLogicSuppliers;
+import com.openbravo.pos.suppliers.SupplierService;
 import com.openbravo.pos.suppliers.JSupplierFinder;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
@@ -36,7 +36,7 @@ import javax.swing.event.DocumentListener;
  */
 public class JParamsSuppliers extends javax.swing.JPanel implements ReportEditorCreator {
     
-    private DataLogicSuppliers dlSuppliers;
+    private SupplierService dlSuppliers;
     private SupplierInfo currentsupplier;
     
     /** Creates new form JParamsSupplier */
@@ -66,7 +66,7 @@ public class JParamsSuppliers extends javax.swing.JPanel implements ReportEditor
      */
     @Override
     public void init(AppView app) {
-        dlSuppliers = app.getBean(DataLogicSuppliers.class);
+        dlSuppliers = app.getBean(SupplierService.class);
     }
     
     /**

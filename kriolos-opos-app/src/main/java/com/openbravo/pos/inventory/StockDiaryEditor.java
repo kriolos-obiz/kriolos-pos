@@ -21,7 +21,7 @@ import com.openbravo.data.user.EditorRecord;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.forms.DataLogicSystem;
-import com.openbravo.pos.suppliers.DataLogicSuppliers;
+import com.openbravo.pos.suppliers.SupplierService;
 import java.awt.Component;
 import com.openbravo.basic.BasicException;
 import com.openbravo.beans.DateUtils;
@@ -50,7 +50,7 @@ public final class StockDiaryEditor extends javax.swing.JPanel implements Editor
     private final AppView m_App;
     private final DataLogicSystem m_dlSystem;    
     private final DataLogicInventory m_dlInventory;
-    private final DataLogicSuppliers m_dlSuppliers;    
+    private final SupplierService m_dlSuppliers;    
     private DataLogicPIM dataLogicPIM;
     private final TicketParser m_TTP;
     
@@ -86,7 +86,7 @@ public final class StockDiaryEditor extends javax.swing.JPanel implements Editor
         m_App = app;
         m_dlSystem = m_App.getBean(DataLogicSystem.class);
         m_dlInventory = m_App.getBean(DataLogicInventory.class);
-        m_dlSuppliers = m_App.getBean(DataLogicSuppliers.class);   
+        m_dlSuppliers = m_App.getBean(SupplierService.class);   
         dataLogicPIM = app.getBean(DataLogicPIM.class);
         m_TTP = m_App.createTicketParser();
         

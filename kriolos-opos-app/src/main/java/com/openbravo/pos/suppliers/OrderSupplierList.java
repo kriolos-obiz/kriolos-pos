@@ -55,20 +55,48 @@ public class OrderSupplierList extends JPanel implements TicketSelector {
     private String currentTicket;
     protected TicketsEditor panelticket;
     protected EventListenerList listeners = new EventListenerList();
-    private final DataLogicSuppliers dataLogicSuppliers;
+    private final SupplierService supplierService;
     private final SharedTicketService sharedTicketService;
 
-    public OrderSupplierList(DataLogicSuppliers dlSuppliers, AppView app, TicketsEditor panelticket) {
-        this(dlSuppliers, app, panelticket, app != null ? app.getBean(SharedTicketService.class) : null);
+    public OrderSupplierList(SupplierService supplierService, AppView app, TicketsEditor panelticket) {
+        this(supplierService, app, panelticket, app != null ? app.getBean(SharedTicketService.class) : null);
     }
 
-    public OrderSupplierList(DataLogicSuppliers dlSuppliers, AppView app, TicketsEditor panelticket, SharedTicketService sharedTicketService) {
+    public OrderSupplierList(SupplierService supplierService, AppView app, TicketsEditor panelticket, SharedTicketService sharedTicketService) {
         this.application = app;
         this.panelticket = panelticket;
-        this.dataLogicSuppliers = dlSuppliers;
+        this.supplierService = supplierService;
         this.sharedTicketService = sharedTicketService != null ? sharedTicketService : (app != null ? app.getBean(SharedTicketService.class) : null);
 
         initComponents();
+    }
+
+    /**
+     * @deprecated Use {@link #OrderSupplierList(SupplierService, AppView, TicketsEditor)} instead.
+     */
+    @Deprecated
+    public OrderSupplierList(DataLogicSuppliers dlSuppliers, AppView app, TicketsEditor panelticket) {
+        this((SupplierService) dlSuppliers, app, panelticket);
+    }
+
+    /**
+     * @deprecated Use {@link #OrderSupplierList(SupplierService, AppView, TicketsEditor, SharedTicketService)} instead.
+     */
+    @Deprecated
+    public OrderSupplierList(DataLogicSuppliers dlSuppliers, AppView app, TicketsEditor panelticket, SharedTicketService sharedTicketService) {
+        this((SupplierService) dlSuppliers, app, panelticket, sharedTicketService);
+    }
+
+    /**
+     * @deprecated Use {@link #getSupplierService()} instead.
+     */
+    @Deprecated
+    public DataLogicSuppliers getDataLogicSuppliers() {
+        return supplierService instanceof DataLogicSuppliers ? (DataLogicSuppliers) supplierService : null;
+    }
+
+    public SupplierService getSupplierService() {
+        return supplierService;
     }
 
     public Component getComponent() {

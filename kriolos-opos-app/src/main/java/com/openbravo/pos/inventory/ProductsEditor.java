@@ -24,7 +24,7 @@ import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.sales.DataLogicTax;
 import com.openbravo.pos.sales.TaxesLogic;
-import com.openbravo.pos.suppliers.DataLogicSuppliers;
+import com.openbravo.pos.suppliers.SupplierService;
 import com.openbravo.pos.suppliers.JDialogNewSupplier;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
@@ -84,7 +84,7 @@ public final class ProductsEditor extends com.openbravo.pos.panels.ValidationPan
     private DirtyManager m_Dirty;
     private DataLogicTax dlTax;
     private DataLogicInventory dlInventory;
-    private DataLogicSuppliers dlSuppliers;
+    private SupplierService dlSuppliers;
     private DataLogicPIM dataLogicPIM;
     private DataLogicSystem dlSystem; 
 
@@ -101,7 +101,7 @@ public final class ProductsEditor extends com.openbravo.pos.panels.ValidationPan
         dlTax = app.getBean(DataLogicTax.class);
         dlInventory = app.getBean(DataLogicInventory.class);
         dlSystem = app.getBean(DataLogicSystem.class);
-        dlSuppliers = app.getBean(DataLogicSuppliers.class);
+        dlSuppliers = app.getBean(SupplierService.class);
         dataLogicPIM = app.getBean(DataLogicPIM.class);
 
         initComponents();
