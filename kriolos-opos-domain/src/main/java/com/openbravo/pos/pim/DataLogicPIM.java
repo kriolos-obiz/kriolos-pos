@@ -40,6 +40,12 @@ import com.openbravo.pos.inventory.ProductsBundleInfo;
 import com.openbravo.pos.ticket.ProductInfo;
 import com.openbravo.pos.ticket.ProductInfoExt;
 import com.openbravo.pos.ticket.ProductInfoExtA;
+import com.openbravo.data.loader.DataRead;
+import com.openbravo.data.loader.SentenceFind;
+import com.openbravo.pos.inventory.AttributeSetInfo;
+import com.openbravo.pos.inventory.UomInfo;
+import com.openbravo.data.loader.ImageUtils;
+import java.awt.image.BufferedImage;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -1195,5 +1201,102 @@ public class DataLogicPIM extends BeanFactoryDataSingle {
 
 
 //// </editor-fold>   PRODUCT MANAGEMENT
+
+    // <editor-fold defaultstate="collapsed" desc="UNITS OF MEASURE (UOM) MANAGEMENT">
+    public final TableDefinition getTableUom() {
+        return new TableDefinition(sessionDB,
+                "uom",
+                new String[]{"id", "name"},
+                new String[]{"id",
+                    AppLocal.getIntString("label.name")},
+                new Datas[]{
+                    Datas.STRING, Datas.STRING},
+                new Formats[]{
+                    Formats.STRING, Formats.STRING},
+                new int[]{0});
+    }
+
+    public final UomInfo getUomInfoById(String id) throws BasicException {
+        return (UomInfo) new PreparedSentence(sessionDB,
+                "SELECT "
+                + "id, name "
+                + "FROM uom "
+                + "WHERE id = ?",
+                SerializerWriteString.INSTANCE, UomInfo.getSerializerRead()).find(id);
+    }
+
+    public final SentenceList<UomInfo> getUomList() {
+        return new StaticSentence<>(sessionDB, "SELECT ID, NAME  FROM uom ORDER BY NAME", null,
+                UomInfo.getSerializerRead());
+    }
+
+    public final List<UomInfo> getUomListAll() {
+        List<UomInfo> list = null;
+        try {
+            list = this.getUomList().list();
+        } catch (BasicException ex) {
+            LOGGER.log(Level.WARNING, "Cannot get UomInfo list", ex);
+        }
+        return list;
+    }
+    // </editor-fold>
+
+    // <editor-fold defaultstate="collapsed" desc="ATTRIBUTE SET MANAGEMENT">
+    public final SentenceList<AttributeSetInfo> getAttributeSetList() {
+        return new StaticSentence<>(sessionDB,
+                "SELECT "
+                + "ID, "
+                + "NAME "
+                + "FROM attributeset "
+                + "ORDER BY NAME",
+                null,
+                (DataRead dr) -> new AttributeSetInfo(dr.getString(1), dr.getString(2)));
+    }
+
+    public final List<AttributeSetInfo> getAttributeSetListAll() {
+        List<AttributeSetInfo> list = null;
+        try {
+            list = this.getAttributeSetList().list();
+        } catch (BasicException ex) {
+            LOGGER.log(Level.WARNING, "Cannot get AttributeSetInfo list", ex);
+        }
+        return list;
+    }
+    // </editor-fold>
+
+    // <editor-fold defaultstate="collapsed" desc="PRODUCT IMAGE & CATALOG OPERATIONS">
+    public final SentenceFind getProductImage() {
+        return new PreparedSentence(sessionDB,
+                "SELECT IMAGE FROM products WHERE ID = ?",
+                SerializerWriteString.INSTANCE,
+                (DataRead dr) -> ImageUtils.readImage(dr.getBytes(1)));
+    }
+
+    public final BufferedImage getProductImage(String imageId) {
+        try {
+            return (BufferedImage) getProductImage().find(imageId);
+        } catch (BasicException e) {
+            return null;
+        }
+    }
+
+    public final int addProductsToCatalogWithCategoryId(String categoryId) throws BasicException {
+        StaticSentence sentence = new StaticSentence(sessionDB,
+                "INSERT INTO products_cat(PRODUCT, CATORDER) SELECT ID, " + sessionDB.DB.INTEGER_NULL()
+                + " FROM products WHERE CATEGORY = ?",
+                SerializerWriteString.INSTANCE);
+
+        return sentence.exec(categoryId);
+    }
+
+    public final int removeProductsFromCatalogWithCategoryId(String categoryId) throws BasicException {
+        StaticSentence sentence = new StaticSentence(sessionDB,
+                "DELETE FROM products_cat WHERE PRODUCT IN (SELECT ID "
+                + "FROM products WHERE CATEGORY = ?)",
+                SerializerWriteString.INSTANCE);
+
+        return sentence.exec(categoryId);
+    }
+    // </editor-fold>
 
 }

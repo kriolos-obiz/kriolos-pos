@@ -24,7 +24,6 @@ import com.openbravo.data.user.EditorRecord;
 import com.openbravo.format.Formats;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
-import com.openbravo.pos.forms.DataLogicSales;
 import java.awt.Component;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
@@ -58,7 +57,6 @@ public final class CategoriesEditor extends JPanel implements EditorRecord {
     private List<CategoryStock> categoryStockList;
     private CategoriesEditor.StockTableModel stockModel;
 
-    private final DataLogicSales dlSales;
     private final DataLogicPIM dataLogicPIM;
 
     /**
@@ -72,7 +70,6 @@ public final class CategoriesEditor extends JPanel implements EditorRecord {
         initComponents();
 
         dataLogicPIM = app.getBean(DataLogicPIM.class);
-        dlSales = app.getBean(DataLogicSales.class);
         categoryParentModel = new ComboBoxValModel(); 
 
         categoryNameText.getDocument().addDocumentListener(dirty);
@@ -594,13 +591,13 @@ public final class CategoriesEditor extends JPanel implements EditorRecord {
 
         try {
             if (categoryShowInCatalog.isSelected()) {
-                int del = dlSales.removeProductsFromCatalogWithCategoryId(categoryId);
-                int add = dlSales.addProductsToCatalogWithCategoryId(categoryId);
+                int del = dataLogicPIM.removeProductsFromCatalogWithCategoryId(categoryId);
+                int add = dataLogicPIM.addProductsToCatalogWithCategoryId(categoryId);
                 jLblInCatalog.setText(AppLocal.getIntString("label.CatalogueStatusYes"));
                 //Notify(AppLocal.getIntString("notify.added"));   
                 LOGGER.log(Level.INFO, "Number of products added: " + add + ", deleted: " + del + ", by categoryId: " + categoryId);
             } else {
-                int del = dlSales.removeProductsFromCatalogWithCategoryId(categoryId);
+                int del = dataLogicPIM.removeProductsFromCatalogWithCategoryId(categoryId);
                 jLblInCatalog.setText(AppLocal.getIntString("label.CatalogueStatusNo"));
                 //Notify(AppLocal.getIntString("notify.removed"));
                 LOGGER.log(Level.INFO, "Number of products deleted: " + del + ", by categoryId: " + categoryId);

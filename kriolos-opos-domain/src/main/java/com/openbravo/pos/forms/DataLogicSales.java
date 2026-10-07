@@ -165,6 +165,18 @@ public class DataLogicSales extends BeanFactoryDataSingle {
         return fallback;
     }
 
+    public DataLogicPIM getDataLogicPIM() {
+        if (app != null) {
+            try {
+                return app.getBean(DataLogicPIM.class);
+            } catch (BeanFactoryException ignored) {
+            }
+        }
+        DataLogicPIM fallback = new DataLogicPIM();
+        fallback.init(sessionDB);
+        return fallback;
+    }
+
     /**
      * @deprecated Use {@link DataLogicInventory#getProductStockState(String, String)} instead.
      */
@@ -354,29 +366,21 @@ public class DataLogicSales extends BeanFactoryDataSingle {
     }
 
     /**
-     * @deprecated Since Nov/2025
+     * @deprecated Use {@link DataLogicPIM#getAttributeSetList()} instead.
      * @return
      */
+    @Deprecated
     public final SentenceList<AttributeSetInfo> getAttributeSetList() {
-        return new StaticSentence(sessionDB,
-                "SELECT "
-                + "ID, "
-                + "NAME "
-                + "FROM attributeset "
-                + "ORDER BY NAME",
-                null,
-                (DataRead dr) -> new AttributeSetInfo(dr.getString(1), dr.getString(2)));
+        return getDataLogicPIM().getAttributeSetList();
     }
 
+    /**
+     * @deprecated Use {@link DataLogicPIM#getAttributeSetListAll()} instead.
+     * @return
+     */
+    @Deprecated
     public final List<AttributeSetInfo> getAttributeSetListAll() {
-        List<AttributeSetInfo> list = null;
-        try {
-            list = this.getAttributeSetList().list();
-        }
-        catch (BasicException ex) {
-            LOGGER.log(Level.WARNING, "Cannot get AttributeSetInfo list", ex);
-        }
-        return list;
+        return getDataLogicPIM().getAttributeSetListAll();
     }
 
     /**
@@ -883,21 +887,20 @@ public class DataLogicSales extends BeanFactoryDataSingle {
     }
 
     // JG 3 Feb 16 - Product load speedup
+    /**
+     * @deprecated Use {@link DataLogicPIM#getProductImage()} instead.
+     */
+    @Deprecated
     public final SentenceFind getProductImage() {
-        return new PreparedSentence(sessionDB,
-                "SELECT IMAGE FROM products WHERE ID = ?",
-                SerializerWriteString.INSTANCE,
-                (DataRead dr) -> ImageUtils.readImage(dr.getBytes(1)));
+        return getDataLogicPIM().getProductImage();
     }
 
+    /**
+     * @deprecated Use {@link DataLogicPIM#getProductImage(String)} instead.
+     */
+    @Deprecated
     public final BufferedImage getProductImage(String imageId) {
-
-        try {
-            return (BufferedImage) getProductImage().find(imageId);
-        }
-        catch (BasicException e) {
-            return null;
-        }
+        return getDataLogicPIM().getProductImage(imageId);
     }
 
     /**
@@ -1015,28 +1018,22 @@ public class DataLogicSales extends BeanFactoryDataSingle {
      *
      * @param categoryId
      * @return num added of products
+     * @deprecated Use {@link DataLogicPIM#addProductsToCatalogWithCategoryId(String)} instead.
      */
+    @Deprecated
     public final int addProductsToCatalogWithCategoryId(String categoryId) throws BasicException {
-        StaticSentence sentence = new StaticSentence(sessionDB,
-                "INSERT INTO products_cat(PRODUCT, CATORDER) SELECT ID, " + sessionDB.DB.INTEGER_NULL()
-                + " FROM products WHERE CATEGORY = ?",
-                SerializerWriteString.INSTANCE);
-
-        return sentence.exec(categoryId);
+        return getDataLogicPIM().addProductsToCatalogWithCategoryId(categoryId);
     }
 
     /**
      *
      * @param categoryId
      * @return number of removed products
+     * @deprecated Use {@link DataLogicPIM#removeProductsFromCatalogWithCategoryId(String)} instead.
      */
+    @Deprecated
     public final int removeProductsFromCatalogWithCategoryId(String categoryId) throws BasicException {
-        StaticSentence sentence = new StaticSentence(sessionDB,
-                "DELETE FROM products_cat WHERE PRODUCT IN (SELECT ID "
-                + "FROM products WHERE CATEGORY = ?)",
-                SerializerWriteString.INSTANCE);
-
-        return sentence.exec(categoryId);
+        return getDataLogicPIM().removeProductsFromCatalogWithCategoryId(categoryId);
     }
 
     /**
@@ -1071,42 +1068,36 @@ public class DataLogicSales extends BeanFactoryDataSingle {
         return getDataLogicInventory().getTableLocations();
     }
 
+    /**
+     * @deprecated Use {@link DataLogicPIM#getUomInfoById(String)} instead.
+     */
+    @Deprecated
     public final UomInfo getUomInfoById(String id) throws BasicException {
-        return (UomInfo) new PreparedSentence(sessionDB,
-                "SELECT "
-                + "id, name "
-                + "FROM uom "
-                + "WHERE id = ?",
-                SerializerWriteString.INSTANCE, UomInfo.getSerializerRead()).find(id);
+        return getDataLogicPIM().getUomInfoById(id);
     }
 
+    /**
+     * @deprecated Use {@link DataLogicPIM#getTableUom()} instead.
+     */
+    @Deprecated
     public final TableDefinition getTableUom() {
-        return new TableDefinition(sessionDB,
-                "uom",
-                new String[]{"id", "name"},
-                new String[]{"id",
-                    AppLocal.getIntString("label.name")},
-                new Datas[]{
-                    Datas.STRING, Datas.STRING},
-                new Formats[]{
-                    Formats.STRING, Formats.STRING},
-                new int[]{0});
+        return getDataLogicPIM().getTableUom();
     }
 
+    /**
+     * @deprecated Use {@link DataLogicPIM#getUomList()} instead.
+     */
+    @Deprecated
     public final SentenceList<UomInfo> getUomList() {
-        return new StaticSentence(sessionDB, "SELECT ID, NAME  FROM uom ORDER BY NAME", null,
-                UomInfo.getSerializerRead());
+        return getDataLogicPIM().getUomList();
     }
 
+    /**
+     * @deprecated Use {@link DataLogicPIM#getUomListAll()} instead.
+     */
+    @Deprecated
     public final List<UomInfo> getUomListAll() {
-        List<UomInfo> list = null;
-        try {
-            list = this.getUomList().list();
-        }
-        catch (BasicException ex) {
-            LOGGER.log(Level.WARNING, "Cannot get UomInfo list", ex);
-        }
-        return list;
+        return getDataLogicPIM().getUomListAll();
     }
 
     /**

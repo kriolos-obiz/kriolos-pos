@@ -22,7 +22,7 @@ import com.openbravo.data.user.EditorRecord;
 import com.openbravo.format.Formats;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
-import com.openbravo.pos.forms.DataLogicSales;
+import com.openbravo.pos.sales.DataLogicTax;
 import com.openbravo.pos.sales.TaxesLogic;
 import com.openbravo.pos.suppliers.DataLogicSuppliers;
 import com.openbravo.pos.suppliers.JDialogNewSupplier;
@@ -82,7 +82,7 @@ public final class ProductsEditor extends com.openbravo.pos.panels.ValidationPan
 
     private TaxesLogic taxeslogic;
     private DirtyManager m_Dirty;
-    private DataLogicSales dlSales;
+    private DataLogicTax dlTax;
     private DataLogicInventory dlInventory;
     private DataLogicSuppliers dlSuppliers;
     private DataLogicPIM dataLogicPIM;
@@ -98,7 +98,7 @@ public final class ProductsEditor extends com.openbravo.pos.panels.ValidationPan
     public ProductsEditor(AppView app, DirtyManager dirty) {
 
         setAppView(app);
-        dlSales = app.getBean(DataLogicSales.class);
+        dlTax = app.getBean(DataLogicTax.class);
         dlInventory = app.getBean(DataLogicInventory.class);
         dlSystem = app.getBean(DataLogicSystem.class);
         dlSuppliers = app.getBean(DataLogicSuppliers.class);
@@ -188,22 +188,22 @@ public final class ProductsEditor extends com.openbravo.pos.panels.ValidationPan
     @SuppressWarnings("unchecked")
     public void activate() throws BasicException {
 
-        taxeslogic = new TaxesLogic(dlSales.getTaxListAll());
+        taxeslogic = new TaxesLogic(dlTax.getTaxListAll());
 
         m_CategoryModel = new ComboBoxValModel(dataLogicPIM.getCategoriesListAll());
         m_jCategory.setModel(m_CategoryModel);
   
-        taxcatmodel = new ComboBoxValModel(dlSales.getTaxCategoriesListAll());
+        taxcatmodel = new ComboBoxValModel(dlTax.getTaxCategoriesListAll());
         m_jTax.setModel(taxcatmodel);
 
-        attmodel = new ComboBoxValModel( dlSales.getAttributeSetListAll());
+        attmodel = new ComboBoxValModel(dataLogicPIM.getAttributeSetListAll());
         attmodel.add(0, null);
         m_jAtt.setModel(attmodel);
 
         m_SuppliersModel = new ComboBoxValModel(dlSuppliers.getSupplierListAll());
         m_jSupplier.setModel(m_SuppliersModel);
 
-        m_UomModel = new ComboBoxValModel(dlSales.getUomListAll());
+        m_UomModel = new ComboBoxValModel(dataLogicPIM.getUomListAll());
         m_jUom.setModel(m_UomModel);
 
         String pId = null;
@@ -824,7 +824,7 @@ public final class ProductsEditor extends com.openbravo.pos.panels.ValidationPan
 
 
     private BufferedImage findImage(String id) {
-        return dlSales.getProductImage(id);
+        return dataLogicPIM.getProductImage(id);
     }
 
 
