@@ -59,5 +59,7 @@ public interface PlaceService {
     Boolean getTableMovedFlag(String ticketID);
 
     void clearTableMovedFlag(String tableID);
+
+    void updatePlaces(int x, int y, String id) throws BasicException;
 }
 

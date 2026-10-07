@@ -118,7 +118,7 @@ public class StockQtyImport extends JPanel implements JPanelView {
     // Get terminal'dbSession set Location property <entry key="location">0</entry>
     m_sInventoryLocation = m_propsdb.getProperty("location");
     try {
-      Location = m_dlSystem.findLocationName(m_sInventoryLocation);
+      Location = m_dlInventory.findLocationName(m_sInventoryLocation);
     } catch (BasicException ex) {
       LOGGER.log(Level.WARNING, null, ex);
     }

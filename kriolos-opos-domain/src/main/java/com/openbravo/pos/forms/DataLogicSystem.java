@@ -364,14 +364,21 @@ public class DataLogicSystem extends BeanFactoryDataSingle {
 
 // <editor-fold defaultstate="collapsed" desc="START OF LOCATION AND PLACES">
 
-    
     /**
-     *
-     * @param iLocation
-     * @return
-     * @throws BasicException
+     * @deprecated Use {@link com.openbravo.pos.inventory.DataLogicInventory#findLocationName(String)} instead.
      */
+    @Deprecated
     public final String findLocationName(String iLocation) throws BasicException {
+        if (app != null) {
+            try {
+                com.openbravo.pos.inventory.DataLogicInventory dlInv =
+                        app.getBean(com.openbravo.pos.inventory.DataLogicInventory.class);
+                if (dlInv != null) {
+                    return dlInv.findLocationName(iLocation);
+                }
+            } catch (BeanFactoryException ignored) {
+            }
+        }
         final SentenceFind m_locationfind = new StaticSentence(this.session,
                 "SELECT NAME FROM locations WHERE ID = ?",
                 SerializerWriteString.INSTANCE,
@@ -379,15 +386,29 @@ public class DataLogicSystem extends BeanFactoryDataSingle {
         return (String) m_locationfind.find(iLocation);
     }
 
-
+    /**
+     * @deprecated Use {@link com.openbravo.pos.sales.restaurant.PlaceService#updatePlaces(int, int, String)}
+     *             or {@link com.openbravo.pos.sales.restaurant.DataLogicRestaurant#updatePlaces(int, int, String)} instead.
+     */
+    @Deprecated
     public final void updatePlaces(int x, int y, String id) throws BasicException {
+        if (app != null) {
+            try {
+                com.openbravo.pos.sales.restaurant.DataLogicRestaurant dlRest =
+                        app.getBean(com.openbravo.pos.sales.restaurant.DataLogicRestaurant.class);
+                if (dlRest != null) {
+                    dlRest.updatePlaces(x, y, id);
+                    return;
+                }
+            } catch (BeanFactoryException ignored) {
+            }
+        }
         final SentenceExec m_updatePlaces = new StaticSentence(this.session,
                 "UPDATE PLACES SET X = ?, Y = ? WHERE ID = ?",
                 new SerializerWriteBasic(new Datas[]{Datas.INT, Datas.INT, Datas.STRING}));
         m_updatePlaces.exec(new Object[]{x, y, id});
     }
 
-    
 //// </editor-fold>
     
     /**

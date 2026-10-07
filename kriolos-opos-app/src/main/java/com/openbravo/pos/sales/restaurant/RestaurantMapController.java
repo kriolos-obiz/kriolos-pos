@@ -59,12 +59,17 @@ public class RestaurantMapController {
     public RestaurantMapController(AppView appView, TicketsEditor panelTicket) {
         this(appView, panelTicket,
                 appView != null ? appView.getBean(SharedTicketService.class) : null,
-                appView != null ? appView.getBean(DataLogicSystem.class) : null,
                 appView != null && appView.getSession() != null ? new PlaceServiceImpl(appView.getSession()) : null);
     }
 
+    public RestaurantMapController(AppView appView, TicketsEditor panelTicket,
+                            SharedTicketService sharedTicketService,
+                            PlaceService placeService) {
+        this(appView, panelTicket, sharedTicketService, null, placeService);
+    }
+
     /**
-     * @deprecated Use {@link #RestaurantMapController(AppView, TicketsEditor, SharedTicketService, DataLogicSystem, PlaceService)} instead.
+     * @deprecated Use {@link #RestaurantMapController(AppView, TicketsEditor, SharedTicketService, PlaceService)} instead.
      */
     @Deprecated
     public RestaurantMapController(AppView appView, TicketsEditor panelTicket,
@@ -73,6 +78,10 @@ public class RestaurantMapController {
         this(appView, panelTicket, (SharedTicketService) dlReceipts, dlSystem, placeService);
     }
 
+    /**
+     * @deprecated Use {@link #RestaurantMapController(AppView, TicketsEditor, SharedTicketService, PlaceService)} instead.
+     */
+    @Deprecated
     public RestaurantMapController(AppView appView, TicketsEditor panelTicket,
                             SharedTicketService sharedTicketService, DataLogicSystem dlSystem,
                             PlaceService placeService) {
@@ -477,7 +486,11 @@ public class RestaurantMapController {
     public void savePlacesLayout() {
         for (Place pl : placeList) {
             try {
-                dlSystem.updatePlaces(pl.getX(), pl.getY(), pl.getId());
+                if (placeService != null) {
+                    placeService.updatePlaces(pl.getX(), pl.getY(), pl.getId());
+                } else if (dlSystem != null) {
+                    dlSystem.updatePlaces(pl.getX(), pl.getY(), pl.getId());
+                }
             }
             catch (BasicException ex) {
                 LOGGER.log(System.Logger.Level.WARNING, "Exception updating place layout: ", ex);

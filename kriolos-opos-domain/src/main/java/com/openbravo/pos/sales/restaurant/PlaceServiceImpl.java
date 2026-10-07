@@ -1,7 +1,9 @@
 package com.openbravo.pos.sales.restaurant;
 
 import com.openbravo.basic.BasicException;
+import com.openbravo.data.loader.Datas;
 import com.openbravo.data.loader.SerializerReadClass;
+import com.openbravo.data.loader.SerializerWriteBasic;
 import com.openbravo.data.loader.Session;
 import com.openbravo.data.loader.StaticSentence;
 import java.sql.Connection;
@@ -501,5 +503,13 @@ public class PlaceServiceImpl implements PlaceService {
         catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "", e);
         }
+    }
+
+    @Override
+    public void updatePlaces(int x, int y, String id) throws BasicException {
+        new StaticSentence(this.dbSession,
+                "UPDATE PLACES SET X = ?, Y = ? WHERE ID = ?",
+                new SerializerWriteBasic(new Datas[]{Datas.INT, Datas.INT, Datas.STRING}))
+                .exec(new Object[]{x, y, id});
     }
 }

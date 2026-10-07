@@ -159,4 +159,11 @@ public class DataLogicRestaurant extends BeanFactoryDataSingle {
             }
         };
     }
+
+    public void updatePlaces(int x, int y, String id) throws BasicException {
+        new StaticSentence(this.sessionDB,
+                "UPDATE PLACES SET X = ?, Y = ? WHERE ID = ?",
+                new SerializerWriteBasic(new Datas[]{Datas.INT, Datas.INT, Datas.STRING}))
+                .exec(new Object[]{x, y, id});
+    }
 }

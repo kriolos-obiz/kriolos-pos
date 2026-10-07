@@ -213,4 +213,8 @@ To transform the legacy monolith into clean, modular components, the 13 `DataLog
    * Migrated tax category queries in `JPanelCSVImport` to `DataLogicTax`.
    * Migrated pickup sequence reset in `JPanelTicketSetup` to direct database sequence sentence via session.
    * Cleaned up unused `DataLogicSales` references, fields, and imports in `JNewCustomerPanel`, `JPaymentPaper`, `JPaymentVoucher`, `JPaymentSelect`, `CategoriesPanel`, `ProductsWarehousePanel`, `ProductsPanel`, `MaterialFilter`, `BundleFilter`, `AuxiliarFilter`, `LocationFilterSales`, `ProductFilter1`, `ProductFilter2`, `ProductFilter4`, `JCatalog`, and `SalesPaymentCoordinatorTest`.
-10. **Next Decoupling Targets:** Extract register session & cash closing domain port (`CloseCashService` / `RegisterSessionService`) for cash drawer reconciliation, end-of-day register closing (`getPaymentsTotal`, `getSalesTotal`), and deprecate leftover legacy methods.
+10. **Eliminate Cross-Domain Bleed from `DataLogicSystem` (Completed):**
+   * Enriched `PlaceService`, `PlaceServiceImpl`, and `DataLogicRestaurant` with `updatePlaces(int x, int y, String id)` for dining table layout management. Retained `@Deprecated` delegator on `DataLogicSystem`.
+   * Decoupled `RestaurantMapController` to call `PlaceService.updatePlaces`, adding a clean constructor without `DataLogicSystem` and deprecating legacy constructors.
+   * Moved warehouse location lookup (`findLocationName`) to `DataLogicInventory`. Retained `@Deprecated` delegator on `DataLogicSystem` and migrated `StockQtyImport` to consume `DataLogicInventory` directly.
+11. **Next Decoupling Targets:** Extract register session & cash closing domain port (`CloseCashService` / `RegisterSessionService`) for cash drawer reconciliation, end-of-day register closing (`getPaymentsTotal`, `getSalesTotal`), and deprecate leftover legacy methods.

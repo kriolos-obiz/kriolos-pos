@@ -88,7 +88,7 @@ public class RestaurantMapControllerTest {
                 new Class<?>[]{TicketsEditor.class},
                 (proxy, method, args) -> null);
 
-        controller = new RestaurantMapController(appView, ticketsEditor, (SharedTicketService) null, null, placeService);
+        controller = new RestaurantMapController(appView, ticketsEditor, (SharedTicketService) null, placeService);
     }
 
     @Test
@@ -170,7 +170,7 @@ public class RestaurantMapControllerTest {
                     return null;
                 });
 
-        RestaurantMapController ctrl = new RestaurantMapController(null, null, mockService, null, placeService);
+        RestaurantMapController ctrl = new RestaurantMapController(null, null, mockService, placeService);
         assertSame(mockService, ctrl.getSharedTicketService());
 
         Place place = new TestPlace("p-1", "Table 1");

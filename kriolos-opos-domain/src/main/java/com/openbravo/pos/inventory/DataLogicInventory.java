@@ -8,6 +8,7 @@ import com.openbravo.data.loader.SentenceExecTransaction;
 import com.openbravo.data.loader.SentenceList;
 import com.openbravo.data.loader.SerializerRead;
 import com.openbravo.data.loader.SerializerReadDouble;
+import com.openbravo.data.loader.SerializerReadString;
 import com.openbravo.data.loader.SerializerWriteBasic;
 import com.openbravo.data.loader.SerializerWriteBasicExt;
 import com.openbravo.data.loader.SerializerWriteString;
@@ -367,5 +368,13 @@ public class DataLogicInventory extends BeanFactoryDataSingle {
 
         Double d = (Double) p.find(warehouse, id, attsetinstid);
         return d == null ? 0.0 : d;
+    }
+
+    public final String findLocationName(String iLocation) throws BasicException {
+        PreparedSentence locationFind = new PreparedSentence(this.sessionDB,
+                "SELECT NAME FROM locations WHERE ID = ?",
+                SerializerWriteString.INSTANCE,
+                SerializerReadString.INSTANCE);
+        return (String) locationFind.find(iLocation);
     }
 }
