@@ -34,11 +34,11 @@ import com.openbravo.pos.payment.PaymentServiceImpl;
 import com.openbravo.pos.pim.CategoryInfo;
 import com.openbravo.pos.pim.DataLogicPIM;
 import com.openbravo.pos.printer.TicketParser;
-import com.openbravo.pos.sales.DataLogicReceipts;
 import com.openbravo.pos.sales.JProductLineEditPanel;
 import com.openbravo.pos.sales.SalesService;
 import com.openbravo.pos.sales.SalesServiceImpl;
 import com.openbravo.pos.sales.SharedTicketInfo;
+import com.openbravo.pos.sales.SharedTicketService;
 import com.openbravo.pos.sales.TaxesException;
 import com.openbravo.pos.sales.TaxesLogic;
 import com.openbravo.pos.sales.TicketsEditor;
@@ -91,7 +91,7 @@ public class ModernTwo extends JPanel implements JPanelView, TicketsEditor {
     private final TicketsEditor panelticket;
 
     // Data Logics and Services
-    private DataLogicReceipts dlReceipts;
+    private SharedTicketService dlReceipts;
     private DataLogicPIM dlPim;
     private DataLogicSales dlSales;
     private DataLogicCustomers dlCustomers;
@@ -127,7 +127,7 @@ public class ModernTwo extends JPanel implements JPanelView, TicketsEditor {
 
     private void initDataLogics() {
         if (app != null) {
-            this.dlReceipts = app.getBean(DataLogicReceipts.class);
+            this.dlReceipts = app.getBean(SharedTicketService.class);
             this.dlPim = app.getBean(DataLogicPIM.class);
             this.dlSales = app.getBean(DataLogicSales.class);
             this.dlCustomers = app.getBean(DataLogicCustomers.class);

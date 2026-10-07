@@ -18,13 +18,14 @@ package com.openbravo.pos.sales.shared;
 
 import com.openbravo.pos.sales.DataLogicReceipts;
 import com.openbravo.pos.sales.SharedTicketInfo;
+import com.openbravo.pos.sales.SharedTicketService;
 import java.awt.Component;
 import java.util.List;
 
 /**
  * Backward-compatible adapter delegating to {@link JTicketsBagSharedPanel}.
  *
- * @deprecated Use {@link JTicketsBagSharedPanel#show(Component, List, DataLogicReceipts)} instead.
+ * @deprecated Use {@link JTicketsBagSharedPanel#show(Component, List, SharedTicketService)} instead.
  */
 @Deprecated
 public class JTicketsBagSharedList {
@@ -39,11 +40,19 @@ public class JTicketsBagSharedList {
         return new JTicketsBagSharedList(ticketsbagshared);
     }
 
+    public static String show(Component parent, List<SharedTicketInfo> atickets, SharedTicketService sharedTicketService) {
+        return JTicketsBagSharedPanel.show(parent, atickets, sharedTicketService);
+    }
+
     public static String show(Component parent, List<SharedTicketInfo> atickets, DataLogicReceipts dlReceipts) {
-        return JTicketsBagSharedPanel.show(parent, atickets, dlReceipts);
+        return JTicketsBagSharedPanel.show(parent, atickets, (SharedTicketService) dlReceipts);
+    }
+
+    public String showTicketsList(List<SharedTicketInfo> atickets, SharedTicketService sharedTicketService) {
+        return JTicketsBagSharedPanel.show(parent, atickets, sharedTicketService);
     }
 
     public String showTicketsList(List<SharedTicketInfo> atickets, DataLogicReceipts dlReceipts) {
-        return JTicketsBagSharedPanel.show(parent, atickets, dlReceipts);
+        return JTicketsBagSharedPanel.show(parent, atickets, (SharedTicketService) dlReceipts);
     }
 }

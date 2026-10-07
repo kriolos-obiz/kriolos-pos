@@ -21,30 +21,17 @@ import com.openbravo.pos.forms.DataLogicSystem;
 import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.basic.BasicException;
-import com.openbravo.beans.JPasswordPanel;
 import com.openbravo.data.gui.ComboBoxValModel;
-import com.openbravo.data.gui.JMessagePanel;
-import com.openbravo.data.gui.MessageInf;
-import com.openbravo.data.gui.modal.PosUIModal;
 import com.openbravo.data.loader.SentenceList;
-import com.openbravo.pos.customers.CustomerInfo;
 import com.openbravo.pos.customers.CustomerInfoExt;
 import com.openbravo.pos.customers.CustomerInfoGlobal;
 import com.openbravo.pos.customers.DataLogicCustomers;
-import com.openbravo.pos.customers.JCustomerFinder;
-import com.openbravo.pos.customers.JDialogNewCustomer;
 import com.openbravo.pos.domain.utils.AmountCalculatorUtil;
 import com.openbravo.pos.forms.*;
-import com.openbravo.pos.inventory.LocationInfo;
-import com.openbravo.pos.inventory.ProductStock;
 import com.openbravo.pos.inventory.TaxCategoryInfo;
-import com.openbravo.pos.pim.CategoryInfo;
 import com.openbravo.pos.payment.JPaymentSelect;
 import com.openbravo.pos.payment.JPaymentSelectReceipt;
 import com.openbravo.pos.payment.JPaymentSelectRefund;
-import com.openbravo.pos.scripting.ScriptEngine;
-import com.openbravo.pos.scripting.ScriptException;
-import com.openbravo.pos.scripting.ScriptFactory;
 import com.openbravo.pos.ticket.ProductInfoExt;
 import com.openbravo.pos.ticket.TaxInfo;
 import com.openbravo.pos.ticket.TicketInfo;
@@ -58,7 +45,6 @@ import com.openbravo.pos.inventory.InventoryService;
 import com.openbravo.pos.inventory.InventoryServiceImpl;
 import com.openbravo.pos.panels.JProductFinderPanel;
 import com.openbravo.pos.pim.DataLogicPIM;
-import com.openbravo.pos.reports.PrintReportUtils;
 import java.awt.*;
 
 import static java.awt.Window.getWindows;
@@ -71,7 +57,6 @@ import javax.swing.Action;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JPanel;
-import javax.swing.event.ListSelectionEvent;
 
 /**
  *
@@ -118,7 +103,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     private JPaymentSelect paymentdialogreceipt;
     private JPaymentSelect paymentdialogrefund;
     private InactivityListener inactivityListener;
-    private DataLogicReceipts dlReceipts = null;
+    private SharedTicketService dlReceipts = null;
     private Boolean priceWith00;
     private AppProperties m_config;
     // private Integer count = 0;
@@ -140,7 +125,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         dlSales = m_App.getBean(DataLogicSales.class);
         dlInventory = m_App.getBean(DataLogicInventory.class);
         dlCustomers = m_App.getBean(DataLogicCustomers.class);
-        dlReceipts = app.getBean(DataLogicReceipts.class);
+        dlReceipts = app.getBean(SharedTicketService.class);
         dataLogicPIM = app.getBean(DataLogicPIM.class);
 
         // Configuration>Peripheral options

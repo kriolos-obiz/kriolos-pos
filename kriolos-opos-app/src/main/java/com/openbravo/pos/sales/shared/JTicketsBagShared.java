@@ -19,9 +19,9 @@ import com.openbravo.basic.BasicException;
 import com.openbravo.beans.JPasswordPanel;
 import com.openbravo.data.gui.MessageInf;
 import com.openbravo.pos.forms.*;
-import com.openbravo.pos.sales.DataLogicReceipts;
 import com.openbravo.pos.sales.JTicketsBag;
 import com.openbravo.pos.sales.SharedTicketInfo;
+import com.openbravo.pos.sales.SharedTicketService;
 import com.openbravo.pos.sales.TicketsEditor;
 import com.openbravo.pos.ticket.TicketInfo;
 import java.util.ArrayList;
@@ -72,7 +72,7 @@ import javax.swing.SwingUtilities;
  */
 public class JTicketsBagShared extends JTicketsBag {
 
-    private DataLogicReceipts dlReceipts = null;
+    private SharedTicketService dlReceipts = null;
     private DataLogicSales dlSales = null;
     private DataLogicSystem dlSystem;
     private Boolean hasPermissionShowSharedList;
@@ -87,7 +87,7 @@ public class JTicketsBagShared extends JTicketsBag {
 
         super(app, panelticket);
 
-        dlReceipts = app.getBean(DataLogicReceipts.class);
+        dlReceipts = app.getBean(SharedTicketService.class);
         dlSales = app.getBean(DataLogicSales.class);
         dlSystem = m_App.getBean(DataLogicSystem.class);
 
