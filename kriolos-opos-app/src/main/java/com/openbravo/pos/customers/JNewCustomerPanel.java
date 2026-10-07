@@ -24,7 +24,6 @@ import com.openbravo.data.user.DirtyManager;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.forms.BeanFactoryException;
-import com.openbravo.pos.forms.DataLogicSales;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -45,7 +44,6 @@ public class JNewCustomerPanel extends JPanel {
     private static final long serialVersionUID = 1L;
 
     private DataLogicCustomers dlCustomer;
-    private DataLogicSales dlSales;
     private CustomerInfoExt selectedCustomer;
     private CustomersView customersView;
     private PosUIModal modalContext;
@@ -83,7 +81,6 @@ public class JNewCustomerPanel extends JPanel {
 
     private void init(AppView app) {
         try {
-            dlSales = app.getBean(DataLogicSales.class);
             dlCustomer = app.getBean(DataLogicCustomers.class);
 
             initComponents();

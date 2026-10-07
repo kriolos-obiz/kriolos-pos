@@ -206,4 +206,11 @@ To transform the legacy monolith into clean, modular components, the 13 `DataLog
    * `JTicketsReprintPanel`: Uses `TicketLifecycleService.getReprintTicketList` and `TicketLifecycleService.loadTicket`.
    * `JTicketsFinder` & `JTicketsFinderPanel`: Injects `TicketLifecycleService` and `TaxService` for receipt lookups and tax category filters.
    * `ReceiptSplit`, `ReceiptSplitPanel`, `SimpleReceipt`: Decoupled from `DataLogicSales` parameter passing.
-9. **Next Decoupling Targets:** Encapsulate raw `SentenceList` / `TableDefinition` in repository adapters behind domain service interfaces, migrate remaining administrative and reporting views away from monolithic `DataLogicSales`, and deprecate leftover legacy methods.
+9. **Eliminate Active `DataLogicSales` Callers Across App (Completed):**
+   * Migrated bundle and auxiliar product queries (`SQL_BUNDLE_LIST`, `SQL_AUXILIAR_LIST`) to `DataLogicInventory` (with deprecated delegates in `DataLogicSales`), decoupling `BundlePanel` and `AuxiliarPanel`.
+   * Migrated warehouse location queries (`getLocationsList`) in `JParamsLocation` to `DataLogicInventory`.
+   * Migrated tax listing in `JPanelReport` to `TaxService.getTaxListAll()`.
+   * Migrated tax category queries in `JPanelCSVImport` to `DataLogicTax`.
+   * Migrated pickup sequence reset in `JPanelTicketSetup` to direct database sequence sentence via session.
+   * Cleaned up unused `DataLogicSales` references, fields, and imports in `JNewCustomerPanel`, `JPaymentPaper`, `JPaymentVoucher`, `JPaymentSelect`, `CategoriesPanel`, `ProductsWarehousePanel`, `ProductsPanel`, `MaterialFilter`, `BundleFilter`, `AuxiliarFilter`, `LocationFilterSales`, `ProductFilter1`, `ProductFilter2`, `ProductFilter4`, `JCatalog`, and `SalesPaymentCoordinatorTest`.
+10. **Next Decoupling Targets:** Extract register session & cash closing domain port (`CloseCashService` / `RegisterSessionService`) for cash drawer reconciliation, end-of-day register closing (`getPaymentsTotal`, `getSalesTotal`), and deprecate leftover legacy methods.

@@ -21,7 +21,7 @@ import com.openbravo.data.gui.ComboBoxValModel;
 import com.openbravo.data.loader.*;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
-import com.openbravo.pos.forms.DataLogicSales;
+import com.openbravo.pos.inventory.DataLogicInventory;
 import java.awt.Component;
 import java.awt.event.ActionListener;
 import java.util.List;
@@ -47,10 +47,10 @@ public class JParamsLocation extends javax.swing.JPanel implements ReportEditorC
     @Override
     public void init(AppView app) {
          
-        DataLogicSales dlSales = app.getBean(DataLogicSales.class);
+        DataLogicInventory dlInventory = app.getBean(DataLogicInventory.class);
         
         // El modelo de locales
-        m_sentlocations = dlSales.getLocationsList();
+        m_sentlocations = dlInventory.getLocationsList();
         m_LocationsModel = new ComboBoxValModel();   
     }
         

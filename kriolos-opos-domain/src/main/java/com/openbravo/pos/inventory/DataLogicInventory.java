@@ -37,6 +37,14 @@ public class DataLogicInventory extends BeanFactoryDataSingle {
         Datas.STRING, Datas.STRING, Datas.STRING, Datas.DOUBLE
     };
 
+    public static final String SQL_BUNDLE_LIST = "SELECT B.ID, B.PRODUCT, B.PRODUCT_BUNDLE, B.QUANTITY, P.REFERENCE, P.CODE, P.NAME "
+            + "FROM products_bundle B, products P "
+            + "WHERE B.PRODUCT_BUNDLE = P.ID AND B.PRODUCT = ?";
+
+    public static final String SQL_AUXILIAR_LIST = "SELECT COM.ID, COM.PRODUCT, COM.PRODUCT2, P.REFERENCE, P.CODE, P.NAME "
+            + "FROM products_com COM, products P "
+            + "WHERE COM.PRODUCT2 = P.ID AND COM.PRODUCT = ?";
+
     public static final String SQL_WAREHOUSE_STOCK_LIST = """
         SELECT 
             L.ID, 

@@ -20,7 +20,6 @@ import com.openbravo.pos.customers.CustomerInfoExt;
 import com.openbravo.pos.customers.DataLogicCustomers;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
-import com.openbravo.pos.forms.DataLogicSales;
 import com.openbravo.pos.forms.DataLogicSystem;
 import com.openbravo.pos.resources.ImageResources;
 
@@ -56,7 +55,6 @@ public abstract class JPaymentSelect extends javax.swing.JDialog implements JPay
     private CustomerInfoExt customerext;
     private DataLogicSystem dlSystem;
     private DataLogicCustomers dlCustomers;
-    private DataLogicSales dlSales;
 
     private PaymentService paymentService;
 
@@ -91,7 +89,6 @@ public abstract class JPaymentSelect extends javax.swing.JDialog implements JPay
         this.paymentService = paymentService;
         dlSystem = app.getBean(DataLogicSystem.class);
         dlCustomers = app.getBean(DataLogicCustomers.class);
-        dlSales = app.getBean(DataLogicSales.class);
 
         m_jButtonPrint.setVisible(true);
         setPrintSelected(!Boolean.parseBoolean(app.getProperties().getProperty("till.receiptprintoff")));

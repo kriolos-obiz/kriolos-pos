@@ -22,7 +22,6 @@ import com.openbravo.data.user.EditorRecord;
 import com.openbravo.data.user.ListProviderCreator;
 import com.openbravo.data.user.DefaultSaveProvider;
 import com.openbravo.pos.forms.AppLocal;
-import com.openbravo.pos.forms.DataLogicSales;
 import com.openbravo.pos.panels.JPanelTable2;
 import com.openbravo.pos.pim.DataLogicPIM;
 import com.openbravo.pos.scanpal2.DeviceScanner;

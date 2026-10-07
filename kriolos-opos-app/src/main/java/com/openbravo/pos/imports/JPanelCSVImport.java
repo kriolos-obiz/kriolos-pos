@@ -26,6 +26,7 @@ import com.openbravo.pos.forms.*;
 import com.openbravo.pos.inventory.DataLogicInventory;
 import com.openbravo.pos.inventory.TaxCategoryInfo;
 import com.openbravo.pos.pim.DataLogicPIM;
+import com.openbravo.pos.sales.DataLogicTax;
 import com.openbravo.pos.sales.TaxesLogic;
 import com.openbravo.pos.suppliers.DataLogicSuppliers;
 import com.openbravo.pos.ticket.ProductInfoExt;
@@ -76,7 +77,7 @@ public class JPanelCSVImport extends JPanel implements JPanelView {
     private static String supplier_default = "[ USE DEFAULT SUPPLIER ]";
     private static String reject_bad_supplier = "[ REJECT ITEMS WITH BAD SUPPLIER ]";
 
-    private DataLogicSales m_dlSales;
+    private DataLogicTax m_dlTax;
     private DataLogicSystem m_dlSystem;
     private DataLogicInventory m_dlInventory;
     private DataLogicImport m_dlImport;
@@ -149,8 +150,8 @@ public class JPanelCSVImport extends JPanel implements JPanelView {
         this.supplierDataLogic = new DataLogicSuppliers();
         this.supplierDataLogic.init(dbSession);
 
-        m_dlSales = new DataLogicSales();
-        m_dlSales.init(dbSession);
+        m_dlTax = new DataLogicTax();
+        m_dlTax.init(dbSession);
 
         m_dlSystem = new DataLogicSystem();
         m_dlSystem.init(dbSession);
@@ -687,13 +688,13 @@ public class JPanelCSVImport extends JPanel implements JPanelView {
     @Override
     public void activate() throws BasicException {
         // Get tax details and logic
-        taxsent = m_dlSales.getTaxList();
+        taxsent = m_dlTax.getTaxList();
         taxeslogic = new TaxesLogic(taxsent.list());
-        taxcatsent = m_dlSales.getTaxCategoriesList();
+        taxcatsent = m_dlTax.getTaxCategoriesList();
         taxcatmodel = new ComboBoxValModel(taxcatsent.list());
 
         // Get categories list
-        taxCategoryInfos = m_dlSales.getTaxCategoriesListAll();
+        taxCategoryInfos = m_dlTax.getTaxCategoriesListAll();
         m_CategoryModel = new ComboBoxValModel(taxCategoryInfos);
         m_CategoryModel.add(reject_bad_category);
         jComboDefaultCategory.setModel(m_CategoryModel);

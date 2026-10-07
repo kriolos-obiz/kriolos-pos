@@ -22,7 +22,6 @@ import com.openbravo.pos.customers.CustomerInfoExt;
 import com.openbravo.pos.customers.DataLogicCustomers;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
-import com.openbravo.pos.forms.DataLogicSales;
 import com.openbravo.pos.util.RoundUtils;
 import com.openbravo.pos.voucher.DataLogicVouchers;
 import com.openbravo.pos.voucher.VoucherInfo;
@@ -43,7 +42,6 @@ public class JPaymentPaper extends javax.swing.JPanel implements JPaymentInterfa
 
     private final JPaymentNotifier paymentNotifier;
 
-    private DataLogicSales datalogicSales;
     private DataLogicCustomers datalogicCustomers;
     private DataLogicVouchers dataLogicVouchers;
     private ComboBoxValModel voucherComboBoxValModel;
@@ -76,7 +74,6 @@ public class JPaymentPaper extends javax.swing.JPanel implements JPaymentInterfa
     private void init(AppView app) {
 
         try {
-            datalogicSales = app.getBean(DataLogicSales.class);
             datalogicCustomers = app.getBean(DataLogicCustomers.class);
             dataLogicVouchers = app.getBean(DataLogicVouchers.class);
          

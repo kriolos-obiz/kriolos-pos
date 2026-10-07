@@ -804,9 +804,7 @@ public class StockManagement extends JPanel implements JPanelView {
 
         // Keypad (Wrapped in FlowLayout so it respects preferred size and doesn't stretch)
         jNumberKeys = new com.openbravo.beans.JNumberKeys();
-        jNumberKeys.setPreferredSize(new Dimension(250, 250));
-        jNumberKeys.setMinimumSize(new Dimension(250, 250));
-        jNumberKeys.setMaximumSize(new Dimension(300, 300));
+        jNumberKeys.setPreferredSize(new Dimension(300, 300));
         jNumberKeys.addJNumberEventListener(this::jNumberKeysKeyPerformed);
         
         JPanel keypadWrapper = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));

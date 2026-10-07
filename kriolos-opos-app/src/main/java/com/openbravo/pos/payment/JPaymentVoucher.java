@@ -23,7 +23,6 @@ import com.openbravo.pos.customers.CustomerInfoExt;
 import com.openbravo.pos.customers.DataLogicCustomers;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
-import com.openbravo.pos.forms.DataLogicSales;
 import com.openbravo.pos.util.RoundUtils;
 import com.openbravo.pos.voucher.DataLogicVouchers;
 import com.openbravo.pos.voucher.VoucherInfo;
@@ -44,7 +43,6 @@ public class JPaymentVoucher extends javax.swing.JPanel implements JPaymentInter
 
     private final JPaymentNotifier paymentNotifier;
 
-    private DataLogicSales dlSales;
     private DataLogicCustomers dlCustomers;
     private DataLogicVouchers dataLogicVouchers;
     private ComboBoxValModel m_VoucherModel;
@@ -77,7 +75,6 @@ public class JPaymentVoucher extends javax.swing.JPanel implements JPaymentInter
     private void init(AppView app) {
 
         try {
-            dlSales = app.getBean(DataLogicSales.class);
             dlCustomers = app.getBean(DataLogicCustomers.class);
             dataLogicVouchers = app.getBean(DataLogicVouchers.class);
    
