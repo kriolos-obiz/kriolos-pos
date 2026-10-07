@@ -22,6 +22,7 @@ import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.forms.DataLogicSystem;
 import com.openbravo.pos.sales.DataLogicReceipts;
+import com.openbravo.pos.sales.SharedTicketService;
 import com.openbravo.pos.sales.TicketsEditor;
 import com.openbravo.pos.ticket.TicketInfo;
 import java.awt.Component;
@@ -44,7 +45,7 @@ public class RestaurantMapController {
 
     private final AppView appView;
     private final TicketsEditor panelTicket;
-    private final DataLogicReceipts dlReceipts;
+    private final SharedTicketService sharedTicketService;
     private final DataLogicSystem dlSystem;
     private final PlaceService placeService;
 
@@ -57,23 +58,45 @@ public class RestaurantMapController {
 
     public RestaurantMapController(AppView appView, TicketsEditor panelTicket) {
         this(appView, panelTicket,
-                appView != null ? appView.getBean(DataLogicReceipts.class) : null,
+                appView != null ? appView.getBean(SharedTicketService.class) : null,
                 appView != null ? appView.getBean(DataLogicSystem.class) : null,
                 appView != null && appView.getSession() != null ? new PlaceServiceImpl(appView.getSession()) : null);
     }
 
-    RestaurantMapController(AppView appView, TicketsEditor panelTicket,
+    /**
+     * @deprecated Use {@link #RestaurantMapController(AppView, TicketsEditor, SharedTicketService, DataLogicSystem, PlaceService)} instead.
+     */
+    @Deprecated
+    public RestaurantMapController(AppView appView, TicketsEditor panelTicket,
                             DataLogicReceipts dlReceipts, DataLogicSystem dlSystem,
+                            PlaceService placeService) {
+        this(appView, panelTicket, (SharedTicketService) dlReceipts, dlSystem, placeService);
+    }
+
+    public RestaurantMapController(AppView appView, TicketsEditor panelTicket,
+                            SharedTicketService sharedTicketService, DataLogicSystem dlSystem,
                             PlaceService placeService) {
         this.appView = appView;
         this.panelTicket = panelTicket;
-        this.dlReceipts = dlReceipts;
+        this.sharedTicketService = sharedTicketService;
         this.dlSystem = dlSystem;
         this.placeService = placeService;
     }
 
     public PlaceService getPlaceService() {
         return placeService;
+    }
+
+    public SharedTicketService getSharedTicketService() {
+        return sharedTicketService;
+    }
+
+    /**
+     * @deprecated Use {@link #getSharedTicketService()} instead.
+     */
+    @Deprecated
+    public DataLogicReceipts getDataLogicReceipts() {
+        return sharedTicketService instanceof DataLogicReceipts ? (DataLogicReceipts) sharedTicketService : null;
     }
 
     public List<Floor> getFloorList() {
@@ -114,7 +137,7 @@ public class RestaurantMapController {
     public void loadData(Component parent) {
         Set<String> ticketPlaceIds = new HashSet<>();
         try {
-            dlReceipts.getSharedTicketList().forEach(ticket -> ticketPlaceIds.add(ticket.getId()));
+            sharedTicketService.getSharedTicketList().forEach(ticket -> ticketPlaceIds.add(ticket.getId()));
         }
         catch (BasicException ex) {
             LOGGER.log(System.Logger.Level.WARNING, "Exception getting shared tickets: ", ex);
@@ -147,7 +170,7 @@ public class RestaurantMapController {
             return null;
         }
         try {
-            return dlReceipts.getSharedTicket(place.getId());
+            return sharedTicketService.getSharedTicket(place.getId());
         }
         catch (BasicException ex) {
             LOGGER.log(System.Logger.Level.WARNING, "Exception fetching shared ticket: ", ex);
@@ -161,7 +184,7 @@ public class RestaurantMapController {
         panelTicket.setActiveTicket(ticket, placeCurrent.getName());
 
         try {
-            dlReceipts.lockSharedTicket(placeCurrent.getId(), LOCKED_STATE);
+            sharedTicketService.lockSharedTicket(placeCurrent.getId(), LOCKED_STATE);
         }
         catch (BasicException ex) {
             Logger.getLogger(RestaurantMapController.class.getName()).log(Level.SEVERE, null, ex);
@@ -231,7 +254,7 @@ public class RestaurantMapController {
             ticket = new TicketInfo();
             ensureTicketUser(ticket);
             try {
-                dlReceipts.insertSharedTicket(place.getId(), ticket, ticket.getPickupId());
+                sharedTicketService.insertSharedTicket(place.getId(), ticket, ticket.getPickupId());
             }
             catch (BasicException ex) {
                 LOGGER.log(System.Logger.Level.WARNING, "Exception creating ticket: ", ex);
@@ -244,7 +267,7 @@ public class RestaurantMapController {
 
         String lockState = null;
         try {
-            lockState = dlReceipts.getLockState(place.getId(), lockState);
+            lockState = sharedTicketService.getLockState(place.getId(), lockState);
             if (LOCKED_STATE.equals(lockState)) {
                 JOptionPane.showMessageDialog(parent, AppLocal.getIntString("message.sharedticketlock"));
                 if (appView.hasPermission("sales.Override")) {
@@ -328,8 +351,8 @@ public class RestaurantMapController {
                     targetTicket.setCustomer(ticketClip.getCustomer());
                 }
                 ticketClip.getLines().forEach(targetTicket::addLine);
-                dlReceipts.updateRSharedTicket(place.getId(), targetTicket, targetTicket.getPickupId());
-                dlReceipts.deleteSharedTicket(placeClipboard.getId());
+                sharedTicketService.updateRSharedTicket(place.getId(), targetTicket, targetTicket.getPickupId());
+                sharedTicketService.deleteSharedTicket(placeClipboard.getId());
             }
             catch (BasicException ex) {
                 LOGGER.log(System.Logger.Level.WARNING, "Exception merging tables: ", ex);
@@ -359,9 +382,9 @@ public class RestaurantMapController {
         TicketInfo existing = getTicketInfo(place);
         if (existing == null) {
             try {
-                dlReceipts.insertRSharedTicket(place.getId(), ticketClip, ticketClip.getPickupId());
+                sharedTicketService.insertRSharedTicket(place.getId(), ticketClip, ticketClip.getPickupId());
                 place.setPeople(true);
-                dlReceipts.deleteSharedTicket(placeClipboard.getId());
+                sharedTicketService.deleteSharedTicket(placeClipboard.getId());
                 placeClipboard.setPeople(false);
             }
             catch (BasicException ex) {
@@ -386,14 +409,14 @@ public class RestaurantMapController {
         if (placeCurrent != null) {
             try {
                 String lockState = null;
-                lockState = dlReceipts.getLockState(placeCurrent.getId(), lockState);
-                dlReceipts.getSharedTicket(placeCurrent.getId());
+                lockState = sharedTicketService.getLockState(placeCurrent.getId(), lockState);
+                sharedTicketService.getSharedTicket(placeCurrent.getId());
 
                 if ("override".equals(lockState) || LOCKED_STATE.equals(lockState)) {
-                    dlReceipts.updateSharedTicket(placeCurrent.getId(),
+                    sharedTicketService.updateSharedTicket(placeCurrent.getId(),
                             panelTicket.getActiveTicket(),
                             panelTicket.getActiveTicket().getPickupId());
-                    dlReceipts.unlockSharedTicket(placeCurrent.getId(), null);
+                    sharedTicketService.unlockSharedTicket(placeCurrent.getId(), null);
                     placeCurrent = null;
                 } else {
                     JOptionPane.showMessageDialog(parent,
@@ -416,7 +439,7 @@ public class RestaurantMapController {
         if (placeCurrent != null) {
             String id = placeCurrent.getId();
             try {
-                dlReceipts.deleteSharedTicket(id);
+                sharedTicketService.deleteSharedTicket(id);
             }
             catch (BasicException ex) {
                 LOGGER.log(System.Logger.Level.WARNING, "Exception deleting ticket: ", ex);
@@ -434,7 +457,7 @@ public class RestaurantMapController {
     public void moveCurrentTicket(Component parent) {
         if (placeCurrent != null) {
             try {
-                dlReceipts.updateRSharedTicket(placeCurrent.getId(),
+                sharedTicketService.updateRSharedTicket(placeCurrent.getId(),
                         panelTicket.getActiveTicket(), panelTicket.getActiveTicket().getPickupId());
             }
             catch (BasicException ex) {

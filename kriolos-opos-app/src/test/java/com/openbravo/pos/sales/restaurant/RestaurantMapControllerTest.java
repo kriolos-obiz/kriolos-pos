@@ -21,6 +21,7 @@ import com.openbravo.pos.forms.AppProperties;
 import com.openbravo.pos.forms.AppUser;
 import com.openbravo.pos.forms.AppUserView;
 import com.openbravo.pos.forms.AppView;
+import com.openbravo.pos.sales.SharedTicketService;
 import com.openbravo.pos.sales.TicketsEditor;
 import com.openbravo.pos.ticket.TicketInfo;
 import java.lang.reflect.Proxy;
@@ -87,7 +88,7 @@ public class RestaurantMapControllerTest {
                 new Class<?>[]{TicketsEditor.class},
                 (proxy, method, args) -> null);
 
-        controller = new RestaurantMapController(appView, ticketsEditor, null, null, placeService);
+        controller = new RestaurantMapController(appView, ticketsEditor, (SharedTicketService) null, null, placeService);
     }
 
     @Test
@@ -153,6 +154,29 @@ public class RestaurantMapControllerTest {
         controller.syncCustomerInTable("Alice", "tck-99");
 
         assertEquals("Alice", placeService.customerByTicketId.get("tck-99"));
+    }
+
+    @Test
+    @DisplayName("Should expose SharedTicketService and support getTicketInfo via service")
+    void testSharedTicketServiceIntegration() throws Exception {
+        TicketInfo expectedTicket = new TicketInfo();
+        SharedTicketService mockService = (SharedTicketService) Proxy.newProxyInstance(
+                SharedTicketService.class.getClassLoader(),
+                new Class<?>[]{SharedTicketService.class},
+                (proxy, method, args) -> {
+                    if ("getSharedTicket".equals(method.getName())) {
+                        return expectedTicket;
+                    }
+                    return null;
+                });
+
+        RestaurantMapController ctrl = new RestaurantMapController(null, null, mockService, null, placeService);
+        assertSame(mockService, ctrl.getSharedTicketService());
+
+        Place place = new TestPlace("p-1", "Table 1");
+        TicketInfo retrieved = ctrl.getTicketInfo(place);
+        assertNotNull(retrieved);
+        assertEquals(expectedTicket.getId(), retrieved.getId());
     }
 
     private static class TestPlace extends Place {
