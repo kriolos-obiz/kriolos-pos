@@ -46,6 +46,7 @@ import com.openbravo.pos.payment.PaymentInfo;
 import com.openbravo.pos.payment.PaymentInfoTicket;
 import com.openbravo.pos.pim.DataLogicPIM;
 import com.openbravo.pos.sales.ReprintTicketInfo;
+import com.openbravo.pos.sales.TicketLifecycleService;
 import com.openbravo.pos.voucher.DataLogicVouchers;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
@@ -61,7 +62,7 @@ import java.util.logging.Logger;
  * @author adrianromero
  * @author jackgerrard
  */
-public class DataLogicSales extends BeanFactoryDataSingle {
+public class DataLogicSales extends BeanFactoryDataSingle implements TicketLifecycleService {
 
     protected Session sessionDB;
 

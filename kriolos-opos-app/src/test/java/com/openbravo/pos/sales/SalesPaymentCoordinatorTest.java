@@ -46,9 +46,12 @@ public class SalesPaymentCoordinatorTest {
                 (proxy, method, args) -> null);
 
         SalesService salesService = new SalesServiceImpl(new TaxesLogic(java.util.Collections.emptyList()));
-        DataLogicSales dlSales = new DataLogicSales();
+        TicketLifecycleService ticketLifecycleService = (TicketLifecycleService) Proxy.newProxyInstance(
+                TicketLifecycleService.class.getClassLoader(),
+                new Class<?>[]{TicketLifecycleService.class},
+                (proxy, method, args) -> null);
 
-        coordinator = new SalesPaymentCoordinator(app, dlSales, salesService);
+        coordinator = new SalesPaymentCoordinator(app, ticketLifecycleService, salesService);
         ticket = new TicketInfo();
     }
 
@@ -86,5 +89,11 @@ public class SalesPaymentCoordinatorTest {
         assertSame(refundDlg, coordinator.resolvePaymentDialog(ticket, receiptDlg, refundDlg));
 
         assertNull(coordinator.resolvePaymentDialog(null, receiptDlg, refundDlg));
+    }
+
+    @Test
+    @DisplayName("Should expose injected TicketLifecycleService port")
+    void testTicketLifecycleServiceAccess() {
+        assertNotNull(coordinator.getTicketLifecycleService());
     }
 }

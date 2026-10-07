@@ -40,13 +40,25 @@ public class SalesPaymentCoordinator {
     private static final Logger LOGGER = System.getLogger(SalesPaymentCoordinator.class.getName());
 
     private final AppView app;
-    private final DataLogicSales dlSales;
+    private final TicketLifecycleService ticketLifecycleService;
     private final SalesService salesService;
 
-    public SalesPaymentCoordinator(AppView app, DataLogicSales dlSales, SalesService salesService) {
+    public SalesPaymentCoordinator(AppView app, TicketLifecycleService ticketLifecycleService, SalesService salesService) {
         this.app = Objects.requireNonNull(app, "AppView cannot be null");
-        this.dlSales = Objects.requireNonNull(dlSales, "DataLogicSales cannot be null");
+        this.ticketLifecycleService = Objects.requireNonNull(ticketLifecycleService, "TicketLifecycleService cannot be null");
         this.salesService = Objects.requireNonNull(salesService, "SalesService cannot be null");
+    }
+
+    /**
+     * @deprecated Use {@link #SalesPaymentCoordinator(AppView, TicketLifecycleService, SalesService)} instead.
+     */
+    @Deprecated
+    public SalesPaymentCoordinator(AppView app, DataLogicSales dlSales, SalesService salesService) {
+        this(app, (TicketLifecycleService) dlSales, salesService);
+    }
+
+    public TicketLifecycleService getTicketLifecycleService() {
+        return ticketLifecycleService;
     }
 
     /**
@@ -131,7 +143,7 @@ public class SalesPaymentCoordinator {
             }
 
             try {
-                dlSales.saveTicket(ticket, app.getInventoryLocation());
+                ticketLifecycleService.saveTicket(ticket, app.getInventoryLocation());
             } catch (BasicException ex) {
                 LOGGER.log(Level.ERROR, "Exception on save ticket ", ex);
                 new MessageInf(MessageInf.SGN_NOTICE, AppLocal.getIntString("message.nosaveticket"), ex).show(parent);
