@@ -220,10 +220,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             <scope>runtime</scope>
         </dependency>
 
-        <dependency> 
-            <groupId>org.netbeans.external</groupId>  
-            <artifactId>AbsoluteLayout</artifactId>
-        </dependency> 
         <!-- Netbeans Module - Swing Validation: On NBM Need extra lib -->
         <dependency>
             <groupId>org.netbeans.modules</groupId>
@@ -305,16 +301,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                         <_JAVA_AWT_WM_NONREPARENTING>1</_JAVA_AWT_WM_NONREPARENTING>
                     </environmentVariables>
                 </configuration>
-                <dependencies>
-                    <!-- ValidationAPI and NBM WRAPPER  -->
-                    <dependency>
-                        <groupId>org.netbeans.external</groupId> 
-                        <artifactId>ValidationAPI</artifactId>
-                        <version>RELEASE180</version>
-                        <scope>compile</scope>
-                    </dependency>
-       
-                </dependencies>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

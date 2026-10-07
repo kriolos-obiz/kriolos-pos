@@ -225,12 +225,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                 <scope>provided</scope>
             </dependency>
 
-            <!-- Netbeans Module - Layput -->
-            <dependency>
-                <groupId>org.netbeans.external</groupId>
-                <artifactId>AbsoluteLayout</artifactId>
-                <version>${netbeans.version}</version>
-            </dependency>
             <!-- Netbeans Module - Swing Validation: On NBM Need extra lib -->
             <dependency>
                 <groupId>org.netbeans.modules</groupId>
@@ -249,13 +243,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                 <artifactId>jaxb-impl</artifactId>
                 <version>2.3.3</version>
                 <scope>runtime</scope>
-            </dependency>
-
-            <!-- ValidationAPI and NBM WRAPPER  -->
-            <dependency>
-                <groupId>org.netbeans.external</groupId>
-                <artifactId>ValidationAPI</artifactId>
-                <version>RELEASE180</version>
             </dependency>
 
             <dependency>
