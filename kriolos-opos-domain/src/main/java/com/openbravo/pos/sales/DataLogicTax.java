@@ -36,7 +36,7 @@ import java.util.logging.Logger;
 /**
  * Data access logic for Tax definitions, categories, and rates.
  */
-public class DataLogicTax extends BeanFactoryDataSingle {
+public class DataLogicTax extends BeanFactoryDataSingle implements TaxService {
 
     private static final Logger LOGGER = Logger.getLogger(DataLogicTax.class.getName());
 
@@ -72,6 +72,7 @@ public class DataLogicTax extends BeanFactoryDataSingle {
                         dr.getInt(8)));
     }
 
+    @Override
     public List<TaxInfo> getTaxListAll() {
         List<TaxInfo> list = null;
         try {
@@ -95,6 +96,17 @@ public class DataLogicTax extends BeanFactoryDataSingle {
                         dr.getString(2)));
     }
 
+    @Override
+    public List<TaxCustCategoryInfo> getTaxCustCategoriesListAll() {
+        List<TaxCustCategoryInfo> list = null;
+        try {
+            list = this.getTaxCustCategoriesList().list();
+        } catch (BasicException ex) {
+            LOGGER.log(Level.WARNING, "Cannot get TaxCustCategoryInfo list", ex);
+        }
+        return list;
+    }
+
     public SentenceList<TaxCategoryInfo> getTaxCategoriesList() {
         return new StaticSentence<>(sessionDB,
                 "SELECT "
@@ -106,6 +118,7 @@ public class DataLogicTax extends BeanFactoryDataSingle {
                 (DataRead dr) -> new TaxCategoryInfo(dr.getString(1), dr.getString(2)));
     }
 
+    @Override
     public List<TaxCategoryInfo> getTaxCategoriesListAll() {
         List<TaxCategoryInfo> list = null;
         try {

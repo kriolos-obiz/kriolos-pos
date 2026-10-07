@@ -189,6 +189,8 @@ To transform the legacy monolith into clean, modular components, the 13 `DataLog
 8. **Extract Security & Audit Logging (Completed):** Created `DataLogicAudit` (`com.openbravo.pos.sales.DataLogicAudit`) for ticket line removal and void auditing (`addTicketLineRemoved`, `addTicketDeleted`). Migrated `TicketLineController` to use `DataLogicAudit`. Retained `@Deprecated` proxy delegations in `DataLogicSales`.
 
 === Phase 3: Pure Domain Services (Hexagonal Ports)
-1. Define pure Java interfaces (Ports) in domain API modules.
-2. Encapsulate low-level `SentenceList`, `PreparedSentence`, and SQL strings within Repository adapters rather than exposing data loader objects to Swing UI components.
-3. Replace `app.getBean(DataLogic*.class)` in UI panels with injected domain service interfaces.
+1. **Hospitality Domain Port (`PlaceService`):** Enriched the `PlaceService` interface with dining table state operations (`moveCustomer`, `setCustomerNameInTable`, `setWaiterNameInTable`, `setTicketIdInTable`, table status locks). Decoupled Swing presentation layers (`RestaurantMapController`, `PlaceButtonRenderer`, `JTicketsBagRestaurant`) to depend on `PlaceService` instead of concrete `PlaceServiceImpl`.
+2. **Audit Logging Port (`AuditService`):** Created `AuditService` (`com.openbravo.pos.sales.AuditService`) for security event and ticket line removal auditing. Made `DataLogicAudit` implement `AuditService` and registered type mapping in `BeanContainer`. Decoupled `TicketLineController` to consume `AuditService`.
+3. **Tax Domain Port (`TaxService`):** Created `TaxService` (`com.openbravo.pos.sales.TaxService`) for tax rates, customer tax categories, and product tax category queries. Made `DataLogicTax` implement `TaxService` and mapped in `BeanContainer`.
+4. **CRM Domain Port (`CustomerService`):** Created `CustomerService` (`com.openbravo.pos.customers.CustomerService`) covering customer lookup, card resolution, note updates, debt tracking, and customer transaction history. Made `DataLogicCustomers` implement `CustomerService` and mapped in `BeanContainer`.
+5. **Next Decoupling Targets:** Encapsulate raw `SentenceList` / `TableDefinition` in repository adapters behind domain service interfaces and migrate remaining UI panels to inject pure domain ports.

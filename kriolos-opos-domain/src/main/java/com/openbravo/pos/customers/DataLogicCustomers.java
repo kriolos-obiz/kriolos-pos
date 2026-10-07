@@ -33,7 +33,7 @@ import java.util.List;
  * @author JG uniCenta
  * @author adrianromero
  */
-public class DataLogicCustomers extends BeanFactoryDataSingle {
+public class DataLogicCustomers extends BeanFactoryDataSingle implements CustomerService {
 
     protected Session s;
     private Row customersRow;
@@ -104,6 +104,7 @@ public class DataLogicCustomers extends BeanFactoryDataSingle {
                 new CustomerInfoRead());
     }
 
+    @Override
     public final CustomerInfo getCustomerInfo(String id) throws BasicException {
         return (CustomerInfo) new PreparedSentence(s,
                 "SELECT "
@@ -115,6 +116,7 @@ public class DataLogicCustomers extends BeanFactoryDataSingle {
                 new CustomerInfoRead()).find(id);
     }
 
+    @Override
     public int updateCustomerExt(final CustomerInfoExt customer) throws BasicException {
 
         return new PreparedSentence(s,
@@ -385,6 +387,7 @@ public class DataLogicCustomers extends BeanFactoryDataSingle {
      * @return
      * @throws BasicException
      */
+    @Override
     public CustomerInfoExt findCustomerInfoExtByCard(String card) throws BasicException {
         return (CustomerInfoExt) new PreparedSentence(this.s,
                 "SELECT "
@@ -428,6 +431,7 @@ public class DataLogicCustomers extends BeanFactoryDataSingle {
      * @return
      * @throws BasicException
      */
+    @Override
     public CustomerInfoExt findCustomerInfoExtByName(String name) throws BasicException {
         return (CustomerInfoExt) new PreparedSentence(this.s,
                 "SELECT "
@@ -471,6 +475,7 @@ public class DataLogicCustomers extends BeanFactoryDataSingle {
      * @return
      * @throws BasicException
      */
+    @Override
     public final CustomerInfoExt findCustomerInfoExtById(String id) throws BasicException {
         return new PreparedSentence<String, CustomerInfoExt>(this.s,
                 "SELECT "
@@ -543,6 +548,7 @@ public class DataLogicCustomers extends BeanFactoryDataSingle {
         }
     }
 
+    @Override
     public final List<CustomerTransaction> getCustomersTransactionList(String cId) throws BasicException {
         return new PreparedSentence<>(s, """
             SELECT 
@@ -571,6 +577,7 @@ public class DataLogicCustomers extends BeanFactoryDataSingle {
                 CustomerTransaction.getSerializerRead()).list(cId);
     }
 
+    @Override
     public final int updateCustomerDebt(String customerId, Double accDebt, Date date) throws BasicException {
         return new PreparedSentence(s,
                 "UPDATE customers SET CURDEBT = ?, CURDATE = ? WHERE ID = ?",
