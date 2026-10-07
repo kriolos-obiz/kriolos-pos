@@ -42,8 +42,8 @@ public class RolesPanel extends JPanelTable {
 
     @Override
     protected void init() {
-        DataLogicAdmin dlAdmin  = app.getBean(DataLogicAdmin.class);        
-        troles = dlAdmin.getTableRoles();         
+        PeopleService peopleService = app.getBean(PeopleService.class);        
+        troles = peopleService.getTableRoles();         
         jeditor = new RolesView(dirty);    
     }
 

@@ -390,7 +390,7 @@ public class ApplicationShell extends JPanel implements AppView {
     private void showLoginPanel() {
         LOGGER.log(Level.INFO, "Showing Authentication Panel");
         if (mAuthPanel == null) {
-            mAuthPanel = new AuthenticationPanel(this, dlogicSystem, appProperties, new AuthenticationPanel.AuthListener() {
+            mAuthPanel = new AuthenticationPanel(this, (SecurityService) dlogicSystem, appProperties, new AuthenticationPanel.AuthListener() {
                 @Override
                 public void onSucess(AppUser user) {
                     openAppView(user);

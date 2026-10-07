@@ -29,6 +29,7 @@ import com.openbravo.pos.forms.AppUser;
 import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.forms.ApplicationShell;
 import com.openbravo.pos.forms.DataLogicSystem;
+import com.openbravo.pos.forms.SecurityService;
 import com.openbravo.pos.forms.DatabaseActivationCallback;
 import com.openbravo.pos.ui.components.ButtonSize;
 import com.openbravo.pos.ui.components.POSButtonFactory;
@@ -84,7 +85,7 @@ public class AuthenticationPanel extends javax.swing.JPanel {
     private final AppView appView;
     private final AppProperties appProperties;
     private final AuthListener authListener;
-    private DataLogicSystem m_dlSystem;
+    private SecurityService securityService;
 
     private DatabaseConfig activeDbConfig = null;
     private StringBuilder inputtext;
@@ -99,32 +100,55 @@ public class AuthenticationPanel extends javax.swing.JPanel {
     private JPanel dbControlsPanel;
 
     /**
-     * Constructs a fully-wired AuthenticationPanel.
+     * Constructs a fully-wired AuthenticationPanel using domain service port.
      *
      * @param app Outer application view / shell.
-     * @param dlSystem DataLogicSystem for querying users (may be null if no
+     * @param securityService SecurityService for querying users (may be null if no
      * database is active yet).
      * @param props System configuration properties.
      * @param authcListener Listener receiving successful authentication events.
      */
-    public AuthenticationPanel(AppView app, DataLogicSystem dlSystem, AppProperties props, AuthListener authcListener) {
+    public AuthenticationPanel(AppView app, SecurityService securityService, AppProperties props, AuthListener authcListener) {
         this.appView = app;
         this.authListener = authcListener;
         this.appProperties = props;
-        this.m_dlSystem = dlSystem;
+        this.securityService = securityService;
 
         initComponents();
         initIntegratedDbSelector();
         initPanel();
-        
     }
 
+    /**
+     * @deprecated Use {@link #AuthenticationPanel(AppView, SecurityService, AppProperties, AuthListener)} instead.
+     */
+    @Deprecated
+    public AuthenticationPanel(AppView app, DataLogicSystem dlSystem, AppProperties props, AuthListener authcListener) {
+        this(app, (SecurityService) dlSystem, props, authcListener);
+    }
+
+    public AuthenticationPanel(SecurityService securityService, AppProperties props, AuthListener authcListener) {
+        this(null, securityService, props, authcListener);
+    }
+
+    /**
+     * @deprecated Use {@link #AuthenticationPanel(SecurityService, AppProperties, AuthListener)} instead.
+     */
+    @Deprecated
     public AuthenticationPanel(DataLogicSystem dlSystem, AppProperties props, AuthListener authcListener) {
-        this(null, dlSystem, props, authcListener);
+        this(null, (SecurityService) dlSystem, props, authcListener);
     }
 
+    public AuthenticationPanel(SecurityService securityService, AuthListener authcListener) {
+        this(null, securityService, AppConfig.getInstance(), authcListener);
+    }
+
+    /**
+     * @deprecated Use {@link #AuthenticationPanel(SecurityService, AuthListener)} instead.
+     */
+    @Deprecated
     public AuthenticationPanel(DataLogicSystem dlSystem, AuthListener authcListener) {
-        this(null, dlSystem, AppConfig.getInstance(), authcListener);
+        this(null, (SecurityService) dlSystem, AppConfig.getInstance(), authcListener);
     }
 
     /**
@@ -338,7 +362,7 @@ public class AuthenticationPanel extends javax.swing.JPanel {
                 @Override
                 public void onSuccess(DatabaseConfig activatedConfig, DataLogicSystem dlSystem) {
                     activeDbConfig = activatedConfig;
-                    updateDataLogicSystem(dlSystem);
+                    updateSecurityService(dlSystem);
                     setBusy(false, "Ligado com sucesso a " + activatedConfig.name());
                     updateBadgeAndButtons();
                     m_txtKeys.requestFocus();
@@ -440,11 +464,19 @@ public class AuthenticationPanel extends javax.swing.JPanel {
         return btnConfigureDatabase;
     }
 
-    public void updateDataLogicSystem(DataLogicSystem dlSystem) {
-        this.m_dlSystem = dlSystem;
+    public void updateSecurityService(SecurityService securityService) {
+        this.securityService = securityService;
         showListPeople();
         revalidate();
         repaint();
+    }
+
+    /**
+     * @deprecated Use {@link #updateSecurityService(SecurityService)} instead.
+     */
+    @Deprecated
+    public void updateDataLogicSystem(DataLogicSystem dlSystem) {
+        updateSecurityService(dlSystem);
     }
 
     public void refreshUsers() {
@@ -454,9 +486,9 @@ public class AuthenticationPanel extends javax.swing.JPanel {
     private void showListPeople() {
         List<AppUser> people = null;
 
-        if (m_dlSystem != null) {
+        if (securityService != null) {
             try {
-                people = m_dlSystem.listPeopleVisible();
+                people = securityService.listPeopleVisible();
             }
             catch (BasicException ee) {
                 LOGGER.log(Level.WARNING, "Error listing visible users", ee);
@@ -508,8 +540,8 @@ public class AuthenticationPanel extends javax.swing.JPanel {
         if (c == '\n') {
             AppUser user = null;
             try {
-                if (m_dlSystem != null) {
-                    user = m_dlSystem.findPeopleByCard(inputtext.toString());
+                if (securityService != null) {
+                    user = securityService.findPeopleByCard(inputtext.toString());
                 }
             }
             catch (BasicException ee) {

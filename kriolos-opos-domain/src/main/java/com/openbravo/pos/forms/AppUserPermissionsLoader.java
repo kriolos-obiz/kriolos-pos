@@ -27,15 +27,23 @@ public class AppUserPermissionsLoader {
     
     private static final Logger LOGGER = Logger.getLogger(AppUserPermissionsLoader.class.getName());
 
-    private final DataLogicSystem dlSystem;
+    private final SecurityService securityService;
 
+    public AppUserPermissionsLoader(SecurityService securityService) {
+        this.securityService = securityService;
+    }
+
+    /**
+     * @deprecated Use {@link #AppUserPermissionsLoader(SecurityService)} instead.
+     */
+    @Deprecated
     public AppUserPermissionsLoader(DataLogicSystem dlSystem) {
-        this.dlSystem = dlSystem;
+        this((SecurityService) dlSystem);
     }
 
     public Set<String> getPermissionsForRole(String role) {
 
-        String permisionsXML = dlSystem.findRolePermissions(role);
+        String permisionsXML = securityService.findRolePermissions(role);
 
         Set<String> permissionsSet = new HashSet<>();
         try {

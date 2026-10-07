@@ -66,7 +66,8 @@ public class WordspacePanel extends JPanel implements AppUserView {
         appCurrentUser = appuser;
 
         dataLogicSystem = appRootPanel.getBean(DataLogicSystem.class);
-        AppUserPermissionsLoader aupLoader = new AppUserPermissionsLoader(dataLogicSystem);
+        SecurityService securityService = appRootPanel.getBean(SecurityService.class);
+        AppUserPermissionsLoader aupLoader = new AppUserPermissionsLoader(securityService);
         Set<String> userPermissions = aupLoader.getPermissionsForRole(appCurrentUser.getRole());
         appCurrentUser.fillPermissions(userPermissions);
 

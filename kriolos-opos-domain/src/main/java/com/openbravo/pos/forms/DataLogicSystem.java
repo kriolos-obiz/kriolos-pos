@@ -36,7 +36,7 @@ import javax.swing.ImageIcon;
  *
  * @author JG uniCenta
  */
-public class DataLogicSystem extends BeanFactoryDataSingle {
+public class DataLogicSystem extends BeanFactoryDataSingle implements SecurityService {
 
     private final static Logger LOGGER = Logger.getLogger(DataLogicSystem.class.getName());
 
