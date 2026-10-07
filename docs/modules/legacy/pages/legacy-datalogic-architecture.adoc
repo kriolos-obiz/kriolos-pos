@@ -232,7 +232,12 @@ To transform the legacy monolith into clean, modular components, the 13 `DataLog
    * Implemented `SecurityService` on `DataLogicSystem` and registered interface type mapping in `BeanContainer`.
    * Decoupled `AppUserPermissionsLoader`, `AuthenticationPanel`, `ApplicationShell`, and `WordspacePanel` to consume `SecurityService`.
    * Retained 100% binary backwards compatibility with `@Deprecated` constructor overloads on `AppUserPermissionsLoader` and `AuthenticationPanel`.
-14. **Next Decoupling Targets:**
+14. **Remote Order Queue Domain Port (`RemoteOrderService` & `RemoteOrder` Record) (Completed):**
+   * Created domain service port interface `RemoteOrderService` (`com.openbravo.pos.sales.RemoteOrderService`) and domain record `RemoteOrder` (`com.openbravo.pos.sales.RemoteOrder`) encapsulating order lines with `Double qty` (supporting fractional item quantities) and `String displayId` (supporting alphanumeric kitchen display routing).
+   * Updated original Liquibase changelog (`pos_liquidbase/db-changelog-v4_5.xml`) for the `orders` table to define `qty` as `DOUBLE` (default `1.0`) and `displayid` as `VARCHAR(50)` (default `'1'`).
+   * Relocated and modernized remote kitchen dispatch coordinator to `RemoteOrderDisplayService` (`com.openbravo.pos.sales.RemoteOrderDisplayService`) in `kriolos-opos-domain`, consuming `RemoteOrderService` with encapsulated `RemoteOrder` records.
+   * Maintained 100% binary backwards compatibility with `@Deprecated` method overloads on `DataLogicOrders` and `DataLogicSystem`.
+15. **Next Decoupling Targets:**
    * Extract warehouse and inventory ledger ports (`InventoryService` / `StockService`) from `DataLogicInventory` and remaining stock operations in `DataLogicSales`.
-   * Extract order processing port (`RemoteOrderService`) resolving duplication between `DataLogicOrders` and `DataLogicSystem`.
+
 

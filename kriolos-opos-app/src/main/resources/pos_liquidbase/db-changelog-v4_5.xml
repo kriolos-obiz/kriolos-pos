@@ -300,7 +300,7 @@
                 <constraints nullable="false" primaryKey="true"/>
             </column>
             <column name="orderid" type="VARCHAR(50)"/>
-            <column defaultValueNumeric="1" name="qty" type="INT"/>
+            <column defaultValueNumeric="1.0" name="qty" type="DOUBLE"/>
             <column name="details" type="VARCHAR(255)"/>
             <column name="attributes" type="VARCHAR(255)"/>
             <column name="notes" type="VARCHAR(255)"/>
@@ -308,7 +308,7 @@
             <column name="ordertime" type="datetime">
                 <constraints nullable="false"/>
             </column>
-            <column defaultValueNumeric="1" name="displayid" type="INT"/>
+            <column defaultValue="1" name="displayid" type="VARCHAR(50)"/>
             <column name="auxiliary" type="INT"/>
             <column name="completetime" type="datetime"/>
         </createTable>

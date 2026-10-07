@@ -456,6 +456,26 @@ public class DataLogicSystem extends BeanFactoryDataSingle implements SecuritySe
     }
 
     /**
+     * @deprecated Use {@link com.openbravo.pos.sales.RemoteOrderService#addOrder} instead.
+     */
+    @Deprecated
+    public final void addOrder(com.openbravo.pos.sales.RemoteOrder order) throws BasicException {
+        getDataLogicOrders().addOrder(order);
+    }
+
+    /**
+     * @deprecated Use {@link DataLogicOrders#addOrder} instead.
+     */
+    @Deprecated
+    public final void addOrder(String orderId, Double qty,
+            String details, String attributes, String notes, String ticketId,
+            String ordertime, String displayId, String auxiliary, String completetime
+    ) throws BasicException {
+        getDataLogicOrders().addOrder(orderId, qty, details, attributes, notes, ticketId,
+                ordertime, displayId, auxiliary, completetime);
+    }
+
+    /**
      * @deprecated Use {@link DataLogicOrders#addOrder} instead.
      */
     @Deprecated
@@ -464,6 +484,26 @@ public class DataLogicSystem extends BeanFactoryDataSingle implements SecuritySe
             String ordertime, Integer displayId, String auxiliary, String completetime
     ) throws BasicException {
         getDataLogicOrders().addOrder(orderId, qty, details, attributes, notes, ticketId,
+                ordertime, displayId, auxiliary, completetime);
+    }
+
+    /**
+     * @deprecated Use {@link com.openbravo.pos.sales.RemoteOrderService#updateOrder} instead.
+     */
+    @Deprecated
+    public final void updateOrder(com.openbravo.pos.sales.RemoteOrder order) throws BasicException {
+        getDataLogicOrders().updateOrder(order);
+    }
+
+    /**
+     * @deprecated Use {@link DataLogicOrders#updateOrder} instead.
+     */
+    @Deprecated
+    public final void updateOrder(String orderId, Double qty,
+            String details, String attributes, String notes, String ticketId,
+            String ordertime, String displayId, String auxiliary, String completetime
+    ) throws BasicException {
+        getDataLogicOrders().updateOrder(orderId, qty, details, attributes, notes, ticketId,
                 ordertime, displayId, auxiliary, completetime);
     }
 

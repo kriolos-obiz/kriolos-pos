@@ -192,6 +192,11 @@ public class SalesPeripheralCoordinator {
     public boolean sendRemoteOrder(TicketInfo ticket, String place, TaxesLogic taxeslogic,
                                   boolean taxesIncluded, boolean warrantyPrint, String pickupId,
                                   Object salesContext) {
+        
+        /* Remote Orders Display */
+        displayRemoteOrder(ticket, place, null);
+        
+        /* Remote Orders Display */
         String scriptId = "script.SendOrder";
         try {
             String rScript = textResourceResolver.apply(scriptId);
@@ -219,26 +224,25 @@ public class SalesPeripheralCoordinator {
     }
 
     /**
+     * Resolves the remote order identifier prioritizing customer name, ticketExt, then pickupString.
+     */
+    public String resolveRemoteOrderId(TicketInfo ticket, String ticketExt, String pickupString) {
+        if (ticket != null && ticket.getCustomer() != null && ticket.getCustomer().getName() != null) {
+            return ticket.getCustomer().getName();
+        } else if (ticketExt != null) {
+            return ticketExt;
+        } else if (pickupString != null) {
+            return pickupString;
+        } else {
+            return ticket != null ? Integer.toString(ticket.getPickupId()) : "";
+        }
+    }
+
+    /**
      * Dispatches remote order display updates to Kitchen/Bar video display systems.
      */
-    public void displayRemoteOrder(TicketInfo ticket, String ticketExt, String pickupString) {
-        createRemoteOrderDisplay(ticket, ticketExt, pickupString).remoteOrderDisplay(1, true);
-    }
-
-    public void displayRemoteOrder(TicketInfo ticket, String ticketExt, String pickupString, String orderId) {
-        createRemoteOrderDisplay(ticket, ticketExt, pickupString).remoteOrderDisplay(orderId, 1, true);
-    }
-
-    public void displayRemoteOrder(TicketInfo ticket, String ticketExt, String pickupString, int display) {
-        createRemoteOrderDisplay(ticket, ticketExt, pickupString).remoteOrderDisplay(display, false);
-    }
-
-    public void displayRemoteOrder(TicketInfo ticket, String ticketExt, String pickupString, String orderId, int display, boolean primary) {
-        createRemoteOrderDisplay(ticket, ticketExt, pickupString).remoteOrderDisplay(orderId, display, primary);
-    }
-
-    public String resolveRemoteOrderId(TicketInfo ticket, String ticketExt, String pickupString) {
-        return createRemoteOrderDisplay(ticket, ticketExt, pickupString).remoteOrderId();
+    private void displayRemoteOrder(TicketInfo ticket, String ticketExt, String display) {
+        createRemoteOrderDisplay(ticket, ticketExt).remoteOrderDisplay(display);
     }
 
     /**
@@ -266,8 +270,8 @@ public class SalesPeripheralCoordinator {
         return tmpPickupId;
     }
 
-    protected RemoteOrderDisplay createRemoteOrderDisplay(TicketInfo ticket, String ticketExt, String pickupString) {
-        return new RemoteOrderDisplay(app, ticket, ticketExt, pickupString);
+    private RemoteOrderDisplayService createRemoteOrderDisplay(TicketInfo ticket, String ticketExt) {
+        return new RemoteOrderDisplayService(app, ticket, ticketExt);
     }
 
     /**

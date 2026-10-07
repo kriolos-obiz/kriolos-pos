@@ -18,13 +18,14 @@ package com.openbravo.pos.forms;
 
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.loader.*;
-import com.openbravo.pos.forms.BeanFactoryDataSingle;
+import com.openbravo.pos.sales.RemoteOrder;
+import com.openbravo.pos.sales.RemoteOrderService;
 
 /**
  *
  * @author uniCenta
  */
-public class DataLogicOrders extends BeanFactoryDataSingle {
+public class DataLogicOrders extends BeanFactoryDataSingle implements RemoteOrderService {
     private SentenceExec m_addOrder;
     private SentenceExec m_updateOrder;
     private SentenceExec m_deleteOrder;
@@ -46,13 +47,13 @@ public class DataLogicOrders extends BeanFactoryDataSingle {
                 + "?, ?, ?, ?, ? ) ",
                 new SerializerWriteBasic(new Datas[]{
                     Datas.STRING,   // OrderId
-                    Datas.INT,      // Qty
+                    Datas.DOUBLE,   // Qty
                     Datas.STRING,   // Details
                     Datas.STRING,   // Attributes
                     Datas.STRING,   // Notes
                     Datas.STRING,   // TicketId
                     Datas.TIMESTAMP,// OrderTime
-                    Datas.INT,      // DisplayId
+                    Datas.STRING,   // DisplayId
                     Datas.INT,      // Auxiliary
                     Datas.TIMESTAMP // CompleteTime
                 }));
@@ -72,13 +73,13 @@ public class DataLogicOrders extends BeanFactoryDataSingle {
                 + "WHERE ORDERID = ? ",
                 new SerializerWriteBasic(new Datas[]{
                     Datas.STRING, // OrderId
-                    Datas.INT,    // Qty
+                    Datas.DOUBLE, // Qty
                     Datas.STRING, // Details
                     Datas.STRING, // Attributes
                     Datas.STRING, // Notes
                     Datas.STRING, // TicketId
                     Datas.STRING, // OrderTime
-                    Datas.INT,    // DisplayId
+                    Datas.STRING, // DisplayId
                     Datas.INT,    // Auxiliary
                     Datas.STRING  // CompleteTime
                 }));
@@ -88,25 +89,101 @@ public class DataLogicOrders extends BeanFactoryDataSingle {
                 SerializerWriteString.INSTANCE);
     }
 
+    @Override
+    public final void addOrder(RemoteOrder order) throws BasicException {
+        if (order == null) {
+            return;
+        }
+        String ordertime = order.ordertime();
+        if (ordertime == null) {
+            ordertime = Long.toString(new java.util.Date().getTime());
+        }
+        m_addOrder.exec(new Object[]{
+            order.orderId(),
+            order.qty(),
+            order.details(),
+            order.attributes(),
+            order.notes(),
+            order.ticketId(),
+            ordertime,
+            order.displayId(),
+            order.auxiliary(),
+            order.completetime()
+        });
+    }
+
+    @Override
+    public final void updateOrder(RemoteOrder order) throws BasicException {
+        if (order == null) {
+            return;
+        }
+        m_updateOrder.exec(new Object[]{
+            order.orderId(),
+            order.qty(),
+            order.details(),
+            order.attributes(),
+            order.notes(),
+            order.ticketId(),
+            order.ordertime(),
+            order.displayId(),
+            order.auxiliary(),
+            order.completetime()
+        });
+    }
+
+    /**
+     * @deprecated Use {@link #addOrder(RemoteOrder)} instead.
+     */
+    @Override
+    @Deprecated
+    public final void addOrder(String orderId, Double qty, 
+            String details, String attributes, String notes, String ticketId, 
+            String ordertime, String displayId, String auxiliary, String completetime
+    ) throws BasicException {
+        addOrder(new RemoteOrder(orderId, qty, details, attributes, notes, ticketId,
+                ordertime, displayId, auxiliary, completetime));
+    }
+
+    /**
+     * @deprecated Use {@link #addOrder(RemoteOrder)} instead.
+     */
+    @Override
+    @Deprecated
     public final void addOrder(String orderId, Integer qty, 
             String details, String attributes, String notes, String ticketId, 
             String ordertime, Integer displayId, String auxiliary, String completetime
     ) throws BasicException {
-        if (ordertime == null) {
-            ordertime = Long.toString(new java.util.Date().getTime());
-        }
-        m_addOrder.exec(new Object[]{orderId, qty, details, attributes, notes, ticketId, 
-                ordertime, displayId, auxiliary, completetime});    
+        addOrder(orderId, qty != null ? qty.doubleValue() : null, details, attributes, notes, ticketId,
+                ordertime, displayId != null ? displayId.toString() : null, auxiliary, completetime);
     }
 
+    /**
+     * @deprecated Use {@link #updateOrder(RemoteOrder)} instead.
+     */
+    @Override
+    @Deprecated
+    public final void updateOrder(String orderId, Double qty, 
+            String details, String attributes, String notes, String ticketId, 
+            String ordertime, String displayId, String auxiliary, String completetime
+    ) throws BasicException {
+        updateOrder(new RemoteOrder(orderId, qty, details, attributes, notes, ticketId,
+                ordertime, displayId, auxiliary, completetime));
+    }
+
+    /**
+     * @deprecated Use {@link #updateOrder(RemoteOrder)} instead.
+     */
+    @Override
+    @Deprecated
     public final void updateOrder(String orderId, Integer qty,
             String details, String attributes, String notes, String ticketId,
             String ordertime, Integer displayId, String auxiliary, String completetime
     ) throws BasicException {
-        m_updateOrder.exec(new Object[]{orderId, qty, details, attributes, notes, ticketId,
-                ordertime, displayId, auxiliary, completetime});
+        updateOrder(orderId, qty != null ? qty.doubleValue() : null, details, attributes, notes, ticketId,
+                ordertime, displayId != null ? displayId.toString() : null, auxiliary, completetime);
     }
 
+    @Override
     public void deleteOrder(String orderId) throws BasicException {
         m_deleteOrder.exec(orderId);
     }

@@ -1146,7 +1146,6 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                     this
             );
         }
-        remoteOrderDisplay();
     }
 
     private void reprintLastTicket() {
@@ -1242,40 +1241,6 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         return m_App.getProperties().getProperty(propertyName);
     }
 
-    /* Remote Orders Display - Utils methods */
-    public void remoteOrderDisplay() {
-        if (peripheralCoordinator != null) {
-            peripheralCoordinator.displayRemoteOrder(m_oTicket, m_oTicketExt, getPickupString(m_oTicket));
-        }
-    }
-
-    /* Remote Orders Display - Utils methods */
-    public void remoteOrderDisplay(String orderId) {
-        if (peripheralCoordinator != null) {
-            peripheralCoordinator.displayRemoteOrder(m_oTicket, m_oTicketExt, getPickupString(m_oTicket), orderId);
-        }
-    }
-
-    /* Remote Orders Display - Utils methods */
-    public void remoteOrderDisplay(int display) {
-        if (peripheralCoordinator != null) {
-            peripheralCoordinator.displayRemoteOrder(m_oTicket, m_oTicketExt, getPickupString(m_oTicket), display);
-        }
-    }
-
-    /* Remote Orders Display - Utils methods */
-    public String remoteOrderId() {
-        return peripheralCoordinator != null
-                ? peripheralCoordinator.resolveRemoteOrderId(m_oTicket, m_oTicketExt, getPickupString(m_oTicket))
-                : "";
-    }
-
-    /* Remote Orders Display - Utils methods */
-    public void remoteOrderDisplay(String orderId, int display, boolean primary) {
-        if (peripheralCoordinator != null) {
-            peripheralCoordinator.displayRemoteOrder(m_oTicket, m_oTicketExt, getPickupString(m_oTicket), orderId, display, primary);
-        }
-    }
 
     private void updateStockButton(boolean hasStock) {
         if (ticketToolbarPane != null) {
