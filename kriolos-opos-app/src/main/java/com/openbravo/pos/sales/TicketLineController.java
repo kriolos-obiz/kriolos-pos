@@ -45,22 +45,27 @@ public class TicketLineController {
     private final AppView app;
     private final SalesService salesService;
     private final DataLogicSales dlSales;
-    private final DataLogicAudit dlAudit;
+    private final AuditService auditService;
 
     public TicketLineController(AppView app, SalesService salesService, DataLogicSales dlSales) {
         this(app, salesService, dlSales, app != null ? safeGetAudit(app) : null);
     }
 
-    public TicketLineController(AppView app, SalesService salesService, DataLogicSales dlSales, DataLogicAudit dlAudit) {
+    public TicketLineController(AppView app, SalesService salesService, DataLogicSales dlSales, AuditService auditService) {
         this.app = app;
         this.salesService = salesService;
         this.dlSales = dlSales;
-        this.dlAudit = dlAudit;
+        this.auditService = auditService;
     }
 
-    private static DataLogicAudit safeGetAudit(AppView app) {
+    @Deprecated
+    public TicketLineController(AppView app, SalesService salesService, DataLogicSales dlSales, DataLogicAudit dlAudit) {
+        this(app, salesService, dlSales, (AuditService) dlAudit);
+    }
+
+    private static AuditService safeGetAudit(AppView app) {
         try {
-            return app.getBean(DataLogicAudit.class);
+            return app.getBean(AuditService.class);
         } catch (Exception ignored) {
             return null;
         }
@@ -104,8 +109,8 @@ public class TicketLineController {
 
         if (app != null && app.getAppUserView() != null && app.getAppUserView().getUser() != null) {
             try {
-                if (dlAudit != null) {
-                    dlAudit.addTicketLineRemoved(
+                if (auditService != null) {
+                    auditService.addTicketLineRemoved(
                             app.getAppUserView().getUser().getName(),
                             ticketID,
                             ticketLine.getProductID(),

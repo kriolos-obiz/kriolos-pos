@@ -30,7 +30,7 @@ import java.util.logging.Logger;
 /**
  * Data access logic for security, void tracking, and ticket line removal audit logging.
  */
-public class DataLogicAudit extends BeanFactoryDataSingle {
+public class DataLogicAudit extends BeanFactoryDataSingle implements AuditService {
 
     private static final Logger LOGGER = Logger.getLogger(DataLogicAudit.class.getName());
 
@@ -41,9 +41,12 @@ public class DataLogicAudit extends BeanFactoryDataSingle {
         this.sessionDB = sessionDB;
     }
 
+    @Override
     public final void addTicketLineRemoved(String username, String ticketId, String productId, String productName, double quantity) {
         addTicketLineRemoved(username, ticketId, productId, productName, quantity, new Date());
     }
+
+    @Override
 
     public final void addTicketLineRemoved(String username, String ticketId, String productId, String productName, double quantity, Date date) {
         final SentenceExec m_lineremoved = new StaticSentence(this.sessionDB,
@@ -65,10 +68,12 @@ public class DataLogicAudit extends BeanFactoryDataSingle {
         }
     }
 
+    @Override
     public final void addTicketDeleted(String username) {
         addTicketDeleted(username, new Date());
     }
 
+    @Override
     public final void addTicketDeleted(String username, Date date) {
         final SentenceExec m_ticketremoved = new StaticSentence(this.sessionDB,
                 """
