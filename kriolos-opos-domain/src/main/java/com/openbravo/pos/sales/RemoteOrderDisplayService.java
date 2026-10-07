@@ -21,9 +21,19 @@ import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.ticket.TicketInfo;
 
 /**
- * Remote Orders Display coordinator.
+ * Domain application coordinator for remote orders display.
  *
- * <p>Handles dispatching and queue management for remote kitchen and bar order displays.</p>
+ * <p>Responsible for decomposing active sale tickets ({@link TicketInfo}) into itemized
+ * {@link RemoteOrder} records and routing them to the configured {@link RemoteOrderService}
+ * service provider.</p>
+ *
+ * <ul>
+ *   <li>Resolves remote order identity prioritizing customer name, external ticket reference,
+ *       or sequential pickup index (via {@link TicketLifecycleService}).</li>
+ *   <li>Purges previous queue entries for the order ID to maintain idempotent state.</li>
+ *   <li>Encapsulates quantity (supporting decimal quantities), kitchen station routing tags,
+ *       product attribute descriptors, and prep notes.</li>
+ * </ul>
  */
 public class RemoteOrderDisplayService {
 

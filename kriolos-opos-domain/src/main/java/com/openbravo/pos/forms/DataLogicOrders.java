@@ -131,58 +131,6 @@ public class DataLogicOrders extends BeanFactoryDataSingle implements RemoteOrde
         });
     }
 
-    /**
-     * @deprecated Use {@link #addOrder(RemoteOrder)} instead.
-     */
-    @Override
-    @Deprecated
-    public final void addOrder(String orderId, Double qty, 
-            String details, String attributes, String notes, String ticketId, 
-            String ordertime, String displayId, String auxiliary, String completetime
-    ) throws BasicException {
-        addOrder(new RemoteOrder(orderId, qty, details, attributes, notes, ticketId,
-                ordertime, displayId, auxiliary, completetime));
-    }
-
-    /**
-     * @deprecated Use {@link #addOrder(RemoteOrder)} instead.
-     */
-    @Override
-    @Deprecated
-    public final void addOrder(String orderId, Integer qty, 
-            String details, String attributes, String notes, String ticketId, 
-            String ordertime, Integer displayId, String auxiliary, String completetime
-    ) throws BasicException {
-        addOrder(orderId, qty != null ? qty.doubleValue() : null, details, attributes, notes, ticketId,
-                ordertime, displayId != null ? displayId.toString() : null, auxiliary, completetime);
-    }
-
-    /**
-     * @deprecated Use {@link #updateOrder(RemoteOrder)} instead.
-     */
-    @Override
-    @Deprecated
-    public final void updateOrder(String orderId, Double qty, 
-            String details, String attributes, String notes, String ticketId, 
-            String ordertime, String displayId, String auxiliary, String completetime
-    ) throws BasicException {
-        updateOrder(new RemoteOrder(orderId, qty, details, attributes, notes, ticketId,
-                ordertime, displayId, auxiliary, completetime));
-    }
-
-    /**
-     * @deprecated Use {@link #updateOrder(RemoteOrder)} instead.
-     */
-    @Override
-    @Deprecated
-    public final void updateOrder(String orderId, Integer qty,
-            String details, String attributes, String notes, String ticketId,
-            String ordertime, Integer displayId, String auxiliary, String completetime
-    ) throws BasicException {
-        updateOrder(orderId, qty != null ? qty.doubleValue() : null, details, attributes, notes, ticketId,
-                ordertime, displayId != null ? displayId.toString() : null, auxiliary, completetime);
-    }
-
     @Override
     public void deleteOrder(String orderId) throws BasicException {
         m_deleteOrder.exec(orderId);

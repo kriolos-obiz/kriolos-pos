@@ -19,10 +19,18 @@ package com.openbravo.pos.sales;
 import com.openbravo.basic.BasicException;
 
 /**
- * Domain service port interface for remote kitchen/bar order queue operations.
+ * Domain service provider port interface for remote kitchen/bar order queue operations.
  *
- * <p>Decouples kitchen order displays and remote order routing from legacy
- * {@code DataLogicOrders} and {@code DataLogicSystem}.</p>
+ * <p>This service is responsible for persisting and synchronizing order lines sent to remote
+ * display systems (kitchen video screens, bar displays, expeditor stations).</p>
+ *
+ * <ul>
+ *   <li><b>Default implementation:</b> {@code DataLogicOrders} stores queue entries in the
+ *       shared database table ({@code ORDERS}). External kitchen display applications query this
+ *       table directly.</li>
+ *   <li><b>Pluggable provider:</b> Can be implemented by an HTTP / REST API client to dispatch
+ *       order lines to an external microservice or cloud kitchen display service.</li>
+ * </ul>
  *
  * @author KriolOS
  */
@@ -51,76 +59,5 @@ public interface RemoteOrderService {
      * @throws BasicException if database deletion fails
      */
     void deleteOrder(String orderId) throws BasicException;
-
-    /**
-     * @deprecated Use {@link #addOrder(RemoteOrder)} instead.
-     */
-    @Deprecated
-    default void addOrder(String orderId, Double qty,
-            String details, String attributes, String notes, String ticketId,
-            String ordertime, String displayId, String auxiliary, String completetime
-    ) throws BasicException {
-        addOrder(new RemoteOrder(orderId, qty, details, attributes, notes, ticketId,
-                ordertime, displayId, auxiliary, completetime));
-    }
-
-    /**
-     * @deprecated Use {@link #addOrder(RemoteOrder)} instead.
-     */
-    @Deprecated
-    default void addOrder(String orderId, Double qty,
-            String details, String attributes, String notes, String ticketId,
-            String ordertime, Integer displayId, String auxiliary, String completetime
-    ) throws BasicException {
-        addOrder(orderId, qty, details, attributes, notes, ticketId,
-                ordertime, displayId != null ? displayId.toString() : null, auxiliary, completetime);
-    }
-
-    /**
-     * @deprecated Use {@link #addOrder(RemoteOrder)} instead.
-     */
-    @Deprecated
-    default void addOrder(String orderId, Integer qty,
-            String details, String attributes, String notes, String ticketId,
-            String ordertime, Integer displayId, String auxiliary, String completetime
-    ) throws BasicException {
-        addOrder(orderId, qty != null ? qty.doubleValue() : null, details, attributes, notes, ticketId,
-                ordertime, displayId != null ? displayId.toString() : null, auxiliary, completetime);
-    }
-
-    /**
-     * @deprecated Use {@link #updateOrder(RemoteOrder)} instead.
-     */
-    @Deprecated
-    default void updateOrder(String orderId, Double qty,
-            String details, String attributes, String notes, String ticketId,
-            String ordertime, String displayId, String auxiliary, String completetime
-    ) throws BasicException {
-        updateOrder(new RemoteOrder(orderId, qty, details, attributes, notes, ticketId,
-                ordertime, displayId, auxiliary, completetime));
-    }
-
-    /**
-     * @deprecated Use {@link #updateOrder(RemoteOrder)} instead.
-     */
-    @Deprecated
-    default void updateOrder(String orderId, Double qty,
-            String details, String attributes, String notes, String ticketId,
-            String ordertime, Integer displayId, String auxiliary, String completetime
-    ) throws BasicException {
-        updateOrder(orderId, qty, details, attributes, notes, ticketId,
-                ordertime, displayId != null ? displayId.toString() : null, auxiliary, completetime);
-    }
-
-    /**
-     * @deprecated Use {@link #updateOrder(RemoteOrder)} instead.
-     */
-    @Deprecated
-    default void updateOrder(String orderId, Integer qty,
-            String details, String attributes, String notes, String ticketId,
-            String ordertime, Integer displayId, String auxiliary, String completetime
-    ) throws BasicException {
-        updateOrder(orderId, qty != null ? qty.doubleValue() : null, details, attributes, notes, ticketId,
-                ordertime, displayId != null ? displayId.toString() : null, auxiliary, completetime);
-    }
+    
 }
