@@ -40,6 +40,7 @@ import com.openbravo.pos.forms.BeanFactoryDataSingle;
 import com.openbravo.pos.inventory.*;
 import com.openbravo.pos.sales.restaurant.FloorsInfo;
 import com.openbravo.pos.sales.restaurant.DataLogicRestaurant;
+import com.openbravo.pos.payment.DataLogicPayments;
 import com.openbravo.pos.payment.PaymentInfo;
 import com.openbravo.pos.payment.PaymentInfoTicket;
 import com.openbravo.pos.pim.DataLogicPIM;
@@ -90,10 +91,7 @@ public class DataLogicSales extends BeanFactoryDataSingle {
             Datas.STRING, Datas.STRING, Datas.DOUBLE, Datas.DOUBLE,
             Datas.STRING, Datas.STRING, Datas.STRING};
 
-        paymenttabledatas = new Datas[]{
-            Datas.STRING, Datas.STRING, Datas.TIMESTAMP,
-            Datas.STRING, Datas.STRING, Datas.DOUBLE,
-            Datas.STRING};
+        paymenttabledatas = null;
 
         stockdatas = new Datas[]{
             Datas.STRING, Datas.STRING, Datas.STRING,
@@ -173,6 +171,18 @@ public class DataLogicSales extends BeanFactoryDataSingle {
             }
         }
         DataLogicPIM fallback = new DataLogicPIM();
+        fallback.init(sessionDB);
+        return fallback;
+    }
+
+    public DataLogicPayments getDataLogicPayments() {
+        if (app != null) {
+            try {
+                return app.getBean(DataLogicPayments.class);
+            } catch (BeanFactoryException ignored) {
+            }
+        }
+        DataLogicPayments fallback = new DataLogicPayments();
         fallback.init(sessionDB);
         return fallback;
     }
@@ -881,9 +891,11 @@ public class DataLogicSales extends BeanFactoryDataSingle {
     /**
      *
      * @return @throws BasicException
+     * @deprecated Use {@link DataLogicPayments#getNextTicketPaymentIndex()} instead.
      */
+    @Deprecated
     public final Integer getNextTicketPaymentIndex() throws BasicException {
-        return (Integer) sessionDB.DB.getSequenceSentence(sessionDB, "ticketsnum_payment").find();
+        return getDataLogicPayments().getNextTicketPaymentIndex();
     }
 
     // JG 3 Feb 16 - Product load speedup
@@ -964,45 +976,21 @@ public class DataLogicSales extends BeanFactoryDataSingle {
     /**
      *
      * @return
+     * @deprecated Use {@link DataLogicPayments#getPaymentMovementInsert()} instead.
      */
+    @Deprecated
     public final SentenceExec getPaymentMovementInsert() {
-        return new SentenceExecTransaction(sessionDB) {
-            @Override
-            public int execInTransaction(Object[] params) throws BasicException {
-                new PreparedSentence(sessionDB,
-                        "INSERT INTO receipts (ID, MONEY, DATENEW) "
-                        + "VALUES (?, ?, ?)",
-                        new SerializerWriteBasicExt(paymenttabledatas,
-                                new int[]{0, 1, 2}))
-                        .exec(params);
-                return new PreparedSentence(sessionDB,
-                        "INSERT INTO payments (ID, RECEIPT, PAYMENT, TOTAL, NOTES) "
-                        + "VALUES (?, ?, ?, ?, ?)",
-                        new SerializerWriteBasicExt(paymenttabledatas,
-                                new int[]{3, 0, 4, 5, 6}))
-                        .exec(params);
-            }
-        };
+        return getDataLogicPayments().getPaymentMovementInsert();
     }
 
     /**
      *
      * @return
+     * @deprecated Use {@link DataLogicPayments#getPaymentMovementDelete()} instead.
      */
+    @Deprecated
     public final SentenceExec getPaymentMovementDelete() {
-        return new SentenceExecTransaction(sessionDB) {
-            @Override
-            public int execInTransaction(Object[] params) throws BasicException {
-                new PreparedSentence(sessionDB,
-                        "DELETE FROM payments WHERE ID = ?",
-                        new SerializerWriteBasicExt(paymenttabledatas, new int[]{3}))
-                        .exec(params);
-                return new PreparedSentence(sessionDB,
-                        "DELETE FROM receipts WHERE ID = ?",
-                        new SerializerWriteBasicExt(paymenttabledatas, new int[]{0}))
-                        .exec(params);
-            }
-        };
+        return getDataLogicPayments().getPaymentMovementDelete();
     }
 
     /**

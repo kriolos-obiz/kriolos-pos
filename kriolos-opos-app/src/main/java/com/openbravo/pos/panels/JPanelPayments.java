@@ -21,7 +21,7 @@ import com.openbravo.data.user.EditorRecord;
 import com.openbravo.data.user.ListProvider;
 import com.openbravo.data.user.DefaultSaveProvider;
 import com.openbravo.pos.forms.AppLocal;
-import com.openbravo.pos.forms.DataLogicSales;
+import com.openbravo.pos.payment.DataLogicPayments;
 
 /**
  *
@@ -30,7 +30,7 @@ import com.openbravo.pos.forms.DataLogicSales;
 public class JPanelPayments extends JPanelTable {
     
     private PaymentsEditor jeditor;    
-    private DataLogicSales m_dlSales = null;
+    private DataLogicPayments m_dlPayments = null;
     
     /** Creates a new instance of JPanelPayments */
     public JPanelPayments() {
@@ -41,7 +41,7 @@ public class JPanelPayments extends JPanelTable {
      */
     @Override
     protected void init() {
-        m_dlSales = app.getBean(DataLogicSales.class);         
+        m_dlPayments = app.getBean(DataLogicPayments.class);         
         jeditor = new PaymentsEditor(app, dirty);    
     }
     
@@ -61,8 +61,8 @@ public class JPanelPayments extends JPanelTable {
     @Override
     public DefaultSaveProvider getSaveProvider() {
         return  new DefaultSaveProvider(null
-                , m_dlSales.getPaymentMovementInsert()
-                , m_dlSales.getPaymentMovementDelete());
+                , m_dlPayments.getPaymentMovementInsert()
+                , m_dlPayments.getPaymentMovementDelete());
     }
     
     /**
