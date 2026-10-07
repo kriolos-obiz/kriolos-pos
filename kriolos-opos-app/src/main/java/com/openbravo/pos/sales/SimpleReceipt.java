@@ -40,8 +40,9 @@ public class SimpleReceipt extends javax.swing.JPanel {
     protected DataLogicCustomers dlCustomers;
 
     /**
-     *
+     * @deprecated DataLogicSales is unused in SimpleReceipt.
      */
+    @Deprecated
     protected DataLogicSales dlSales;
 
     /**
@@ -58,16 +59,17 @@ public class SimpleReceipt extends javax.swing.JPanel {
      * @param dlSales
      * @param taxeslogic
      * @param dlCustomers */
+    @Deprecated
     public SimpleReceipt(String ticketline, DataLogicSales dlSales, DataLogicCustomers dlCustomers, TaxesLogic taxeslogic) {        
-        
+        this(ticketline, dlCustomers, taxeslogic);
+        this.dlSales = dlSales;
+    }
+
+    public SimpleReceipt(String ticketline, DataLogicCustomers dlCustomers, TaxesLogic taxeslogic) {
         initComponents();
-        
-        // dlSystem.getResourceAsXML("Ticket.Line")
         ticketlines = new JTicketLines(ticketline);
         this.dlCustomers = dlCustomers;
-        this.dlSales = dlSales;
         this.taxeslogic = taxeslogic;
-        
         jPanel2.add(ticketlines, BorderLayout.CENTER);
     }
     

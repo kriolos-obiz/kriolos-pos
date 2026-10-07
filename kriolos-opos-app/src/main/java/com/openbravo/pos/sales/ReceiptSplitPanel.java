@@ -49,19 +49,24 @@ public class ReceiptSplitPanel extends JPanel {
         initDomainAdapters();
     }
 
-    public ReceiptSplitPanel(String ticketline, DataLogicSales dlSales, DataLogicCustomers dlCustomers, TaxesLogic taxeslogic) {
+    public ReceiptSplitPanel(String ticketline, DataLogicCustomers dlCustomers, TaxesLogic taxeslogic) {
         initComponents();
         initDomainAdapters();
         if (getRootPane() != null) {
             getRootPane().setDefaultButton(m_jButtonOK);
         }
 
-        receiptone = new SimpleReceipt(ticketline, dlSales, dlCustomers, taxeslogic);
+        receiptone = new SimpleReceipt(ticketline, dlCustomers, taxeslogic);
         receiptone.setCustomerEnabled(false);
         jPanel5.add(receiptone, BorderLayout.CENTER);
 
-        receipttwo = new SimpleReceipt(ticketline, dlSales, dlCustomers, taxeslogic);
+        receipttwo = new SimpleReceipt(ticketline, dlCustomers, taxeslogic);
         jPanel3.add(receipttwo, BorderLayout.CENTER);
+    }
+
+    @Deprecated
+    public ReceiptSplitPanel(String ticketline, DataLogicSales dlSales, DataLogicCustomers dlCustomers, TaxesLogic taxeslogic) {
+        this(ticketline, dlCustomers, taxeslogic);
     }
 
     private void initDomainAdapters() {
@@ -95,8 +100,8 @@ public class ReceiptSplitPanel extends JPanel {
         receipttwo.setTicket(ticket2, ticketext);
     }
 
-    public static boolean show(Component parent, String ticketline, DataLogicSales dlSales, DataLogicCustomers dlCustomers, TaxesLogic taxeslogic, TicketInfo ticket, TicketInfo ticket2, String ticketext) {
-        ReceiptSplitPanel panel = new ReceiptSplitPanel(ticketline, dlSales, dlCustomers, taxeslogic);
+    public static boolean show(Component parent, String ticketline, DataLogicCustomers dlCustomers, TaxesLogic taxeslogic, TicketInfo ticket, TicketInfo ticket2, String ticketext) {
+        ReceiptSplitPanel panel = new ReceiptSplitPanel(ticketline, dlCustomers, taxeslogic);
         panel.setTickets(ticket, ticket2, ticketext);
         PosUIModal modal = PosUIModal.create(parent, panel)
                 .setTitle(AppLocal.getIntString("caption.split"))
@@ -105,6 +110,11 @@ public class ReceiptSplitPanel extends JPanel {
         panel.setModalContext(modal);
         modal.show();
         return panel.isAccepted();
+    }
+
+    @Deprecated
+    public static boolean show(Component parent, String ticketline, DataLogicSales dlSales, DataLogicCustomers dlCustomers, TaxesLogic taxeslogic, TicketInfo ticket, TicketInfo ticket2, String ticketext) {
+        return show(parent, ticketline, dlCustomers, taxeslogic, ticket, ticket2, ticketext);
     }
 
     @SuppressWarnings("unchecked")

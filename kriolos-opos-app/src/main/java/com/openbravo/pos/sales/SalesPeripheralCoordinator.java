@@ -317,13 +317,26 @@ public class SalesPeripheralCoordinator {
     /**
      * Loads the last completed ticket, recalculates taxes, and dispatches it to the receipt printer.
      *
-     * @param parent parent UI component for alerts
-     * @param dlSales data logic sales for ticket retrieval
+    /**
+     * Loads the last completed ticket using {@link TicketLifecycleService}, recalculates taxes, and dispatches it to the receipt printer.
+     *
+     * @param parent UI component for alerts
+     * @param ticketLifecycleService service for ticket retrieval
      * @param taxeslogic active taxes calculation logic
      * @param ticketPrinter consumer to print the retrieved ticket
      * @param notifier consumer to notify user
      * @return an {@link Optional} containing the reprinted ticket if successful
      */
+    public Optional<TicketInfo> reprintLastTicket(Component parent, TicketLifecycleService ticketLifecycleService, TaxesLogic taxeslogic,
+                                                  BiConsumer<String, TicketInfo> ticketPrinter,
+                                                  Consumer<String> notifier) {
+        return reprintLastTicket(parent, ticketLifecycleService != null ? ticketLifecycleService::loadLastTicket : null, taxeslogic, ticketPrinter, notifier);
+    }
+
+    /**
+     * @deprecated Use {@link #reprintLastTicket(Component, TicketLifecycleService, TaxesLogic, BiConsumer, Consumer)} instead.
+     */
+    @Deprecated
     public Optional<TicketInfo> reprintLastTicket(Component parent, DataLogicSales dlSales, TaxesLogic taxeslogic,
                                                   BiConsumer<String, TicketInfo> ticketPrinter,
                                                   Consumer<String> notifier) {

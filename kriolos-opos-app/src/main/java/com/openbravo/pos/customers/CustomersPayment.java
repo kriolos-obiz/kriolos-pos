@@ -16,7 +16,7 @@
 package com.openbravo.pos.customers;
 
 import com.openbravo.pos.forms.JPanelView;
-import com.openbravo.pos.forms.DataLogicSales;
+import com.openbravo.pos.sales.TicketLifecycleService;
 import com.openbravo.pos.forms.DataLogicSystem;
 import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.forms.BeanFactoryApp;
@@ -56,7 +56,7 @@ public class CustomersPayment extends javax.swing.JPanel implements JPanelView, 
 
     private AppView app;
     private DataLogicCustomers dlcustomers;
-    private DataLogicSales dlsales;
+    private TicketLifecycleService ticketLifecycleService;
     private DataLogicSystem dlsystem;
     private TicketParser ttp;
     private JPaymentSelect paymentdialog;
@@ -83,7 +83,7 @@ public class CustomersPayment extends javax.swing.JPanel implements JPanelView, 
 
         this.app = app;
         dlcustomers = app.getBean(DataLogicCustomers.class);
-        dlsales = app.getBean(DataLogicSales.class);
+        ticketLifecycleService = app.getBean(TicketLifecycleService.class);
         dlsystem = app.getBean(DataLogicSystem.class);
         ttp = app.createTicketParser();
     }
@@ -730,7 +730,7 @@ public class CustomersPayment extends javax.swing.JPanel implements JPanelView, 
             ticket.setCustomer(customerext);
 
             try {
-                dlsales.saveTicket(ticket, app.getInventoryLocation());
+                ticketLifecycleService.saveTicket(ticket, app.getInventoryLocation());
             } catch (BasicException eData) {
                 MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE, AppLocal.getIntString("message.nosaveticket"),
                         eData);
@@ -808,7 +808,7 @@ public class CustomersPayment extends javax.swing.JPanel implements JPanelView, 
                 ticket.setCustomer(customerext);
 
                 try {
-                    dlsales.saveTicket(ticket, app.getInventoryLocation());
+                    ticketLifecycleService.saveTicket(ticket, app.getInventoryLocation());
                 } catch (BasicException eData) {
                     MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE,
                             AppLocal.getIntString("message.nosaveticket"), eData);

@@ -47,8 +47,20 @@ public class TicketLineController {
     private final DataLogicSales dlSales;
     private final AuditService auditService;
 
+    /**
+     * @deprecated Use {@link #TicketLineController(AppView, SalesService, AuditService)} instead.
+     */
+    @Deprecated
     public TicketLineController(AppView app, SalesService salesService, DataLogicSales dlSales) {
         this(app, salesService, dlSales, app != null ? safeGetAudit(app) : null);
+    }
+
+    public TicketLineController(AppView app, SalesService salesService) {
+        this(app, salesService, (AuditService) null);
+    }
+
+    public TicketLineController(AppView app, SalesService salesService, AuditService auditService) {
+        this(app, salesService, null, auditService);
     }
 
     public TicketLineController(AppView app, SalesService salesService, DataLogicSales dlSales, AuditService auditService) {
@@ -232,7 +244,7 @@ public class TicketLineController {
         }
 
         ReceiptSplit splitdialog = ReceiptSplit.getDialog(parent,
-                dlSystem.getResourceAsXML(TicketConstants.RES_TICKET_LINES), dlSales, dlCustomers, taxesLogic);
+                dlSystem.getResourceAsXML(TicketConstants.RES_TICKET_LINES), dlCustomers, taxesLogic);
 
         TicketInfo ticket1 = currentTicket.copyTicket();
         TicketInfo ticket2 = new TicketInfo();

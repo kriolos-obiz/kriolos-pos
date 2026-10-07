@@ -72,7 +72,9 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     private JPanelButtons m_jbtnconfig;
     private AppView m_App;
     private DataLogicSystem dlSystem;
-    private DataLogicSales dlSales;
+    private TicketLifecycleService ticketLifecycleService;
+    private TaxService taxService;
+    private AuditService auditService;
     private DataLogicInventory dlInventory;
     private DataLogicCustomers dlCustomers;
     private DataLogicPIM dataLogicPIM;
@@ -85,10 +87,6 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
 
     private JTicketsBag m_ticketsbag;
     protected SalesPeripheralCoordinator peripheralCoordinator;
-    private SentenceList senttax;
-
-    private SentenceList senttaxcategories;
-    // private ListKeyed taxcategoriescollection;
     private ComboBoxValModel taxcategoriesmodel;
     private TaxesLogic taxeslogic;
     private SalesService salesService;
@@ -122,7 +120,9 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         m_App = app;
 
         dlSystem = m_App.getBean(DataLogicSystem.class);
-        dlSales = m_App.getBean(DataLogicSales.class);
+        ticketLifecycleService = m_App.getBean(TicketLifecycleService.class);
+        taxService = m_App.getBean(TaxService.class);
+        auditService = m_App.getBean(AuditService.class);
         dlInventory = m_App.getBean(DataLogicInventory.class);
         dlCustomers = m_App.getBean(DataLogicCustomers.class);
         dlReceipts = app.getBean(SharedTicketService.class);
@@ -149,8 +149,6 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         m_jPanelLines.add(m_ticketlines, java.awt.BorderLayout.CENTER);
         peripheralCoordinator = new SalesPeripheralCoordinator(m_App, dlSystem);
 
-        senttax = dlSales.getTaxList();
-        senttaxcategories = dlSales.getTaxCategoriesList();
         taxcategoriesmodel = new ComboBoxValModel();
 
         stateToZero();
@@ -270,8 +268,12 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         return m_App;
     }
 
+    /**
+     * @deprecated Use domain services directly instead.
+     */
+    @Deprecated
     protected DataLogicSales getDataLogicSales() {
-        return dlSales;
+        return m_App.getBean(DataLogicSales.class);
     }
 
     /**
@@ -301,15 +303,15 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
 
         inputPane.setTaxIncluded("true".equals(m_jbtnconfig.getProperty("taxesincluded")));
 
-        List<TaxInfo> taxlist = senttax.list();
-        List<TaxCategoryInfo> taxcategorieslist = senttaxcategories.list();
+        List<TaxInfo> taxlist = taxService.getTaxListAll();
+        List<TaxCategoryInfo> taxcategorieslist = taxService.getTaxCategoriesListAll();
 
         // Initialize Services
         taxeslogic = new TaxesLogic(taxlist);
         salesService = new SalesServiceImpl(taxeslogic);
-        ticketLineController = new TicketLineController(m_App, salesService, dlSales);
+        ticketLineController = new TicketLineController(m_App, salesService, auditService);
         salesCustomerController = new SalesCustomerController(m_App, dlCustomers);
-        salesPaymentCoordinator = new SalesPaymentCoordinator(m_App, dlSales, salesService);
+        salesPaymentCoordinator = new SalesPaymentCoordinator(m_App, ticketLifecycleService, salesService);
         paymentService = new PaymentServiceImpl();
         inventoryService = new InventoryServiceImpl(dlInventory, m_App.getSession());
         salesStockCoordinator = new SalesStockCoordinator(inventoryService, dataLogicPIM, dlInventory);
@@ -1152,7 +1154,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         if (peripheralCoordinator != null) {
             peripheralCoordinator.reprintLastTicket(
                     this,
-                    dlSales,
+                    ticketLifecycleService,
                     taxeslogic,
                     (res, tck) -> printTicket(res, tck, null),
                     this::Notify

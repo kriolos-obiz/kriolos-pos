@@ -36,7 +36,7 @@ public class TicketLineControllerTest {
 
     @BeforeEach
     void setUp() {
-        controller = new TicketLineController(null, null, null);
+        controller = new TicketLineController(null, null);
         ticket = new TicketInfo();
     }
 

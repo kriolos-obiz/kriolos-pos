@@ -20,8 +20,8 @@ import com.openbravo.data.gui.MessageInf;
 import com.openbravo.data.gui.modal.PosUIModal;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
-import com.openbravo.pos.forms.DataLogicSales;
 import com.openbravo.pos.forms.DataLogicSystem;
+import com.openbravo.pos.sales.TicketLifecycleService;
 import com.openbravo.pos.hardware.PosHardwareManager;
 import com.openbravo.pos.printer.TicketParser;
 import com.openbravo.pos.printer.TicketPrinterException;
@@ -60,13 +60,13 @@ public class JTicketsReprintPanel extends JPanel {
     private AppView appView;
 
     private final DataLogicSystem dlSystem;
-    private final DataLogicSales dlSales;
+    private final TicketLifecycleService ticketLifecycleService;
     private PosUIModal modalContext;
 
     public JTicketsReprintPanel(AppView app) {
         this.appView = app;
         this.dlSystem = appView.getBean(DataLogicSystem.class);
-        this.dlSales = appView.getBean(DataLogicSales.class);
+        this.ticketLifecycleService = appView.getBean(TicketLifecycleService.class);
         initComponents();
         initDomainAdapters();
 
@@ -92,7 +92,7 @@ public class JTicketsReprintPanel extends JPanel {
             currentTicketId = null;
             m_jtickets.removeAll();
 
-            List<ReprintTicketInfo> atickets = dlSales.getReprintTicketList();
+            List<ReprintTicketInfo> atickets = ticketLifecycleService.getReprintTicketList();
 
             for (ReprintTicketInfo aticket : atickets) {
                 m_jtickets.add(new JButtonTicket(aticket));
@@ -151,7 +151,7 @@ public class JTicketsReprintPanel extends JPanel {
 
                         int ticketId = Integer.parseInt(currentTicketId);
                         int ticketType = 0;
-                        TicketInfo ticketInfoOriginal = dlSales.loadTicket(ticketType, ticketId);
+                        TicketInfo ticketInfoOriginal = ticketLifecycleService.loadTicket(ticketType, ticketId);
 
                         if (ticketInfoOriginal != null) {
                             printTicket(ticketInfoOriginal, null);

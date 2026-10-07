@@ -32,6 +32,8 @@ import com.openbravo.pos.customers.JCustomerFinder;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.DataLogicSales;
 import com.openbravo.pos.inventory.TaxCategoryInfo;
+import com.openbravo.pos.sales.TaxService;
+import com.openbravo.pos.sales.TicketLifecycleService;
 import com.openbravo.pos.ticket.FindTicketsInfo;
 import com.openbravo.pos.ticket.FindTicketsRenderer;
 import java.awt.*;
@@ -53,7 +55,8 @@ public class JTicketsFinderPanel extends JPanel implements EditorCreator {
 
     private ListProvider lpr;
     private ComboBoxValModel<TaxCategoryInfo> m_CategoryModel;
-    private DataLogicSales dlSales;
+    private TicketLifecycleService ticketLifecycleService;
+    private TaxService taxService;
     private DataLogicCustomers dlCustomers;
     private FindTicketsInfo selectedTicket;
     private PosUIModal modalContext;
@@ -63,10 +66,15 @@ public class JTicketsFinderPanel extends JPanel implements EditorCreator {
         initDomainAdapters();
     }
 
-    public JTicketsFinderPanel(DataLogicSales dlSales, DataLogicCustomers dlCustomers) {
+    public JTicketsFinderPanel(TicketLifecycleService ticketLifecycleService, TaxService taxService, DataLogicCustomers dlCustomers) {
         initComponents();
-        init(dlSales, dlCustomers);
+        init(ticketLifecycleService, taxService, dlCustomers);
         initDomainAdapters();
+    }
+
+    @Deprecated
+    public JTicketsFinderPanel(DataLogicSales dlSales, DataLogicCustomers dlCustomers) {
+        this((TicketLifecycleService) dlSales, (TaxService) dlSales, dlCustomers);
     }
 
     private void initDomainAdapters() {
@@ -82,8 +90,8 @@ public class JTicketsFinderPanel extends JPanel implements EditorCreator {
         this.modalContext = modalContext;
     }
 
-    public static FindTicketsInfo show(Component parent, DataLogicSales dlSales, DataLogicCustomers dlCustomers) {
-        JTicketsFinderPanel panel = new JTicketsFinderPanel(dlSales, dlCustomers);
+    public static FindTicketsInfo show(Component parent, TicketLifecycleService ticketLifecycleService, TaxService taxService, DataLogicCustomers dlCustomers) {
+        JTicketsFinderPanel panel = new JTicketsFinderPanel(ticketLifecycleService, taxService, dlCustomers);
         PosUIModal modal = PosUIModal.create(parent, panel)
                 .setTitle(AppLocal.getIntString("form.tickettitle"))
                 .setModal(true)
@@ -91,6 +99,11 @@ public class JTicketsFinderPanel extends JPanel implements EditorCreator {
         panel.setModalContext(modal);
         modal.show();
         return panel.getSelectedTicket();
+    }
+
+    @Deprecated
+    public static FindTicketsInfo show(Component parent, DataLogicSales dlSales, DataLogicCustomers dlCustomers) {
+        return show(parent, (TicketLifecycleService) dlSales, (TaxService) dlSales, dlCustomers);
     }
 
     public FindTicketsInfo getSelectedTicket() {
@@ -101,9 +114,10 @@ public class JTicketsFinderPanel extends JPanel implements EditorCreator {
         return selectedTicket;
     }
 
-    private void init(DataLogicSales dlSales, DataLogicCustomers dlCustomers) {
+    private void init(TicketLifecycleService ticketLifecycleService, TaxService taxService, DataLogicCustomers dlCustomers) {
 
-        this.dlSales = dlSales;
+        this.ticketLifecycleService = ticketLifecycleService;
+        this.taxService = taxService;
         this.dlCustomers = dlCustomers;
 
         jScrollPane1.getVerticalScrollBar().setPreferredSize(new Dimension(35, 35));
@@ -111,7 +125,7 @@ public class JTicketsFinderPanel extends JPanel implements EditorCreator {
         jtxtTicketID.addEditorKeys(m_jKeys);
         jtxtMoney.addEditorKeys(m_jKeys);
 
-        lpr = new ListProviderCreator(dlSales.getTicketsList(), this);
+        lpr = new ListProviderCreator(ticketLifecycleService != null ? ticketLifecycleService.getTicketsList() : null, this);
 
         jListTickets.setCellRenderer(new FindTicketsRenderer());
 
@@ -152,7 +166,9 @@ public class JTicketsFinderPanel extends JPanel implements EditorCreator {
 
         jcboMoney.setModel(ListQBFModelNumber.getMandatoryNumber());
 
-        List<TaxCategoryInfo> taxCategoryList = dlSales.getTaxCategoriesListAll();
+        List<TaxCategoryInfo> taxCategoryList = taxService != null
+                ? new ArrayList<>(taxService.getTaxCategoriesListAll())
+                : new ArrayList<>();
         taxCategoryList.add(0, null);
 
         m_CategoryModel = new ComboBoxValModel(taxCategoryList);

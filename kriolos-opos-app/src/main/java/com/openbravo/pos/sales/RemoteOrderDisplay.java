@@ -3,7 +3,6 @@ package com.openbravo.pos.sales;
 import com.openbravo.basic.BasicException;
 import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.forms.DataLogicOrders;
-import com.openbravo.pos.forms.DataLogicSales;
 import com.openbravo.pos.ticket.TicketInfo;
 
 /**
@@ -14,7 +13,7 @@ import com.openbravo.pos.ticket.TicketInfo;
 public class RemoteOrderDisplay {
 
     private final DataLogicOrders dlOrders;
-    private final DataLogicSales dlSales;
+    private final TicketLifecycleService ticketLifecycleService;
     private final TicketInfo ticketInfo;
     private final String orderId;
     private final String ticketExternalId;
@@ -25,7 +24,7 @@ public class RemoteOrderDisplay {
         this.orderId = orderId;
         this.ticketExternalId = ticketExternalId;
         dlOrders = appView.getBean(DataLogicOrders.class);
-        dlSales = appView.getBean(DataLogicSales.class);
+        ticketLifecycleService = appView.getBean(TicketLifecycleService.class);
     }
 
     protected final static System.Logger LOGGER = System.getLogger(RemoteOrderDisplay.class.getName());
@@ -53,7 +52,7 @@ public class RemoteOrderDisplay {
         } else {
             if (ticketInfo.getPickupId() == 0) {
                 try {
-                    ticketInfo.setPickupId(dlSales.getNextPickupIndex());
+                    ticketInfo.setPickupId(ticketLifecycleService.getNextPickupIndex());
                 } catch (BasicException ex) {
                     LOGGER.log(System.Logger.Level.WARNING, "Exception on generate next pickup id: ", ex);
                     ticketInfo.setPickupId(0);

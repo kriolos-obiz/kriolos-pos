@@ -20,6 +20,8 @@ import com.openbravo.data.gui.modal.PosUIModal;
 import com.openbravo.pos.customers.DataLogicCustomers;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.DataLogicSales;
+import com.openbravo.pos.sales.TaxService;
+import com.openbravo.pos.sales.TicketLifecycleService;
 import com.openbravo.pos.ticket.FindTicketsInfo;
 import java.awt.Component;
 
@@ -34,13 +36,25 @@ public class JTicketsFinder {
     private final Component parent;
     private final JTicketsFinderPanel panel;
 
-    private JTicketsFinder(Component parent, DataLogicSales dlSales, DataLogicCustomers dlCustomers) {
+    public JTicketsFinder(Component parent, TicketLifecycleService ticketLifecycleService, TaxService taxService, DataLogicCustomers dlCustomers) {
         this.parent = parent;
-        this.panel = new JTicketsFinderPanel(dlSales, dlCustomers);
+        this.panel = new JTicketsFinderPanel(ticketLifecycleService, taxService, dlCustomers);
+    }
+
+    private JTicketsFinder(Component parent, DataLogicSales dlSales, DataLogicCustomers dlCustomers) {
+        this(parent, (TicketLifecycleService) dlSales, (TaxService) dlSales, dlCustomers);
+    }
+
+    public static JTicketsFinder getReceiptFinder(Component parent, TicketLifecycleService ticketLifecycleService, TaxService taxService, DataLogicCustomers dlCustomers) {
+        return new JTicketsFinder(parent, ticketLifecycleService, taxService, dlCustomers);
     }
 
     public static JTicketsFinder getReceiptFinder(Component parent, DataLogicSales dlSales, DataLogicCustomers dlCustomers) {
         return new JTicketsFinder(parent, dlSales, dlCustomers);
+    }
+
+    public static FindTicketsInfo show(Component parent, TicketLifecycleService ticketLifecycleService, TaxService taxService, DataLogicCustomers dlCustomers) {
+        return JTicketsFinderPanel.show(parent, ticketLifecycleService, taxService, dlCustomers);
     }
 
     public static FindTicketsInfo show(Component parent, DataLogicSales dlSales, DataLogicCustomers dlCustomers) {

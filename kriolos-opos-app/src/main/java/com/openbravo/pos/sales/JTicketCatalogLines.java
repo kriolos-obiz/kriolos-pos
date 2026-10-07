@@ -20,7 +20,6 @@ import com.openbravo.basic.BasicException;
 import com.openbravo.pos.catalog.CatalogSelector;
 import com.openbravo.pos.catalog.JCatalog;
 import com.openbravo.pos.forms.AppView;
-import com.openbravo.pos.forms.DataLogicSales;
 import com.openbravo.pos.forms.DataLogicSystem;
 import com.openbravo.pos.ticket.TicketLineInfo;
 import java.awt.CardLayout;
@@ -46,7 +45,6 @@ public class JTicketCatalogLines extends javax.swing.JPanel {
             int height) {
         
         DataLogicSystem dlSystem = app.getBean(DataLogicSystem.class);
-        DataLogicSales dlSales = app.getBean(DataLogicSales.class);
         
         initComponents();
         

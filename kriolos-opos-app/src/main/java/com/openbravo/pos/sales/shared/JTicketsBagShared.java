@@ -19,9 +19,11 @@ import com.openbravo.basic.BasicException;
 import com.openbravo.beans.JPasswordPanel;
 import com.openbravo.data.gui.MessageInf;
 import com.openbravo.pos.forms.*;
+import com.openbravo.pos.sales.AuditService;
 import com.openbravo.pos.sales.JTicketsBag;
 import com.openbravo.pos.sales.SharedTicketInfo;
 import com.openbravo.pos.sales.SharedTicketService;
+import com.openbravo.pos.sales.TicketLifecycleService;
 import com.openbravo.pos.sales.TicketsEditor;
 import com.openbravo.pos.ticket.TicketInfo;
 import java.util.ArrayList;
@@ -73,7 +75,8 @@ import javax.swing.SwingUtilities;
 public class JTicketsBagShared extends JTicketsBag {
 
     private SharedTicketService dlReceipts = null;
-    private DataLogicSales dlSales = null;
+    private TicketLifecycleService ticketLifecycleService = null;
+    private AuditService auditService = null;
     private DataLogicSystem dlSystem;
     private Boolean hasPermissionShowSharedList;
 
@@ -88,7 +91,8 @@ public class JTicketsBagShared extends JTicketsBag {
         super(app, panelticket);
 
         dlReceipts = app.getBean(SharedTicketService.class);
-        dlSales = app.getBean(DataLogicSales.class);
+        ticketLifecycleService = app.getBean(TicketLifecycleService.class);
+        auditService = app.getBean(AuditService.class);
         dlSystem = m_App.getBean(DataLogicSystem.class);
 
         hasPermissionShowSharedList = m_App.hasPermission("sales.ShowList");
@@ -130,7 +134,7 @@ public class JTicketsBagShared extends JTicketsBag {
     @Override
     public void deleteTicket() {
 
-        dlSales.addTicketDeleted(m_App.getAppUserView().getUser().getName());
+        auditService.addTicketDeleted(m_App.getAppUserView().getUser().getName());
         updateCount();
     }
 
@@ -226,7 +230,7 @@ public class JTicketsBagShared extends JTicketsBag {
     }
 
     private void setActiveReprintTicket(String id) throws BasicException {
-        TicketInfo ticket = dlSales.getReprintTicket(id);
+        TicketInfo ticket = ticketLifecycleService.getReprintTicket(id);
         JOptionPane.showMessageDialog(this, AppLocal.getIntString("NOT IMPLEMENTED YET"));
         LOGGER.log(System.Logger.Level.WARNING, "NOT IMPLEMENTED setActiveReprintTicket");
     }

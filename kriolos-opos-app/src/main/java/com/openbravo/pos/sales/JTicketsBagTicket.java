@@ -30,7 +30,6 @@ import com.openbravo.pos.cash.CashManagementServiceImpl;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppProperties;
 import com.openbravo.pos.forms.AppView;
-import com.openbravo.pos.forms.DataLogicSales;
 import com.openbravo.pos.forms.DataLogicSystem;
 import com.openbravo.pos.hardware.PosHardwareManager;
 import com.openbravo.pos.printer.DeviceTicket;
@@ -55,7 +54,8 @@ public class JTicketsBagTicket extends JTicketsBag {
     private static final Logger LOGGER = Logger.getLogger(JTicketsBagTicket.class.getName());
     private DataLogicSystem m_dlSystem = null;
     protected DataLogicCustomers dlCustomers = null;
-    private final DataLogicSales m_dlSales;
+    private final TicketLifecycleService ticketLifecycleService;
+    private final TaxService taxService;
 
     private SalesService salesService;
     // private TaxesLogic taxeslogic;
@@ -88,7 +88,8 @@ public class JTicketsBagTicket extends JTicketsBag {
 
         m_panelticketedit = panelticket;
         m_dlSystem = m_App.getBean(DataLogicSystem.class);
-        m_dlSales = m_App.getBean(DataLogicSales.class);
+        ticketLifecycleService = m_App.getBean(TicketLifecycleService.class);
+        taxService = m_App.getBean(TaxService.class);
         dlCustomers = m_App.getBean(DataLogicCustomers.class);
         AppProperties props = null;
 
@@ -105,12 +106,7 @@ public class JTicketsBagTicket extends JTicketsBag {
 
         m_jPanelTicket.add(previewDeviceTicket.getDevicePrinter("1").getPrinterComponent(), BorderLayout.CENTER);
 
-        try {
-            // taxeslogic = new TaxesLogic(m_dlSales.getTaxList().list());
-            salesService = new SalesServiceImpl(new TaxesLogic(m_dlSales.getTaxList().list()));
-        } catch (BasicException ex) {
-            LOGGER.log(Level.WARNING, null, ex);
-        }
+        salesService = new SalesServiceImpl(new TaxesLogic(taxService.getTaxListAll()));
         
         cashManagementService = new CashManagementServiceImpl(m_App.getSession());
     }
@@ -161,7 +157,7 @@ public class JTicketsBagTicket extends JTicketsBag {
         if (m_ticketCopy != null) {
             // Para editar borramos el ticket anterior
             try {
-                m_dlSales.deleteTicket(m_ticketCopy, m_App.getInventoryLocation());
+                ticketLifecycleService.deleteTicket(m_ticketCopy, m_App.getInventoryLocation());
             } catch (BasicException eData) {
                 LOGGER.log(Level.WARNING, null, eData);
                 MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE, AppLocal.getIntString("message.nosaveticket"),
@@ -222,7 +218,7 @@ public class JTicketsBagTicket extends JTicketsBag {
         try {
 
             TicketInfo ticket = (iTicketid != null)
-                    ? m_dlSales.loadTicket(iTickettype, iTicketid)
+                    ? ticketLifecycleService.loadTicket(iTickettype, iTicketid)
                     : null;
 
             if (ticket == null) {
@@ -632,7 +628,7 @@ public class JTicketsBagTicket extends JTicketsBag {
     }// GEN-LAST:event_m_jKeysActionPerformed
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_jButton2ActionPerformed
-        JTicketsFinder finder = JTicketsFinder.getReceiptFinder(this, m_dlSales, dlCustomers);
+        JTicketsFinder finder = JTicketsFinder.getReceiptFinder(this, ticketLifecycleService, taxService, dlCustomers);
         finder.setVisible(true);
         FindTicketsInfo selectedTicket = finder.getSelectedCustomer();
         if (selectedTicket == null) {

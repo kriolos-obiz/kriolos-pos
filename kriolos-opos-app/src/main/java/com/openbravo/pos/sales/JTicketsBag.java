@@ -58,7 +58,13 @@ public abstract class JTicketsBag extends JPanel {
     /**
      *
      */
+    /**
+     * @deprecated Use {@link #ticketLifecycleService} instead.
+     */
+    @Deprecated
     protected DataLogicSales m_dlSales;
+
+    protected TicketLifecycleService ticketLifecycleService;
 
     /**
      *
@@ -73,7 +79,8 @@ public abstract class JTicketsBag extends JPanel {
     public JTicketsBag(AppView oApp, TicketsEditor panelticket) {        
         m_App = oApp;     
         m_panelticket = panelticket;        
-        m_dlSales = m_App.getBean(DataLogicSales.class);
+        m_dlSales = m_App != null ? m_App.getBean(DataLogicSales.class) : null;
+        ticketLifecycleService = m_App != null ? m_App.getBean(TicketLifecycleService.class) : null;
     }
     
     

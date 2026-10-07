@@ -24,7 +24,6 @@ import com.openbravo.pos.customers.DataLogicCustomers;
 import com.openbravo.pos.customers.JCustomerFinderPanel;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
-import com.openbravo.pos.forms.DataLogicSales;
 import com.openbravo.pos.forms.DataLogicSystem;
 import com.openbravo.pos.forms.JPanelView;
 import com.openbravo.pos.payment.JPaymentSelect;
@@ -34,13 +33,16 @@ import com.openbravo.pos.payment.PaymentServiceImpl;
 import com.openbravo.pos.pim.CategoryInfo;
 import com.openbravo.pos.pim.DataLogicPIM;
 import com.openbravo.pos.printer.TicketParser;
+import com.openbravo.pos.sales.AuditService;
 import com.openbravo.pos.sales.JProductLineEditPanel;
 import com.openbravo.pos.sales.SalesService;
 import com.openbravo.pos.sales.SalesServiceImpl;
 import com.openbravo.pos.sales.SharedTicketInfo;
 import com.openbravo.pos.sales.SharedTicketService;
+import com.openbravo.pos.sales.TaxService;
 import com.openbravo.pos.sales.TaxesException;
 import com.openbravo.pos.sales.TaxesLogic;
+import com.openbravo.pos.sales.TicketLifecycleService;
 import com.openbravo.pos.sales.TicketsEditor;
 import com.openbravo.pos.sales.modern.FlexFactory;
 import com.openbravo.pos.sales.modern.FlexLayout;
@@ -93,7 +95,9 @@ public class ModernTwo extends JPanel implements JPanelView, TicketsEditor {
     // Data Logics and Services
     private SharedTicketService dlReceipts;
     private DataLogicPIM dlPim;
-    private DataLogicSales dlSales;
+    private TicketLifecycleService ticketLifecycleService;
+    private TaxService taxService;
+    private AuditService auditService;
     private DataLogicCustomers dlCustomers;
     private DataLogicSystem dlSystem;
     private TaxesLogic taxeslogic;
@@ -129,12 +133,14 @@ public class ModernTwo extends JPanel implements JPanelView, TicketsEditor {
         if (app != null) {
             this.dlReceipts = app.getBean(SharedTicketService.class);
             this.dlPim = app.getBean(DataLogicPIM.class);
-            this.dlSales = app.getBean(DataLogicSales.class);
+            this.ticketLifecycleService = app.getBean(TicketLifecycleService.class);
+            this.taxService = app.getBean(TaxService.class);
+            this.auditService = app.getBean(AuditService.class);
             this.dlCustomers = app.getBean(DataLogicCustomers.class);
             this.dlSystem = app.getBean(DataLogicSystem.class);
 
-            if (dlSales != null) {
-                List<TaxInfo> taxList = dlSales.getTaxListAll();
+            if (taxService != null) {
+                List<TaxInfo> taxList = taxService.getTaxListAll();
                 this.taxeslogic = new TaxesLogic(taxList);
                 this.paymentService = new PaymentServiceImpl();
                 this.salesService = new SalesServiceImpl(taxeslogic);
@@ -288,8 +294,8 @@ public class ModernTwo extends JPanel implements JPanelView, TicketsEditor {
     }
 
     public void deleteTicket() {
-        if (dlSales != null && app != null && app.getAppUserView() != null && app.getAppUserView().getUser() != null) {
-            dlSales.addTicketDeleted(app.getAppUserView().getUser().getName());
+        if (auditService != null && app != null && app.getAppUserView() != null && app.getAppUserView().getUser() != null) {
+            auditService.addTicketDeleted(app.getAppUserView().getUser().getName());
         }
         clearCurrentTicket();
     }
@@ -544,8 +550,8 @@ public class ModernTwo extends JPanel implements JPanelView, TicketsEditor {
             activeTicket.setDate(new Date());
 
             try {
-                if (dlSales != null) {
-                    dlSales.saveTicket(activeTicket, app.getInventoryLocation());
+                if (ticketLifecycleService != null) {
+                    ticketLifecycleService.saveTicket(activeTicket, app.getInventoryLocation());
                 }
 
                 if (paymentDialog.isPrintSelected()) {

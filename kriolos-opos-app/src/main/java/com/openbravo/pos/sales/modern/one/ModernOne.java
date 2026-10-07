@@ -23,7 +23,6 @@ import com.openbravo.pos.customers.DataLogicCustomers;
 import com.openbravo.pos.customers.JCustomerFinderPanel;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
-import com.openbravo.pos.forms.DataLogicSales;
 import com.openbravo.pos.forms.DataLogicSystem;
 import com.openbravo.pos.forms.JPanelView;
 import com.openbravo.pos.payment.JPaymentSelect;
@@ -37,7 +36,9 @@ import com.openbravo.pos.sales.JProductLineEditPanel;
 import com.openbravo.pos.sales.SalesService;
 import com.openbravo.pos.sales.SalesServiceImpl;
 import com.openbravo.pos.sales.SharedTicketService;
+import com.openbravo.pos.sales.TaxService;
 import com.openbravo.pos.sales.TaxesLogic;
+import com.openbravo.pos.sales.TicketLifecycleService;
 import com.openbravo.pos.sales.TicketsEditor;
 import com.openbravo.pos.ticket.ProductInfoExt;
 import com.openbravo.pos.ticket.TaxInfo;
@@ -74,7 +75,8 @@ public class ModernOne extends JPanel implements JPanelView, TicketsEditor {
     private static final Logger LOGGER = Logger.getLogger(ModernOne.class.getName());
 
     private final AppView app;
-    private DataLogicSales dlSales;
+    private TicketLifecycleService ticketLifecycleService;
+    private TaxService taxService;
     private DataLogicPIM dlPim;
     private DataLogicSystem dlSystem;
     private SharedTicketService dlReceipts;
@@ -112,7 +114,8 @@ public class ModernOne extends JPanel implements JPanelView, TicketsEditor {
     }
 
     private void initDomainServices() {
-        dlSales = app.getBean(DataLogicSales.class);
+        ticketLifecycleService = app.getBean(TicketLifecycleService.class);
+        taxService = app.getBean(TaxService.class);
         dlPim = app.getBean(DataLogicPIM.class);
         dlSystem = app.getBean(DataLogicSystem.class);
         dlReceipts = app.getBean(SharedTicketService.class);
@@ -201,7 +204,7 @@ public class ModernOne extends JPanel implements JPanelView, TicketsEditor {
         LOGGER.log(Level.INFO, "Activating ModernOne sales layout");
 
         // 1. Initialize Taxes and Sales Services
-        List<TaxInfo> taxlist = dlSales.getTaxListAll();
+        List<TaxInfo> taxlist = taxService.getTaxListAll();
         taxeslogic = new TaxesLogic(taxlist);
         salesService = new SalesServiceImpl(taxeslogic);
 
@@ -423,7 +426,7 @@ public class ModernOne extends JPanel implements JPanelView, TicketsEditor {
 
             try {
                 // Persist ticket into database
-                dlSales.saveTicket(activeTicket, app.getInventoryLocation());
+                ticketLifecycleService.saveTicket(activeTicket, app.getInventoryLocation());
 
                 // Print receipt
                 printReceipt(activeTicket);

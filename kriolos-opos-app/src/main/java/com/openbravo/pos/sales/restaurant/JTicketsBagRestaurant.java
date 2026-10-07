@@ -25,7 +25,7 @@ import com.openbravo.data.gui.JMessagePanel;
 import com.openbravo.data.gui.MessageInf;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
-import com.openbravo.pos.forms.DataLogicSales;
+import com.openbravo.pos.sales.TicketLifecycleService;
 import com.openbravo.pos.forms.DataLogicSystem;
 import com.openbravo.pos.forms.ApplicationShell;
 import com.openbravo.pos.printer.TicketParser;
@@ -49,7 +49,7 @@ public class JTicketsBagRestaurant extends javax.swing.JPanel {
     private final JTicketsBagRestaurantMap ticketsBagRestaurantMap;
     private TicketInfo ticketInfo;
     private final DataLogicSystem dataLogicSystem;
-    private final DataLogicSales dataLogicSales;
+    private final TicketLifecycleService ticketLifecycleService;
     private final TicketParser ticketParser;
     private final PlaceService restDB;
 
@@ -62,7 +62,7 @@ public class JTicketsBagRestaurant extends javax.swing.JPanel {
         restDB = new PlaceServiceImpl(appView.getSession());
 
         dataLogicSystem = appView.getBean(DataLogicSystem.class);
-        dataLogicSales = appView.getBean(DataLogicSales.class);
+        ticketLifecycleService = appView.getBean(TicketLifecycleService.class);
 
         ticketParser = appView.createTicketParser();
         j_btnKitchen.setVisible(true);
@@ -108,7 +108,7 @@ public class JTicketsBagRestaurant extends javax.swing.JPanel {
 
             if (ticket.getPickupId() == 0) {
                 try {
-                    ticket.setPickupId(dataLogicSales.getNextPickupIndex());
+                    ticket.setPickupId(ticketLifecycleService.getNextPickupIndex());
                 }
                 catch (BasicException e) {
                     LOGGER.log(Level.SEVERE, "Exception print ticket", e);

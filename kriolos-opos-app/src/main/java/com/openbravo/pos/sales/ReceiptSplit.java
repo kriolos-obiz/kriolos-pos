@@ -34,17 +34,32 @@ public class ReceiptSplit {
     private final Component parent;
     private final ReceiptSplitPanel panel;
 
-    private ReceiptSplit(Component parent, String ticketline, DataLogicSales dlSales, DataLogicCustomers dlCustomers, TaxesLogic taxeslogic) {
+    public ReceiptSplit(Component parent, String ticketline, DataLogicCustomers dlCustomers, TaxesLogic taxeslogic) {
         this.parent = parent;
-        this.panel = new ReceiptSplitPanel(ticketline, dlSales, dlCustomers, taxeslogic);
+        this.panel = new ReceiptSplitPanel(ticketline, dlCustomers, taxeslogic);
     }
 
+    @Deprecated
+    public ReceiptSplit(Component parent, String ticketline, DataLogicSales dlSales, DataLogicCustomers dlCustomers, TaxesLogic taxeslogic) {
+        this(parent, ticketline, dlCustomers, taxeslogic);
+    }
+
+    public static ReceiptSplit getDialog(Component parent, String ticketline, DataLogicCustomers dlCustomers, TaxesLogic taxeslogic) {
+        return new ReceiptSplit(parent, ticketline, dlCustomers, taxeslogic);
+    }
+
+    @Deprecated
     public static ReceiptSplit getDialog(Component parent, String ticketline, DataLogicSales dlSales, DataLogicCustomers dlCustomers, TaxesLogic taxeslogic) {
-        return new ReceiptSplit(parent, ticketline, dlSales, dlCustomers, taxeslogic);
+        return getDialog(parent, ticketline, dlCustomers, taxeslogic);
     }
 
+    public static boolean show(Component parent, String ticketline, DataLogicCustomers dlCustomers, TaxesLogic taxeslogic, TicketInfo ticket, TicketInfo ticket2, String ticketext) {
+        return ReceiptSplitPanel.show(parent, ticketline, dlCustomers, taxeslogic, ticket, ticket2, ticketext);
+    }
+
+    @Deprecated
     public static boolean show(Component parent, String ticketline, DataLogicSales dlSales, DataLogicCustomers dlCustomers, TaxesLogic taxeslogic, TicketInfo ticket, TicketInfo ticket2, String ticketext) {
-        return ReceiptSplitPanel.show(parent, ticketline, dlSales, dlCustomers, taxeslogic, ticket, ticket2, ticketext);
+        return show(parent, ticketline, dlCustomers, taxeslogic, ticket, ticket2, ticketext);
     }
 
     public boolean showDialog(TicketInfo ticket, TicketInfo ticket2, String ticketext) {
