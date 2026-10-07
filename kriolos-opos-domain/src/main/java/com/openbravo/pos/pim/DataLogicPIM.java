@@ -42,6 +42,7 @@ import com.openbravo.pos.ticket.ProductInfoExt;
 import com.openbravo.pos.ticket.ProductInfoExtA;
 import com.openbravo.data.loader.DataRead;
 import com.openbravo.data.loader.SentenceFind;
+import com.openbravo.pos.catalog.CatalogService;
 import com.openbravo.pos.inventory.AttributeSetInfo;
 import com.openbravo.pos.inventory.UomInfo;
 import com.openbravo.data.loader.ImageUtils;
@@ -54,7 +55,7 @@ import java.util.logging.Logger;
  *
  * @author poolborges
  */
-public class DataLogicPIM extends BeanFactoryDataSingle {
+public class DataLogicPIM extends BeanFactoryDataSingle implements CatalogService {
 
     private static final Logger LOGGER = Logger.getLogger(BeanFactoryDataSingle.class.getName());
 

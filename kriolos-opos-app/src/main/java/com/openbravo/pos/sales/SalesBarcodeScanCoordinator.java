@@ -18,6 +18,8 @@ package com.openbravo.pos.sales;
 
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.gui.MessageInf;
+import com.openbravo.pos.catalog.CatalogService;
+import com.openbravo.pos.customers.CustomerService;
 import com.openbravo.pos.customers.DataLogicCustomers;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.pim.DataLogicPIM;
@@ -66,13 +68,18 @@ public class SalesBarcodeScanCoordinator {
     private final ProductLookup byUShortCode;
     private final CustomerLookup byCard;
 
-    public SalesBarcodeScanCoordinator(DataLogicPIM dataLogicPIM, DataLogicCustomers dlCustomers) {
+    public SalesBarcodeScanCoordinator(CatalogService catalogService, CustomerService customerService) {
         this(
-            code -> dataLogicPIM != null ? dataLogicPIM.getProductInfoByCode(code) : null,
-            code -> dataLogicPIM != null ? dataLogicPIM.getProductInfoByShortCode(code) : null,
-            code -> dataLogicPIM != null ? dataLogicPIM.getProductInfoByUShortCode(code) : null,
-            card -> dlCustomers != null ? dlCustomers.findCustomerInfoExtByCard(card) : null
+            code -> catalogService != null ? catalogService.getProductInfoByCode(code) : null,
+            code -> catalogService != null ? catalogService.getProductInfoByShortCode(code) : null,
+            code -> catalogService != null ? catalogService.getProductInfoByUShortCode(code) : null,
+            card -> customerService != null ? customerService.findCustomerInfoExtByCard(card) : null
         );
+    }
+
+    @Deprecated
+    public SalesBarcodeScanCoordinator(DataLogicPIM dataLogicPIM, DataLogicCustomers dlCustomers) {
+        this((CatalogService) dataLogicPIM, (CustomerService) dlCustomers);
     }
 
     SalesBarcodeScanCoordinator(ProductLookup byCode, ProductLookup byShortCode,

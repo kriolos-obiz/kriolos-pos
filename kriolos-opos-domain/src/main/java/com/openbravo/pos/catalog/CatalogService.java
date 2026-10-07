@@ -16,10 +16,48 @@
  */
 package com.openbravo.pos.catalog;
 
+import com.openbravo.basic.BasicException;
+import com.openbravo.pos.inventory.AttributeSetInfo;
+import com.openbravo.pos.inventory.UomInfo;
+import com.openbravo.pos.pim.CategoryInfo;
+import com.openbravo.pos.ticket.ProductInfoExt;
+import java.awt.image.BufferedImage;
+import java.util.List;
+
 /**
+ * Service port interface for Catalog, Product Information Management (PIM), and UOM queries.
  *
  * @author poolborges
  */
 public interface CatalogService {
-    
+
+    ProductInfoExt getProductInfo(String id) throws BasicException;
+
+    ProductInfoExt getProductInfoByCode(String code) throws BasicException;
+
+    ProductInfoExt getProductInfoByShortCode(String code) throws BasicException;
+
+    ProductInfoExt getProductInfoByUShortCode(String code) throws BasicException;
+
+    ProductInfoExt getProductInfoByReference(String reference) throws BasicException;
+
+    CategoryInfo getCategoryInfo(String id) throws BasicException;
+
+    List<CategoryInfo> getRootCategories() throws BasicException;
+
+    List<CategoryInfo> getSubcategories(String categoryId) throws BasicException;
+
+    BufferedImage getProductImage(String productId);
+
+    List<ProductInfoExt> getProductCatalog(String categoryId) throws BasicException;
+
+    List<ProductInfoExt> getProductConstant() throws BasicException;
+
+    List<ProductInfoExt> getProductComposite(String productId) throws BasicException;
+
+    UomInfo getUomInfoById(String uomId) throws BasicException;
+
+    List<UomInfo> getUomListAll();
+
+    List<AttributeSetInfo> getAttributeSetListAll();
 }

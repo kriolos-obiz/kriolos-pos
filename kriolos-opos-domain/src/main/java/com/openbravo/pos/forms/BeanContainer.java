@@ -59,6 +59,7 @@ public class BeanContainer {
         m_oldclasses.put("com.openbravo.pos.sales.AuditService", "com.openbravo.pos.sales.DataLogicAudit");
         m_oldclasses.put("com.openbravo.pos.sales.TaxService", "com.openbravo.pos.sales.DataLogicTax");
         m_oldclasses.put("com.openbravo.pos.customers.CustomerService", "com.openbravo.pos.customers.DataLogicCustomers");
+        m_oldclasses.put("com.openbravo.pos.catalog.CatalogService", "com.openbravo.pos.pim.DataLogicPIM");
     }
 
     /**
