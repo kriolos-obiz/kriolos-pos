@@ -25,6 +25,7 @@ import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.forms.BeanFactoryException;
 import com.openbravo.pos.sales.DataLogicTax;
+import com.openbravo.pos.sales.TaxService;
 import com.openbravo.pos.util.StringUtils;
 import java.awt.Component;
 import java.awt.Desktop;
@@ -64,6 +65,8 @@ public final class CustomersView extends com.openbravo.pos.panels.ValidationPane
     private CustomerService customerService;
     @Deprecated
     private DataLogicCustomers dlCustomers;
+    private TaxService taxService;
+    @Deprecated
     private DataLogicTax dlTax;
 
     //HS updates to get last added Customer 06.03.2014
@@ -81,11 +84,12 @@ public final class CustomersView extends com.openbravo.pos.panels.ValidationPane
             appView = app;
             customerService = app.getBean(CustomerService.class);
             dlCustomers = (customerService instanceof DataLogicCustomers) ? (DataLogicCustomers) customerService : app.getBean(DataLogicCustomers.class);
-            dlTax = app.getBean(DataLogicTax.class);
+            taxService = app.getBean(TaxService.class);
+            dlTax = (taxService instanceof DataLogicTax) ? (DataLogicTax) taxService : null;
 
             initComponents();
 
-            m_sentcat = dlTax.getTaxCustCategoriesList();
+            m_sentcat = taxService.getTaxCustCategoriesList();
             m_CategoryModel = new ComboBoxValModel();
 
             m_Dirty = dirty;

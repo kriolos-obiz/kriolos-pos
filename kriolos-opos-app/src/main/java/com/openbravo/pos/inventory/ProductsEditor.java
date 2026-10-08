@@ -23,6 +23,7 @@ import com.openbravo.format.Formats;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.sales.DataLogicTax;
+import com.openbravo.pos.sales.TaxService;
 import com.openbravo.pos.sales.TaxesLogic;
 import com.openbravo.pos.suppliers.SupplierService;
 import com.openbravo.pos.suppliers.JDialogNewSupplier;
@@ -83,6 +84,8 @@ public final class ProductsEditor extends com.openbravo.pos.panels.ValidationPan
 
     private TaxesLogic taxeslogic;
     private DirtyManager m_Dirty;
+    private TaxService taxService;
+    @Deprecated
     private DataLogicTax dlTax;
     private StockService stockService;
     private SupplierService dlSuppliers;
@@ -100,7 +103,8 @@ public final class ProductsEditor extends com.openbravo.pos.panels.ValidationPan
     public ProductsEditor(AppView app, DirtyManager dirty) {
 
         setAppView(app);
-        dlTax = app.getBean(DataLogicTax.class);
+        taxService = app.getBean(TaxService.class);
+        dlTax = (taxService instanceof DataLogicTax) ? (DataLogicTax) taxService : null;
         stockService = app.getBean(StockService.class);
         dlSystem = app.getBean(DataLogicSystem.class);
         dlSuppliers = app.getBean(SupplierService.class);
@@ -191,12 +195,12 @@ public final class ProductsEditor extends com.openbravo.pos.panels.ValidationPan
     @SuppressWarnings("unchecked")
     public void activate() throws BasicException {
 
-        taxeslogic = new TaxesLogic(dlTax.getTaxListAll());
+        taxeslogic = new TaxesLogic(taxService.getTaxListAll());
 
         m_CategoryModel = new ComboBoxValModel(catalogService.getCategoriesListAll());
         m_jCategory.setModel(m_CategoryModel);
   
-        taxcatmodel = new ComboBoxValModel(dlTax.getTaxCategoriesListAll());
+        taxcatmodel = new ComboBoxValModel(taxService.getTaxCategoriesListAll());
         m_jTax.setModel(taxcatmodel);
 
         attmodel = new ComboBoxValModel(catalogService.getAttributeSetListAll());

@@ -19,6 +19,7 @@ import com.openbravo.pos.ticket.TicketTaxInfo;
 import com.openbravo.pos.ticket.TicketInfo;
 import com.openbravo.pos.ticket.TicketLineInfo;
 import com.openbravo.pos.ticket.TaxInfo;
+import com.openbravo.pos.sales.TaxService;
 import com.openbravo.pos.sales.DataLogicTax;
 import com.openbravo.pos.ticket.ProductInfoExt;
 import com.openbravo.pos.ticket.FindTicketsInfo;
@@ -168,6 +169,17 @@ public class DataLogicSales extends BeanFactoryDataSingle implements TicketLifec
         return getDataLogicInventory();
     }
 
+    public TaxService getTaxService() {
+        if (app != null) {
+            try {
+                return app.getBean(TaxService.class);
+            } catch (BeanFactoryException ignored) {
+            }
+        }
+        return getDataLogicTax();
+    }
+
+    @Deprecated
     public DataLogicTax getDataLogicTax() {
         if (app != null) {
             try {
@@ -430,35 +442,35 @@ public class DataLogicSales extends BeanFactoryDataSingle implements TicketLifec
     }
 
     /**
-     * @deprecated Use {@link DataLogicTax#getTaxCategoryInfoList()} instead.
+     * @deprecated Use {@link TaxService#getTaxCategoryInfoList()} instead.
      */
     @Deprecated
     public final SentenceList<TaxCategoryInfo> getTaxCategoryInfoList() {
-        return getDataLogicTax().getTaxCategoryInfoList();
+        return getTaxService().getTaxCategoryInfoList();
     }
 
     /**
-     * @deprecated Use {@link DataLogicTax#getTaxList()} instead.
+     * @deprecated Use {@link TaxService#getTaxList()} instead.
      */
     @Deprecated
     public final SentenceList<TaxInfo> getTaxList() {
-        return getDataLogicTax().getTaxList();
+        return getTaxService().getTaxList();
     }
 
     /**
-     * @deprecated Use {@link DataLogicTax#getTaxListAll()} instead.
+     * @deprecated Use {@link TaxService#getTaxListAll()} instead.
      */
     @Deprecated
     public final List<TaxInfo> getTaxListAll() {
-        return getDataLogicTax().getTaxListAll();
+        return getTaxService().getTaxListAll();
     }
 
     /**
-     * @deprecated Use {@link DataLogicTax#getTaxCustCategoriesList()} instead.
+     * @deprecated Use {@link TaxService#getTaxCustCategoriesList()} instead.
      */
     @Deprecated
     public final SentenceList<TaxCustCategoryInfo> getTaxCustCategoriesList() {
-        return getDataLogicTax().getTaxCustCategoriesList();
+        return getTaxService().getTaxCustCategoriesList();
     }
 
     /**
@@ -475,19 +487,19 @@ public class DataLogicSales extends BeanFactoryDataSingle implements TicketLifec
     }
 
     /**
-     * @deprecated Use {@link DataLogicTax#getTaxCategoriesList()} instead.
+     * @deprecated Use {@link TaxService#getTaxCategoriesList()} instead.
      */
     @Deprecated
     public final SentenceList<TaxCategoryInfo> getTaxCategoriesList() {
-        return getDataLogicTax().getTaxCategoriesList();
+        return getTaxService().getTaxCategoriesList();
     }
 
     /**
-     * @deprecated Use {@link DataLogicTax#getTaxCategoriesListAll()} instead.
+     * @deprecated Use {@link TaxService#getTaxCategoriesListAll()} instead.
      */
     @Deprecated
     public final List<TaxCategoryInfo> getTaxCategoriesListAll() {
-        return getDataLogicTax().getTaxCategoriesListAll();
+        return getTaxService().getTaxCategoriesListAll();
     }
 
     /**
@@ -1142,27 +1154,27 @@ public class DataLogicSales extends BeanFactoryDataSingle implements TicketLifec
     }
 
     /**
-     * @deprecated Use {@link DataLogicTax#getTableTaxes()} instead.
+     * @deprecated Use {@link TaxService#getTableTaxes()} instead.
      */
     @Deprecated
     public final TableDefinition getTableTaxes() {
-        return getDataLogicTax().getTableTaxes();
+        return getTaxService().getTableTaxes();
     }
 
     /**
-     * @deprecated Use {@link DataLogicTax#getTableTaxCustCategories()} instead.
+     * @deprecated Use {@link TaxService#getTableTaxCustCategories()} instead.
      */
     @Deprecated
     public final TableDefinition getTableTaxCustCategories() {
-        return getDataLogicTax().getTableTaxCustCategories();
+        return getTaxService().getTableTaxCustCategories();
     }
 
     /**
-     * @deprecated Use {@link DataLogicTax#getTableTaxCategories()} instead.
+     * @deprecated Use {@link TaxService#getTableTaxCategories()} instead.
      */
     @Deprecated
     public final TableDefinition getTableTaxCategories() {
-        return getDataLogicTax().getTableTaxCategories();
+        return getTaxService().getTableTaxCategories();
     }
 
     /**

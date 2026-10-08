@@ -68,7 +68,7 @@ public class CatalogController {
 
     @Deprecated
     public CatalogController(DataLogicSales dlSales, DataLogicPIM dataLogicPIM) {
-        this(dlSales != null ? dlSales.getDataLogicTax() : null, dataLogicPIM);
+        this(dlSales != null ? dlSales.getTaxService() : null, dataLogicPIM);
     }
     
     public TaxesLogic getTaxesLogic(){

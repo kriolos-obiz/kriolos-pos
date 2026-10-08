@@ -17,6 +17,8 @@
 package com.openbravo.pos.sales;
 
 import com.openbravo.basic.BasicException;
+import com.openbravo.data.loader.SentenceList;
+import com.openbravo.data.loader.TableDefinition;
 import com.openbravo.pos.inventory.TaxCategoryInfo;
 import com.openbravo.pos.inventory.TaxCustCategoryInfo;
 import com.openbravo.pos.ticket.TaxInfo;
@@ -27,9 +29,24 @@ import java.util.List;
  */
 public interface TaxService {
 
+    SentenceList<TaxInfo> getTaxList();
+
     List<TaxInfo> getTaxListAll();
+
+    SentenceList<TaxCustCategoryInfo> getTaxCustCategoriesList();
+
+    List<TaxCustCategoryInfo> getTaxCustCategoriesListAll();
+
+    SentenceList<TaxCategoryInfo> getTaxCategoriesList();
 
     List<TaxCategoryInfo> getTaxCategoriesListAll();
 
-    List<TaxCustCategoryInfo> getTaxCustCategoriesListAll();
+    SentenceList<TaxCategoryInfo> getTaxCategoryInfoList();
+
+    TableDefinition getTableTaxes();
+
+    TableDefinition getTableTaxCustCategories();
+
+    TableDefinition getTableTaxCategories();
 }
+

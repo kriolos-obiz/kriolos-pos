@@ -28,6 +28,7 @@ import com.openbravo.pos.inventory.DataLogicInventory;
 import com.openbravo.pos.inventory.TaxCategoryInfo;
 import com.openbravo.pos.pim.DataLogicPIM;
 import com.openbravo.pos.sales.DataLogicTax;
+import com.openbravo.pos.sales.TaxService;
 import com.openbravo.pos.sales.TaxesLogic;
 import com.openbravo.pos.suppliers.SupplierService;
 import com.openbravo.pos.ticket.ProductInfoExt;
@@ -78,6 +79,8 @@ public class JPanelCSVImport extends JPanel implements JPanelView {
     private static String supplier_default = "[ USE DEFAULT SUPPLIER ]";
     private static String reject_bad_supplier = "[ REJECT ITEMS WITH BAD SUPPLIER ]";
 
+    private TaxService taxService;
+    @Deprecated
     private DataLogicTax m_dlTax;
     private DataLogicSystem m_dlSystem;
     private DataLogicInventory m_dlInventory;
@@ -162,8 +165,18 @@ public class JPanelCSVImport extends JPanel implements JPanelView {
         
         this.supplierDataLogic = oApp.getBean(SupplierService.class);
 
-        m_dlTax = new DataLogicTax();
-        m_dlTax.init(dbSession);
+        TaxService resolvedTax = null;
+        try {
+            resolvedTax = oApp.getBean(TaxService.class);
+        } catch (BeanFactoryException ignored) {
+        }
+        if (resolvedTax == null) {
+            DataLogicTax fallback = new DataLogicTax();
+            fallback.init(dbSession);
+            resolvedTax = fallback;
+        }
+        this.taxService = resolvedTax;
+        this.m_dlTax = (this.taxService instanceof DataLogicTax) ? (DataLogicTax) this.taxService : null;
 
         m_dlSystem = new DataLogicSystem();
         m_dlSystem.init(dbSession);
@@ -707,13 +720,13 @@ public class JPanelCSVImport extends JPanel implements JPanelView {
     @Override
     public void activate() throws BasicException {
         // Get tax details and logic
-        taxsent = m_dlTax.getTaxList();
+        taxsent = taxService.getTaxList();
         taxeslogic = new TaxesLogic(taxsent.list());
-        taxcatsent = m_dlTax.getTaxCategoriesList();
+        taxcatsent = taxService.getTaxCategoriesList();
         taxcatmodel = new ComboBoxValModel(taxcatsent.list());
 
         // Get categories list
-        taxCategoryInfos = m_dlTax.getTaxCategoriesListAll();
+        taxCategoryInfos = taxService.getTaxCategoriesListAll();
         m_CategoryModel = new ComboBoxValModel(taxCategoryInfos);
         m_CategoryModel.add(reject_bad_category);
         jComboDefaultCategory.setModel(m_CategoryModel);
