@@ -232,12 +232,155 @@ To transform the legacy monolith into clean, modular components, the 13 `DataLog
    * Implemented `SecurityService` on `DataLogicSystem` and registered interface type mapping in `BeanContainer`.
    * Decoupled `AppUserPermissionsLoader`, `AuthenticationPanel`, `ApplicationShell`, and `WordspacePanel` to consume `SecurityService`.
    * Retained 100% binary backwards compatibility with `@Deprecated` constructor overloads on `AppUserPermissionsLoader` and `AuthenticationPanel`.
-14. **Remote Order Queue Domain Port (`RemoteOrderService` & `RemoteOrder` Record) (Completed):**
-   * Created domain service port interface `RemoteOrderService` (`com.openbravo.pos.sales.RemoteOrderService`) and domain record `RemoteOrder` (`com.openbravo.pos.sales.RemoteOrder`) encapsulating order lines with `Double qty` (supporting fractional item quantities) and `String displayId` (supporting alphanumeric kitchen display routing).
+14. **Remote Order Queue Service Provider (`RemoteOrderService` & `RemoteOrderDisplayService`) (Completed):**
+   * Established `RemoteOrderService` (`com.openbravo.pos.sales.RemoteOrderService`) as the service provider interface (SPI port) for kitchen display queues.
+   * Default implementation `DataLogicOrders` stores order lines in the shared database table (`ORDERS`), queried by external kitchen display screens.
+   * Architecture supports pluggable providers (e.g., an HTTP / REST API client dispatching order lines to an external microservice or cloud kitchen display).
+   * Created domain record `RemoteOrder` (`com.openbravo.pos.sales.RemoteOrder`) encapsulating order lines with `Double qty` (supporting fractional item quantities) and `String displayId` (supporting alphanumeric kitchen display routing).
    * Updated original Liquibase changelog (`pos_liquidbase/db-changelog-v4_5.xml`) for the `orders` table to define `qty` as `DOUBLE` (default `1.0`) and `displayid` as `VARCHAR(50)` (default `'1'`).
-   * Relocated and modernized remote kitchen dispatch coordinator to `RemoteOrderDisplayService` (`com.openbravo.pos.sales.RemoteOrderDisplayService`) in `kriolos-opos-domain`, consuming `RemoteOrderService` with encapsulated `RemoteOrder` records.
+   * Relocated and modernized remote kitchen dispatch coordinator to `RemoteOrderDisplayService` (`com.openbravo.pos.sales.RemoteOrderDisplayService`) in `kriolos-opos-domain`, which decomposes active `TicketInfo` lines into `RemoteOrder` records and delegates dispatching to `RemoteOrderService`.
    * Maintained 100% binary backwards compatibility with `@Deprecated` method overloads on `DataLogicOrders` and `DataLogicSystem`.
-15. **Next Decoupling Targets:**
-   * Extract warehouse and inventory ledger ports (`InventoryService` / `StockService`) from `DataLogicInventory` and remaining stock operations in `DataLogicSales`.
+15. **Warehouse & Stock Ledger Domain Ports (`InventoryService` & `StockService`) (Completed):**
+   * Extracted pure domain service ports `InventoryService` (`com.openbravo.pos.inventory.InventoryService`) and `StockService` (`com.openbravo.pos.inventory.StockService` extending `InventoryService`).
+   * Eliminated leakage of low-level `SentenceExec` and `SentenceList` from service ports:
+     ** Replaced raw `SentenceExec getStockCurrentInsert()` with clean domain methods `addStockEntry(StockEntry entry)` and `addStockEntry(locationId, productId, units)`.
+     ** Introduced domain record `StockEntry` (`locationId`, `productId`, `attributeSetInstanceId`, `units`).
+     ** Migrated `SentenceList<LocationInfo> getLocationsList()` across `InventoryService`, `DataLogicInventory`, and deprecated delegator on `DataLogicSales` to return `List<LocationInfo> throws BasicException`.
+     ** Replaced raw query sentence `SentenceList getWarehouseStockList(SerializerRead sr)` with high-level `ListProvider getWarehouseStockListProvider(EditorCreator filter)` and `SaveProvider getWarehouseStockSaveProvider()`.
+     ** Encapsulated stock diary writes and reversions via domain methods `recordStockMovement`, `revertStockMovement`, and `getStockDiarySaveProvider()`.
+   * Implemented `StockService` (and `InventoryService`) on `DataLogicInventory` and registered both interfaces in `BeanContainer`.
+   * Migrated callers across `kriolos-opos-app`:
+     ** `StockDiaryPanel`: Injects `StockService` and uses `stockService.getStockDiarySaveProvider()`.
+     ** `StockDiaryEditor`: Injects `InventoryService`, consumes `inventoryService.getLocationsList()`, eliminating redundant `.list()` queries.
+     ** `StockManagement`: Injects `StockService` for `getLocationsListAll()`, `getProductStockList()`, and `saveStockDiary()`.
+     ** `ProductsWarehousePanel`: Injects `InventoryService`, uses `getWarehouseStockListProvider(m_paramslocation)` and `getWarehouseStockSaveProvider()`, eliminating internal `WarehouseSerializerRead`.
+     ** `LocationsPanel`: Injects `InventoryService` for `getTableLocations()`.
+     ** `ProductsEditor`: Injects `StockService` for `getProductStockList()`.
+     ** `JParamsLocation`: Injects `InventoryService` for `getLocationsList()`.
+     ** `SalesStockCoordinator`: Injects `InventoryService` and resolves location names via `InventoryService.getLocationsListAll()`.
+     ** `JPanelTicket`: Injects `InventoryService`, eliminated concrete `DataLogicInventory` field.
+     ** `BundlePanel` & `AuxiliarPanel`: Consume `StockService.SQL_BUNDLE_LIST` and `StockService.SQL_AUXILIAR_LIST`.
+     ** `JPanelCSVImport`: Uses `inventoryService.addStockEntry("0", ProductID, Units)`.
+   * Maintained 100% binary backwards compatibility with `@Deprecated` delegators on `DataLogicSales` and legacy constructor overloads.
+16. **Treasury & Cash Drawer Domain Port (`TreasuryService`) (Completed):**
+   * Extracted pure domain service port interface `TreasuryService` (`com.openbravo.pos.payment.TreasuryService`) and domain record `PaymentMovement` (`com.openbravo.pos.payment.PaymentMovement`) for cash in / cash out drawer movements and payment sequence indexing (`getNextTicketPaymentIndex`).
+   * Eliminated leakage of low-level `SentenceExec` on service ports:
+     ** Replaced raw `SentenceExec getPaymentMovementInsert()` and `SentenceExec getPaymentMovementDelete()` with clean domain methods `recordPaymentMovement(PaymentMovement movement)` and `deletePaymentMovement(receiptId, paymentId)`.
+     ** Introduced high-level `SaveProvider getPaymentMovementSaveProvider()`.
+   * Implemented `TreasuryService` on `DataLogicPayments` and registered type mapping in `BeanContainer`.
+   * Decoupled `JPanelPayments` in `kriolos-opos-app` to inject `TreasuryService` and consume `treasuryService.getPaymentMovementSaveProvider()`, eliminating direct `DefaultSaveProvider` wrapping of `SentenceExec`.
+   * Added `getTreasuryService()` in `DataLogicSales` maintaining 100% binary backwards compatibility.
+17. **Product Attributes & Attribute Sets Domain Port (`AttributeService`) (Completed):**
+   * Extracted pure domain service port interface `AttributeService` (`com.openbravo.pos.inventory.AttributeService`) and domain record `AttributeInstEntry` (`com.openbravo.pos.inventory.AttributeInstEntry`) for product attribute sets, attribute instances, and instance values.
+   * Eliminated leakage of low-level `SentenceList` and `SentenceExec` on attribute service ports:
+     ** Replaced raw query executions with high-level domain collection queries: `List<AttributeInfo> getAttributeList()`, `List<AttributeSetInfo> getAttributeSetList()`, `List<AttributeInstInfo> getAttributeInstList()`, and `List<String> getAttributeValues()`.
+     ** Replaced manual, procedural multi-sentence transaction logic for finding/creating attribute set instances and value rows with domain method `String findOrCreateAttributeSetInstance(String attributeSetId, String description, List<AttributeInstEntry> entries)`.
+   * Implemented `AttributeService` on `DataLogicAttribute` and registered type mapping in `BeanContainer`.
+   * Decoupled callers across `kriolos-opos-app`:
+     ** `AttributeFilter`: Injects `AttributeService` and calls `attributeService.getAttributeList()`.
+     ** `AttributeSetFilter`: Injects `AttributeService` and calls `attributeService.getAttributeSetList()`.
+     ** `AttributeUseEditor`: Injects `AttributeService` and calls `attributeService.getAttributeList()`.
+     ** `AttributeUsePanel` & `AttributeValuesPanel`: Consume static constants `AttributeService.SQL_ATTRIBUTE_LIST` and `AttributeService.SQL_ATTRIBUTESET_LIST`.
+     ** `JProductAttEditPanel`: Injects `AttributeService` and creates attribute set instances through `attributeService.findOrCreateAttributeSetInstance(...)`, eliminating direct coupling to `DataLogicAttribute` and `Session`.
+     ** `JProductAttEdit` & `JProductAttEdit2`: Added overloaded constructors and factory methods accepting `AttributeService`.
+   * Maintained 100% binary backwards compatibility with `@Deprecated` legacy constructors and fields.
+18. **Voucher Issuance, Redemption & Validation Domain Port (`VoucherService`) (Completed):**
+   * Extracted pure domain service port interface `VoucherService` (`com.openbravo.pos.voucher.VoucherService`) for voucher lifecycle management (issuance, sequence numbering, lookup, and redemption).
+   * Eliminated leakage of low-level `SentenceList` and raw `PreparedSentence` queries:
+     ** Replaced raw `PreparedSentence getVoucherNumber()` with clean domain method `findLastVoucherNumber(String prefix)` and default sequence generator `generateNextVoucherNumber()`.
+     ** Replaced static raw query `updateVoucherNonActive(String, Session)` with instance domain method `deactivateVoucher(String voucherNumber)`.
+     ** Modernized lookup methods `getVoucher(String id)`, `getVoucherAll(String id)`, and `getVoucherList()`.
+     ** Centralized table definition via `TableDefinition getTableVouchers()`.
+   * Implemented `VoucherService` on `DataLogicVouchers` and registered type mapping in `BeanContainer`.
+   * Decoupled callers across `kriolos-opos-app`:
+     ** `JPaymentVoucher`: Injects `VoucherService` and calls `voucherService.getVoucherList()` and `voucherService.getVoucher(id)`, eliminating direct `DataLogicVouchers` and unused `DataLogicCustomers`.
+     ** `JPaymentPaper`: Injects `VoucherService` and calls `voucherService.getVoucherList()` and `voucherService.getVoucher(id)`.
+     ** `VoucherEditor`: Injects `VoucherService`, delegates voucher number generation to `voucherService.generateNextVoucherNumber()`, and calls `voucherService.getVoucherAll(voucherId)`.
+     ** `VoucherPanel`: Injects `VoucherService`, consumes `voucherService.getTableVouchers()`, and instantiates `VoucherEditor` with injected `VoucherService`.
+   * Added `getVoucherService()` and `getDataLogicVouchers()` on `DataLogicSales`, delegating `updateVoucherNonActive` to `getVoucherService().deactivateVoucher(voucherNumber)`.
+   * Updated `DataLogicSystem.getVouchersActiveList()` to resolve `VoucherService`.
+   * Maintained 100% binary backwards compatibility with `@Deprecated` legacy methods and constructor overloads.
+19. **Employee Presence & Shift Management Domain Port (`ShiftService`) (Completed):**
+   * Extracted pure domain service port interface `ShiftService` (`com.openbravo.pos.epm.ShiftService`) and domain record `ShiftBreakActivity` (`com.openbravo.pos.epm.ShiftBreakActivity`) for employee shifts, check-in/out time clock, breaks, and leaves.
+   * Eliminated leakage of low-level `SentenceList` and raw query definitions:
+     ** Replaced raw `SentenceList getBreaksList()` and `getLeavesList()` with clean domain queries `List<BreaksInfo> getBreaksListAll()` and `List<LeavesInfo> getLeavesListAll()`.
+     ** Replaced raw object arrays with strongly typed domain record `ShiftBreakActivity getLastBreakActivity(String userId)`.
+     ** Encapsulated employee lookup query sentence into high-level provider `ListProvider getEmployeeListProvider(EditorCreator filter)`.
+     ** Standardized all method names to standard Java camelCase (`checkIn`, `checkOut`, `isCheckedIn`, `startBreak`, `endBreak`, `isOnBreak`, `getShiftId`, `getLastCheckIn`, `getLastCheckOut`, `getStartBreakTime`, `getLastBreakId`, `getLastBreakName`, `isOnLeave`, `blockEmployee`).
+     ** Preserved legacy PascalCase methods (`CheckIn`, `CheckOut`, etc.) as `@Deprecated` delegators for backwards compatibility.
+   * Implemented `ShiftService` on `DataLogicPresenceManagement` and registered type mapping in `BeanContainer`.
+   * Decoupled callers across `kriolos-opos-app`:
+     ** `JPanelEmployeePresence`: Injects `ShiftService`, calls `shiftService.listBreaksVisible()`, `shiftService.startBreak()`, `shiftService.endBreak()`, `shiftService.checkIn()`, `shiftService.checkOut()`, `shiftService.isOnBreak()`, and consumes `ShiftBreakActivity`.
+     ** `BreaksView`: Injects `ShiftService` and calls `shiftService.getBreaksListAll()`, eliminating raw `SentenceList m_sentcat`.
+     ** `BreaksPanel`: Injects `ShiftService`, calls `shiftService.getTableBreaks()`, and instantiates `BreaksView` with injected `ShiftService`.
+     ** `LeavesView`: Injects `ShiftService`, calls `shiftService.isCheckedIn()`, `shiftService.blockEmployee()`, and passes `ShiftService` to `JEmployeeFinder`.
+     ** `LeavesPanel`: Injects `ShiftService`, calls `shiftService.getTableLeaves()`, and instantiates `LeavesView` with injected `ShiftService`.
+     ** `JEmployeeFinder` & `JEmployeeFinderPanel`: Modernized to accept `ShiftService`, utilizing `shiftService.getEmployeeListProvider(this)` instead of direct `ListProviderCreator(SentenceList)`.
+   * Maintained 100% binary backwards compatibility with `@Deprecated` legacy constructors and overloads.
+20. **Batch CSV Data Import Domain Port (`ImportService`) (Completed):**
+   * Extracted pure domain service port interface `ImportService` (`com.openbravo.pos.imports.ImportService`) for batch CSV imports (products, customers, and stock quantities) and duplicate/change status resolution.
+   * Defined clean port methods:
+     ** `execCSVStockUpdate(Object[] csv)`: Inserts stock update entries into the import staging table.
+     ** `execAddCSVEntry(Object[] csv)`: Inserts product import entries into the staging table.
+     ** `execCustomerAddCSVEntry(Object[] csv)`: Inserts customer import entries into the staging table.
+     ** `getProductRecordType(...)` & `getCustomerRecordType(...)`: Identifies whether an incoming CSV row matches an existing record, detects field differences (name, barcode, reference), or flags duplicate conflicts. Provided type-safe convenience overloads (`getProductRecordType(ref, code, name)` and `getCustomerRecordType(searchKey, name)`).
+   * Implemented `ImportService` on `DataLogicImport` and registered alias mapping in `BeanContainer` (`com.openbravo.pos.imports.ImportService -> com.openbravo.pos.imports.DataLogicImport`).
+   * Decoupled import UI components across `kriolos-opos-app`:
+     ** `CustomerCSVImport`: Resolves `ImportService` from `AppView`, delegating customer CSV entry creation and customer record type resolution.
+     ** `StockQtyImport`: Resolves `ImportService` from `AppView`, delegating stock quantity CSV updates.
+     ** `JPanelCSVImport`: Resolves `ImportService` from `AppView`, delegating product CSV entry insertion and product record type resolution.
+   * Added `ImportServiceTest` in `kriolos-opos-domain` verifying container resolution and default method delegation.
+   * Maintained 100% binary backwards compatibility with `@Deprecated` legacy getters and constructors.
+21. **Hospitality & Reservations Domain Port (`RestaurantService`) (Completed):**
+   * Extracted pure domain service port interface `RestaurantService` (`com.openbravo.pos.sales.restaurant.RestaurantService`) for hospitality floor plans, dining tables, places, and table reservations.
+   * Eliminated cross-domain bleed and raw query sentence exposure:
+     ** Extracted clean domain collection queries: `List<FloorsInfo> getFloorsListAll()` and `List<FloorsInfo> getFloorTablesListAll()`.
+     ** Replaced manual `ListProviderCreator(getReservationsList(), ...)` and `DefaultSaveProvider(getReservationsUpdate(), ...)` with high-level providers: `ListProvider getReservationsListProvider(EditorCreator filter)` and `SaveProvider getReservationsSaveProvider()`.
+     ** Maintained table management methods: `TableDefinition getTableFloors()`, `TableDefinition getTablePlaces()`, and `void updatePlaces(int x, int y, String id)`.
+   * Implemented `RestaurantService` on `DataLogicRestaurant` and registered alias mapping in `BeanContainer` (`com.openbravo.pos.sales.restaurant.RestaurantService -> com.openbravo.pos.sales.restaurant.DataLogicRestaurant`).
+   * Decoupled legacy monolith callers:
+     ** `DataLogicCustomers`: Added `getRestaurantService()`, deprecated `getDataLogicRestaurant()`, and routed all legacy `@Deprecated` reservation delegates (`getReservationsList`, `getReservationsUpdate`, `getReservationsDelete`, `getReservationsInsert`) to `getRestaurantService()`.
+     ** `DataLogicSales`: Added `getRestaurantService()`, deprecated `getDataLogicRestaurant()`, and routed `@Deprecated` floor query delegates to `getRestaurantService()`.
+     ** `DataLogicSystem`: Updated `updatePlaces(...)` to resolve `RestaurantService` from the bean container.
+   * Modernized UI callers in `kriolos-opos-app`:
+     ** `JTicketsBagRestaurantRes`: Injects `RestaurantService` via `oApp.getBean(RestaurantService.class)` and uses `getReservationsListProvider` and `getReservationsSaveProvider`.
+     ** `JPanelFloors`: Resolves `RestaurantService` from `AppView` for table definitions.
+     ** `JPanelPlaces`: Resolves `RestaurantService` and passes it to `PlacesEditor`.
+     ** `PlacesEditor`: Updated to accept `RestaurantService` and consume `getFloorsListAll()` for combo box population; retained backwards-compatible constructors.
+   * Added `RestaurantServiceTest` in `kriolos-opos-domain` verifying container resolution and interface contract.
+   * Maintained 100% binary backwards compatibility with `@Deprecated` legacy methods and constructor overloads.
+22. **Product Information Management & Catalog Domain Port (`CatalogService`) (Completed):**
+   * Enriched and completed pure domain service port interface `CatalogService` (`com.openbravo.pos.catalog.CatalogService`) for product catalog, categories, pricing, unit of measures (UOM), and stock bundles:
+     ** Clean category operations: `getCategoryInfo(id)`, `getRootCategories()`, `getSubcategories(categoryId)`, `createCategory(Object[] category)`, `getCategoriesListAll()`, and `getCategorysProductList(categoryId)`.
+     ** Catalog membership and pricing: `addProductsToCatalogWithCategoryId(categoryId)`, `removeProductsFromCatalogWithCategoryId(categoryId)`, and `updateProductPrice(productId, newPrice)`.
+     ** Product metadata and UI providers: `getTableCategories()`, `getTableUom()`, `getProductsRow()`, `getProductSaveProvider()`, and `getProductListProvider(EditorCreator filter)`.
+     ** High-level product and attribute lookups: `getProductInfo(id)`, `getProductInfoByCode(code)`, `getProductInfoByReference(ref)`, `getProductImage(id)`, `getUomListAll()`, and `getAttributeSetListAll()`.
+     ** Preserved legacy queries as `@Deprecated` delegators: `getProductList()`, `getProductListNormal()`, `getProductListAuxiliar()`, `getCategoriesList_1()`, `getProductCatQBF()`, `productInsert()`, `productUpdate()`, and `getProductCatDelete()`.
+   * Implemented `CatalogService` on `DataLogicPIM` and verified type mapping in `BeanContainer` (`com.openbravo.pos.catalog.CatalogService -> com.openbravo.pos.pim.DataLogicPIM`).
+   * Decoupled legacy monolith callers:
+     ** `DataLogicSales`: Added `getCatalogService()`, deprecated `getDataLogicPIM()`, and routed all catalog delegates (`addProductsToCatalogWithCategoryId`, `removeProductsFromCatalogWithCategoryId`, `getUomInfoById`, `getTableUom`, `getUomListAll`, `getAttributeSetListAll`) to `getCatalogService()`.
+   * Decoupled and modernized UI callers across `kriolos-opos-app`:
+     ** `CategoriesPanel` & `UomPanel`: Inject `CatalogService` for `getTableCategories()` and `getTableUom()`.
+     ** `CategoriesEditor`: Injects `CatalogService` for `getCategoriesListAll()`, `getCategorysProductList()`, `addProductsToCatalogWithCategoryId()`, and `removeProductsFromCatalogWithCategoryId()`.
+     ** `ProductsPanel` & `PriceImportPanel`: Inject `CatalogService`, consuming `getProductsRow()`, `getProductListProvider()`, and `getProductSaveProvider()`.
+     ** `ProductsEditor`: Injects `CatalogService` for `getCategoriesListAll()`, `getAttributeSetListAll()`, `getUomListAll()`, and `getProductImage()`.
+     ** `JProductLineEditPanel` & `JProductLineEditTaxPanel`: Injected `CatalogService` for direct price updating (`updateProductPrice`).
+     ** `StockDiaryEditor`: Injects `CatalogService` for barcode and reference lookups.
+     ** `StockManagement`: Injects `CatalogService` for barcode product incremental lookup.
+     ** `AuxiliarEditor` & `BundleEditor`: Inject `CatalogService` for product lookup by code and reference.
+     ** `AuxiliarFilter` & `BundleFilter`: Inject `CatalogService` for filtering by code and reference.
+     ** `ProductFilter`, `ProductFilter1`, `ProductFilter2`, `ProductFilter3`, `ProductFilter4`, `ProductFilterSales`, `CategoryFilter`, `LocationFilterSales`: Inject `CatalogService` for category listings.
+     ** `MaterialFilter`: Injects `CatalogService` for `getProductList()`.
+     ** `JProductFinderPanel`: Injects `CatalogService` for normal, auxiliar, and all product listing queries.
+     ** `ModernTouchCatalog`, `ModernOne`, and `ModernTwo`: Injected `CatalogService` for root categories, catalog items, and barcode lookups.
+     ** `JPanelTicket`: Injects `CatalogService` and passes it to `SalesStockCoordinator`, `SalesBarcodeScanCoordinator`, and visor device display.
+     ** `JPanelCSVImport` & `StockQtyImport`: Inject `CatalogService` for product save provider, category creation, and product lookups.
+   * Created `CatalogServiceTest` in `kriolos-opos-domain` verifying container resolution and clean domain contracts.
+   * Maintained 100% binary backwards compatibility with `@Deprecated` legacy getters and constructors across all modified classes.
+23. **Next Decoupling Targets:**
+   * Review remaining legacy DataLogic classes (e.g., Reports / `DataLogicReports`, Devices / Fiscal printers).
+
+
+
 
 
