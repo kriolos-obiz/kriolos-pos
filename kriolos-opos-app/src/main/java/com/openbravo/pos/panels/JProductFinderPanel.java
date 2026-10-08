@@ -20,6 +20,7 @@ import com.openbravo.basic.BasicException;
 import com.openbravo.data.gui.modal.PosUIModal;
 import com.openbravo.data.user.ListProvider;
 import com.openbravo.data.user.ListProviderCreator;
+import com.openbravo.pos.catalog.CatalogService;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.pim.DataLogicPIM;
@@ -45,6 +46,7 @@ public class JProductFinderPanel extends JPanel {
 
     private ProductInfoExt m_ReturnProduct;
     private ListProvider lpr;
+    private CatalogService catalogService;
     private DataLogicPIM dataLogicPIM;
     private PosUIModal modalContext;
 
@@ -100,7 +102,8 @@ public class JProductFinderPanel extends JPanel {
 
     private void init(AppView app, int productsType) {
 
-        dataLogicPIM = (DataLogicPIM) app.getBean(DataLogicPIM.class);
+        catalogService = app.getBean(CatalogService.class);
+        dataLogicPIM = (catalogService instanceof DataLogicPIM) ? (DataLogicPIM) catalogService : null;
 
         jScrollPane1.getVerticalScrollBar().setPreferredSize(new Dimension(35, 35));
         jScrollPane1.getHorizontalScrollBar().setPreferredSize(new Dimension(35, 35));
@@ -113,13 +116,13 @@ public class JProductFinderPanel extends JPanel {
         m_jProductSelect.repaint();
         switch (productsType) {
             case PRODUCT_NORMAL:
-                lpr = new ListProviderCreator(dataLogicPIM.getProductListNormal(), jproductfilter);
+                lpr = new ListProviderCreator(catalogService.getProductListNormal(), jproductfilter);
                 break;
             case PRODUCT_AUXILIAR:
-                lpr = new ListProviderCreator(dataLogicPIM.getProductListAuxiliar(), jproductfilter);
+                lpr = new ListProviderCreator(catalogService.getProductListAuxiliar(), jproductfilter);
                 break;
             default: // PRODUCT_ALL
-                lpr = new ListProviderCreator(dataLogicPIM.getProductList(), jproductfilter);
+                lpr = new ListProviderCreator(catalogService.getProductList(), jproductfilter);
                 break;
         }
         jListProducts.setCellRenderer(new ProductRenderer());
@@ -347,6 +350,15 @@ public class JProductFinderPanel extends JPanel {
     private void m_jKeysActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_m_jKeysActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_m_jKeysActionPerformed
+
+    public CatalogService getCatalogService() {
+        return catalogService;
+    }
+
+    @Deprecated
+    public DataLogicPIM getDataLogicPIM() {
+        return dataLogicPIM;
+    }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButton3;

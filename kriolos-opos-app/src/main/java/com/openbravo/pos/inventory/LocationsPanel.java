@@ -46,8 +46,8 @@ public class LocationsPanel extends JPanelTable {
      */
     @Override
     protected void init() {   
-        DataLogicInventory dlInventory = app.getBean(DataLogicInventory.class);          
-        tlocations = dlInventory.getTableLocations();
+        InventoryService inventoryService = app.getBean(InventoryService.class);          
+        tlocations = inventoryService.getTableLocations();
         jeditor = new LocationsView(dirty);
     }
     

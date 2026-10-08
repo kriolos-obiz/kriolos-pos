@@ -17,12 +17,10 @@
 package com.openbravo.pos.inventory;
 
 import com.openbravo.basic.BasicException;
-import com.openbravo.data.loader.*;
+import com.openbravo.data.loader.Datas;
 import com.openbravo.data.model.Field;
 import com.openbravo.data.model.Row;
 import com.openbravo.data.user.EditorRecord;
-import com.openbravo.data.user.ListProviderCreator;
-import com.openbravo.data.user.DefaultSaveProvider;
 import com.openbravo.format.Formats;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.panels.JPanelTable2;
@@ -30,7 +28,6 @@ import com.openbravo.pos.reports.JParamsLocation;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.UUID;
 
 /**
  *
@@ -40,7 +37,7 @@ public class ProductsWarehousePanel extends JPanelTable2 {
 
     private JParamsLocation m_paramslocation;
     private ProductsWarehouseEditor jeditor;
-    private DataLogicInventory dlInventory;
+    private InventoryService inventoryService;
 
     /** Creates a new instance of ProductsWarehousePanel */
     public ProductsWarehousePanel() {
@@ -51,7 +48,7 @@ public class ProductsWarehousePanel extends JPanelTable2 {
      */
     @Override
     protected void init() {
-        dlInventory = app.getBean(DataLogicInventory.class);
+        inventoryService = app.getBean(InventoryService.class);
 
         m_paramslocation = new JParamsLocation();
         m_paramslocation.init(app);
@@ -67,25 +64,9 @@ public class ProductsWarehousePanel extends JPanelTable2 {
                 new Field("STOCKMAXIMUM", Datas.DOUBLE, Formats.DOUBLE),
                 new Field("UNITS", Datas.DOUBLE, Formats.DOUBLE));
 
-        lpr = new ListProviderCreator(dlInventory.getWarehouseStockList(new WarehouseSerializerRead()),
-                m_paramslocation);
+        lpr = inventoryService.getWarehouseStockListProvider(m_paramslocation);
 
-        SentenceExec updatesent = new SentenceExecTransaction(app.getSession()) {
-            @Override
-            public int execInTransaction(Object[] params) throws BasicException {
-                Object[] values = params;
-                if (values[0] == null) {
-                    // INSERT
-                    values[0] = UUID.randomUUID().toString();
-                    return dlInventory.getStockLevelInsert().exec(new Object[] { values[0], values[4], values[1], values[5], values[6] });
-                } else {
-                    // UPDATE
-                    return dlInventory.getStockLevelUpdate().exec(new Object[] { values[5], values[6], values[0] });
-                }
-            }
-        };
-
-        spr = new DefaultSaveProvider(updatesent, null, null);
+        spr = inventoryService.getWarehouseStockSaveProvider();
 
         jeditor = new ProductsWarehouseEditor(dirty);
     }
@@ -135,22 +116,6 @@ public class ProductsWarehousePanel extends JPanelTable2 {
                 ProductsWarehousePanel.this.bd.actionLoad();
             } catch (BasicException w) {
             }
-        }
-    }
-
-    private class WarehouseSerializerRead implements SerializerRead {
-        @Override
-        public Object readValues(DataRead dr) throws BasicException {
-            return new Object[] {
-                    dr.getString(1),
-                    dr.getString(2),
-                    dr.getString(3),
-                    dr.getString(4),
-                    ((Object[]) m_paramslocation.createValue())[1],
-                    dr.getDouble(5),
-                    dr.getDouble(6),
-                    dr.getDouble(7)
-            };
         }
     }
 }

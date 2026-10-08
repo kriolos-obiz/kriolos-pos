@@ -19,6 +19,7 @@ import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppUser;
 import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.forms.DataLogicSystem;
+import com.openbravo.pos.util.SAXParserUtils;
 import com.openbravo.pos.util.ThumbNailBuilder;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -63,7 +64,7 @@ public class JPanelButtons extends javax.swing.JPanel {
         this.bListener = bListener;
         dlSystem = app.getBean(DataLogicSystem.class);
         try {
-            SAXParserFactory spf = SAXParserFactory.newInstance();
+            SAXParserFactory spf = SAXParserUtils.newSecureInstance();
             SAXParser m_sp = spf.newSAXParser();
             m_sp.parse(new InputSource(new StringReader(sConfigRes)), new ConfigurationHandler());
         } catch (ParserConfigurationException ePC) {

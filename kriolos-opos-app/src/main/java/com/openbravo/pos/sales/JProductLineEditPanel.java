@@ -24,7 +24,7 @@ import com.openbravo.format.Formats;
 import com.openbravo.pos.forms.AppConfig;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
-import com.openbravo.pos.pim.DataLogicPIM;
+import com.openbravo.pos.catalog.CatalogService;
 import com.openbravo.pos.ticket.TicketLineInfo;
 import java.awt.BorderLayout;
 import java.awt.Component;
@@ -480,8 +480,8 @@ public class JProductLineEditPanel extends JPanel {
 
     private void m_jBtnPriceUpdateActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_m_jBtnPriceUpdateActionPerformed
         try {
-            DataLogicPIM dataLogicPIM = appView.getBean(DataLogicPIM.class); 
-            dataLogicPIM.updateProductPrice(productID, m_jPrice.getValue());
+            CatalogService catalogService = appView.getBean(CatalogService.class); 
+            catalogService.updateProductPrice(productID, m_jPrice.getValue());
             m_jBtnPriceUpdate.setEnabled(false);
         } catch (BasicException ex) {
             LOGGER.log(Level.WARNING, "Exception update products pricesell for ID: " + productID, ex);

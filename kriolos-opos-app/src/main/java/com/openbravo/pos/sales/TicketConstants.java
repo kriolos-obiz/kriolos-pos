@@ -36,8 +36,26 @@ public final class TicketConstants {
     /** Ticket event: 'ticket.total' */
     public static final String EV_TICKET_TOTAL = "ticket.total";
 
-    /** Ticket line property: 'ticket.updated' */
+    /** Ticket line property: 'ticket.updated' MUST MOVED TO TicketLineConstants */
     public static final String PROP_TICKET_UPDATED = "ticket.updated";
+    
+    /** Set priceVisibled in JTicketCatalogLines:  */
+    public static final String PROP_CATALOG_PRICE_VISIBLED= "pricevisible";
+    
+    /** Set priceVisibled in JTicketCatalogLines:  */
+    public static final String PROP_CATALOG_TAX_INCLUDED= "taxesincluded";
+    
+    /** Set priceVisibled in JTicketCatalogLines:  */
+    public static final String PROP_CATALOG_PRODUCT_CARD_HEIGHT= "img-height";
+    
+    /** Set priceVisibled in JTicketCatalogLines:  */
+    public static final String PROP_CATALOG_PRODUCT_CARD_WIDTH= "img-width";
+    
+    /** Set priceVisibled in JTicketCatalogLines:  */
+    public static final String PROP_CATALOG_CATEGORY_SIDEBAR_HEIGHT= "cat-height";
+    
+    /** Set default category on InputPage:  */
+    public static final String PROP_TAX_CATEGORY_ID = "taxcategoryid";
 
     /** Ticket resource: 'Ticket.Buttons' */
     public static final String RES_TICKET_BUTTONS = "Ticket.Buttons";

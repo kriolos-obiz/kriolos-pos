@@ -39,9 +39,8 @@ import com.openbravo.pos.util.InactivityListener;
 
 import com.openbravo.pos.payment.PaymentService;
 import com.openbravo.pos.payment.PaymentServiceImpl;
-import com.openbravo.pos.inventory.DataLogicInventory;
+import com.openbravo.pos.catalog.CatalogService;
 import com.openbravo.pos.inventory.InventoryService;
-import com.openbravo.pos.inventory.InventoryServiceImpl;
 import com.openbravo.pos.panels.JProductFinderPanel;
 import com.openbravo.pos.pim.DataLogicPIM;
 import java.awt.*;
@@ -74,8 +73,8 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     private TicketLifecycleService ticketLifecycleService;
     private TaxService taxService;
     private AuditService auditService;
-    private DataLogicInventory dlInventory;
     private DataLogicCustomers dlCustomers;
+    private CatalogService catalogService;
     private DataLogicPIM dataLogicPIM;
     private TicketsEditor m_panelticket;
     private TicketInfo m_oTicket;
@@ -122,10 +121,11 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         ticketLifecycleService = m_App.getBean(TicketLifecycleService.class);
         taxService = m_App.getBean(TaxService.class);
         auditService = m_App.getBean(AuditService.class);
-        dlInventory = m_App.getBean(DataLogicInventory.class);
+        inventoryService = m_App.getBean(InventoryService.class);
         dlCustomers = m_App.getBean(DataLogicCustomers.class);
         dlReceipts = app.getBean(SharedTicketService.class);
-        dataLogicPIM = app.getBean(DataLogicPIM.class);
+        catalogService = app.getBean(CatalogService.class);
+        dataLogicPIM = (catalogService instanceof DataLogicPIM) ? (DataLogicPIM) catalogService : null;
 
         // Configuration>Peripheral options
         ticketHeaderPane.setScaleVisible(m_App.hasScale());
@@ -312,9 +312,8 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         salesCustomerController = new SalesCustomerController(m_App, dlCustomers);
         salesPaymentCoordinator = new SalesPaymentCoordinator(m_App, ticketLifecycleService, salesService);
         paymentService = new PaymentServiceImpl();
-        inventoryService = new InventoryServiceImpl(dlInventory, m_App.getSession());
-        salesStockCoordinator = new SalesStockCoordinator(inventoryService, dataLogicPIM, dlInventory);
-        salesBarcodeScanCoordinator = new SalesBarcodeScanCoordinator(dataLogicPIM, dlCustomers);
+        salesStockCoordinator = new SalesStockCoordinator(inventoryService, catalogService);
+        salesBarcodeScanCoordinator = new SalesBarcodeScanCoordinator(catalogService, dlCustomers);
         salesScriptCoordinator = new SalesScriptCoordinator(dlSystem, () -> m_jbtnconfig);
 
         paymentdialogreceipt = JPaymentSelectReceipt.getDialog(this);
@@ -322,7 +321,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         paymentdialogrefund = JPaymentSelectRefund.getDialog(this);
         paymentdialogrefund.init(m_App, paymentService);
 
-        String taxesid = m_jbtnconfig.getProperty("taxcategoryid");
+        String taxesid = m_jbtnconfig.getProperty(TicketConstants.PROP_TAX_CATEGORY_ID);
         taxcategoriesmodel = new ComboBoxValModel(taxcategorieslist);
         taxcategoriesmodel.setSelectedKey(taxesid);
 
@@ -924,8 +923,8 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     private void initDeviceDisplay() {
         peripheralCoordinator.setupAdvancedDisplayListener(this.m_ticketlines, () -> this.m_oTicket, sProductId -> {
             try {
-                ProductInfoExt prod = dataLogicPIM.getProductInfo(sProductId);
-                return prod != null ? prod : dataLogicPIM.getProductInfoByCode(sProductId);
+                ProductInfoExt prod = catalogService.getProductInfo(sProductId);
+                return prod != null ? prod : catalogService.getProductInfoByCode(sProductId);
             } catch (BasicException ex) {
                 return null;
             }
@@ -1285,6 +1284,15 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
                 ((ApplicationShell) m_App).closeAppView();
             }
         }
+    }
+
+    public CatalogService getCatalogService() {
+        return catalogService;
+    }
+
+    @Deprecated
+    public DataLogicPIM getDataLogicPIM() {
+        return dataLogicPIM;
     }
 }
 

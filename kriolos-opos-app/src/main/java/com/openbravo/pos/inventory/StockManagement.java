@@ -17,6 +17,7 @@ import com.openbravo.data.gui.MessageInf;
 import com.openbravo.format.Formats;
 import com.openbravo.pos.catalog.CatalogSelector;
 import com.openbravo.pos.catalog.JCatalog;
+import com.openbravo.pos.catalog.CatalogService;
 import com.openbravo.pos.forms.*;
 import com.openbravo.pos.panels.JProductFinderPanel;
 import com.openbravo.pos.pim.DataLogicPIM;
@@ -79,9 +80,10 @@ public class StockManagement extends JPanel implements JPanelView {
     private final String user;
 
     private final DataLogicSystem m_dlSystem;
-    private final DataLogicInventory m_dlInventory;
+    private final StockService stockService;
     private final SupplierService m_dlSuppliers;
-    private DataLogicPIM dataLogicPIM;
+    private final CatalogService catalogService;
+    private final DataLogicPIM dataLogicPIM;
     private final TicketParser m_TTP;
 
     private final CatalogSelector m_cat;
@@ -124,9 +126,10 @@ public class StockManagement extends JPanel implements JPanelView {
 
         m_App = app;
         m_dlSystem = m_App.getBean(DataLogicSystem.class);
-        m_dlInventory = m_App.getBean(DataLogicInventory.class);
+        stockService = m_App.getBean(StockService.class);
         m_dlSuppliers = m_App.getBean(SupplierService.class);
-        dataLogicPIM = app.getBean(DataLogicPIM.class);
+        catalogService = app.getBean(CatalogService.class);
+        dataLogicPIM = (catalogService instanceof DataLogicPIM) ? (DataLogicPIM) catalogService : null;
         m_TTP = m_App.createTicketParser();
         stockModel = new ProductStockTableModel(new ArrayList<>());
 
@@ -183,7 +186,7 @@ public class StockManagement extends JPanel implements JPanelView {
     public void activate() throws BasicException {
         m_cat.loadCatalog();
 
-        java.util.List<LocationInfo> l = m_dlInventory.getLocationsListAll();
+        java.util.List<LocationInfo> l = stockService.getLocationsListAll();
 
         m_LocationsModel = new ComboBoxValModel<LocationInfo>(l);
         m_jLocation.setModel(m_LocationsModel);
@@ -260,7 +263,7 @@ public class StockManagement extends JPanel implements JPanelView {
 
     private void incProductByCode(String sCode, double dQuantity) {
         try {
-            ProductInfoExt oProduct = dataLogicPIM.getProductInfoByCode(sCode);
+            ProductInfoExt oProduct = catalogService.getProductInfoByCode(sCode);
             if (oProduct == null) {
                 com.openbravo.pos.util.NotifyUtils.beep();
             } else {
@@ -275,7 +278,7 @@ public class StockManagement extends JPanel implements JPanelView {
     private List<ProductStock> getProductStockList(String pId) {
         List<ProductStock> productList = new ArrayList<>();
         try {
-            productStockList = m_dlInventory.getProductStockList(pId);
+            productStockList = stockService.getProductStockList(pId);
             productStockList.stream().forEach((productStock) -> {
                 String productId = productStock.getProductId();
                 if (productId.equals(pId)) {
@@ -545,7 +548,7 @@ public class StockManagement extends JPanel implements JPanelView {
             pst.setUserId(rec.getUser());
             pst.setSupplierId(rec.getSupplier().getId());
             pst.setSupplierDoc(rec.getSupplierDoc());
-            m_dlInventory.saveStockDiary(pst);
+            stockService.saveStockDiary(pst);
         }
 
         clearStockTable();
@@ -1042,5 +1045,14 @@ public class StockManagement extends JPanel implements JPanelView {
     private javax.swing.JComboBox m_jreason;
     private javax.swing.JLabel webLblQty;
     private javax.swing.JLabel webLblValue;
+    public CatalogService getCatalogService() {
+        return catalogService;
+    }
+
+    @Deprecated
+    public DataLogicPIM getDataLogicPIM() {
+        return dataLogicPIM;
+    }
+
     // End of variables declaration                   
 }

@@ -62,7 +62,7 @@ public class BundlePanel extends JPanelTable2 {
                 new Column("QUANTITY"));
 
         lpr = row.getListProvider(app.getSession(),
-                DataLogicInventory.SQL_BUNDLE_LIST, filter);
+                StockService.SQL_BUNDLE_LIST, filter);
         spr = row.getSaveProvider(app.getSession(), table);
 
         editor = new BundleEditor(app, dirty);

@@ -21,7 +21,7 @@ import com.openbravo.basic.BasicException;
 import com.openbravo.data.user.EditorListener;
 import com.openbravo.data.user.EditorRecord;
 import com.openbravo.data.user.ListProviderCreator;
-import com.openbravo.data.user.DefaultSaveProvider;
+import com.openbravo.pos.catalog.CatalogService;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.panels.JPanelTable2;
 import com.openbravo.pos.pim.DataLogicPIM;
@@ -41,6 +41,7 @@ public class PriceImportPanel extends JPanelTable2 implements EditorListener {
     private ProductsEditor jeditor;
     private ProductFilter jproductfilter;    
     
+    private CatalogService catalogService;
     private DataLogicPIM dataLogicPIM = null;
     
     /** Creates a new instance of ProductsPanel2 */
@@ -52,20 +53,18 @@ public class PriceImportPanel extends JPanelTable2 implements EditorListener {
      */
     @Override
     protected void init() {   
-        dataLogicPIM = app.getBean(DataLogicPIM.class);
+        catalogService = app.getBean(CatalogService.class);
+        dataLogicPIM = (catalogService instanceof DataLogicPIM) ? (DataLogicPIM) catalogService : null;
         
         // el panel del filtro
         jproductfilter = new ProductFilter();
         jproductfilter.init(app);
 
-        row = dataLogicPIM.getProductsRow();
+        row = catalogService.getProductsRow();
 
-        lpr =  new ListProviderCreator(dataLogicPIM.getProductCatQBF(), jproductfilter);
+        lpr = catalogService.getProductListProvider(jproductfilter);
 
-        spr = new DefaultSaveProvider(
-            dataLogicPIM.productUpdate(),
-            dataLogicPIM.productInsert(),
-            dataLogicPIM.getProductCatDelete());
+        spr = catalogService.getProductSaveProvider();
         
         // el panel del editor
         jeditor = new ProductsEditor(app, dirty);       
@@ -140,6 +139,15 @@ public class PriceImportPanel extends JPanelTable2 implements EditorListener {
      *
      * @param value
      */
+    public CatalogService getCatalogService() {
+        return catalogService;
+    }
+
+    @Deprecated
+    public DataLogicPIM getDataLogicPIM() {
+        return dataLogicPIM;
+    }
+
     @Override
     public void updateValue(Object value) {
     }    

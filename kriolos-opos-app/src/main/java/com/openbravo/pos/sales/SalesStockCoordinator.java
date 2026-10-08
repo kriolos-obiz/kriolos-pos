@@ -23,6 +23,7 @@ import com.openbravo.pos.inventory.DataLogicInventory;
 import com.openbravo.pos.inventory.InventoryService;
 import com.openbravo.pos.inventory.LocationInfo;
 import com.openbravo.pos.inventory.ProductStock;
+import com.openbravo.pos.catalog.CatalogService;
 import com.openbravo.pos.pim.DataLogicPIM;
 import com.openbravo.pos.pim.CategoryInfo;
 import com.openbravo.pos.ticket.ProductInfoExt;
@@ -43,11 +44,29 @@ public class SalesStockCoordinator {
     private static final System.Logger LOGGER = System.getLogger(SalesStockCoordinator.class.getName());
 
     private final InventoryService inventoryService;
+    private final CatalogService catalogService;
     private final DataLogicPIM dataLogicPIM;
     private final DataLogicInventory dlInventory;
 
+    public SalesStockCoordinator(InventoryService inventoryService, CatalogService catalogService) {
+        this.inventoryService = inventoryService;
+        this.catalogService = catalogService;
+        this.dataLogicPIM = (catalogService instanceof DataLogicPIM) ? (DataLogicPIM) catalogService : null;
+        this.dlInventory = null;
+    }
+
+    @Deprecated
+    public SalesStockCoordinator(InventoryService inventoryService, DataLogicPIM dataLogicPIM) {
+        this(inventoryService, (CatalogService) dataLogicPIM);
+    }
+
+    /**
+     * @deprecated Use {@link #SalesStockCoordinator(InventoryService, CatalogService)} instead.
+     */
+    @Deprecated
     public SalesStockCoordinator(InventoryService inventoryService, DataLogicPIM dataLogicPIM, DataLogicInventory dlInventory) {
         this.inventoryService = inventoryService;
+        this.catalogService = dataLogicPIM;
         this.dataLogicPIM = dataLogicPIM;
         this.dlInventory = dlInventory;
     }
@@ -108,9 +127,9 @@ public class SalesStockCoordinator {
             String barcode = null;
             String locationName = location;
 
-            if (dataLogicPIM != null) {
+            if (catalogService != null) {
                 try {
-                    ProductInfoExt prod = dataLogicPIM.getProductInfo(line.getProductID());
+                    ProductInfoExt prod = catalogService.getProductInfo(line.getProductID());
                     if (prod != null) {
                         if (productName == null || productName.isBlank()) {
                             productName = prod.getName();
@@ -118,7 +137,7 @@ public class SalesStockCoordinator {
                         reference = prod.getReference();
                         barcode = prod.getCode();
                         if (prod.getCategoryID() != null) {
-                            CategoryInfo cat = dataLogicPIM.getCategoryInfo(prod.getCategoryID());
+                            CategoryInfo cat = catalogService.getCategoryInfo(prod.getCategoryID());
                             if (cat != null) {
                                 categoryName = cat.getName();
                             }
@@ -129,7 +148,7 @@ public class SalesStockCoordinator {
 
                 if (categoryName == null && line.getProductCategoryID() != null) {
                     try {
-                        CategoryInfo cat = dataLogicPIM.getCategoryInfo(line.getProductCategoryID());
+                        CategoryInfo cat = catalogService.getCategoryInfo(line.getProductCategoryID());
                         if (cat != null) {
                             categoryName = cat.getName();
                         }
@@ -138,7 +157,20 @@ public class SalesStockCoordinator {
                 }
             }
 
-            if (dlInventory != null) {
+            if (inventoryService != null) {
+                try {
+                    List<LocationInfo> locs = inventoryService.getLocationsListAll();
+                    if (locs != null) {
+                        for (LocationInfo loc : locs) {
+                            if (location.equals(loc.getID())) {
+                                locationName = loc.getName();
+                                break;
+                            }
+                        }
+                    }
+                } catch (Exception ignored) {
+                }
+            } else if (dlInventory != null) {
                 try {
                     List<LocationInfo> locs = dlInventory.getLocationsListAll();
                     if (locs != null) {

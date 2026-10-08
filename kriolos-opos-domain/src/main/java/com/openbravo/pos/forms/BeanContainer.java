@@ -66,6 +66,14 @@ public class BeanContainer {
         m_oldclasses.put("com.openbravo.pos.admin.PeopleService", "com.openbravo.pos.admin.DataLogicAdmin");
         m_oldclasses.put("com.openbravo.pos.forms.SecurityService", "com.openbravo.pos.forms.DataLogicSystem");
         m_oldclasses.put("com.openbravo.pos.sales.RemoteOrderService", "com.openbravo.pos.forms.DataLogicOrders");
+        m_oldclasses.put("com.openbravo.pos.inventory.InventoryService", "com.openbravo.pos.inventory.DataLogicInventory");
+        m_oldclasses.put("com.openbravo.pos.inventory.StockService", "com.openbravo.pos.inventory.DataLogicInventory");
+        m_oldclasses.put("com.openbravo.pos.payment.TreasuryService", "com.openbravo.pos.payment.DataLogicPayments");
+        m_oldclasses.put("com.openbravo.pos.inventory.AttributeService", "com.openbravo.pos.inventory.DataLogicAttribute");
+        m_oldclasses.put("com.openbravo.pos.voucher.VoucherService", "com.openbravo.pos.voucher.DataLogicVouchers");
+        m_oldclasses.put("com.openbravo.pos.epm.ShiftService", "com.openbravo.pos.epm.DataLogicPresenceManagement");
+        m_oldclasses.put("com.openbravo.pos.imports.ImportService", "com.openbravo.pos.imports.DataLogicImport");
+        m_oldclasses.put("com.openbravo.pos.sales.restaurant.RestaurantService", "com.openbravo.pos.sales.restaurant.DataLogicRestaurant");
     }
 
     /**
@@ -151,9 +159,3 @@ public class BeanContainer {
         return getBean(beanClass.getName(), beanClass, appView);
     }
 }
-        m_oldclasses.put("com.openbravo.pos.payment.TreasuryService", "com.openbravo.pos.payment.DataLogicPayments");
-        m_oldclasses.put("com.openbravo.pos.voucher.VoucherService", "com.openbravo.pos.voucher.DataLogicVouchers");
-        m_oldclasses.put("com.openbravo.pos.inventory.AttributeService", "com.openbravo.pos.inventory.DataLogicAttribute");
-        m_oldclasses.put("com.openbravo.pos.epm.ShiftService", "com.openbravo.pos.epm.DataLogicPresenceManagement");
-        m_oldclasses.put("com.openbravo.pos.sales.restaurant.RestaurantService", "com.openbravo.pos.sales.restaurant.DataLogicRestaurant");
-        m_oldclasses.put("com.openbravo.pos.imports.ImportService", "com.openbravo.pos.imports.DataLogicImport");

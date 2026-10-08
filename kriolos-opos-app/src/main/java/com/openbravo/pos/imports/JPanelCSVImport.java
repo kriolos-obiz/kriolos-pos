@@ -23,6 +23,7 @@ import com.openbravo.data.loader.*;
 import com.openbravo.data.user.DefaultSaveProvider;
 import com.openbravo.data.user.SaveProvider;
 import com.openbravo.pos.forms.*;
+import com.openbravo.pos.catalog.CatalogService;
 import com.openbravo.pos.inventory.DataLogicInventory;
 import com.openbravo.pos.inventory.TaxCategoryInfo;
 import com.openbravo.pos.pim.DataLogicPIM;
@@ -80,8 +81,10 @@ public class JPanelCSVImport extends JPanel implements JPanelView {
     private DataLogicTax m_dlTax;
     private DataLogicSystem m_dlSystem;
     private DataLogicInventory m_dlInventory;
+    private ImportService importService;
     private DataLogicImport m_dlImport;
     private SupplierService supplierDataLogic;
+    private CatalogService catalogService;
     private DataLogicPIM dataLogicPIM;
 
     protected SaveProvider spr;
@@ -144,8 +147,18 @@ public class JPanelCSVImport extends JPanel implements JPanelView {
         
         AppProperties props = oApp.getProperties();
         
-        this.dataLogicPIM = new DataLogicPIM();
-        this.dataLogicPIM.init(dbSession);
+        CatalogService resolvedCatalog = null;
+        try {
+            resolvedCatalog = oApp.getBean(CatalogService.class);
+        } catch (BeanFactoryException ignored) {
+        }
+        if (resolvedCatalog == null) {
+            DataLogicPIM fallback = new DataLogicPIM();
+            fallback.init(dbSession);
+            resolvedCatalog = fallback;
+        }
+        this.catalogService = resolvedCatalog;
+        this.dataLogicPIM = (this.catalogService instanceof DataLogicPIM) ? (DataLogicPIM) this.catalogService : null;
         
         this.supplierDataLogic = oApp.getBean(SupplierService.class);
 
@@ -158,13 +171,20 @@ public class JPanelCSVImport extends JPanel implements JPanelView {
         m_dlInventory = new DataLogicInventory();
         m_dlInventory.init(dbSession);
 
-        m_dlImport = new DataLogicImport();
-        m_dlImport.init(dbSession);
+        ImportService resolvedImport = null;
+        try {
+            resolvedImport = oApp.getBean(ImportService.class);
+        } catch (BeanFactoryException ignored) {
+        }
+        if (resolvedImport == null) {
+            DataLogicImport fallback = new DataLogicImport();
+            fallback.init(dbSession);
+            resolvedImport = fallback;
+        }
+        this.importService = resolvedImport;
+        this.m_dlImport = (this.importService instanceof DataLogicImport) ? (DataLogicImport) this.importService : null;
 
-        spr = new DefaultSaveProvider(
-                dataLogicPIM.productUpdate(),
-                dataLogicPIM.productInsert(),
-                dataLogicPIM.getProductCatDelete());
+        spr = catalogService.getProductSaveProvider();
 
         last_folder = props.getProperty("CSV.last_folder");
         config_file = props.getConfigFile();
@@ -531,7 +551,7 @@ public class JPanelCSVImport extends JPanel implements JPanelView {
             newcat[2] = true;
 
             try {
-                dataLogicPIM.createCategory(newcat);
+                catalogService.createCategory(newcat);
 
                 cat_list = new HashMap<>();
                 for (Object category : taxCategoryInfos) {
@@ -630,7 +650,7 @@ public class JPanelCSVImport extends JPanel implements JPanelView {
     private void updateRecord(String pID) {
         prodInfo = new ProductInfoExt();
         try {
-            prodInfo = dataLogicPIM.getProductInfo(pID);
+            prodInfo = catalogService.getProductInfo(pID);
             dOriginalRate = taxeslogic.getTaxRate(prodInfo.getTaxCategoryID());
             dCategory = ((String) cat_list.get(prodInfo.getCategoryID())
                     == null) ? prodInfo.getCategoryID()
@@ -935,13 +955,7 @@ public class JPanelCSVImport extends JPanel implements JPanelView {
     }
 
     public void addStockCurrent(String LocationID, String ProductID, Double Units) throws BasicException {
-
-        Object[] values = new Object[3];
-        values[0] = "0";
-        values[1] = ProductID;
-        values[2] = (double) Units;
-
-        m_dlInventory.getStockCurrentInsert().exec(values);
+        m_dlInventory.addStockEntry("0", ProductID, Units);
     }
 
     /**
@@ -967,7 +981,7 @@ public class JPanelCSVImport extends JPanel implements JPanelView {
         myprod[11] = productTax;                                                // Tax
         myprod[12] = Supplier;                                                  // Supplier
         try {
-            m_dlImport.execAddCSVEntry(myprod);
+            this.importService.execAddCSVEntry(myprod);
         } catch (BasicException ex) {
             LOGGER.log(Level.WARNING, null, ex);
         }
@@ -978,17 +992,25 @@ public class JPanelCSVImport extends JPanel implements JPanelView {
      * @return
      */
     public String getRecord() {
-        // Get record type using using DataLogicSystem
-        Object[] myprod = new Object[3];
-        myprod[0] = productReference;
-        myprod[1] = productBarcode;
-        myprod[2] = productName;
+        // Get record type using ImportService
         try {
-            return (m_dlImport.getProductRecordType(myprod));
+            return this.importService.getProductRecordType(productReference, productBarcode, productName);
         } catch (BasicException ex) {
             LOGGER.log(Level.WARNING, null, ex);
         }
         return "Exception";
+    }
+
+    public ImportService getImportService() {
+        return this.importService;
+    }
+
+    @Deprecated
+    public DataLogicImport getDataLogicImport() {
+        if (this.m_dlImport == null && this.importService instanceof DataLogicImport) {
+            return (DataLogicImport) this.importService;
+        }
+        return this.m_dlImport;
     }
 
     /**
@@ -2074,5 +2096,14 @@ public class JPanelCSVImport extends JPanel implements JPanelView {
     private javax.swing.JLabel jTextUpdates;
     private javax.swing.JButton jbtnFileChoose;
     private javax.swing.JButton jbtnReset;
+    public CatalogService getCatalogService() {
+        return catalogService;
+    }
+
+    @Deprecated
+    public DataLogicPIM getDataLogicPIM() {
+        return dataLogicPIM;
+    }
+
     // End of variables declaration//GEN-END:variables
 }

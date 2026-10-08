@@ -17,14 +17,22 @@ import com.openbravo.pos.forms.BeanFactoryDataSingle;
 import com.openbravo.pos.pim.DataLogicPIM;
 import com.openbravo.format.Formats;
 import com.openbravo.pos.forms.AppLocal;
-import com.openbravo.data.loader.TableDefinition;
-import com.openbravo.data.loader.StaticSentence;
+import com.openbravo.data.loader.DataRead;
 import com.openbravo.data.loader.SerializerReadClass;
+import com.openbravo.data.loader.StaticSentence;
+import com.openbravo.data.loader.TableDefinition;
+import com.openbravo.data.user.DefaultSaveProvider;
+import com.openbravo.data.user.EditorCreator;
+import com.openbravo.data.user.ListProvider;
+import com.openbravo.data.user.ListProviderCreator;
+import com.openbravo.data.user.SaveProvider;
+import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class DataLogicInventory extends BeanFactoryDataSingle {
+public class DataLogicInventory extends BeanFactoryDataSingle implements StockService {
     
     private static final Logger LOGGER = Logger.getLogger(DataLogicInventory.class.getName());
     protected Session sessionDB;
@@ -78,6 +86,26 @@ public class DataLogicInventory extends BeanFactoryDataSingle {
         sessionDB = s;
     }
 
+    @Override
+    public ListProvider getWarehouseStockListProvider(EditorCreator filter) {
+        return new ListProviderCreator(getWarehouseStockList(new SerializerRead() {
+            @Override
+            public Object readValues(DataRead dr) throws BasicException {
+                return new Object[]{
+                    dr.getString(1),
+                    dr.getString(2),
+                    dr.getString(3),
+                    dr.getString(4),
+                    filter != null && filter.createValue() != null ? ((Object[]) filter.createValue())[1] : null,
+                    dr.getDouble(5),
+                    dr.getDouble(6),
+                    dr.getDouble(7)
+                };
+            }
+        }), filter);
+    }
+
+    @Override
     public final SentenceList getWarehouseStockList(SerializerRead sr) {
         return new PreparedSentence(sessionDB,
                 SQL_WAREHOUSE_STOCK_LIST,
@@ -101,7 +129,7 @@ public class DataLogicInventory extends BeanFactoryDataSingle {
                 new SerializerWriteBasic(new Datas[]{Datas.STRING, Datas.STRING, Datas.DOUBLE}));
     }
 
-    public final SentenceList<LocationInfo> getLocationsList() {
+    public final SentenceList<LocationInfo> getLocationsSentence() {
         return new StaticSentence(sessionDB,
                 "SELECT ID, "
                 + "NAME, "
@@ -111,15 +139,21 @@ public class DataLogicInventory extends BeanFactoryDataSingle {
                 new SerializerReadClass(LocationInfo.class));
     }
 
+    @Override
+    public final List<LocationInfo> getLocationsList() throws BasicException {
+        return getLocationsSentence().list();
+    }
+
+    @Override
     public final List<LocationInfo> getLocationsListAll() {
         List<LocationInfo> list = null;
         try {
-            list = this.getLocationsList().list();
+            list = this.getLocationsList();
         }
         catch (BasicException ex) {
             LOGGER.log(Level.WARNING, "Cannot get LocationInfo list", ex);
         }
-        return list;
+        return list != null ? list : Collections.emptyList();
     }
 
     public final TableDefinition getTableLocations() {
@@ -376,5 +410,125 @@ public class DataLogicInventory extends BeanFactoryDataSingle {
                 SerializerWriteString.INSTANCE,
                 SerializerReadString.INSTANCE);
         return (String) locationFind.find(iLocation);
+    }
+
+    @Override
+    public ProductStock getStock(String productId, String locationId) throws BasicException {
+        return getProductStockState(productId, locationId);
+    }
+
+    @Override
+    public void addStockEntry(StockEntry entry) throws BasicException {
+        if (entry == null) {
+            return;
+        }
+        addStockEntry(entry.locationId(), entry.productId(), entry.attributeSetInstanceId(), entry.units());
+    }
+
+    @Override
+    public void addStockEntry(String locationId, String productId, double units) throws BasicException {
+        addStockEntry(locationId, productId, null, units);
+    }
+
+    @Override
+    public void addStockEntry(String locationId, String productId, String attributeSetInstanceId, double units) throws BasicException {
+        if (attributeSetInstanceId == null) {
+            getStockCurrentInsert().exec(new Object[]{locationId, productId, units});
+        } else {
+            new PreparedSentence(sessionDB,
+                    "INSERT INTO stockcurrent (LOCATION, PRODUCT, ATTRIBUTESETINSTANCE_ID, UNITS) VALUES (?, ?, ?, ?)",
+                    new SerializerWriteBasic(new Datas[]{Datas.STRING, Datas.STRING, Datas.STRING, Datas.DOUBLE}))
+                    .exec(new Object[]{locationId, productId, attributeSetInstanceId, units});
+        }
+    }
+
+    @Override
+    public void createStock(String locationId, String productId, double units) throws BasicException {
+        addStockEntry(locationId, productId, units);
+    }
+
+    @Override
+    public void updateStock(String locationId, String productId, double units) throws BasicException {
+        PreparedSentence sentence = new PreparedSentence(sessionDB,
+                "UPDATE stockcurrent SET UNITS = ? WHERE LOCATION = ? AND PRODUCT = ?",
+                new SerializerWriteBasicExt(new Datas[]{Datas.DOUBLE, Datas.STRING, Datas.STRING},
+                        new int[]{0, 1, 2}));
+        sentence.exec(new Object[]{units, locationId, productId});
+    }
+
+    @Override
+    public void recordStockMovement(
+            String id,
+            Date date,
+            int reasonKey,
+            String location,
+            String productId,
+            String attSetInstId,
+            double units,
+            double price,
+            String appUser
+    ) throws BasicException {
+        getStockDiaryInsert().exec(new Object[]{
+            id,
+            date,
+            reasonKey,
+            location,
+            productId,
+            attSetInstId,
+            units,
+            price,
+            appUser
+        });
+    }
+
+    @Override
+    public void revertStockMovement(
+            String diaryId,
+            String location,
+            String productId,
+            String attSetInstId,
+            double units
+    ) throws BasicException {
+        getStockDiaryDelete().exec(new Object[]{
+            diaryId,
+            null,
+            null,
+            location,
+            productId,
+            attSetInstId,
+            units
+        });
+    }
+
+    @Override
+    public SaveProvider getStockDiarySaveProvider() {
+        return new DefaultSaveProvider(null, getStockDiaryInsert(), getStockDiaryDelete());
+    }
+
+    @Override
+    public void insertStockLevel(String id, String locationId, String productId, Double stockSecurity, Double stockMaximum) throws BasicException {
+        getStockLevelInsert().exec(new Object[]{id, locationId, productId, stockSecurity, stockMaximum});
+    }
+
+    @Override
+    public void updateStockLevel(String id, Double stockSecurity, Double stockMaximum) throws BasicException {
+        getStockLevelUpdate().exec(new Object[]{stockSecurity, stockMaximum, id});
+    }
+
+    @Override
+    public SaveProvider getWarehouseStockSaveProvider() {
+        SentenceExec updatesent = new SentenceExecTransaction(sessionDB) {
+            @Override
+            public int execInTransaction(Object[] params) throws BasicException {
+                Object[] values = params;
+                if (values[0] == null) {
+                    values[0] = java.util.UUID.randomUUID().toString();
+                    return getStockLevelInsert().exec(new Object[]{values[0], values[4], values[1], values[5], values[6]});
+                } else {
+                    return getStockLevelUpdate().exec(new Object[]{values[5], values[6], values[0]});
+                }
+            }
+        };
+        return new DefaultSaveProvider(updatesent, null, null);
     }
 }

@@ -365,16 +365,16 @@ public class DataLogicSystem extends BeanFactoryDataSingle implements SecuritySe
 // <editor-fold defaultstate="collapsed" desc="START OF LOCATION AND PLACES">
 
     /**
-     * @deprecated Use {@link com.openbravo.pos.inventory.DataLogicInventory#findLocationName(String)} instead.
+     * @deprecated Use {@link com.openbravo.pos.inventory.InventoryService#findLocationName(String)} instead.
      */
     @Deprecated
     public final String findLocationName(String iLocation) throws BasicException {
         if (app != null) {
             try {
-                com.openbravo.pos.inventory.DataLogicInventory dlInv =
-                        app.getBean(com.openbravo.pos.inventory.DataLogicInventory.class);
-                if (dlInv != null) {
-                    return dlInv.findLocationName(iLocation);
+                com.openbravo.pos.inventory.InventoryService inv =
+                        app.getBean(com.openbravo.pos.inventory.InventoryService.class);
+                if (inv != null) {
+                    return inv.findLocationName(iLocation);
                 }
             } catch (BeanFactoryException ignored) {
             }
@@ -388,11 +388,20 @@ public class DataLogicSystem extends BeanFactoryDataSingle implements SecuritySe
 
     /**
      * @deprecated Use {@link com.openbravo.pos.sales.restaurant.PlaceService#updatePlaces(int, int, String)}
-     *             or {@link com.openbravo.pos.sales.restaurant.DataLogicRestaurant#updatePlaces(int, int, String)} instead.
+     *             or {@link com.openbravo.pos.sales.restaurant.RestaurantService#updatePlaces(int, int, String)} instead.
      */
     @Deprecated
     public final void updatePlaces(int x, int y, String id) throws BasicException {
         if (app != null) {
+            try {
+                com.openbravo.pos.sales.restaurant.RestaurantService restService =
+                        app.getBean(com.openbravo.pos.sales.restaurant.RestaurantService.class);
+                if (restService != null) {
+                    restService.updatePlaces(x, y, id);
+                    return;
+                }
+            } catch (BeanFactoryException ignored) {
+            }
             try {
                 com.openbravo.pos.sales.restaurant.DataLogicRestaurant dlRest =
                         app.getBean(com.openbravo.pos.sales.restaurant.DataLogicRestaurant.class);
@@ -412,13 +421,13 @@ public class DataLogicSystem extends BeanFactoryDataSingle implements SecuritySe
 //// </editor-fold>
     
     /**
-     * @deprecated Use {@link com.openbravo.pos.voucher.DataLogicVouchers#getVoucherList()} instead.
+     * @deprecated Use {@link com.openbravo.pos.voucher.VoucherService#getVoucherList()} instead.
      */
     @Deprecated
     public final List<VoucherInfo> getVouchersActiveList() throws BasicException {
         if (app != null) {
             try {
-                return app.getBean(com.openbravo.pos.voucher.DataLogicVouchers.class).getVoucherList();
+                return app.getBean(com.openbravo.pos.voucher.VoucherService.class).getVoucherList();
             } catch (BeanFactoryException ignored) {
             }
         }

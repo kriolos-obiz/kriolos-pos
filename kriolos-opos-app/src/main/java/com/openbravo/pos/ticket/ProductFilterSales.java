@@ -27,6 +27,7 @@ import com.openbravo.data.loader.QBFCompareEnum;
 import com.openbravo.data.user.EditorCreator;
 import com.openbravo.editor.JEditorKeys;
 import com.openbravo.editor.JEditorString;
+import com.openbravo.pos.catalog.CatalogService;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.pim.CategoryInfo;
@@ -39,6 +40,7 @@ import com.openbravo.pos.pim.DataLogicPIM;
 public class ProductFilterSales extends javax.swing.JPanel implements EditorCreator {
     
     private ComboBoxValModel m_CategoryModel;
+    private CatalogService catalogService;
     private DataLogicPIM dataLogicPIM;
     
     /** Creates new form ProductFilterSales
@@ -47,7 +49,8 @@ public class ProductFilterSales extends javax.swing.JPanel implements EditorCrea
     public ProductFilterSales(AppView app, JEditorKeys jKeys) {
         initComponents();
 
-        dataLogicPIM = app.getBean(DataLogicPIM.class);
+        catalogService = app.getBean(CatalogService.class);
+        dataLogicPIM = (catalogService instanceof DataLogicPIM) ? (DataLogicPIM) catalogService : null;
         m_CategoryModel = new ComboBoxValModel();           
         
 //        m_jCboPriceBuy.setModel(new ListQBFModelNumber());
@@ -75,7 +78,7 @@ public class ProductFilterSales extends javax.swing.JPanel implements EditorCrea
         m_jPriceSell.reset();
         m_jtxtName.activate();
         
-        List<CategoryInfo> catlist = dataLogicPIM.getCategoriesListAll();
+        List<CategoryInfo> catlist = catalogService.getCategoriesListAll();
         catlist.add(0, null);
         m_CategoryModel = new ComboBoxValModel(catlist);
         m_jCategory.setModel(m_CategoryModel);
@@ -316,6 +319,15 @@ public class ProductFilterSales extends javax.swing.JPanel implements EditorCrea
     }//GEN-LAST:event_jBtnResetActionPerformed
     
     
+    public CatalogService getCatalogService() {
+        return catalogService;
+    }
+
+    @Deprecated
+    public DataLogicPIM getDataLogicPIM() {
+        return dataLogicPIM;
+    }
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jBtnReset;
     private javax.swing.JLabel jLabel1;

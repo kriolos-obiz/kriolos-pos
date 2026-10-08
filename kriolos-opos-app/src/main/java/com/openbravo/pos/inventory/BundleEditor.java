@@ -24,6 +24,7 @@ import com.openbravo.format.Formats;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.panels.JProductFinderPanel;
+import com.openbravo.pos.catalog.CatalogService;
 import com.openbravo.pos.pim.DataLogicPIM;
 import com.openbravo.pos.ticket.ProductInfoExt;
 import java.awt.Component;
@@ -36,6 +37,7 @@ import java.util.UUID;
  */
 public class BundleEditor extends javax.swing.JPanel implements EditorRecord {
 
+    private CatalogService catalogService;
     private DataLogicPIM dataLogicPIM;
     
     private String id;
@@ -52,7 +54,8 @@ public class BundleEditor extends javax.swing.JPanel implements EditorRecord {
            
         this.appView = app;
 
-        dataLogicPIM = app.getBean(DataLogicPIM.class);
+        this.catalogService = app.getBean(CatalogService.class);
+        this.dataLogicPIM = (catalogService instanceof DataLogicPIM) ? (DataLogicPIM) catalogService : null;
 
         initComponents();
      
@@ -204,7 +207,7 @@ public class BundleEditor extends javax.swing.JPanel implements EditorRecord {
 
     private void assignProductByCode() {
         try {
-            ProductInfoExt prod = dataLogicPIM.getProductInfoByCode(m_jBarcode.getText());
+            ProductInfoExt prod = catalogService.getProductInfoByCode(m_jBarcode.getText());
             assignProduct(prod);
             if (prod == null) {
                 com.openbravo.pos.util.NotifyUtils.beep();       
@@ -219,7 +222,7 @@ public class BundleEditor extends javax.swing.JPanel implements EditorRecord {
 
     private void assignProductByReference() {
         try {
-            ProductInfoExt prod = dataLogicPIM.getProductInfoByReference(m_jReference.getText());
+            ProductInfoExt prod = catalogService.getProductInfoByReference(m_jReference.getText());
             assignProduct(prod);
             if (prod == null) {
                 com.openbravo.pos.util.NotifyUtils.beep();       
@@ -395,6 +398,15 @@ public class BundleEditor extends javax.swing.JPanel implements EditorRecord {
 
   
 
+
+    public CatalogService getCatalogService() {
+        return catalogService;
+    }
+
+    @Deprecated
+    public DataLogicPIM getDataLogicPIM() {
+        return dataLogicPIM;
+    }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel jLabel1;

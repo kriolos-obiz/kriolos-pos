@@ -40,14 +40,18 @@ import com.openbravo.pos.forms.BeanFactoryDataSingle;
 import com.openbravo.pos.inventory.*;
 import com.openbravo.pos.sales.restaurant.FloorsInfo;
 import com.openbravo.pos.sales.restaurant.DataLogicRestaurant;
+import com.openbravo.pos.sales.restaurant.RestaurantService;
 import com.openbravo.pos.sales.DataLogicAudit;
 import com.openbravo.pos.payment.DataLogicPayments;
 import com.openbravo.pos.payment.PaymentInfo;
 import com.openbravo.pos.payment.PaymentInfoTicket;
+import com.openbravo.pos.payment.TreasuryService;
+import com.openbravo.pos.catalog.CatalogService;
 import com.openbravo.pos.pim.DataLogicPIM;
 import com.openbravo.pos.sales.ReprintTicketInfo;
 import com.openbravo.pos.sales.TicketLifecycleService;
 import com.openbravo.pos.voucher.DataLogicVouchers;
+import com.openbravo.pos.voucher.VoucherService;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -144,6 +148,26 @@ public class DataLogicSales extends BeanFactoryDataSingle implements TicketLifec
         return fallback;
     }
 
+    public StockService getStockService() {
+        if (app != null) {
+            try {
+                return app.getBean(StockService.class);
+            } catch (BeanFactoryException ignored) {
+            }
+        }
+        return getDataLogicInventory();
+    }
+
+    public InventoryService getInventoryService() {
+        if (app != null) {
+            try {
+                return app.getBean(InventoryService.class);
+            } catch (BeanFactoryException ignored) {
+            }
+        }
+        return getDataLogicInventory();
+    }
+
     public DataLogicTax getDataLogicTax() {
         if (app != null) {
             try {
@@ -156,8 +180,29 @@ public class DataLogicSales extends BeanFactoryDataSingle implements TicketLifec
         return fallback;
     }
 
+    public RestaurantService getRestaurantService() {
+        if (app != null) {
+            try {
+                return app.getBean(RestaurantService.class);
+            } catch (BeanFactoryException ignored) {
+            }
+        }
+        return getDataLogicRestaurant();
+    }
+
+    /**
+     * @deprecated Use {@link #getRestaurantService()} instead.
+     */
+    @Deprecated
     public DataLogicRestaurant getDataLogicRestaurant() {
         if (app != null) {
+            try {
+                RestaurantService svc = app.getBean(RestaurantService.class);
+                if (svc instanceof DataLogicRestaurant) {
+                    return (DataLogicRestaurant) svc;
+                }
+            } catch (BeanFactoryException ignored) {
+            }
             try {
                 return app.getBean(DataLogicRestaurant.class);
             } catch (BeanFactoryException ignored) {
@@ -168,8 +213,29 @@ public class DataLogicSales extends BeanFactoryDataSingle implements TicketLifec
         return fallback;
     }
 
+    public CatalogService getCatalogService() {
+        if (app != null) {
+            try {
+                return app.getBean(CatalogService.class);
+            } catch (BeanFactoryException ignored) {
+            }
+        }
+        return getDataLogicPIM();
+    }
+
+    /**
+     * @deprecated Use {@link #getCatalogService()} instead.
+     */
+    @Deprecated
     public DataLogicPIM getDataLogicPIM() {
         if (app != null) {
+            try {
+                CatalogService svc = app.getBean(CatalogService.class);
+                if (svc instanceof DataLogicPIM) {
+                    return (DataLogicPIM) svc;
+                }
+            } catch (BeanFactoryException ignored) {
+            }
             try {
                 return app.getBean(DataLogicPIM.class);
             } catch (BeanFactoryException ignored) {
@@ -188,6 +254,38 @@ public class DataLogicSales extends BeanFactoryDataSingle implements TicketLifec
             }
         }
         DataLogicPayments fallback = new DataLogicPayments();
+        fallback.init(sessionDB);
+        return fallback;
+    }
+
+    public TreasuryService getTreasuryService() {
+        if (app != null) {
+            try {
+                return app.getBean(TreasuryService.class);
+            } catch (BeanFactoryException ignored) {
+            }
+        }
+        return getDataLogicPayments();
+    }
+
+    public VoucherService getVoucherService() {
+        if (app != null) {
+            try {
+                return app.getBean(VoucherService.class);
+            } catch (BeanFactoryException ignored) {
+            }
+        }
+        return getDataLogicVouchers();
+    }
+
+    public DataLogicVouchers getDataLogicVouchers() {
+        if (app != null) {
+            try {
+                return app.getBean(DataLogicVouchers.class);
+            } catch (BeanFactoryException ignored) {
+            }
+        }
+        DataLogicVouchers fallback = new DataLogicVouchers();
         fallback.init(sessionDB);
         return fallback;
     }
@@ -393,7 +491,7 @@ public class DataLogicSales extends BeanFactoryDataSingle implements TicketLifec
     }
 
     /**
-     * @deprecated Use {@link DataLogicPIM#getAttributeSetList()} instead.
+     * @deprecated Use {@link CatalogService#getAttributeSetListAll()} instead.
      * @return
      */
     @Deprecated
@@ -402,22 +500,22 @@ public class DataLogicSales extends BeanFactoryDataSingle implements TicketLifec
     }
 
     /**
-     * @deprecated Use {@link DataLogicPIM#getAttributeSetListAll()} instead.
+     * @deprecated Use {@link CatalogService#getAttributeSetListAll()} instead.
      * @return
      */
     @Deprecated
     public final List<AttributeSetInfo> getAttributeSetListAll() {
-        return getDataLogicPIM().getAttributeSetListAll();
+        return getCatalogService().getAttributeSetListAll();
     }
 
     /**
      * @deprecated Since Nov/2025
      * @return
     /**
-     * @deprecated Use {@link DataLogicInventory#getLocationsList()} instead.
+     * @deprecated Use {@link InventoryService#getLocationsList()} instead.
      */
     @Deprecated
-    public final SentenceList<LocationInfo> getLocationsList() {
+    public final List<LocationInfo> getLocationsList() throws BasicException {
         return getDataLogicInventory().getLocationsList();
     }
 
@@ -430,19 +528,19 @@ public class DataLogicSales extends BeanFactoryDataSingle implements TicketLifec
     }
 
     /**
-     * @deprecated Use {@link DataLogicRestaurant#getFloorsList()} instead.
+     * @deprecated Use {@link RestaurantService#getFloorsList()} or {@link RestaurantService#getFloorsListAll()} instead.
      */
     @Deprecated
     public final SentenceList<FloorsInfo> getFloorsList() {
-        return getDataLogicRestaurant().getFloorsList();
+        return getRestaurantService().getFloorsList();
     }
 
     /**
-     * @deprecated Use {@link DataLogicRestaurant#getFloorTablesList()} instead.
+     * @deprecated Use {@link RestaurantService#getFloorTablesList()} or {@link RestaurantService#getFloorTablesListAll()} instead.
      */
     @Deprecated
     public final SentenceList<FloorsInfo> getFloorTablesList() {
-        return getDataLogicRestaurant().getFloorTablesList();
+        return getRestaurantService().getFloorTablesList();
     }
 
     /**
@@ -671,18 +769,19 @@ public class DataLogicSales extends BeanFactoryDataSingle implements TicketLifec
                     ticketlineinsert.exec(l);
 
                     if (l.getProductID() != null && l.isProductService() != true) {
-                        getStockDiaryInsert().exec(new Object[]{
+                        getStockService().recordStockMovement(
                             UUID.randomUUID().toString(),
                             ticket.getDate(),
                             l.getMultiply() < 0.0
-                            ? MovementReason.IN_REFUND.getKey()
-                            : MovementReason.OUT_SALE.getKey(),
+                            ? (Integer) MovementReason.IN_REFUND.getKey()
+                            : (Integer) MovementReason.OUT_SALE.getKey(),
                             location,
                             l.getProductID(),
-                            l.getProductAttSetInstId(), -l.getMultiply(),
+                            l.getProductAttSetInstId(),
+                            -l.getMultiply(),
                             l.getPrice(),
                             ticket.getUser().getName()
-                        });
+                        );
                     }
                 }
 
@@ -766,7 +865,7 @@ public class DataLogicSales extends BeanFactoryDataSingle implements TicketLifec
     }
 
     private int updateVoucherNonActive(String voucherNumber) throws BasicException {
-        return DataLogicVouchers.updateVoucherNonActive(voucherNumber, sessionDB);
+        return getVoucherService().deactivateVoucher(voucherNumber);
     }
 
     private boolean isPaymentMethodCustomerDebt(String paymentMethod) {
@@ -791,19 +890,19 @@ public class DataLogicSales extends BeanFactoryDataSingle implements TicketLifec
                 for (int ticketLineNumber = 0; ticketLineNumber < ticket.getLinesCount(); ticketLineNumber++) {
 
                     if (ticket.getLine(ticketLineNumber).getProductID() != null) {
-                        getStockDiaryInsert().exec(new Object[]{
+                        getStockService().recordStockMovement(
                             UUID.randomUUID().toString(),
                             nowDate,
                             ticket.getLine(ticketLineNumber).getMultiply() >= 0.0
-                            ? MovementReason.IN_REFUND.getKey()
-                            : MovementReason.OUT_SALE.getKey(),
+                            ? (Integer) MovementReason.IN_REFUND.getKey()
+                            : (Integer) MovementReason.OUT_SALE.getKey(),
                             location,
                             ticket.getLine(ticketLineNumber).getProductID(),
                             ticket.getLine(ticketLineNumber).getProductAttSetInstId(),
                             ticket.getLine(ticketLineNumber).getMultiply(),
                             ticket.getLine(ticketLineNumber).getPrice(),
                             ticket.getUser().getName()
-                        });
+                        );
                     }
                     // For productBundle
                     List<ProductsBundleInfo> bundle = getProductsBundle((String) ticket.getLine(ticketLineNumber).getProductID());
@@ -813,15 +912,15 @@ public class DataLogicSales extends BeanFactoryDataSingle implements TicketLifec
                             ProductInfoExt bundleProduct = getProductInfoExtById(
                                     bundleComponent.getProductBundleId());
 
-                            getStockDiaryInsert().exec(new Object[]{
+                            getStockService().recordStockMovement(
                                 UUID.randomUUID().toString(),
                                 nowDate,
                                 ticket.getLine(ticketLineNumber).getMultiply()
                                 * bundleComponent
                                 .getQuantity() >= 0.0
-                                ? MovementReason.IN_REFUND
+                                ? (Integer) MovementReason.IN_REFUND
                                 .getKey()
-                                : MovementReason.OUT_SALE
+                                : (Integer) MovementReason.OUT_SALE
                                 .getKey(),
                                 location,
                                 bundleComponent.getProductBundleId(),
@@ -829,7 +928,8 @@ public class DataLogicSales extends BeanFactoryDataSingle implements TicketLifec
                                 ticket.getLine(ticketLineNumber).getMultiply()
                                 * bundleComponent.getQuantity(),
                                 bundleProduct.getPriceSell(),
-                                ticket.getUser().getName()});
+                                ticket.getUser().getName()
+                            );
                         }
                     }
                 }
@@ -1023,22 +1123,22 @@ public class DataLogicSales extends BeanFactoryDataSingle implements TicketLifec
      *
      * @param categoryId
      * @return num added of products
-     * @deprecated Use {@link DataLogicPIM#addProductsToCatalogWithCategoryId(String)} instead.
+     * @deprecated Use {@link CatalogService#addProductsToCatalogWithCategoryId(String)} instead.
      */
     @Deprecated
     public final int addProductsToCatalogWithCategoryId(String categoryId) throws BasicException {
-        return getDataLogicPIM().addProductsToCatalogWithCategoryId(categoryId);
+        return getCatalogService().addProductsToCatalogWithCategoryId(categoryId);
     }
 
     /**
      *
      * @param categoryId
      * @return number of removed products
-     * @deprecated Use {@link DataLogicPIM#removeProductsFromCatalogWithCategoryId(String)} instead.
+     * @deprecated Use {@link CatalogService#removeProductsFromCatalogWithCategoryId(String)} instead.
      */
     @Deprecated
     public final int removeProductsFromCatalogWithCategoryId(String categoryId) throws BasicException {
-        return getDataLogicPIM().removeProductsFromCatalogWithCategoryId(categoryId);
+        return getCatalogService().removeProductsFromCatalogWithCategoryId(categoryId);
     }
 
     /**
@@ -1074,19 +1174,19 @@ public class DataLogicSales extends BeanFactoryDataSingle implements TicketLifec
     }
 
     /**
-     * @deprecated Use {@link DataLogicPIM#getUomInfoById(String)} instead.
+     * @deprecated Use {@link CatalogService#getUomInfoById(String)} instead.
      */
     @Deprecated
     public final UomInfo getUomInfoById(String id) throws BasicException {
-        return getDataLogicPIM().getUomInfoById(id);
+        return getCatalogService().getUomInfoById(id);
     }
 
     /**
-     * @deprecated Use {@link DataLogicPIM#getTableUom()} instead.
+     * @deprecated Use {@link CatalogService#getTableUom()} instead.
      */
     @Deprecated
     public final TableDefinition getTableUom() {
-        return getDataLogicPIM().getTableUom();
+        return getCatalogService().getTableUom();
     }
 
     /**
@@ -1098,11 +1198,11 @@ public class DataLogicSales extends BeanFactoryDataSingle implements TicketLifec
     }
 
     /**
-     * @deprecated Use {@link DataLogicPIM#getUomListAll()} instead.
+     * @deprecated Use {@link CatalogService#getUomListAll()} instead.
      */
     @Deprecated
     public final List<UomInfo> getUomListAll() {
-        return getDataLogicPIM().getUomListAll();
+        return getCatalogService().getUomListAll();
     }
 
     /**

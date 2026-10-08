@@ -17,6 +17,13 @@
 package com.openbravo.pos.catalog;
 
 import com.openbravo.basic.BasicException;
+import com.openbravo.data.loader.SentenceExec;
+import com.openbravo.data.loader.SentenceList;
+import com.openbravo.data.loader.TableDefinition;
+import com.openbravo.data.model.Row;
+import com.openbravo.data.user.EditorCreator;
+import com.openbravo.data.user.ListProvider;
+import com.openbravo.data.user.SaveProvider;
 import com.openbravo.pos.inventory.AttributeSetInfo;
 import com.openbravo.pos.inventory.UomInfo;
 import com.openbravo.pos.pim.CategoryInfo;
@@ -25,7 +32,7 @@ import java.awt.image.BufferedImage;
 import java.util.List;
 
 /**
- * Service port interface for Catalog, Product Information Management (PIM), and UOM queries.
+ * Service port interface for Catalog, Product Information Management (PIM), Pricing, and UOM queries.
  *
  * @author poolborges
  */
@@ -47,6 +54,18 @@ public interface CatalogService {
 
     List<CategoryInfo> getSubcategories(String categoryId) throws BasicException;
 
+    void createCategory(Object[] category) throws BasicException;
+
+    List<CategoryInfo> getCategoriesListAll();
+
+    List<CategoryStock> getCategorysProductList(String categoryId) throws BasicException;
+
+    int addProductsToCatalogWithCategoryId(String categoryId) throws BasicException;
+
+    int removeProductsFromCatalogWithCategoryId(String categoryId) throws BasicException;
+
+    void updateProductPrice(String productId, double newPrice) throws BasicException;
+
     BufferedImage getProductImage(String productId);
 
     List<ProductInfoExt> getProductCatalog(String categoryId) throws BasicException;
@@ -55,9 +74,45 @@ public interface CatalogService {
 
     List<ProductInfoExt> getProductComposite(String productId) throws BasicException;
 
+    TableDefinition getTableCategories();
+
+    TableDefinition getTableUom();
+
     UomInfo getUomInfoById(String uomId) throws BasicException;
 
     List<UomInfo> getUomListAll();
 
     List<AttributeSetInfo> getAttributeSetListAll();
+
+    Row getProductsRow();
+
+    SaveProvider getProductSaveProvider();
+
+    ListProvider getProductListProvider();
+
+    ListProvider getProductListProvider(EditorCreator filter);
+
+    @Deprecated
+    SentenceList<ProductInfoExt> getProductList();
+
+    @Deprecated
+    SentenceList<ProductInfoExt> getProductListNormal();
+
+    @Deprecated
+    SentenceList<ProductInfoExt> getProductListAuxiliar();
+
+    @Deprecated
+    SentenceList<CategoryInfo> getCategoriesList_1();
+
+    @Deprecated
+    SentenceList getProductCatQBF();
+
+    @Deprecated
+    SentenceExec productInsert();
+
+    @Deprecated
+    SentenceExec productUpdate();
+
+    @Deprecated
+    SentenceExec getProductCatDelete();
 }

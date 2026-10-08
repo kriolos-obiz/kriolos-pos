@@ -20,6 +20,7 @@ import com.openbravo.pos.scripting.ScriptEngine;
 import com.openbravo.pos.scripting.ScriptException;
 import com.openbravo.pos.scripting.ScriptFactory;
 import com.openbravo.pos.ticket.TicketLineInfo;
+import com.openbravo.pos.util.SAXParserUtils;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -71,23 +72,26 @@ public class JTicketLines extends javax.swing.JPanel {
 
         ColumnTicket[] acolumns = new ColumnTicket[0];
 
-        if (ticketline != null) {
-            try {
-                if (m_sp == null) {
-                    SAXParserFactory spf = SAXParserFactory.newInstance();
-                    m_sp = spf.newSAXParser();
-                }
-                ColumnsHandler columnshandler = new ColumnsHandler();
-                m_sp.parse(new InputSource(new StringReader(ticketline)), columnshandler);
-                acolumns = columnshandler.getColumns();
+        try {
+            SAXParserFactory spf = SAXParserUtils.newSecureInstance();
+            // A new parser instance for each call ensures thread safety
+            SAXParser sp = spf.newSAXParser();
+            ColumnsHandler columnshandler = new ColumnsHandler();
+            sp.parse(new InputSource(new StringReader(ticketline)), columnshandler);
+            acolumns = columnshandler.getColumns();
 
-            } catch (ParserConfigurationException ePC) {
-                logger.log(Level.WARNING, "exception.parserconfig" + ticketline, ePC);
-            } catch (SAXException eSAX) {
-                logger.log(Level.WARNING, "exception.xmlfile" + ticketline, eSAX);
-            } catch (IOException eIO) {
-                logger.log(Level.WARNING, "exception.iofile" + ticketline, eIO);
-            }
+        }
+        catch (ParserConfigurationException ex) {
+            logger.log(Level.SEVERE, "Parser configuration error.", ex);
+            throw new RuntimeException("exception.parserconfig", ex);
+        }
+        catch (SAXException ex) {
+            logger.log(Level.SEVERE, "XML parsing error.", ex);
+            throw new RuntimeException("exception.xmlfile", ex);
+        }
+        catch (IOException ex) {
+            logger.log(Level.SEVERE, "I/O error during parsing.", ex);
+            throw new RuntimeException("exception.iofile", ex);
         }
 
         m_jTableModel = new TicketTableModel(acolumns);

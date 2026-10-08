@@ -22,6 +22,7 @@ import com.openbravo.pos.customers.CustomerInfoExt;
 import com.openbravo.pos.customers.DataLogicCustomers;
 import com.openbravo.pos.customers.JCustomerFinderPanel;
 import com.openbravo.pos.forms.AppLocal;
+import com.openbravo.pos.catalog.CatalogService;
 import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.forms.DataLogicSystem;
 import com.openbravo.pos.forms.JPanelView;
@@ -77,6 +78,7 @@ public class ModernOne extends JPanel implements JPanelView, TicketsEditor {
     private final AppView app;
     private TicketLifecycleService ticketLifecycleService;
     private TaxService taxService;
+    private CatalogService catalogService;
     private DataLogicPIM dlPim;
     private DataLogicSystem dlSystem;
     private SharedTicketService dlReceipts;
@@ -116,7 +118,8 @@ public class ModernOne extends JPanel implements JPanelView, TicketsEditor {
     private void initDomainServices() {
         ticketLifecycleService = app.getBean(TicketLifecycleService.class);
         taxService = app.getBean(TaxService.class);
-        dlPim = app.getBean(DataLogicPIM.class);
+        catalogService = app.getBean(CatalogService.class);
+        dlPim = (catalogService instanceof DataLogicPIM) ? (DataLogicPIM) catalogService : null;
         dlSystem = app.getBean(DataLogicSystem.class);
         dlReceipts = app.getBean(SharedTicketService.class);
         dlCustomers = app.getBean(DataLogicCustomers.class);
@@ -287,12 +290,12 @@ public class ModernOne extends JPanel implements JPanelView, TicketsEditor {
 
     private void loadCatalogData() {
         try {
-            List<CategoryInfo> categories = dlPim.getRootCategories();
+            List<CategoryInfo> categories = catalogService.getRootCategories();
             catalogPane.setCategories(categories);
 
             List<ProductInfoExt> allProducts = new java.util.ArrayList<>();
             for (CategoryInfo cat : categories) {
-                List<ProductInfoExt> prods = dlPim.getProductCatalog(cat.getID());
+                List<ProductInfoExt> prods = catalogService.getProductCatalog(cat.getID());
                 if (prods != null) {
                     allProducts.addAll(prods);
                 }
@@ -539,5 +542,14 @@ public class ModernOne extends JPanel implements JPanelView, TicketsEditor {
         } catch (BasicException e) {
             LOGGER.log(Level.WARNING, "Failed to query parked tickets count", e);
         }
+    }
+
+    public CatalogService getCatalogService() {
+        return catalogService;
+    }
+
+    @Deprecated
+    public DataLogicPIM getDataLogicPIM() {
+        return dlPim;
     }
 }

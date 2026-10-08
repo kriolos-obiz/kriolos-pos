@@ -27,6 +27,7 @@ import com.openbravo.data.loader.QBFCompareEnum;
 import com.openbravo.data.loader.SentenceList;
 import com.openbravo.data.user.EditorCreator;
 import com.openbravo.format.Formats;
+import com.openbravo.pos.catalog.CatalogService;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.pim.DataLogicPIM;
@@ -38,6 +39,8 @@ import com.openbravo.pos.pim.DataLogicPIM;
  */
 public class MaterialFilter extends javax.swing.JPanel implements EditorCreator {
     
+    private CatalogService catalogService;
+    private DataLogicPIM dataLogicPIM;
     private SentenceList m_sentprods;
     private ComboBoxValModel m_ProdsModel;
 
@@ -46,8 +49,9 @@ public class MaterialFilter extends javax.swing.JPanel implements EditorCreator 
     public MaterialFilter(AppView app) {
         initComponents();
         
-        DataLogicPIM dataLogicPIM = app.getBean(DataLogicPIM.class);
-        m_sentprods = dataLogicPIM.getProductList();
+        this.catalogService = app.getBean(CatalogService.class);
+        this.dataLogicPIM = (catalogService instanceof DataLogicPIM) ? (DataLogicPIM) catalogService : null;
+        m_sentprods = catalogService.getProductList();
         m_ProdsModel = new ComboBoxValModel();
          
         m_jCboName.setModel(new ListQBFModelNumber());
@@ -150,6 +154,15 @@ public class MaterialFilter extends javax.swing.JPanel implements EditorCreator 
    
     
     
+    public CatalogService getCatalogService() {
+        return catalogService;
+    }
+
+    @Deprecated
+    public DataLogicPIM getDataLogicPIM() {
+        return dataLogicPIM;
+    }
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;

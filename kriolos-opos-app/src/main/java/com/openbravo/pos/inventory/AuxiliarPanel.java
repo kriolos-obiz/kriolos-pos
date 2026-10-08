@@ -64,7 +64,7 @@ public class AuxiliarPanel extends JPanelTable2 {
                 new Column("PRODUCT2"));
 
         lpr = row.getListProvider(app.getSession(),
-                DataLogicInventory.SQL_AUXILIAR_LIST, filter);
+                StockService.SQL_AUXILIAR_LIST, filter);
         spr = row.getSaveProvider(app.getSession(), table);
 
         editor = new AuxiliarEditor(app, dirty);

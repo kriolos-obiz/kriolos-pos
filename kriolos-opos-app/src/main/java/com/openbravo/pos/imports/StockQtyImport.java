@@ -24,6 +24,7 @@ import com.openbravo.pos.forms.*;
 import com.openbravo.pos.inventory.ProductStock;
 import com.openbravo.pos.ticket.ProductInfoExt;
 
+import com.openbravo.pos.catalog.CatalogService;
 import com.openbravo.pos.inventory.InventoryService;
 import com.openbravo.pos.inventory.InventoryServiceImpl;
 import com.openbravo.pos.inventory.DataLogicInventory;
@@ -58,8 +59,10 @@ public class StockQtyImport extends JPanel implements JPanelView {
   private Session dbSession;
   private DataLogicInventory m_dlInventory;
   private DataLogicSystem m_dlSystem;
+  private ImportService m_importService;
   private DataLogicImport m_dlImport;
   private InventoryService invService;
+  private CatalogService catalogService;
   private DataLogicPIM dataLogicPIM;
 
   private ProductInfoExt prodInfo;
@@ -98,8 +101,18 @@ public class StockQtyImport extends JPanel implements JPanelView {
 
     dbSession = appView.getSession();
     
-    dataLogicPIM = new DataLogicPIM(); 
-    dataLogicPIM.init(dbSession);
+    CatalogService resolvedCatalog = null;
+    try {
+      resolvedCatalog = appView.getBean(CatalogService.class);
+    } catch (BeanFactoryException ignored) {
+    }
+    if (resolvedCatalog == null) {
+      DataLogicPIM fallback = new DataLogicPIM();
+      fallback.init(dbSession);
+      resolvedCatalog = fallback;
+    }
+    this.catalogService = resolvedCatalog;
+    this.dataLogicPIM = (this.catalogService instanceof DataLogicPIM) ? (DataLogicPIM) this.catalogService : null;
 
     // Set db tables
     m_dlInventory = new DataLogicInventory();
@@ -107,8 +120,18 @@ public class StockQtyImport extends JPanel implements JPanelView {
     m_dlSystem = new DataLogicSystem();
     m_dlSystem.init(dbSession);
 
-    m_dlImport = new DataLogicImport();
-    m_dlImport.init(dbSession);
+    ImportService resolvedImport = null;
+    try {
+      resolvedImport = appView.getBean(ImportService.class);
+    } catch (BeanFactoryException ignored) {
+    }
+    if (resolvedImport == null) {
+      DataLogicImport fallback = new DataLogicImport();
+      fallback.init(dbSession);
+      resolvedImport = fallback;
+    }
+    m_importService = resolvedImport;
+    m_dlImport = (m_importService instanceof DataLogicImport) ? (DataLogicImport) m_importService : null;
 
     invService = new InventoryServiceImpl(m_dlInventory, dbSession);
 
@@ -339,7 +362,7 @@ public class StockQtyImport extends JPanel implements JPanelView {
 
       String sCode = products.get(0);
 
-      prodInfo = dataLogicPIM.getProductInfoByCode(sCode);
+      prodInfo = catalogService.getProductInfoByCode(sCode);
 
       if (prodInfo != null) {
         prodStock = m_dlInventory.getProductStockState(prodInfo.getID(), m_sInventoryLocation);
@@ -368,7 +391,7 @@ public class StockQtyImport extends JPanel implements JPanelView {
 
       String sCode = products.get(0);
 
-      prodInfo = dataLogicPIM.getProductInfoByCode(sCode);
+      prodInfo = catalogService.getProductInfoByCode(sCode);
 
       if (prodInfo != null) {
         prodStock = m_dlInventory.getProductStockState(prodInfo.getID(), m_sInventoryLocation);
@@ -436,10 +459,22 @@ public class StockQtyImport extends JPanel implements JPanelView {
     myprod[5] = newQty; // Product Quantity
 
     try {
-      m_dlImport.execCSVStockUpdate(myprod);
+      m_importService.execCSVStockUpdate(myprod);
     } catch (BasicException ex) {
       LOGGER.log(Level.WARNING, null, ex);
     }
+  }
+
+  public ImportService getImportService() {
+    return m_importService;
+  }
+
+  @Deprecated
+  public DataLogicImport getDataLogicImport() {
+    if (m_dlImport == null && m_importService instanceof DataLogicImport) {
+      return (DataLogicImport) m_importService;
+    }
+    return m_dlImport;
   }
 
   /**
@@ -835,5 +870,14 @@ public class StockQtyImport extends JPanel implements JPanelView {
     private javax.swing.JButton jbtnReset;
     private javax.swing.JLabel m_jLocation;
     private javax.swing.JProgressBar webPBar;
-    // End of variables declaration//GEN-END:variables
+  public CatalogService getCatalogService() {
+    return catalogService;
+  }
+
+  @Deprecated
+  public DataLogicPIM getDataLogicPIM() {
+    return dataLogicPIM;
+  }
+
+  // End of variables declaration//GEN-END:variables
 }

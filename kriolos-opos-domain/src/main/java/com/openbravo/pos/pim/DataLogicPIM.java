@@ -41,11 +41,16 @@ import com.openbravo.pos.ticket.ProductInfo;
 import com.openbravo.pos.ticket.ProductInfoExt;
 import com.openbravo.pos.ticket.ProductInfoExtA;
 import com.openbravo.data.loader.DataRead;
+import com.openbravo.data.loader.ImageUtils;
 import com.openbravo.data.loader.SentenceFind;
 import com.openbravo.pos.catalog.CatalogService;
 import com.openbravo.pos.inventory.AttributeSetInfo;
 import com.openbravo.pos.inventory.UomInfo;
-import com.openbravo.data.loader.ImageUtils;
+import com.openbravo.data.user.DefaultSaveProvider;
+import com.openbravo.data.user.EditorCreator;
+import com.openbravo.data.user.ListProvider;
+import com.openbravo.data.user.ListProviderCreator;
+import com.openbravo.data.user.SaveProvider;
 import java.awt.image.BufferedImage;
 import java.util.List;
 import java.util.logging.Level;
@@ -64,6 +69,25 @@ public class DataLogicPIM extends BeanFactoryDataSingle implements CatalogServic
     @Override
     public void init(Session sessionDB) {
         this.sessionDB = sessionDB;
+    }
+
+    public Session getSession() {
+        return sessionDB;
+    }
+
+    @Override
+    public SaveProvider getProductSaveProvider() {
+        return new DefaultSaveProvider(productUpdate(), productInsert(), getProductCatDelete());
+    }
+
+    @Override
+    public ListProvider getProductListProvider() {
+        return new ListProviderCreator(getProductCatQBF());
+    }
+
+    @Override
+    public ListProvider getProductListProvider(EditorCreator filter) {
+        return new ListProviderCreator(getProductCatQBF(), filter);
     }
 
     // <editor-fold defaultstate="collapsed" desc="CATEGORY MANAGEMENT"> 

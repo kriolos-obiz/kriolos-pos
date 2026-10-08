@@ -30,6 +30,7 @@ import com.openbravo.pos.payment.JPaymentSelect;
 import com.openbravo.pos.payment.JPaymentSelectReceipt;
 import com.openbravo.pos.payment.PaymentService;
 import com.openbravo.pos.payment.PaymentServiceImpl;
+import com.openbravo.pos.catalog.CatalogService;
 import com.openbravo.pos.pim.CategoryInfo;
 import com.openbravo.pos.pim.DataLogicPIM;
 import com.openbravo.pos.printer.TicketParser;
@@ -94,6 +95,7 @@ public class ModernTwo extends JPanel implements JPanelView, TicketsEditor {
 
     // Data Logics and Services
     private SharedTicketService dlReceipts;
+    private CatalogService catalogService;
     private DataLogicPIM dlPim;
     private TicketLifecycleService ticketLifecycleService;
     private TaxService taxService;
@@ -132,7 +134,8 @@ public class ModernTwo extends JPanel implements JPanelView, TicketsEditor {
     private void initDataLogics() {
         if (app != null) {
             this.dlReceipts = app.getBean(SharedTicketService.class);
-            this.dlPim = app.getBean(DataLogicPIM.class);
+            this.catalogService = app.getBean(CatalogService.class);
+            this.dlPim = (catalogService instanceof DataLogicPIM) ? (DataLogicPIM) catalogService : null;
             this.ticketLifecycleService = app.getBean(TicketLifecycleService.class);
             this.taxService = app.getBean(TaxService.class);
             this.auditService = app.getBean(AuditService.class);
@@ -350,13 +353,13 @@ public class ModernTwo extends JPanel implements JPanelView, TicketsEditor {
 
     private void loadCatalogData() {
         try {
-            if (dlPim != null) {
-                List<CategoryInfo> categories = dlPim.getRootCategories();
+            if (catalogService != null) {
+                List<CategoryInfo> categories = catalogService.getRootCategories();
                 catalogPane.setCategories(categories);
 
                 List<ProductInfoExt> allProducts = new ArrayList<>();
                 for (CategoryInfo cat : categories) {
-                    List<ProductInfoExt> prods = dlPim.getProductCatalog(cat.getID());
+                    List<ProductInfoExt> prods = catalogService.getProductCatalog(cat.getID());
                     if (prods != null) {
                         allProducts.addAll(prods);
                     }
@@ -389,9 +392,9 @@ public class ModernTwo extends JPanel implements JPanelView, TicketsEditor {
     }
 
     private void handleBarcodeScanned(String barcode) {
-        if (dlPim != null && barcode != null && !barcode.isBlank()) {
+        if (catalogService != null && barcode != null && !barcode.isBlank()) {
             try {
-                ProductInfoExt prod = dlPim.getProductInfoByCode(barcode);
+                ProductInfoExt prod = catalogService.getProductInfoByCode(barcode);
                 if (prod != null) {
                     addProductToTicket(prod);
                 } else {
@@ -671,5 +674,14 @@ public class ModernTwo extends JPanel implements JPanelView, TicketsEditor {
         if (app != null && app.getAppUserView() != null) {
             app.getAppUserView().showTask("com.openbravo.pos.panels.JPanelCloseMoney");
         }
+    }
+
+    public CatalogService getCatalogService() {
+        return catalogService;
+    }
+
+    @Deprecated
+    public DataLogicPIM getDataLogicPIM() {
+        return dlPim;
     }
 }

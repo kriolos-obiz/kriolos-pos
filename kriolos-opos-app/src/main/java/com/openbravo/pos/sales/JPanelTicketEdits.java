@@ -81,12 +81,12 @@ public class JPanelTicketEdits extends JPanelTicket {
     protected Component getSouthComponent() {
 
         m_catandlines = new JTicketCatalogLines(getAppView(), this,                
-                "true".equals(getTicketButtons().getProperty("pricevisible")),
-                "true".equals(getTicketButtons().getProperty("taxesincluded")),
-                Integer.parseInt(getTicketButtons().getProperty("img-width", "64")),
-                Integer.parseInt(getTicketButtons().getProperty("img-height", "54")));
-        m_catandlines.setPreferredSize(new Dimension(0,
-                Integer.parseInt(getTicketButtons().getProperty("cat-height", "245"))));
+                Boolean.parseBoolean(getTicketButtons().getProperty(TicketConstants.PROP_CATALOG_PRICE_VISIBLED)),
+                Boolean.parseBoolean(getTicketButtons().getProperty(TicketConstants.PROP_CATALOG_TAX_INCLUDED)),
+                Integer.parseInt(getTicketButtons().getProperty(TicketConstants.PROP_CATALOG_PRODUCT_CARD_WIDTH, "64")),
+                Integer.parseInt(getTicketButtons().getProperty(TicketConstants.PROP_CATALOG_PRODUCT_CARD_HEIGHT, "54")));
+        
+        m_catandlines.setPreferredSize(new Dimension(0,Integer.parseInt(getTicketButtons().getProperty(TicketConstants.PROP_CATALOG_CATEGORY_SIDEBAR_HEIGHT, "245"))));
         m_catandlines.addActionListener(new CatalogListener());
         return m_catandlines;
     } 
