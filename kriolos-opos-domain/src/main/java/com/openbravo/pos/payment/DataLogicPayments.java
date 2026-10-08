@@ -23,12 +23,15 @@ import com.openbravo.data.loader.SentenceExec;
 import com.openbravo.data.loader.SentenceExecTransaction;
 import com.openbravo.data.loader.SerializerWriteBasicExt;
 import com.openbravo.data.loader.Session;
+import com.openbravo.data.user.DefaultSaveProvider;
+import com.openbravo.data.user.SaveProvider;
 import com.openbravo.pos.forms.BeanFactoryDataSingle;
+import java.util.Date;
 
 /**
  * Data access logic for treasury, cash drawer movements, and payment sequence numbering.
  */
-public class DataLogicPayments extends BeanFactoryDataSingle {
+public class DataLogicPayments extends BeanFactoryDataSingle implements TreasuryService {
 
     private Session sessionDB;
     protected Datas[] paymenttabledatas;
@@ -79,6 +82,46 @@ public class DataLogicPayments extends BeanFactoryDataSingle {
         };
     }
 
+    @Override
+    public void recordPaymentMovement(
+            String receiptId,
+            String activeCashIndex,
+            Date date,
+            String paymentId,
+            String reason,
+            double total,
+            String notes
+    ) throws BasicException {
+        getPaymentMovementInsert().exec(new Object[]{
+            receiptId,
+            activeCashIndex,
+            date != null ? date : new Date(),
+            paymentId,
+            reason,
+            total,
+            notes != null ? notes : ""
+        });
+    }
+
+    @Override
+    public void deletePaymentMovement(String receiptId, String paymentId) throws BasicException {
+        getPaymentMovementDelete().exec(new Object[]{
+            receiptId,
+            null,
+            null,
+            paymentId,
+            null,
+            null,
+            null
+        });
+    }
+
+    @Override
+    public SaveProvider getPaymentMovementSaveProvider() {
+        return new DefaultSaveProvider(null, getPaymentMovementInsert(), getPaymentMovementDelete());
+    }
+
+    @Override
     public final Integer getNextTicketPaymentIndex() throws BasicException {
         return (Integer) sessionDB.DB.getSequenceSentence(sessionDB, "ticketsnum_payment").find();
     }

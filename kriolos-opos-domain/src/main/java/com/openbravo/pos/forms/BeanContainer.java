@@ -151,3 +151,4 @@ public class BeanContainer {
         return getBean(beanClass.getName(), beanClass, appView);
     }
 }
+        m_oldclasses.put("com.openbravo.pos.payment.TreasuryService", "com.openbravo.pos.payment.DataLogicPayments");
