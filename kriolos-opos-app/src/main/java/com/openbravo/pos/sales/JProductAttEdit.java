@@ -19,6 +19,7 @@ package com.openbravo.pos.sales;
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.gui.modal.PosUIModal;
 import com.openbravo.data.loader.Session;
+import com.openbravo.pos.inventory.AttributeService;
 import java.awt.Component;
 
 /**
@@ -37,8 +38,17 @@ public class JProductAttEdit {
         this.panel = new JProductAttEditPanel(s);
     }
 
+    private JProductAttEdit(Component parent, AttributeService attributeService) {
+        this.parent = parent;
+        this.panel = new JProductAttEditPanel(attributeService);
+    }
+
     public static JProductAttEdit getAttributesEditor(Component parent, Session s) {
         return new JProductAttEdit(parent, s);
+    }
+
+    public static JProductAttEdit getAttributesEditor(Component parent, AttributeService attributeService) {
+        return new JProductAttEdit(parent, attributeService);
     }
 
     public void editAttributes(String attsetid, String attsetinstid) throws BasicException {

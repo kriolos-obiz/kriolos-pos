@@ -58,7 +58,7 @@ public class AttributeValuesPanel extends JPanelTable2 {
                 new Column("VALUE"));
 
         lpr = row.getListProvider(app.getSession(),
-                DataLogicAttribute.SQL_ATTRIBUTE_VALUE_LIST, filter);
+                AttributeService.SQL_ATTRIBUTE_VALUE_LIST, filter);
         spr = row.getSaveProvider(app.getSession(), table);
 
         editor = new AttributeValuesEditor(dirty);

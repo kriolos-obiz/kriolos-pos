@@ -16,6 +16,7 @@
  */
 package com.openbravo.pos.inventory;
 
+import com.openbravo.basic.BasicException;
 import com.openbravo.data.loader.DataRead;
 import com.openbravo.data.loader.Datas;
 import com.openbravo.data.loader.PreparedSentence;
@@ -30,12 +31,14 @@ import com.openbravo.data.loader.StaticSentence;
 import com.openbravo.pos.forms.BeanFactoryDataSingle;
 import com.openbravo.pos.inventory.AttributeInstInfo;
 import com.openbravo.pos.inventory.AttributeSetInfo;
+import java.util.List;
+import java.util.UUID;
 
 /**
  *
  * @author poolborges
  */
-public class DataLogicAttribute extends BeanFactoryDataSingle {
+public class DataLogicAttribute extends BeanFactoryDataSingle implements AttributeService {
 
         // SQL constants for panel queries
         public static final String SQL_ATTRIBUTE_USE_LIST = "SELECT ATTUSE.ID, ATTUSE.attributeset_ID, ATTUSE.ATTRIBUTE_ID, ATTUSE.LINENO, ATT.NAME "
@@ -93,8 +96,9 @@ public class DataLogicAttribute extends BeanFactoryDataSingle {
                                 new SerializerWriteBasic(Datas.STRING, Datas.STRING),
                                 SerializerReadString.INSTANCE);
 
+                String charNull = (s != null && s.DB != null) ? s.DB.CHAR_NULL() : "NULL";
                 attinstSent = new PreparedSentence(s,
-                                "SELECT A.ID, A.NAME, " + s.DB.CHAR_NULL() + ", " + s.DB.CHAR_NULL() + " "
+                                "SELECT A.ID, A.NAME, " + charNull + ", " + charNull + " "
                                                 + "FROM attributeuse AU JOIN attribute A ON AU.ATTRIBUTE_ID = A.ID "
                                                 + "WHERE AU.ATTRIBUTESET_ID = ? "
                                                 + "ORDER BY AU.LINENO",
@@ -126,6 +130,65 @@ public class DataLogicAttribute extends BeanFactoryDataSingle {
                                 "SELECT ID, NAME FROM attributeset ORDER BY NAME",
                                 null,
                                 (DataRead dr) -> new AttributeSetInfo(dr.getString(1), dr.getString(2)));
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public List<AttributeInfo> getAttributeList() throws BasicException {
+                return (List<AttributeInfo>) (List<?>) attributeListSent.list();
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public List<AttributeSetInfo> getAttributeSetList() throws BasicException {
+                return (List<AttributeSetInfo>) (List<?>) attributeSetListSent.list();
+        }
+
+        @Override
+        public AttributeSetInfo findAttributeSet(String attributeSetId) throws BasicException {
+                return (AttributeSetInfo) attsetSent.find(new Object[]{attributeSetId});
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public List<AttributeInstInfo> getAttributeInstList(String attributeSetId, String attributeSetInstanceId) throws BasicException {
+                return (List<AttributeInstInfo>) (List<?>) (attributeSetInstanceId == null
+                                ? attinstSent.list(new Object[]{attributeSetId})
+                                : attinstSent2.list(new Object[]{attributeSetId, attributeSetInstanceId}));
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public List<String> getAttributeValues(String attributeId) throws BasicException {
+                return (List<String>) (List<?>) attvaluesSent.list(new Object[]{attributeId});
+        }
+
+        @Override
+        public String findAttributeSetInstanceId(String attributeSetId, String description) throws BasicException {
+                return (String) attsetinstExistsSent.find(new Object[]{attributeSetId, description});
+        }
+
+        @Override
+        public String findOrCreateAttributeSetInstance(String attributeSetId, String description, List<AttributeInstEntry> entries) throws BasicException {
+                if (description == null || description.trim().isEmpty()) {
+                        return null;
+                }
+                String id = findAttributeSetInstanceId(attributeSetId, description);
+                if (id == null) {
+                        id = UUID.randomUUID().toString();
+                        attsetSave.exec(new Object[]{id, attributeSetId, description});
+                        if (entries != null) {
+                                for (AttributeInstEntry entry : entries) {
+                                        attinstSave.exec(new Object[]{
+                                                UUID.randomUUID().toString(),
+                                                id,
+                                                entry.attributeId(),
+                                                entry.value()
+                                        });
+                                }
+                        }
+                }
+                return id;
         }
 
 }

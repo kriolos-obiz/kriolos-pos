@@ -61,7 +61,7 @@ public class AttributeUsePanel extends JPanelTable2 {
                 new Column("LINENO"));
 
         lpr = row.getListProvider(app.getSession(),
-                DataLogicAttribute.SQL_ATTRIBUTE_USE_LIST, filter);
+                AttributeService.SQL_ATTRIBUTE_USE_LIST, filter);
         spr = row.getSaveProvider(app.getSession(), table);
 
         editor = new AttributeUseEditor(app, dirty);

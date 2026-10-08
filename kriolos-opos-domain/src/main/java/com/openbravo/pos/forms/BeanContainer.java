@@ -153,3 +153,4 @@ public class BeanContainer {
 }
         m_oldclasses.put("com.openbravo.pos.payment.TreasuryService", "com.openbravo.pos.payment.DataLogicPayments");
         m_oldclasses.put("com.openbravo.pos.voucher.VoucherService", "com.openbravo.pos.voucher.DataLogicVouchers");
+        m_oldclasses.put("com.openbravo.pos.inventory.AttributeService", "com.openbravo.pos.inventory.DataLogicAttribute");
