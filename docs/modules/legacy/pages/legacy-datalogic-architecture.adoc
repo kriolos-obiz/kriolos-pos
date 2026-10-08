@@ -419,5 +419,42 @@ To transform the legacy monolith into clean, modular components, the 13 `DataLog
      ** `TaxServiceTest`: Tests container resolution of `TaxService` to `DataLogicTax` and verifies tax rates, categories, and table definitions.
      ** `SupplierServiceTest`: Tests container resolution of `SupplierService` to `DataLogicSuppliers` and verifies supplier master data, lists, and table definitions.
    * Maintained 100% binary backwards compatibility with `@Deprecated` legacy methods and constructor overloads across all modified classes.
-25. **Next Decoupling Targets:**
-   * Review remaining legacy DataLogic classes (e.g., System / `DataLogicSystem`, Reports / `DataLogicReports`).
+25. **System & Resource Domain Decoupling (`ResourceService` & `SystemService`) (Completed):**
+   * Designed pure domain service port interfaces:
+     ** `ResourceService` (`com.openbravo.pos.forms.ResourceService`): Handles all template, XML, property, image, and resource operations (`getTableResources()`, `getResourceAsBinary()`, `getResourceAsText()`, `getResourceAsXML()`, `getResourceAsImage()`, `getResourceAsProperties()`, `setResource()`, `setResourceAsBinary()`, `setResourceAsProperties()`).
+     ** `SystemService` (`com.openbravo.pos.forms.SystemService`): Inherits both `ResourceService` and `SecurityService`, adding core system runtime operations (`getDBVersion()`, `findVersion()`, `getUser()`, `execDrawerOpened(name, action, openDate)`).
+   * Updated `DataLogicSystem` and `BeanContainer`:
+     ** `DataLogicSystem` implements `SystemService` (and thus transitively `ResourceService` and `SecurityService`).
+     ** Null-safe session handling in `DataLogicSystem.init(Session)` to support container lookups and mock environments without active database sessions.
+     ** Registered container aliases in `BeanContainer`:
+        *** `com.openbravo.pos.forms.ResourceService -> com.openbravo.pos.forms.DataLogicSystem`
+        *** `com.openbravo.pos.forms.SystemService -> com.openbravo.pos.forms.DataLogicSystem`
+   * Decoupled domain consumers:
+     ** `TicketParser`: Decoupled to accept pure `SystemService`, retaining `@Deprecated` backward-compatible constructor for `DataLogicSystem`.
+   * Decoupled UI panels, dialogs, editors, and controllers in `kriolos-opos-app`:
+     ** `ApplicationShell`: Injected `SystemService` for version checks, drawer tracking, and background initialization (`SwingWorker<SystemService, String>`). Decoupled location name resolution to `InventoryService`.
+     ** `DatabaseActivationCallback`: Added default overload `onSuccess(DatabaseConfig, SystemService)`, deprecating `DataLogicSystem` callback.
+     ** `WordspacePanel`: Decoupled to inject `ResourceService`, deprecating `dataLogicSystem` field.
+     ** `JRootMenu`: Updated `setRootMenu(..., ResourceService)`, retaining `@Deprecated` overload for `DataLogicSystem`.
+     ** `ResourcesPanel`: Decoupled to `ResourceService.getTableResources()`.
+     ** `JPanelCloseMoney` & `JPanelCloseMoneyReprint`: Decoupled to `SystemService` and `ResourceService`.
+     ** `CustomersPayment` & `CustomerEventHandler`: Decoupled XML receipt resource loading to `ResourceService`.
+     ** `CashReprintModel`: Removed unused `DataLogicSystem` import.
+     ** `ProductsEditor`, `StockDiaryEditor`, `JPanelCSVImport`, `CustomerCSVImport`: Deprecated unused legacy fields and decoupled bean lookups.
+     ** `StockQtyImport` & `StockManagement`: Decoupled to `ResourceService`.
+     ** `VoucherEditor`: Decoupled to `ResourceService.getResourceAsImage()`.
+     ** `JPaymentCashPos` & `JPaymentSelect`: Decoupled to `ResourceService`.
+     ** `JPanelButtons`: Decoupled to `ResourceService.getResourceAsImage()`.
+     ** `JRefundLines` & `JTicketCatalogLines`: Decoupled to `ResourceService`.
+     ** `JTicketsBagTicket`, `JTicketsBagShared`, `JTicketsReprintPanel`: Decoupled to `ResourceService`.
+     ** `ModernOne` & `ModernTwo`: Decoupled to `ResourceService.getResourceAsXML()`.
+     ** `JTicketsBagRestaurant`: Decoupled to `ResourceService` for XML order templates and Beanshell scripts.
+     ** `SalesScriptCoordinator`: Added constructor taking `ResourceService`, deprecating `DataLogicSystem`.
+     ** `SalesPeripheralCoordinator`: Decoupled pole/secondary display line initialization and constructors to `ResourceService`.
+     ** `TicketLineController`: Decoupled `splitTicket` to accept `ResourceService`, deprecating legacy overloads.
+     ** `JPanelTicket`: Decoupled fields and delegates to `ResourceService`.
+   * Created domain unit test suite:
+     ** `SystemServiceTest`: Validates container resolution of `SystemService` and `ResourceService` to `DataLogicSystem`, contract compliance, and resource query operations.
+   * Maintained 100% binary backwards compatibility with `@Deprecated` legacy methods and constructor overloads across all modified classes.
+26. **Next Decoupling Targets:**
+   * Review remaining legacy DataLogic classes (e.g., Reports / `DataLogicReports`).
