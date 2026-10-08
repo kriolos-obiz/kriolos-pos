@@ -19,12 +19,12 @@ import com.openbravo.basic.BasicException;
 import com.openbravo.data.gui.ComboBoxValModel;
 import com.openbravo.format.Formats;
 import com.openbravo.pos.customers.CustomerInfoExt;
-import com.openbravo.pos.customers.DataLogicCustomers;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.util.RoundUtils;
 import com.openbravo.pos.voucher.DataLogicVouchers;
 import com.openbravo.pos.voucher.VoucherInfo;
+import com.openbravo.pos.voucher.VoucherService;
 import java.awt.Component;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -42,8 +42,7 @@ public class JPaymentPaper extends javax.swing.JPanel implements JPaymentInterfa
 
     private final JPaymentNotifier paymentNotifier;
 
-    private DataLogicCustomers datalogicCustomers;
-    private DataLogicVouchers dataLogicVouchers;
+    private VoucherService voucherService;
     private ComboBoxValModel voucherComboBoxValModel;
 
     private double totalPayed;
@@ -59,29 +58,28 @@ public class JPaymentPaper extends javax.swing.JPanel implements JPaymentInterfa
      * @param paymentMethod
      */
     public JPaymentPaper(AppView app, JPaymentNotifier notifier, String paymentMethod) {
+        this(app, notifier, paymentMethod, null);
+    }
 
+    public JPaymentPaper(AppView app, JPaymentNotifier notifier, String paymentMethod, VoucherService voucherService) {
         this.paymentNotifier = notifier;
         this.paymentMethod = paymentMethod;
         this.totalToPay = 0.0;
+        this.voucherService = voucherService != null ? voucherService : app.getBean(VoucherService.class);
 
-        init(app);
+        init();
 
         this.m_jTendered.addPropertyChangeListener("Edition", new RecalculateState());
         this.m_jTendered.addEditorKeys(m_jKeys);
-
     }
 
-    private void init(AppView app) {
+    private void init() {
 
         try {
-            datalogicCustomers = app.getBean(DataLogicCustomers.class);
-            dataLogicVouchers = app.getBean(DataLogicVouchers.class);
-         
-
             initComponents();
 
             voucherComboBoxValModel = new ComboBoxValModel();
-            List<VoucherInfo> voucherList = dataLogicVouchers.getVoucherList();
+            List<VoucherInfo> voucherList = voucherService.getVoucherList();
             voucherList.add(0, null);
 
             voucherComboBoxValModel = new ComboBoxValModel(voucherList);
@@ -128,7 +126,7 @@ public class JPaymentPaper extends javax.swing.JPanel implements JPaymentInterfa
     public PaymentInfo executePayment() {
         try {
             String id = voucherComboBoxValModel.getSelectedKey().toString();
-            VoucherInfo m_voucherInfo1 = dataLogicVouchers.getVoucherInfo(id);
+            VoucherInfo m_voucherInfo1 = voucherService.getVoucher(id);
             voucherNumber = m_voucherInfo1.getVoucherNumber();
         } catch (BasicException ex) {
             LOGGER.log(Level.WARNING, "Exeception on execute payment: ", ex);
@@ -295,7 +293,7 @@ public class JPaymentPaper extends javax.swing.JPanel implements JPaymentInterfa
             try {
 
                 String id = voucherComboBoxValModel.getSelectedKey().toString();
-                VoucherInfo m_voucherInfo = dataLogicVouchers.getVoucherInfo(id);
+                VoucherInfo m_voucherInfo = voucherService.getVoucher(id);
 
                 if (m_voucherInfo != null) {
                     m_jTendered.setDoubleValue(m_voucherInfo.getAmount());
