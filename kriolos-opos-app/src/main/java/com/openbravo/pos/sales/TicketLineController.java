@@ -21,6 +21,7 @@ import com.openbravo.beans.JPasswordPanel;
 import com.openbravo.data.gui.JMessagePanel;
 import com.openbravo.data.gui.MessageInf;
 import com.openbravo.data.loader.Session;
+import com.openbravo.pos.customers.CustomerService;
 import com.openbravo.pos.customers.DataLogicCustomers;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
@@ -237,14 +238,14 @@ public class TicketLineController {
      * @return Optional containing the updated remaining ticket if split and closed successfully, or empty if cancelled/failed
      */
     public Optional<TicketInfo> splitTicket(Component parent, TicketInfo currentTicket, String ticketExt,
-                                            DataLogicSystem dlSystem, DataLogicCustomers dlCustomers,
+                                            DataLogicSystem dlSystem, CustomerService customerService,
                                             TaxesLogic taxesLogic, Predicate<TicketInfo> ticketCloser) {
         if (currentTicket == null || currentTicket.getLinesCount() <= 0) {
             return Optional.empty();
         }
 
         ReceiptSplit splitdialog = ReceiptSplit.getDialog(parent,
-                dlSystem.getResourceAsXML(TicketConstants.RES_TICKET_LINES), dlCustomers, taxesLogic);
+                dlSystem.getResourceAsXML(TicketConstants.RES_TICKET_LINES), customerService, taxesLogic);
 
         TicketInfo ticket1 = currentTicket.copyTicket();
         TicketInfo ticket2 = new TicketInfo();
@@ -256,6 +257,13 @@ public class TicketLineController {
             }
         }
         return Optional.empty();
+    }
+
+    @Deprecated
+    public Optional<TicketInfo> splitTicket(Component parent, TicketInfo currentTicket, String ticketExt,
+                                            DataLogicSystem dlSystem, DataLogicCustomers dlCustomers,
+                                            TaxesLogic taxesLogic, Predicate<TicketInfo> ticketCloser) {
+        return splitTicket(parent, currentTicket, ticketExt, dlSystem, (CustomerService) dlCustomers, taxesLogic, ticketCloser);
     }
 
     /**

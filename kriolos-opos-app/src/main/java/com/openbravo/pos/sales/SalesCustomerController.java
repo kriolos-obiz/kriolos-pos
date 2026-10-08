@@ -22,6 +22,7 @@ import com.openbravo.data.gui.MessageInf;
 import com.openbravo.data.gui.modal.PosUIModal;
 import com.openbravo.pos.customers.CustomerInfo;
 import com.openbravo.pos.customers.CustomerInfoExt;
+import com.openbravo.pos.customers.CustomerService;
 import com.openbravo.pos.customers.DataLogicCustomers;
 import com.openbravo.pos.customers.JCustomerFinder;
 import com.openbravo.pos.customers.JDialogNewCustomer;
@@ -49,11 +50,16 @@ public class SalesCustomerController {
     private static final Logger LOGGER = System.getLogger(SalesCustomerController.class.getName());
 
     private final AppView app;
-    private final DataLogicCustomers dlCustomers;
+    private final CustomerService customerService;
 
-    public SalesCustomerController(AppView app, DataLogicCustomers dlCustomers) {
+    public SalesCustomerController(AppView app, CustomerService customerService) {
         this.app = app;
-        this.dlCustomers = dlCustomers;
+        this.customerService = customerService;
+    }
+
+    @Deprecated
+    public SalesCustomerController(AppView app, DataLogicCustomers dlCustomers) {
+        this(app, (CustomerService) dlCustomers);
     }
 
     /**
@@ -117,7 +123,7 @@ public class SalesCustomerController {
     }
 
     private Optional<CustomerInfoExt> findCustomer(Component parent, TicketInfo currentTicket) {
-        JCustomerFinder finder = JCustomerFinder.getCustomerFinder(parent, dlCustomers);
+        JCustomerFinder finder = JCustomerFinder.getCustomerFinder(parent, customerService);
 
         if (currentTicket.getCustomerId() == null) {
             finder.setAppView(app);
@@ -128,7 +134,7 @@ public class SalesCustomerController {
             CustomerInfo customerInfo = finder.getSelectedCustomer();
             if (customerInfo != null) {
                 try {
-                    CustomerInfoExt customerExt = dlCustomers.findCustomerInfoExtById(customerInfo.getId());
+                    CustomerInfoExt customerExt = customerService.findCustomerInfoExtById(customerInfo.getId());
                     return Optional.ofNullable(customerExt);
                 } catch (BasicException ex) {
                     LOGGER.log(Level.WARNING, "Exception on Select Customer: ", ex);
@@ -148,7 +154,7 @@ public class SalesCustomerController {
 
                 if (finder.getSelectedCustomer() != null) {
                     try {
-                        CustomerInfoExt customerExt = dlCustomers.findCustomerInfoExtById(finder.getSelectedCustomer().getId());
+                        CustomerInfoExt customerExt = customerService.findCustomerInfoExtById(finder.getSelectedCustomer().getId());
                         return Optional.ofNullable(customerExt);
                     } catch (BasicException ex) {
                         LOGGER.log(Level.WARNING, "Exception on change customer: ", ex);

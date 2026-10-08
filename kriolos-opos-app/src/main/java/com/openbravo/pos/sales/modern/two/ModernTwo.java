@@ -20,6 +20,7 @@ import com.openbravo.basic.BasicException;
 import com.openbravo.data.gui.modal.PosUIModal;
 import com.openbravo.pos.customers.CustomerInfo;
 import com.openbravo.pos.customers.CustomerInfoExt;
+import com.openbravo.pos.customers.CustomerService;
 import com.openbravo.pos.customers.DataLogicCustomers;
 import com.openbravo.pos.customers.JCustomerFinderPanel;
 import com.openbravo.pos.forms.AppLocal;
@@ -100,6 +101,8 @@ public class ModernTwo extends JPanel implements JPanelView, TicketsEditor {
     private TicketLifecycleService ticketLifecycleService;
     private TaxService taxService;
     private AuditService auditService;
+    private CustomerService customerService;
+    @Deprecated
     private DataLogicCustomers dlCustomers;
     private DataLogicSystem dlSystem;
     private TaxesLogic taxeslogic;
@@ -139,7 +142,8 @@ public class ModernTwo extends JPanel implements JPanelView, TicketsEditor {
             this.ticketLifecycleService = app.getBean(TicketLifecycleService.class);
             this.taxService = app.getBean(TaxService.class);
             this.auditService = app.getBean(AuditService.class);
-            this.dlCustomers = app.getBean(DataLogicCustomers.class);
+            this.customerService = app.getBean(CustomerService.class);
+            this.dlCustomers = (customerService instanceof DataLogicCustomers) ? (DataLogicCustomers) customerService : app.getBean(DataLogicCustomers.class);
             this.dlSystem = app.getBean(DataLogicSystem.class);
 
             if (taxService != null) {
@@ -479,19 +483,11 @@ public class ModernTwo extends JPanel implements JPanelView, TicketsEditor {
     }
 
     private void selectCustomer() {
-        if (dlCustomers == null) return;
-        JCustomerFinderPanel customerFinder = new JCustomerFinderPanel(dlCustomers);
-        PosUIModal modal = PosUIModal.create(this, customerFinder)
-                .setTitle(AppLocal.getIntString("title.customer"))
-                .setModal(true)
-                .setResizable(true);
-        customerFinder.setModalContext(modal);
-        modal.show();
-
-        CustomerInfo selected = customerFinder.getSelectedCustomer();
+        if (customerService == null) return;
+        CustomerInfo selected = JCustomerFinderPanel.show(this, customerService);
         if (selected != null) {
             try {
-                activeCustomer = dlCustomers.findCustomerInfoExtById(selected.getId());
+                activeCustomer = customerService.findCustomerInfoExtById(selected.getId());
                 if (activeTicket != null) {
                     activeTicket.setCustomer(activeCustomer);
                 }

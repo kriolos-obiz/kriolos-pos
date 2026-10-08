@@ -53,12 +53,20 @@ public class JCustomerFinderPanel extends javax.swing.JPanel implements EditorCr
         initDomainAdapters();
     }
 
-    public JCustomerFinderPanel(DataLogicCustomers dlCustomers) {
+    public JCustomerFinderPanel(CustomerService customerService) {
         initComponents();
         setPreferredSize(new Dimension(758, 634));
-        init(dlCustomers);
+        init(customerService);
         initDomainAdapters();
         cleanSearch();
+    }
+
+    /**
+     * @deprecated Use {@link #JCustomerFinderPanel(CustomerService)} instead.
+     */
+    @Deprecated
+    public JCustomerFinderPanel(DataLogicCustomers dlCustomers) {
+        this((CustomerService) dlCustomers);
     }
 
     private void initDomainAdapters() {
@@ -74,12 +82,12 @@ public class JCustomerFinderPanel extends javax.swing.JPanel implements EditorCr
         this.modalContext = modalContext;
     }
 
-    public static CustomerInfo show(Component parent, DataLogicCustomers dlCustomers) {
-        return show(parent, dlCustomers, null);
+    public static CustomerInfo show(Component parent, CustomerService customerService) {
+        return show(parent, customerService, null);
     }
 
-    public static CustomerInfo show(Component parent, DataLogicCustomers dlCustomers, CustomerInfo initialCustomer) {
-        JCustomerFinderPanel panel = new JCustomerFinderPanel(dlCustomers);
+    public static CustomerInfo show(Component parent, CustomerService customerService, CustomerInfo initialCustomer) {
+        JCustomerFinderPanel panel = new JCustomerFinderPanel(customerService);
         if (initialCustomer != null) {
             panel.search(initialCustomer);
         }
@@ -91,6 +99,22 @@ public class JCustomerFinderPanel extends javax.swing.JPanel implements EditorCr
         panel.setModalContext(modal);
         modal.show();
         return panel.getSelectedCustomer();
+    }
+
+    /**
+     * @deprecated Use {@link #show(Component, CustomerService)} instead.
+     */
+    @Deprecated
+    public static CustomerInfo show(Component parent, DataLogicCustomers dlCustomers) {
+        return show(parent, (CustomerService) dlCustomers, null);
+    }
+
+    /**
+     * @deprecated Use {@link #show(Component, CustomerService, CustomerInfo)} instead.
+     */
+    @Deprecated
+    public static CustomerInfo show(Component parent, DataLogicCustomers dlCustomers, CustomerInfo initialCustomer) {
+        return show(parent, (CustomerService) dlCustomers, initialCustomer);
     }
 
     public void searchKey() {
@@ -119,7 +143,7 @@ public class JCustomerFinderPanel extends javax.swing.JPanel implements EditorCr
         return m_ReturnCustomer;
     }
 
-    private void init(DataLogicCustomers dlCustomers) {
+    private void init(CustomerService customerService) {
 
         initComponents();
 
@@ -141,7 +165,7 @@ public class JCustomerFinderPanel extends javax.swing.JPanel implements EditorCr
 
         m_jtxtTaxID.activate();
 
-        lpr = new ListProviderCreator<>(dlCustomers.getCustomerList(), this);
+        lpr = new ListProviderCreator<>(customerService.getCustomerList(), this);
 
         jListCustomers.setCellRenderer(new BusinessPartnerListCellRenderer());
 
@@ -150,6 +174,11 @@ public class JCustomerFinderPanel extends javax.swing.JPanel implements EditorCr
         }
 
         m_ReturnCustomer = null;
+    }
+
+    @Deprecated
+    private void init(DataLogicCustomers dlCustomers) {
+        init((CustomerService) dlCustomers);
     }
 
     public void search(CustomerInfo customer) {

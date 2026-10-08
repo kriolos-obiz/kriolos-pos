@@ -34,8 +34,16 @@ public class SalesCustomerControllerTest {
 
     @BeforeEach
     void setUp() {
-        customerController = new SalesCustomerController(null, null);
+        customerController = new SalesCustomerController(null, (com.openbravo.pos.customers.CustomerService) null);
         ticket = new TicketInfo();
+    }
+
+    @Test
+    @DisplayName("Should instantiate via deprecated DataLogicCustomers constructor")
+    @SuppressWarnings("deprecation")
+    void testDeprecatedConstructor() {
+        SalesCustomerController deprecatedController = new SalesCustomerController(null, (com.openbravo.pos.customers.DataLogicCustomers) null);
+        assertNotNull(deprecatedController);
     }
 
     @Test

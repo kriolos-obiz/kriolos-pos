@@ -18,6 +18,9 @@ package com.openbravo.pos.customers;
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.loader.*;
 import com.openbravo.data.user.DefaultSaveProvider;
+import com.openbravo.data.user.EditorCreator;
+import com.openbravo.data.user.ListProvider;
+import com.openbravo.data.user.ListProviderCreator;
 import com.openbravo.data.user.SaveProvider;
 import com.openbravo.data.model.Field;
 import com.openbravo.data.model.Row;
@@ -531,6 +534,87 @@ public class DataLogicCustomers extends BeanFactoryDataSingle implements Custome
                 + "FROM customers WHERE ID = ?",
                 SerializerWriteString.INSTANCE,
                 new CustomerInfoExtRead()).find(id);
+    }
+
+    @Override
+    public ListProvider<CustomerInfo> getCustomerListProvider(EditorCreator filter) {
+        return new ListProviderCreator<>(getCustomerList(), filter);
+    }
+
+    @Override
+    public CustomerInfoExt findCustomerInfoExtBySearchKey(String searchKey) throws BasicException {
+        return (CustomerInfoExt) new PreparedSentence(this.s,
+                "SELECT "
+                + "ID, "
+                + "SEARCHKEY, "
+                + "TAXID, "
+                + "NAME, "
+                + "TAXCATEGORY, "
+                + "CARD, "
+                + "MAXDEBT, "
+                + "ADDRESS, "
+                + "ADDRESS2, "
+                + "POSTAL, "
+                + "CITY, "
+                + "REGION, "
+                + "COUNTRY, "
+                + "FIRSTNAME, "
+                + "LASTNAME, "
+                + "EMAIL, "
+                + "PHONE, "
+                + "PHONE2, "
+                + "FAX, "
+                + "NOTES, "
+                + "VISIBLE, "
+                + "CURDATE, "
+                + "CURDEBT, "
+                + "IMAGE, "
+                + "ISVIP, "
+                + "DISCOUNT, "
+                + "MEMODATE "
+                + "FROM customers "
+                + "WHERE SEARCHKEY = ? AND VISIBLE = " + this.s.DB.TRUE() + " "
+                + "ORDER BY NAME",
+                SerializerWriteString.INSTANCE,
+                new CustomerInfoExtRead()).find(searchKey);
+    }
+
+    @Override
+    public CustomerInfoExt findCustomerInfoExtByTaxId(String taxId) throws BasicException {
+        return (CustomerInfoExt) new PreparedSentence(this.s,
+                "SELECT "
+                + "ID, "
+                + "SEARCHKEY, "
+                + "TAXID, "
+                + "NAME, "
+                + "TAXCATEGORY, "
+                + "CARD, "
+                + "MAXDEBT, "
+                + "ADDRESS, "
+                + "ADDRESS2, "
+                + "POSTAL, "
+                + "CITY, "
+                + "REGION, "
+                + "COUNTRY, "
+                + "FIRSTNAME, "
+                + "LASTNAME, "
+                + "EMAIL, "
+                + "PHONE, "
+                + "PHONE2, "
+                + "FAX, "
+                + "NOTES, "
+                + "VISIBLE, "
+                + "CURDATE, "
+                + "CURDEBT, "
+                + "IMAGE, "
+                + "ISVIP, "
+                + "DISCOUNT, "
+                + "MEMODATE "
+                + "FROM customers "
+                + "WHERE TAXID = ? AND VISIBLE = " + this.s.DB.TRUE() + " "
+                + "ORDER BY NAME",
+                SerializerWriteString.INSTANCE,
+                new CustomerInfoExtRead()).find(taxId);
     }
 
     protected static class CustomerInfoExtRead implements SerializerRead<CustomerInfoExt> {

@@ -27,8 +27,11 @@ import com.openbravo.data.user.EditorCreator;
 import com.openbravo.data.user.ListProvider;
 import com.openbravo.data.user.ListProviderCreator;
 import com.openbravo.format.Formats;
+import com.openbravo.pos.customers.CustomerInfo;
+import com.openbravo.pos.customers.CustomerService;
 import com.openbravo.pos.customers.DataLogicCustomers;
 import com.openbravo.pos.customers.JCustomerFinder;
+import com.openbravo.pos.customers.JCustomerFinderPanel;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.DataLogicSales;
 import com.openbravo.pos.inventory.TaxCategoryInfo;
@@ -57,6 +60,7 @@ public class JTicketsFinderPanel extends JPanel implements EditorCreator {
     private ComboBoxValModel<TaxCategoryInfo> m_CategoryModel;
     private TicketLifecycleService ticketLifecycleService;
     private TaxService taxService;
+    private CustomerService customerService;
     private DataLogicCustomers dlCustomers;
     private FindTicketsInfo selectedTicket;
     private PosUIModal modalContext;
@@ -66,15 +70,20 @@ public class JTicketsFinderPanel extends JPanel implements EditorCreator {
         initDomainAdapters();
     }
 
-    public JTicketsFinderPanel(TicketLifecycleService ticketLifecycleService, TaxService taxService, DataLogicCustomers dlCustomers) {
+    public JTicketsFinderPanel(TicketLifecycleService ticketLifecycleService, TaxService taxService, CustomerService customerService) {
         initComponents();
-        init(ticketLifecycleService, taxService, dlCustomers);
+        init(ticketLifecycleService, taxService, customerService);
         initDomainAdapters();
     }
 
     @Deprecated
+    public JTicketsFinderPanel(TicketLifecycleService ticketLifecycleService, TaxService taxService, DataLogicCustomers dlCustomers) {
+        this(ticketLifecycleService, taxService, (CustomerService) dlCustomers);
+    }
+
+    @Deprecated
     public JTicketsFinderPanel(DataLogicSales dlSales, DataLogicCustomers dlCustomers) {
-        this((TicketLifecycleService) dlSales, (TaxService) dlSales, dlCustomers);
+        this((TicketLifecycleService) dlSales, (TaxService) dlSales, (CustomerService) dlCustomers);
     }
 
     private void initDomainAdapters() {
@@ -90,8 +99,8 @@ public class JTicketsFinderPanel extends JPanel implements EditorCreator {
         this.modalContext = modalContext;
     }
 
-    public static FindTicketsInfo show(Component parent, TicketLifecycleService ticketLifecycleService, TaxService taxService, DataLogicCustomers dlCustomers) {
-        JTicketsFinderPanel panel = new JTicketsFinderPanel(ticketLifecycleService, taxService, dlCustomers);
+    public static FindTicketsInfo show(Component parent, TicketLifecycleService ticketLifecycleService, TaxService taxService, CustomerService customerService) {
+        JTicketsFinderPanel panel = new JTicketsFinderPanel(ticketLifecycleService, taxService, customerService);
         PosUIModal modal = PosUIModal.create(parent, panel)
                 .setTitle(AppLocal.getIntString("form.tickettitle"))
                 .setModal(true)
@@ -102,8 +111,13 @@ public class JTicketsFinderPanel extends JPanel implements EditorCreator {
     }
 
     @Deprecated
+    public static FindTicketsInfo show(Component parent, TicketLifecycleService ticketLifecycleService, TaxService taxService, DataLogicCustomers dlCustomers) {
+        return show(parent, ticketLifecycleService, taxService, (CustomerService) dlCustomers);
+    }
+
+    @Deprecated
     public static FindTicketsInfo show(Component parent, DataLogicSales dlSales, DataLogicCustomers dlCustomers) {
-        return show(parent, (TicketLifecycleService) dlSales, (TaxService) dlSales, dlCustomers);
+        return show(parent, (TicketLifecycleService) dlSales, (TaxService) dlSales, (CustomerService) dlCustomers);
     }
 
     public FindTicketsInfo getSelectedTicket() {
@@ -114,11 +128,14 @@ public class JTicketsFinderPanel extends JPanel implements EditorCreator {
         return selectedTicket;
     }
 
-    private void init(TicketLifecycleService ticketLifecycleService, TaxService taxService, DataLogicCustomers dlCustomers) {
+    public void init(TicketLifecycleService ticketLifecycleService, TaxService taxService, CustomerService customerService) {
 
         this.ticketLifecycleService = ticketLifecycleService;
         this.taxService = taxService;
-        this.dlCustomers = dlCustomers;
+        this.customerService = customerService;
+        if (customerService instanceof DataLogicCustomers) {
+            this.dlCustomers = (DataLogicCustomers) customerService;
+        }
 
         jScrollPane1.getVerticalScrollBar().setPreferredSize(new Dimension(35, 35));
 
@@ -721,14 +738,12 @@ public class JTicketsFinderPanel extends JPanel implements EditorCreator {
         jLblTicketCount.setVisible(false);
         jLblReturnCount.setVisible(false);
 
-        JCustomerFinder finder = JCustomerFinder.getCustomerFinder(this, dlCustomers);
-        finder.search(null);
-        finder.setVisible(true);
+        CustomerInfo customer = JCustomerFinderPanel.show(this, customerService);
 
         try {
-            jtxtCustomer.setText(finder.getSelectedCustomer() == null
+            jtxtCustomer.setText(customer == null
                     ? null
-                    : dlCustomers.findCustomerInfoExtById(finder.getSelectedCustomer().getId()).toString());
+                    : customerService.findCustomerInfoExtById(customer.getId()).toString());
         } catch (BasicException e) {
             MessageInf msg = new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.cannotfindcustomer"), e);
             msg.show(this);

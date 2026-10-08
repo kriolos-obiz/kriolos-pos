@@ -21,8 +21,10 @@ import com.openbravo.data.user.DirtyManager;
 import com.openbravo.data.user.EditorRecord;
 import com.openbravo.format.Formats;
 import com.openbravo.pos.customers.CustomerInfo;
+import com.openbravo.pos.customers.CustomerService;
 import com.openbravo.pos.customers.DataLogicCustomers;
 import com.openbravo.pos.customers.JCustomerFinder;
+import com.openbravo.pos.customers.JCustomerFinderPanel;
 import com.openbravo.pos.customers.JDialogNewCustomer;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
@@ -44,6 +46,8 @@ public final class VoucherEditor extends javax.swing.JPanel implements EditorRec
 
     private static final long serialVersionUID = 1L;
     private String voucherId;
+    private final CustomerService customerService;
+    @Deprecated
     private final DataLogicCustomers dlCustomers;
     private final DataLogicSystem dlSystem;
     private final VoucherService voucherService;
@@ -51,16 +55,21 @@ public final class VoucherEditor extends javax.swing.JPanel implements EditorRec
     private final AppView m_app;
 
     public VoucherEditor(DirtyManager dirty, AppView app) {
-        this(dirty, app, null);
+        this(dirty, app, null, null);
     }
 
     public VoucherEditor(DirtyManager dirty, AppView app, VoucherService voucherService) {
+        this(dirty, app, voucherService, null);
+    }
+
+    public VoucherEditor(DirtyManager dirty, AppView app, VoucherService voucherService, CustomerService customerService) {
         m_app = app;
 
         initComponents();
 
-        dlCustomers = app.getBean(DataLogicCustomers.class);
-        dlSystem = app.getBean(DataLogicSystem.class);
+        this.customerService = customerService != null ? customerService : app.getBean(CustomerService.class);
+        this.dlCustomers = (this.customerService instanceof DataLogicCustomers) ? (DataLogicCustomers) this.customerService : app.getBean(DataLogicCustomers.class);
+        this.dlSystem = app.getBean(DataLogicSystem.class);
         this.voucherService = voucherService != null ? voucherService : app.getBean(VoucherService.class);
         voucherNumberTField.getDocument().addDocumentListener(dirty);
         voucherCustomerTField.getDocument().addDocumentListener(dirty);
@@ -117,7 +126,7 @@ public final class VoucherEditor extends javax.swing.JPanel implements EditorRec
                 voucherId = (String) attr[0];
                 voucherNumberTField.setText(Formats.STRING.formatValue((String) attr[1]));
                 voucherNumberTField.setEnabled(false);
-                customerInfo = dlCustomers.getCustomerInfo(attr[2].toString());
+                customerInfo = customerService.getCustomerInfo(attr[2].toString());
                 voucherCustomerTField.setText(customerInfo.getName());
                 voucherCustomerTField.setEnabled(false);
                 voucherAmountTField.setText(Formats.DOUBLE.formatValue((Double) attr[3]));
@@ -145,7 +154,7 @@ public final class VoucherEditor extends javax.swing.JPanel implements EditorRec
             voucherId = (String) attr[0];
             voucherNumberTField.setText(Formats.STRING.formatValue((String) attr[1]));
             voucherNumberTField.setEnabled(true);
-            customerInfo = dlCustomers.getCustomerInfo(attr[2].toString());
+            customerInfo = customerService.getCustomerInfo(attr[2].toString());
             voucherCustomerTField.setText(customerInfo.getName());
             voucherCustomerTField.setEnabled(true);
             voucherAmountTField.setText(Formats.DOUBLE.formatValue((Double) attr[3]));
@@ -382,12 +391,10 @@ private void printBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRS
 
     private void customerSelectorBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_customerSelectorBtnActionPerformed
 
-        JCustomerFinder finder = JCustomerFinder.getCustomerFinder(this, dlCustomers);
-        finder.search(null);
-        finder.setVisible(true);
+        CustomerInfo selected = JCustomerFinderPanel.show(this, customerService);
 
-        if (finder.getSelectedCustomer() != null) {
-            customerInfo = finder.getSelectedCustomer();
+        if (selected != null) {
+            customerInfo = selected;
             voucherCustomerTField.setText(customerInfo.getName());
         }
 

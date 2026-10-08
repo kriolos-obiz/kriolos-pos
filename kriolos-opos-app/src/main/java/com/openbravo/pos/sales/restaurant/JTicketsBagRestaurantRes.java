@@ -30,9 +30,11 @@ import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.forms.BeanFactoryException;
 import com.openbravo.format.Formats;
 import com.openbravo.basic.BasicException;
+import com.openbravo.pos.customers.CustomerInfo;
+import com.openbravo.pos.customers.CustomerService;
 import com.openbravo.pos.customers.DataLogicCustomers;
 import com.openbravo.pos.customers.JCustomerFinder;
-import com.openbravo.pos.customers.CustomerInfo;
+import com.openbravo.pos.customers.JCustomerFinderPanel;
 
 /**
  *
@@ -42,6 +44,8 @@ public class JTicketsBagRestaurantRes extends javax.swing.JPanel implements Edit
 
     private final JTicketsBagRestaurantMap m_restaurantmap;
     
+    private CustomerService customerService = null;
+    @Deprecated
     private DataLogicCustomers dlCustomers = null;
     private RestaurantService restaurantService = null;
     private DataLogicRestaurant dlRestaurant = null;
@@ -68,7 +72,8 @@ public class JTicketsBagRestaurantRes extends javax.swing.JPanel implements Edit
         
         m_restaurantmap = restaurantmap;
         
-        dlCustomers = oApp.getBean(DataLogicCustomers.class);
+        customerService = oApp.getBean(CustomerService.class);
+        dlCustomers = (customerService instanceof DataLogicCustomers) ? (DataLogicCustomers) customerService : oApp.getBean(DataLogicCustomers.class);
         try {
             restaurantService = oApp.getBean(RestaurantService.class);
         } catch (BeanFactoryException ignored) {
@@ -660,11 +665,7 @@ public class JTicketsBagRestaurantRes extends javax.swing.JPanel implements Edit
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
 
-        JCustomerFinder finder = JCustomerFinder.getCustomerFinder(this, dlCustomers);
-        finder.search(customer);
-        finder.setVisible(true);
-        
-        CustomerInfo c = finder.getSelectedCustomer(); 
+        CustomerInfo c = JCustomerFinderPanel.show(this, customerService, customer);
         
         if (c == null) {       
             assignCustomer(new CustomerInfo(null));

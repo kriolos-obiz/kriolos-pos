@@ -17,6 +17,7 @@
 package com.openbravo.pos.sales;
 
 import com.openbravo.data.gui.modal.PosUIModal;
+import com.openbravo.pos.customers.CustomerService;
 import com.openbravo.pos.customers.DataLogicCustomers;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.DataLogicSales;
@@ -26,7 +27,7 @@ import java.awt.Component;
 /**
  * Backward-compatible adapter delegating to {@link ReceiptSplitPanel}.
  *
- * @deprecated Use {@link ReceiptSplitPanel#show(Component, String, DataLogicSales, DataLogicCustomers, TaxesLogic, TicketInfo, TicketInfo, String)} instead.
+ * @deprecated Use {@link ReceiptSplitPanel#show(Component, String, CustomerService, TaxesLogic, TicketInfo, TicketInfo, String)} instead.
  */
 @Deprecated
 public class ReceiptSplit {
@@ -34,32 +35,47 @@ public class ReceiptSplit {
     private final Component parent;
     private final ReceiptSplitPanel panel;
 
-    public ReceiptSplit(Component parent, String ticketline, DataLogicCustomers dlCustomers, TaxesLogic taxeslogic) {
+    public ReceiptSplit(Component parent, String ticketline, CustomerService customerService, TaxesLogic taxeslogic) {
         this.parent = parent;
-        this.panel = new ReceiptSplitPanel(ticketline, dlCustomers, taxeslogic);
+        this.panel = new ReceiptSplitPanel(ticketline, customerService, taxeslogic);
+    }
+
+    @Deprecated
+    public ReceiptSplit(Component parent, String ticketline, DataLogicCustomers dlCustomers, TaxesLogic taxeslogic) {
+        this(parent, ticketline, (CustomerService) dlCustomers, taxeslogic);
     }
 
     @Deprecated
     public ReceiptSplit(Component parent, String ticketline, DataLogicSales dlSales, DataLogicCustomers dlCustomers, TaxesLogic taxeslogic) {
-        this(parent, ticketline, dlCustomers, taxeslogic);
+        this(parent, ticketline, (CustomerService) dlCustomers, taxeslogic);
     }
 
+    public static ReceiptSplit getDialog(Component parent, String ticketline, CustomerService customerService, TaxesLogic taxeslogic) {
+        return new ReceiptSplit(parent, ticketline, customerService, taxeslogic);
+    }
+
+    @Deprecated
     public static ReceiptSplit getDialog(Component parent, String ticketline, DataLogicCustomers dlCustomers, TaxesLogic taxeslogic) {
-        return new ReceiptSplit(parent, ticketline, dlCustomers, taxeslogic);
+        return new ReceiptSplit(parent, ticketline, (CustomerService) dlCustomers, taxeslogic);
     }
 
     @Deprecated
     public static ReceiptSplit getDialog(Component parent, String ticketline, DataLogicSales dlSales, DataLogicCustomers dlCustomers, TaxesLogic taxeslogic) {
-        return getDialog(parent, ticketline, dlCustomers, taxeslogic);
+        return getDialog(parent, ticketline, (CustomerService) dlCustomers, taxeslogic);
     }
 
+    public static boolean show(Component parent, String ticketline, CustomerService customerService, TaxesLogic taxeslogic, TicketInfo ticket, TicketInfo ticket2, String ticketext) {
+        return ReceiptSplitPanel.show(parent, ticketline, customerService, taxeslogic, ticket, ticket2, ticketext);
+    }
+
+    @Deprecated
     public static boolean show(Component parent, String ticketline, DataLogicCustomers dlCustomers, TaxesLogic taxeslogic, TicketInfo ticket, TicketInfo ticket2, String ticketext) {
-        return ReceiptSplitPanel.show(parent, ticketline, dlCustomers, taxeslogic, ticket, ticket2, ticketext);
+        return ReceiptSplitPanel.show(parent, ticketline, (CustomerService) dlCustomers, taxeslogic, ticket, ticket2, ticketext);
     }
 
     @Deprecated
     public static boolean show(Component parent, String ticketline, DataLogicSales dlSales, DataLogicCustomers dlCustomers, TaxesLogic taxeslogic, TicketInfo ticket, TicketInfo ticket2, String ticketext) {
-        return show(parent, ticketline, dlCustomers, taxeslogic, ticket, ticket2, ticketext);
+        return show(parent, ticketline, (CustomerService) dlCustomers, taxeslogic, ticket, ticket2, ticketext);
     }
 
     public boolean showDialog(TicketInfo ticket, TicketInfo ticket2, String ticketext) {

@@ -19,6 +19,7 @@ package com.openbravo.pos.forms;
 import java.util.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -29,7 +30,7 @@ import java.util.logging.Logger;
 public class BeanContainer {
 
     private static final Logger LOGGER = Logger.getLogger(BeanContainer.class.getName());
-    private static final Map<String, BeanFactory> m_aBeanFactories = new HashMap<>();
+    private static final Map<String, BeanFactory> m_aBeanFactories = new ConcurrentHashMap<>();
     private static final HashMap<String, String> m_oldclasses = new HashMap<>();
 
     private static String mapNewClass(String classname) {
@@ -157,5 +158,12 @@ public class BeanContainer {
             return null;
         }
         return getBean(beanClass.getName(), beanClass, appView);
+    }
+    
+    /**
+     * 
+     */
+    public static void cleanAll() {
+        m_aBeanFactories.clear();
     }
 }

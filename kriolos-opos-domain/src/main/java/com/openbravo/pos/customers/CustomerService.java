@@ -17,6 +17,12 @@
 package com.openbravo.pos.customers;
 
 import com.openbravo.basic.BasicException;
+import com.openbravo.data.loader.SentenceList;
+import com.openbravo.data.loader.TableDefinition;
+import com.openbravo.data.model.Row;
+import com.openbravo.data.user.EditorCreator;
+import com.openbravo.data.user.ListProvider;
+import com.openbravo.data.user.SaveProvider;
 import java.util.Date;
 import java.util.List;
 
@@ -33,9 +39,23 @@ public interface CustomerService {
 
     CustomerInfoExt findCustomerInfoExtByName(String name) throws BasicException;
 
+    CustomerInfoExt findCustomerInfoExtBySearchKey(String searchKey) throws BasicException;
+
+    CustomerInfoExt findCustomerInfoExtByTaxId(String taxId) throws BasicException;
+
     int updateCustomerExt(CustomerInfoExt customer) throws BasicException;
 
     int updateCustomerDebt(String customerId, Double accDebt, Date date) throws BasicException;
 
     List<CustomerTransaction> getCustomersTransactionList(String customerId) throws BasicException;
+
+    TableDefinition getTableCustomers();
+
+    Row getCustomersRow();
+
+    SaveProvider getCustomerSaveProvider();
+
+    SentenceList<CustomerInfo> getCustomerList();
+
+    ListProvider<CustomerInfo> getCustomerListProvider(EditorCreator filter);
 }

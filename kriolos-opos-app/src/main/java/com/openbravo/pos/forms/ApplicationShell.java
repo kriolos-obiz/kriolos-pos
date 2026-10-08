@@ -112,7 +112,7 @@ public class ApplicationShell extends JPanel implements AppView {
     }
 
     private void setInventoryLocation() {
-        if(hostSavedProperties == null){
+        if (hostSavedProperties == null) {
             return;
         }
         inventoryLocation = hostSavedProperties.getProperty(HOST_PROP_KEY_LOCATION);
@@ -211,8 +211,6 @@ public class ApplicationShell extends JPanel implements AppView {
         return deviceTicket;
     }
 
-
-
     @Override
     public Session getSession() {
         return session;
@@ -263,8 +261,7 @@ public class ApplicationShell extends JPanel implements AppView {
     public Object getBean(String beanfactory) throws BeanFactoryException {
         return BeanContainer.getBean(beanfactory, this);
     }
-    
-    
+
     @Override
     public <T> T getBean(Class<T> beanClass) throws BeanFactoryException {
         return BeanContainer.getBean(beanClass, this);
@@ -348,7 +345,6 @@ public class ApplicationShell extends JPanel implements AppView {
     public void tryToClose() {
 
         if (closeAppView()) {
-            releaseResources();
             if (session != null) {
                 try {
                     session.close();
@@ -370,6 +366,10 @@ public class ApplicationShell extends JPanel implements AppView {
     @Override
     public boolean closeAppView() {
 
+        BeanContainer.cleanAll();
+
+        releaseResources();
+
         if (principalApp == null) {
             return true;
         } else if (!principalApp.deactivate()) {
@@ -381,8 +381,6 @@ public class ApplicationShell extends JPanel implements AppView {
 
             contentContainerPanel.remove(principalApp);
             principalApp = null;
-
-            //showLoginPanel();
             return true;
         }
     }
@@ -407,11 +405,13 @@ public class ApplicationShell extends JPanel implements AppView {
     }
 
     /**
-     * Activates a database asynchronously using a background SwingWorker, reporting
-     * real-time progress steps and completing on the Event Dispatch Thread.
+     * Activates a database asynchronously using a background SwingWorker,
+     * reporting real-time progress steps and completing on the Event Dispatch
+     * Thread.
      *
      * @param dbConfig The target database configuration to connect to.
-     * @param callback Optional callback for real-time progress, success, and error notifications.
+     * @param callback Optional callback for real-time progress, success, and
+     * error notifications.
      */
     public void activateDatabase(DatabaseConfig dbConfig, DatabaseActivationCallback callback) {
         if (dbConfig == null) {
@@ -431,43 +431,44 @@ public class ApplicationShell extends JPanel implements AppView {
                 publish("A verificar parâmetros da base de dados...");
                 AppConfig.testConnection(dbConfig);
 
-                publish("A ligar à base de dados...");
+                publish("A ligar à base de dados..."+dbConfig.name());
                 if (session != null) {
                     try {
                         session.close();
-                    } catch (SQLException ex) {
+                    }
+                    catch (SQLException ex) {
                         LOGGER.log(Level.WARNING, "Error closing previous session: ", ex);
                     }
                 }
-                Session newSession = new Session(dbConfig.url(), dbConfig.username(), dbConfig.password());
+                session = new Session(dbConfig.url(), dbConfig.username(), dbConfig.password());
 
                 publish("A executar migrações de dados...");
-                com.openbravo.pos.data.DBMigrator.execDBMigration(newSession);
+                com.openbravo.pos.data.DBMigrator.execDBMigration(session);
 
                 publish("A inicializar serviços do sistema...");
-                session = newSession;
-                DataLogicSystem newDl = (DataLogicSystem) getBean("com.openbravo.pos.forms.DataLogicSystem");
-                newDl.init(session);
-                dlogicSystem = newDl;
-
+                dlogicSystem = null;
+                dlogicSystem = getBean(DataLogicSystem.class);
+                dlogicSystem.init(session);
+     
+                cashManagementService= null;
                 cashManagementService = new CashManagementServiceImpl(session);
                 hostSavedProperties = dlogicSystem.getResourceAsProperties(getHostPropertyId());
 
+                publish("A inicializar active Cash and Inventory..");
+                setInventoryLocation();
                 if (checkActiveCash()) {
                     throw new BasicException("Falha ao verificar ActiveCash");
                 }
 
                 publish("A configurar interface e periféricos...");
-                setInventoryLocation();
+                initPeripheral();
+                
+                
+                publish("A configurar status panel...");
                 setTitlePanel();
                 setStatusBarPanel();
+                logStartup();
 
-                if (deviceTicket == null) {
-                    initPeripheral();
-                    logStartup();
-                } else {
-                    ticketParser = createTicketParser();
-                }
 
                 return dlogicSystem;
             }
@@ -487,7 +488,8 @@ public class ApplicationShell extends JPanel implements AppView {
                     if (callback != null) {
                         callback.onSuccess(dbConfig, dl);
                     }
-                } catch (Exception ex) {
+                }
+                catch (Exception ex) {
                     Throwable cause = (ex instanceof java.util.concurrent.ExecutionException && ex.getCause() != null)
                             ? ex.getCause()
                             : ex;
@@ -495,7 +497,8 @@ public class ApplicationShell extends JPanel implements AppView {
                     if (callback != null) {
                         callback.onError(cause);
                     }
-                } finally {
+                }
+                finally {
                     waitCursorEnd();
                 }
             }

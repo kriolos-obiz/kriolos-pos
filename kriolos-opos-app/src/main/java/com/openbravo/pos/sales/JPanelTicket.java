@@ -24,6 +24,7 @@ import com.openbravo.basic.BasicException;
 import com.openbravo.data.gui.ComboBoxValModel;
 import com.openbravo.pos.customers.CustomerInfoExt;
 import com.openbravo.pos.customers.CustomerInfoGlobal;
+import com.openbravo.pos.customers.CustomerService;
 import com.openbravo.pos.customers.DataLogicCustomers;
 import com.openbravo.pos.domain.utils.AmountCalculatorUtil;
 import com.openbravo.pos.forms.*;
@@ -73,6 +74,8 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     private TicketLifecycleService ticketLifecycleService;
     private TaxService taxService;
     private AuditService auditService;
+    private CustomerService customerService;
+    @Deprecated
     private DataLogicCustomers dlCustomers;
     private CatalogService catalogService;
     private DataLogicPIM dataLogicPIM;
@@ -122,7 +125,8 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         taxService = m_App.getBean(TaxService.class);
         auditService = m_App.getBean(AuditService.class);
         inventoryService = m_App.getBean(InventoryService.class);
-        dlCustomers = m_App.getBean(DataLogicCustomers.class);
+        customerService = m_App.getBean(CustomerService.class);
+        dlCustomers = (customerService instanceof DataLogicCustomers) ? (DataLogicCustomers) customerService : m_App.getBean(DataLogicCustomers.class);
         dlReceipts = app.getBean(SharedTicketService.class);
         catalogService = app.getBean(CatalogService.class);
         dataLogicPIM = (catalogService instanceof DataLogicPIM) ? (DataLogicPIM) catalogService : null;
@@ -309,11 +313,11 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         taxeslogic = new TaxesLogic(taxlist);
         salesService = new SalesServiceImpl(taxeslogic);
         ticketLineController = new TicketLineController(m_App, salesService, auditService);
-        salesCustomerController = new SalesCustomerController(m_App, dlCustomers);
+        salesCustomerController = new SalesCustomerController(m_App, customerService);
         salesPaymentCoordinator = new SalesPaymentCoordinator(m_App, ticketLifecycleService, salesService);
         paymentService = new PaymentServiceImpl();
         salesStockCoordinator = new SalesStockCoordinator(inventoryService, catalogService);
-        salesBarcodeScanCoordinator = new SalesBarcodeScanCoordinator(catalogService, dlCustomers);
+        salesBarcodeScanCoordinator = new SalesBarcodeScanCoordinator(catalogService, customerService);
         salesScriptCoordinator = new SalesScriptCoordinator(dlSystem, () -> m_jbtnconfig);
 
         paymentdialogreceipt = JPaymentSelectReceipt.getDialog(this);
@@ -1127,7 +1131,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     private void splitTicket() {
         if (ticketLineController != null) {
             ticketLineController.splitTicket(
-                    this, m_oTicket, m_oTicketExt, dlSystem, dlCustomers, taxeslogic,
+                    this, m_oTicket, m_oTicketExt, dlSystem, customerService, taxeslogic,
                     ticket2 -> closeTicket(ticket2, m_oTicketExt))
                     .ifPresent(remainingTicket -> setActiveTicket(remainingTicket, m_oTicketExt));
         }

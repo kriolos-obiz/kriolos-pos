@@ -43,6 +43,8 @@ public class JNewCustomerPanel extends JPanel {
     private static final Logger LOGGER = Logger.getLogger(JNewCustomerPanel.class.getName());
     private static final long serialVersionUID = 1L;
 
+    private CustomerService customerService;
+    @Deprecated
     private DataLogicCustomers dlCustomer;
     private CustomerInfoExt selectedCustomer;
     private CustomersView customersView;
@@ -81,7 +83,8 @@ public class JNewCustomerPanel extends JPanel {
 
     private void init(AppView app) {
         try {
-            dlCustomer = app.getBean(DataLogicCustomers.class);
+            customerService = app.getBean(CustomerService.class);
+            dlCustomer = (customerService instanceof DataLogicCustomers) ? (DataLogicCustomers) customerService : app.getBean(DataLogicCustomers.class);
 
             initComponents();
 
@@ -176,10 +179,10 @@ public class JNewCustomerPanel extends JPanel {
             Object customer = createValue();
             String m_oId = ((Object[]) customer)[0].toString();
 
-            int status = dlCustomer.getTableCustomers().getInsertSentence().exec(customer);
+            int status = customerService.getTableCustomers().getInsertSentence().exec(customer);
 
             if (status > 0) {
-                selectedCustomer = dlCustomer.findCustomerInfoExtById(m_oId);
+                selectedCustomer = customerService.findCustomerInfoExtById(m_oId);
                 if (modalContext != null) {
                     modalContext.setResult(selectedCustomer);
                     modalContext.close();

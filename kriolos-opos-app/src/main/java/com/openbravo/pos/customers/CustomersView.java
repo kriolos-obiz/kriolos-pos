@@ -61,6 +61,8 @@ public final class CustomersView extends com.openbravo.pos.panels.ValidationPane
     private ComboBoxValModel m_CategoryModel;
 
     private DirtyManager m_Dirty;
+    private CustomerService customerService;
+    @Deprecated
     private DataLogicCustomers dlCustomers;
     private DataLogicTax dlTax;
 
@@ -77,7 +79,8 @@ public final class CustomersView extends com.openbravo.pos.panels.ValidationPane
     public CustomersView(AppView app, DirtyManager dirty) {
         try {
             appView = app;
-            dlCustomers = app.getBean(DataLogicCustomers.class);
+            customerService = app.getBean(CustomerService.class);
+            dlCustomers = (customerService instanceof DataLogicCustomers) ? (DataLogicCustomers) customerService : app.getBean(DataLogicCustomers.class);
             dlTax = app.getBean(DataLogicTax.class);
 
             initComponents();
@@ -517,7 +520,7 @@ public final class CustomersView extends com.openbravo.pos.panels.ValidationPane
 
         List<CustomerTransaction> customerTransactionList = new ArrayList<>();
         try {
-            customerTransactionList = dlCustomers.getCustomersTransactionList(cId);
+            customerTransactionList = customerService.getCustomersTransactionList(cId);
             for (CustomerTransaction customerTransaction : customerTransactionList) {
                 String customerId = customerTransaction.getCustomerId();
                 if (!customerId.equals(cId)) {

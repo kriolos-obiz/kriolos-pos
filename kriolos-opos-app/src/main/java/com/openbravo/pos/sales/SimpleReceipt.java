@@ -18,8 +18,11 @@ package com.openbravo.pos.sales;
 
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.gui.MessageInf;
+import com.openbravo.pos.customers.CustomerInfo;
+import com.openbravo.pos.customers.CustomerService;
 import com.openbravo.pos.customers.DataLogicCustomers;
 import com.openbravo.pos.customers.JCustomerFinder;
+import com.openbravo.pos.customers.JCustomerFinderPanel;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.DataLogicSales;
 import com.openbravo.pos.ticket.TicketInfo;
@@ -34,9 +37,12 @@ import java.util.List;
  */
 public class SimpleReceipt extends javax.swing.JPanel {
     
+    protected CustomerService customerService;
+
     /**
-     *
+     * @deprecated Use {@link #customerService} instead.
      */
+    @Deprecated
     protected DataLogicCustomers dlCustomers;
 
     /**
@@ -61,16 +67,24 @@ public class SimpleReceipt extends javax.swing.JPanel {
      * @param dlCustomers */
     @Deprecated
     public SimpleReceipt(String ticketline, DataLogicSales dlSales, DataLogicCustomers dlCustomers, TaxesLogic taxeslogic) {        
-        this(ticketline, dlCustomers, taxeslogic);
+        this(ticketline, (CustomerService) dlCustomers, taxeslogic);
         this.dlSales = dlSales;
     }
 
-    public SimpleReceipt(String ticketline, DataLogicCustomers dlCustomers, TaxesLogic taxeslogic) {
+    public SimpleReceipt(String ticketline, CustomerService customerService, TaxesLogic taxeslogic) {
         initComponents();
         ticketlines = new JTicketLines(ticketline);
-        this.dlCustomers = dlCustomers;
+        this.customerService = customerService;
+        if (customerService instanceof DataLogicCustomers) {
+            this.dlCustomers = (DataLogicCustomers) customerService;
+        }
         this.taxeslogic = taxeslogic;
         jPanel2.add(ticketlines, BorderLayout.CENTER);
+    }
+
+    @Deprecated
+    public SimpleReceipt(String ticketline, DataLogicCustomers dlCustomers, TaxesLogic taxeslogic) {
+        this(ticketline, (CustomerService) dlCustomers, taxeslogic);
     }
     
     /**
@@ -407,14 +421,12 @@ public class SimpleReceipt extends javax.swing.JPanel {
 
     private void btnCustomerActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCustomerActionPerformed
         
-        JCustomerFinder finder = JCustomerFinder.getCustomerFinder(this, dlCustomers);
-        finder.search(ticket.getCustomer());
-        finder.setVisible(true);
+        CustomerInfo selected = JCustomerFinderPanel.show(this, customerService, ticket.getCustomer());
         
         try {
-            ticket.setCustomer(finder.getSelectedCustomer() == null
+            ticket.setCustomer(selected == null
                     ? null
-                    : dlCustomers.findCustomerInfoExtById(finder.getSelectedCustomer().getId()));
+                    : customerService.findCustomerInfoExtById(selected.getId()));
         } catch (BasicException e) {
             MessageInf msg = new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.cannotfindcustomer"), e);
             msg.show(this);            

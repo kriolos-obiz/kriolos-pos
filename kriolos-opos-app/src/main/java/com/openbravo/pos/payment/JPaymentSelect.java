@@ -17,6 +17,7 @@ package com.openbravo.pos.payment;
 
 import com.openbravo.format.Formats;
 import com.openbravo.pos.customers.CustomerInfoExt;
+import com.openbravo.pos.customers.CustomerService;
 import com.openbravo.pos.customers.DataLogicCustomers;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
@@ -54,6 +55,8 @@ public abstract class JPaymentSelect extends javax.swing.JDialog implements JPay
     private double m_dTotal;
     private CustomerInfoExt customerext;
     private DataLogicSystem dlSystem;
+    private CustomerService customerService;
+    @Deprecated
     private DataLogicCustomers dlCustomers;
 
     private PaymentService paymentService;
@@ -88,7 +91,8 @@ public abstract class JPaymentSelect extends javax.swing.JDialog implements JPay
         this.app = app;
         this.paymentService = paymentService;
         dlSystem = app.getBean(DataLogicSystem.class);
-        dlCustomers = app.getBean(DataLogicCustomers.class);
+        customerService = app.getBean(CustomerService.class);
+        dlCustomers = (customerService instanceof DataLogicCustomers) ? (DataLogicCustomers) customerService : app.getBean(DataLogicCustomers.class);
 
         m_jButtonPrint.setVisible(true);
         setPrintSelected(!Boolean.parseBoolean(app.getProperties().getProperty("till.receiptprintoff")));

@@ -15,6 +15,7 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package com.openbravo.pos.sales;
 
+import com.openbravo.pos.customers.CustomerService;
 import com.openbravo.pos.customers.DataLogicCustomers;
 import com.openbravo.pos.panels.JTicketsFinder;
 import com.openbravo.pos.ticket.FindTicketsInfo;
@@ -53,6 +54,8 @@ public class JTicketsBagTicket extends JTicketsBag {
 
     private static final Logger LOGGER = Logger.getLogger(JTicketsBagTicket.class.getName());
     private DataLogicSystem m_dlSystem = null;
+    private CustomerService customerService = null;
+    @Deprecated
     protected DataLogicCustomers dlCustomers = null;
     private final TicketLifecycleService ticketLifecycleService;
     private final TaxService taxService;
@@ -90,7 +93,8 @@ public class JTicketsBagTicket extends JTicketsBag {
         m_dlSystem = m_App.getBean(DataLogicSystem.class);
         ticketLifecycleService = m_App.getBean(TicketLifecycleService.class);
         taxService = m_App.getBean(TaxService.class);
-        dlCustomers = m_App.getBean(DataLogicCustomers.class);
+        customerService = m_App.getBean(CustomerService.class);
+        dlCustomers = (customerService instanceof DataLogicCustomers) ? (DataLogicCustomers) customerService : m_App.getBean(DataLogicCustomers.class);
         AppProperties props = null;
 
         previewDeviceTicket = PosHardwareManager.createPreviewTicketDevice();
@@ -628,7 +632,7 @@ public class JTicketsBagTicket extends JTicketsBag {
     }// GEN-LAST:event_m_jKeysActionPerformed
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_jButton2ActionPerformed
-        JTicketsFinder finder = JTicketsFinder.getReceiptFinder(this, ticketLifecycleService, taxService, dlCustomers);
+        JTicketsFinder finder = JTicketsFinder.getReceiptFinder(this, ticketLifecycleService, taxService, customerService);
         finder.setVisible(true);
         FindTicketsInfo selectedTicket = finder.getSelectedCustomer();
         if (selectedTicket == null) {

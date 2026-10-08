@@ -55,6 +55,8 @@ public class CustomersPayment extends javax.swing.JPanel implements JPanelView, 
     private static final long serialVersionUID = 1L;
 
     private AppView app;
+    private CustomerService customerService;
+    @Deprecated
     private DataLogicCustomers dlcustomers;
     private TicketLifecycleService ticketLifecycleService;
     private DataLogicSystem dlsystem;
@@ -82,7 +84,8 @@ public class CustomersPayment extends javax.swing.JPanel implements JPanelView, 
     public void init(AppView app) throws BeanFactoryException {
 
         this.app = app;
-        dlcustomers = app.getBean(DataLogicCustomers.class);
+        customerService = app.getBean(CustomerService.class);
+        dlcustomers = (customerService instanceof DataLogicCustomers) ? (DataLogicCustomers) customerService : app.getBean(DataLogicCustomers.class);
         ticketLifecycleService = app.getBean(TicketLifecycleService.class);
         dlsystem = app.getBean(DataLogicSystem.class);
         ttp = app.createTicketParser();
@@ -207,7 +210,7 @@ public class CustomersPayment extends javax.swing.JPanel implements JPanelView, 
     private void readCustomer() {
 
         try {
-            CustomerInfoExt customer = dlcustomers.findCustomerInfoExtByCard(editorcard.getText());
+            CustomerInfoExt customer = customerService.findCustomerInfoExtByCard(editorcard.getText());
             if (customer == null) {
                 MessageInf msg = new MessageInf(MessageInf.SGN_WARNING,
                         AppLocal.getIntString("message.cannotfindcustomer"));
@@ -232,7 +235,7 @@ public class CustomersPayment extends javax.swing.JPanel implements JPanelView, 
         customerext.setPrePay(txtPrePay.getText());
 
         try {
-            dlcustomers.updateCustomerExt(customerext);
+            customerService.updateCustomerExt(customerext);
             editCustomer(customerext);
         } catch (BasicException e) {
             MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE, AppLocal.getIntString("message.nosave"), e);
@@ -677,13 +680,10 @@ public class CustomersPayment extends javax.swing.JPanel implements JPanelView, 
 
     private void btnCustomerActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_btnCustomerActionPerformed
 
-        JCustomerFinder finder = JCustomerFinder.getCustomerFinder(this, dlcustomers);
-        finder.search(null);
-        finder.setVisible(true);
-        CustomerInfo customer = finder.getSelectedCustomer();
+        CustomerInfo customer = JCustomerFinderPanel.show(this, customerService);
         if (customer != null) {
             try {
-                CustomerInfoExt c = dlcustomers.findCustomerInfoExtById(customer.getId());
+                CustomerInfoExt c = customerService.findCustomerInfoExtById(customer.getId());
                 if (c == null) {
                     MessageInf msg = new MessageInf(MessageInf.SGN_WARNING,
                             AppLocal.getIntString("message.cannotfindcustomer"));
@@ -740,7 +740,7 @@ public class CustomersPayment extends javax.swing.JPanel implements JPanelView, 
             // reload customer
             CustomerInfoExt c;
             try {
-                c = dlcustomers.findCustomerInfoExtById(customerext.getId());
+                c = customerService.findCustomerInfoExtById(customerext.getId());
                 if (c == null) {
                     MessageInf msg = new MessageInf(MessageInf.SGN_WARNING,
                             AppLocal.getIntString("message.cannotfindcustomer"));
@@ -818,7 +818,7 @@ public class CustomersPayment extends javax.swing.JPanel implements JPanelView, 
                 CustomerInfoExt c = null;
                 ;
                 try {
-                    c = dlcustomers.findCustomerInfoExtById(customerext.getId());
+                    c = customerService.findCustomerInfoExtById(customerext.getId());
                     if (c == null) {
                         MessageInf msg = new MessageInf(MessageInf.SGN_WARNING,
                                 AppLocal.getIntString("message.cannotfindcustomer"));

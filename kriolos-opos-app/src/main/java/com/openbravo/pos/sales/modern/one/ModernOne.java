@@ -19,6 +19,7 @@ package com.openbravo.pos.sales.modern.one;
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.gui.modal.PosUIModal;
 import com.openbravo.pos.customers.CustomerInfoExt;
+import com.openbravo.pos.customers.CustomerService;
 import com.openbravo.pos.customers.DataLogicCustomers;
 import com.openbravo.pos.customers.JCustomerFinderPanel;
 import com.openbravo.pos.forms.AppLocal;
@@ -82,6 +83,8 @@ public class ModernOne extends JPanel implements JPanelView, TicketsEditor {
     private DataLogicPIM dlPim;
     private DataLogicSystem dlSystem;
     private SharedTicketService dlReceipts;
+    private CustomerService customerService;
+    @Deprecated
     private DataLogicCustomers dlCustomers;
 
     private TaxesLogic taxeslogic;
@@ -122,7 +125,8 @@ public class ModernOne extends JPanel implements JPanelView, TicketsEditor {
         dlPim = (catalogService instanceof DataLogicPIM) ? (DataLogicPIM) catalogService : null;
         dlSystem = app.getBean(DataLogicSystem.class);
         dlReceipts = app.getBean(SharedTicketService.class);
-        dlCustomers = app.getBean(DataLogicCustomers.class);
+        customerService = app.getBean(CustomerService.class);
+        dlCustomers = (customerService instanceof DataLogicCustomers) ? (DataLogicCustomers) customerService : app.getBean(DataLogicCustomers.class);
 
         paymentService = new PaymentServiceImpl();
         ticketParser = app.createTicketParser();
@@ -377,18 +381,10 @@ public class ModernOne extends JPanel implements JPanelView, TicketsEditor {
     }
 
     private void selectCustomer() {
-        JCustomerFinderPanel customerFinder = new JCustomerFinderPanel(dlCustomers);
-        PosUIModal modal = PosUIModal.create(this, customerFinder)
-                .setTitle(AppLocal.getIntString("title.customer"))
-                .setModal(true)
-                .setResizable(true);
-        customerFinder.setModalContext(modal);
-        modal.show();
-
-        com.openbravo.pos.customers.CustomerInfo selected = customerFinder.getSelectedCustomer();
+        com.openbravo.pos.customers.CustomerInfo selected = JCustomerFinderPanel.show(this, customerService);
         if (selected != null) {
             try {
-                activeCustomer = dlCustomers.findCustomerInfoExtById(selected.getId());
+                activeCustomer = customerService.findCustomerInfoExtById(selected.getId());
                 if (activeTicket != null) {
                     activeTicket.setCustomer(activeCustomer);
                 }
