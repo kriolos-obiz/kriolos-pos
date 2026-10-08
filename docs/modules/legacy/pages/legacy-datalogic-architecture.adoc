@@ -377,10 +377,31 @@ To transform the legacy monolith into clean, modular components, the 13 `DataLog
      ** `JPanelCSVImport` & `StockQtyImport`: Inject `CatalogService` for product save provider, category creation, and product lookups.
    * Created `CatalogServiceTest` in `kriolos-opos-domain` verifying container resolution and clean domain contracts.
    * Maintained 100% binary backwards compatibility with `@Deprecated` legacy getters and constructors across all modified classes.
-23. **Next Decoupling Targets:**
-   * Review remaining legacy DataLogic classes (e.g., Reports / `DataLogicReports`, Devices / Fiscal printers).
-
-
-
-
-
+23. **Customer Domain Decoupling (`CustomerService`) (Completed):**
+   * Enriched and completed pure domain service port interface `CustomerService` (`com.openbravo.pos.customers.CustomerService`):
+     ** Added table definitions, row metadata, and save/list providers: `getTableCustomers()`, `getCustomersRow()`, `getCustomerSaveProvider()`, `getCustomerList()`, and `getCustomerListProvider(EditorCreator filter)`.
+     ** Added customer search and lookup queries: `findCustomerInfoExtBySearchKey(searchKey)` and `findCustomerInfoExtByTaxId(taxId)`.
+     ** Implemented all new interface methods in `DataLogicCustomers` and verified container alias mapping in `BeanContainer` (`com.openbravo.pos.customers.CustomerService -> com.openbravo.pos.customers.DataLogicCustomers`).
+   * Decoupled UI components, dialogs, modals, and controllers in `kriolos-opos-app`:
+     ** `JCustomerFinderPanel` & `JCustomerFinder`: Updated constructors and static `show` methods to accept `CustomerService`, retaining `@Deprecated` overloads for `DataLogicCustomers`.
+     ** `JBusinessPartnerFinderPanel` & `JBusinessPartnerFinder`: Decoupled to accept `CustomerService`, retaining `@Deprecated` backward-compatible delegates.
+     ** `JTicketsFinderPanel` & `JTicketsFinder`: Decoupled customer lookups to `CustomerService`.
+     ** `SalesCustomerController`: Refactored to depend on pure `CustomerService`; updated `selectCustomer`, `findCustomer`, and retained `@Deprecated` constructor for binary compatibility.
+     ** `JPanelTicket`: Injects `CustomerService` and supplies it to `SalesCustomerController`, `SalesBarcodeScanCoordinator`, and `TicketLineController.splitTicket`.
+     ** `TicketLineController`: Updated `splitTicket` to accept `CustomerService` (with `@Deprecated` overload).
+     ** `ReceiptSplitPanel` & `ReceiptSplit`: Added `CustomerService` constructors and `show` overloads.
+     ** `SimpleReceipt`: Updated to accept `CustomerService` for customer lookups; retained `@Deprecated` fields and constructors.
+     ** `ModernOne` & `ModernTwo`: Injected `CustomerService` for customer search modal and lookup.
+     ** `CustomersPanel`: Injected `CustomerService` for `getTableCustomers()` and `getCustomerSaveProvider()`.
+     ** `CustomersView`: Injected `CustomerService` for `getCustomersTransactionList(cId)`.
+     ** `CustomersPayment`: Injected `CustomerService` for card lookup, customer update, and customer modal lookup.
+     ** `JNewCustomerPanel`: Injected `CustomerService` for `getTableCustomers().getInsertSentence()` and `findCustomerInfoExtById`.
+     ** `JParamsCustomer`: Injected `CustomerService` for customer modal lookup.
+     ** `JTicketsBagTicket` & `JTicketsBagRestaurantRes`: Injected `CustomerService` and passed to customer/ticket finders.
+     ** `VoucherEditor`: Injected `CustomerService` for `getCustomerInfo` and customer lookup.
+     ** `JPaymentSelect`: Injected `CustomerService` and deprecated `DataLogicCustomers` field.
+   * Created `CustomerServiceTest` in `kriolos-opos-domain` verifying container resolution and clean domain contracts.
+   * Updated `SalesCustomerControllerTest` to test both `CustomerService` and legacy deprecated constructors.
+   * Maintained 100% binary backwards compatibility with `@Deprecated` legacy methods and constructor overloads across all modified classes.
+24. **Next Decoupling Targets:**
+   * Review remaining legacy DataLogic classes (e.g., System / `DataLogicSystem`, Reports / `DataLogicReports`).
