@@ -403,5 +403,21 @@ To transform the legacy monolith into clean, modular components, the 13 `DataLog
    * Created `CustomerServiceTest` in `kriolos-opos-domain` verifying container resolution and clean domain contracts.
    * Updated `SalesCustomerControllerTest` to test both `CustomerService` and legacy deprecated constructors.
    * Maintained 100% binary backwards compatibility with `@Deprecated` legacy methods and constructor overloads across all modified classes.
-24. **Next Decoupling Targets:**
+24. **Tax Domain Decoupling & Supplier Domain Verification (`TaxService` & `SupplierService`) (Completed):**
+   * Enriched and completed pure domain service port interface `TaxService` (`com.openbravo.pos.sales.TaxService`):
+     ** Added sentence list queries and table definitions: `getTaxList()`, `getTaxCustCategoriesList()`, `getTaxCategoriesList()`, `getTaxCategoryInfoList()`, `getTableTaxes()`, `getTableTaxCustCategories()`, and `getTableTaxCategories()`.
+     ** Implemented all new interface methods in `DataLogicTax` and verified container alias mapping in `BeanContainer` (`com.openbravo.pos.sales.TaxService -> com.openbravo.pos.sales.DataLogicTax`).
+     ** Updated `DataLogicSales`: Added `getTaxService()`, deprecated `getDataLogicTax()`, and routed all tax queries (`getTaxList`, `getTaxListAll`, `getTaxCustCategoriesList`, `getTaxCustCategoriesListAll`, `getTaxCategoriesList`, `getTaxCategoriesListAll`) to `getTaxService()`.
+   * Decoupled all remaining UI panels, editors, and controllers in `kriolos-opos-app` away from `DataLogicTax`:
+     ** `TaxPanel` & `TaxEditor`: Injected `TaxService` and eliminated direct `DataLogicTax` dependency while preserving binary-compatible constructor overloads.
+     ** `TaxCategoriesPanel` & `TaxCustCategoriesPanel`: Injected `TaxService` for `getTableTaxCategories()` and `getTableTaxCustCategories()`.
+     ** `ProductsEditor`: Injected `TaxService` for `getTaxListAll()` and `getTaxCategoriesListAll()`, deprecating `dlTax`.
+     ** `CustomersView`: Injected `TaxService` for `getTaxCustCategoriesList()`, deprecating `dlTax`.
+     ** `CatalogController`: Decoupled `CatalogController(DataLogicSales, DataLogicPIM)` constructor delegation to `dlSales.getTaxService()`.
+     ** `JPanelCSVImport`: Injected `TaxService` for `getTaxList()`, `getTaxCategoriesList()`, and `getTaxCategoriesListAll()`, deprecating `m_dlTax`.
+   * Created comprehensive domain unit test suites in `kriolos-opos-domain`:
+     ** `TaxServiceTest`: Tests container resolution of `TaxService` to `DataLogicTax` and verifies tax rates, categories, and table definitions.
+     ** `SupplierServiceTest`: Tests container resolution of `SupplierService` to `DataLogicSuppliers` and verifies supplier master data, lists, and table definitions.
+   * Maintained 100% binary backwards compatibility with `@Deprecated` legacy methods and constructor overloads across all modified classes.
+25. **Next Decoupling Targets:**
    * Review remaining legacy DataLogic classes (e.g., System / `DataLogicSystem`, Reports / `DataLogicReports`).
