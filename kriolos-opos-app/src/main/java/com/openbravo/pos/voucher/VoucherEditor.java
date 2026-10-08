@@ -29,6 +29,7 @@ import com.openbravo.pos.customers.JDialogNewCustomer;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.forms.DataLogicSystem;
+import com.openbravo.pos.forms.ResourceService;
 import com.openbravo.pos.util.ValidateBuilder;
 import java.awt.Component;
 import java.awt.image.BufferedImage;
@@ -49,6 +50,8 @@ public final class VoucherEditor extends javax.swing.JPanel implements EditorRec
     private final CustomerService customerService;
     @Deprecated
     private final DataLogicCustomers dlCustomers;
+    private final ResourceService resourceService;
+    @Deprecated
     private final DataLogicSystem dlSystem;
     private final VoucherService voucherService;
     private CustomerInfo customerInfo;
@@ -69,7 +72,8 @@ public final class VoucherEditor extends javax.swing.JPanel implements EditorRec
 
         this.customerService = customerService != null ? customerService : app.getBean(CustomerService.class);
         this.dlCustomers = (this.customerService instanceof DataLogicCustomers) ? (DataLogicCustomers) this.customerService : app.getBean(DataLogicCustomers.class);
-        this.dlSystem = app.getBean(DataLogicSystem.class);
+        this.resourceService = app.getBean(ResourceService.class);
+        this.dlSystem = (this.resourceService instanceof DataLogicSystem) ? (DataLogicSystem) this.resourceService : null;
         this.voucherService = voucherService != null ? voucherService : app.getBean(VoucherService.class);
         voucherNumberTField.getDocument().addDocumentListener(dirty);
         voucherCustomerTField.getDocument().addDocumentListener(dirty);
@@ -377,7 +381,7 @@ private void printBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRS
 
     try {
         VoucherInfo voucherInfo = voucherService.getVoucherAll(voucherId);
-        BufferedImage image = dlSystem.getResourceAsImage("Window.Logo");
+        BufferedImage image = (resourceService != null) ? resourceService.getResourceAsImage("Window.Logo") : null;
         if (voucherInfo != null) {
             JDialogReportPanel dialog = JDialogReportPanel
                     .getDialog(this, m_app, voucherInfo, image);

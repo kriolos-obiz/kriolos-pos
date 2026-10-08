@@ -70,7 +70,9 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     private JTicketLines m_ticketlines;
     private JPanelButtons m_jbtnconfig;
     private AppView m_App;
+    @Deprecated
     private DataLogicSystem dlSystem;
+    private ResourceService resourceService;
     private TicketLifecycleService ticketLifecycleService;
     private TaxService taxService;
     private AuditService auditService;
@@ -120,7 +122,8 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
 
         m_App = app;
 
-        dlSystem = m_App.getBean(DataLogicSystem.class);
+        resourceService = m_App.getBean(ResourceService.class);
+        dlSystem = (resourceService instanceof DataLogicSystem) ? (DataLogicSystem) resourceService : null;
         ticketLifecycleService = m_App.getBean(TicketLifecycleService.class);
         taxService = m_App.getBean(TaxService.class);
         auditService = m_App.getBean(AuditService.class);
@@ -148,9 +151,9 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         }
 
         LOGGER.log(System.Logger.Level.DEBUG, "JPanelTicket.init: criar: Ticket.Line");
-        m_ticketlines = new JTicketLines(dlSystem.getResourceAsXML(TicketConstants.RES_TICKET_LINES));
+        m_ticketlines = new JTicketLines(resourceService.getResourceAsXML(TicketConstants.RES_TICKET_LINES));
         m_jPanelLines.add(m_ticketlines, java.awt.BorderLayout.CENTER);
-        peripheralCoordinator = new SalesPeripheralCoordinator(m_App, dlSystem);
+        peripheralCoordinator = new SalesPeripheralCoordinator(m_App, resourceService);
 
         taxcategoriesmodel = new ComboBoxValModel();
 
@@ -318,7 +321,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         paymentService = new PaymentServiceImpl();
         salesStockCoordinator = new SalesStockCoordinator(inventoryService, catalogService);
         salesBarcodeScanCoordinator = new SalesBarcodeScanCoordinator(catalogService, customerService);
-        salesScriptCoordinator = new SalesScriptCoordinator(dlSystem, () -> m_jbtnconfig);
+        salesScriptCoordinator = new SalesScriptCoordinator(resourceService, () -> m_jbtnconfig);
 
         paymentdialogreceipt = JPaymentSelectReceipt.getDialog(this);
         paymentdialogreceipt.init(m_App, paymentService);
@@ -997,11 +1000,11 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     }
 
     public String getResourceAsXML(String sresourcename) {
-        return dlSystem.getResourceAsXML(sresourcename);
+        return resourceService.getResourceAsXML(sresourcename);
     }
 
     public BufferedImage getResourceAsImage(String sresourcename) {
-        return dlSystem.getResourceAsImage(sresourcename);
+        return resourceService.getResourceAsImage(sresourcename);
     }
 
     public void setSelectedIndex(int i) {
@@ -1131,7 +1134,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
     private void splitTicket() {
         if (ticketLineController != null) {
             ticketLineController.splitTicket(
-                    this, m_oTicket, m_oTicketExt, dlSystem, customerService, taxeslogic,
+                    this, m_oTicket, m_oTicketExt, resourceService, customerService, taxeslogic,
                     ticket2 -> closeTicket(ticket2, m_oTicketExt))
                     .ifPresent(remainingTicket -> setActiveTicket(remainingTicket, m_oTicketExt));
         }

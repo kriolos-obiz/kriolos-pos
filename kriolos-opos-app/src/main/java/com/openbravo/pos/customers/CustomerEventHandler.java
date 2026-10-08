@@ -86,8 +86,8 @@ public class CustomerEventHandler {
         try {
             ScriptEngine scriptEngine = ScriptFactory.getScriptEngine(ScriptFactory.BEANSHELL);
 
-            DataLogicSystem dlSystem = appContext.getBean(DataLogicSystem.class);
-            String script = dlSystem.getResourceAsXML(event);
+            com.openbravo.pos.forms.ResourceService resourceService = appContext.getBean(com.openbravo.pos.forms.ResourceService.class);
+            String script = resourceService.getResourceAsXML(event);
             scriptEngine.put("customer", customer);
             scriptEngine.put("device", appContext.getProperties().getProperty("machine.hostname"));
             scriptEngine.eval(script);

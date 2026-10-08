@@ -26,6 +26,7 @@ import com.openbravo.pos.customers.JCustomerFinderPanel;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.forms.DataLogicSystem;
+import com.openbravo.pos.forms.ResourceService;
 import com.openbravo.pos.forms.JPanelView;
 import com.openbravo.pos.payment.JPaymentSelect;
 import com.openbravo.pos.payment.JPaymentSelectReceipt;
@@ -104,6 +105,8 @@ public class ModernTwo extends JPanel implements JPanelView, TicketsEditor {
     private CustomerService customerService;
     @Deprecated
     private DataLogicCustomers dlCustomers;
+    private ResourceService resourceService;
+    @Deprecated
     private DataLogicSystem dlSystem;
     private TaxesLogic taxeslogic;
     private PaymentService paymentService;
@@ -144,7 +147,8 @@ public class ModernTwo extends JPanel implements JPanelView, TicketsEditor {
             this.auditService = app.getBean(AuditService.class);
             this.customerService = app.getBean(CustomerService.class);
             this.dlCustomers = (customerService instanceof DataLogicCustomers) ? (DataLogicCustomers) customerService : app.getBean(DataLogicCustomers.class);
-            this.dlSystem = app.getBean(DataLogicSystem.class);
+            this.resourceService = app.getBean(ResourceService.class);
+            this.dlSystem = (resourceService instanceof DataLogicSystem) ? (DataLogicSystem) resourceService : null;
 
             if (taxService != null) {
                 List<TaxInfo> taxList = taxService.getTaxListAll();
@@ -153,7 +157,7 @@ public class ModernTwo extends JPanel implements JPanelView, TicketsEditor {
                 this.salesService = new SalesServiceImpl(taxeslogic);
             }
 
-            if (dlSystem != null) {
+            if (resourceService != null || dlSystem != null) {
                 this.ticketParser = app.createTicketParser();
             }
         }
@@ -573,7 +577,7 @@ public class ModernTwo extends JPanel implements JPanelView, TicketsEditor {
     private void printReceipt(TicketInfo ticket) {
         if (ticket == null || ticketParser == null) return;
         try {
-            String template = dlSystem.getResourceAsXML("Printer.Ticket");
+            String template = (resourceService != null) ? resourceService.getResourceAsXML("Printer.Ticket") : null;
             if (template != null && !template.isBlank()) {
                 ticketParser.printTicket(template, ticket);
             }

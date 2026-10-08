@@ -18,6 +18,7 @@ package com.openbravo.pos.printer;
 
 import com.openbravo.basic.BasicException;
 import com.openbravo.pos.forms.DataLogicSystem;
+import com.openbravo.pos.forms.SystemService;
 import com.openbravo.pos.ticket.TicketInfo;
 import com.openbravo.pos.util.AudioUtils;
 import com.openbravo.pos.util.SAXParserUtils;
@@ -45,6 +46,8 @@ public class TicketParser extends DefaultHandler {
     private static final Logger LOGGER = Logger.getLogger(TicketParser.class.getName());
 
     private final DeviceTicket deviceTicket;
+    private final SystemService systemService;
+    @Deprecated
     private final DataLogicSystem dataLogicSystem;
 
     private StringBuilder currentText;
@@ -78,9 +81,15 @@ public class TicketParser extends DefaultHandler {
     int qrcodeSize = DevicePrinter.QRCODE_DEFAULT_SIZE;
     char qrcodeErrorCode =  DevicePrinter.QRCODE_DEFAULT_ERROR_CODE;
 
-    public TicketParser(DeviceTicket deviceTicket, DataLogicSystem dataLogicSystem) {
+    public TicketParser(DeviceTicket deviceTicket, SystemService systemService) {
         this.deviceTicket = deviceTicket;
-        this.dataLogicSystem = dataLogicSystem;
+        this.systemService = systemService;
+        this.dataLogicSystem = (systemService instanceof DataLogicSystem) ? (DataLogicSystem) systemService : null;
+    }
+
+    @Deprecated
+    public TicketParser(DeviceTicket deviceTicket, DataLogicSystem dataLogicSystem) {
+        this(deviceTicket, (SystemService) dataLogicSystem);
     }
 
     public void printTicket(String xmlInput, TicketInfo ticket) throws TicketPrinterException {
@@ -193,7 +202,9 @@ public class TicketParser extends DefaultHandler {
                 deviceTicket.getDevicePrinter(readString(attributes.getValue("printer"), "1")).openDrawer();
                 // Cashdrawer has been activated record the data in the table
                 try {
-                    dataLogicSystem.execDrawerOpened(currentUser, ticketId, new Date());
+                    if (systemService != null) {
+                        systemService.execDrawerOpened(currentUser, ticketId, new Date());
+                    }
                 } catch (BasicException ex) {
                     LOGGER.log(Level.SEVERE, "Failed to log drawer opened event.", ex);
                 }
@@ -282,7 +293,7 @@ public class TicketParser extends DefaultHandler {
                 break;
             case "image":
                 try {
-                    BufferedImage image = dataLogicSystem.getResourceAsImage(currentText.toString());
+                    BufferedImage image = (systemService != null) ? systemService.getResourceAsImage(currentText.toString()) : null;
                     if (image != null) {
                         outputPrinter.printImage(image);
                     }

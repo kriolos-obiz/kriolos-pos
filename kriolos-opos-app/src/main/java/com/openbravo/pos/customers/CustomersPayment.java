@@ -18,6 +18,7 @@ package com.openbravo.pos.customers;
 import com.openbravo.pos.forms.JPanelView;
 import com.openbravo.pos.sales.TicketLifecycleService;
 import com.openbravo.pos.forms.DataLogicSystem;
+import com.openbravo.pos.forms.ResourceService;
 import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.forms.BeanFactoryApp;
 import com.openbravo.pos.forms.BeanFactoryException;
@@ -59,6 +60,8 @@ public class CustomersPayment extends javax.swing.JPanel implements JPanelView, 
     @Deprecated
     private DataLogicCustomers dlcustomers;
     private TicketLifecycleService ticketLifecycleService;
+    private ResourceService resourceService;
+    @Deprecated
     private DataLogicSystem dlsystem;
     private TicketParser ttp;
     private JPaymentSelect paymentdialog;
@@ -87,7 +90,8 @@ public class CustomersPayment extends javax.swing.JPanel implements JPanelView, 
         customerService = app.getBean(CustomerService.class);
         dlcustomers = (customerService instanceof DataLogicCustomers) ? (DataLogicCustomers) customerService : app.getBean(DataLogicCustomers.class);
         ticketLifecycleService = app.getBean(TicketLifecycleService.class);
-        dlsystem = app.getBean(DataLogicSystem.class);
+        resourceService = app.getBean(ResourceService.class);
+        dlsystem = (resourceService instanceof DataLogicSystem) ? (DataLogicSystem) resourceService : null;
         ttp = app.createTicketParser();
     }
 
@@ -246,7 +250,7 @@ public class CustomersPayment extends javax.swing.JPanel implements JPanelView, 
 
     private void printTicket(String resname, TicketInfo ticket, CustomerInfoExt customer) {
 
-        String resource = dlsystem.getResourceAsXML(resname);
+        String resource = (resourceService != null) ? resourceService.getResourceAsXML(resname) : null;
         if (resource == null) {
             MessageInf msg = new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.cannotprintticket"));
             msg.show(this);

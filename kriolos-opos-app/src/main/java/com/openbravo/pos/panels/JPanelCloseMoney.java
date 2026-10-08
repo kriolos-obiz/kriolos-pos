@@ -14,6 +14,8 @@ import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.forms.BeanFactoryException;
 import com.openbravo.pos.forms.BeanFactoryApp;
 import com.openbravo.pos.forms.AppLocal;
+import com.openbravo.pos.forms.DataLogicSystem;
+import com.openbravo.pos.forms.SystemService;
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.gui.MessageInf;
 import com.openbravo.data.gui.TableRendererBasic;
@@ -52,6 +54,8 @@ public class JPanelCloseMoney extends JPanel implements JPanelView, BeanFactoryA
 
     private static final Logger LOGGER = Logger.getLogger(JPanelCloseMoney.class.getName());
     private AppView appView;
+    private SystemService systemService;
+    @Deprecated
     private DataLogicSystem dataLogicSystem;
 
     private CashReport paymentsToClose = null;
@@ -71,7 +75,8 @@ public class JPanelCloseMoney extends JPanel implements JPanelView, BeanFactoryA
     public void init(AppView app) throws BeanFactoryException {
 
         appView = app;
-        dataLogicSystem = appView.getBean(DataLogicSystem.class);
+        systemService = appView.getBean(SystemService.class);
+        dataLogicSystem = (systemService instanceof DataLogicSystem) ? (DataLogicSystem) systemService : null;
         ticketParser = appView.createTicketParser();
 
         cashManagementService = new CashManagementServiceImpl(appView.getSession());
@@ -195,7 +200,7 @@ public class JPanelCloseMoney extends JPanel implements JPanelView, BeanFactoryA
 
     private void printPayments(String report) {
 
-        String sresource = dataLogicSystem.getResourceAsXML(report);
+        String sresource = (systemService != null) ? systemService.getResourceAsXML(report) : null;
         if (sresource == null) {
             MessageInf msg = new MessageInf(MessageInf.SGN_WARNING,
                     AppLocal.getIntString("message.cannotprintticket"));
@@ -371,7 +376,7 @@ public class JPanelCloseMoney extends JPanel implements JPanelView, BeanFactoryA
             try {
                 // Fire cash.closed event
                 ScriptEngine scriptEngine = ScriptFactory.getScriptEngine(ScriptFactory.BEANSHELL);
-                String script = dataLogicSystem.getResourceAsXML(scriptId);
+                String script = (systemService != null) ? systemService.getResourceAsXML(scriptId) : null;
                 scriptEngine.eval(script);
             } catch (BeanFactoryException | ScriptException e) {
                 LOGGER.log(Level.WARNING, "Exception on executing script: " + scriptId, e);
@@ -408,7 +413,9 @@ public class JPanelCloseMoney extends JPanel implements JPanelView, BeanFactoryA
                 
                 cashManagementService.addCloseCash(cash);
                 
-                dataLogicSystem.execDrawerOpened(appView.getAppUserView().getUser().getName(), "Close Cash", dNow);
+                if (systemService != null) {
+                    systemService.execDrawerOpened(appView.getAppUserView().getUser().getName(), "Close Cash", dNow);
+                }
 
                 // ponemos la fecha de fin
                 paymentsToClose.setDateEnd(dNow);

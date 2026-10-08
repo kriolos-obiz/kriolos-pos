@@ -36,7 +36,7 @@ import javax.swing.ImageIcon;
  *
  * @author JG uniCenta
  */
-public class DataLogicSystem extends BeanFactoryDataSingle implements SecurityService {
+public class DataLogicSystem extends BeanFactoryDataSingle implements SystemService {
 
     private final static Logger LOGGER = Logger.getLogger(DataLogicSystem.class.getName());
 
@@ -49,7 +49,7 @@ public class DataLogicSystem extends BeanFactoryDataSingle implements SecuritySe
     @Override
     public void init(Session session) {
         this.session = session;
-        this.m_dbVersion = this.session.DB.getName();
+        this.m_dbVersion = (this.session != null && this.session.DB != null) ? this.session.DB.getName() : null;
 
         m_tresources = new TableDefinition(session,
                 "resources",

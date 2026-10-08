@@ -22,6 +22,7 @@ import com.openbravo.pos.customers.DataLogicCustomers;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.forms.DataLogicSystem;
+import com.openbravo.pos.forms.ResourceService;
 import com.openbravo.pos.resources.ImageResources;
 
 import java.awt.*;
@@ -54,7 +55,9 @@ public abstract class JPaymentSelect extends javax.swing.JDialog implements JPay
     private AppView app;
     private double m_dTotal;
     private CustomerInfoExt customerext;
+    @Deprecated
     private DataLogicSystem dlSystem;
+    private ResourceService resourceService;
     private CustomerService customerService;
     @Deprecated
     private DataLogicCustomers dlCustomers;
@@ -90,7 +93,8 @@ public abstract class JPaymentSelect extends javax.swing.JDialog implements JPay
     public void init(AppView app, PaymentService paymentService) {
         this.app = app;
         this.paymentService = paymentService;
-        dlSystem = app.getBean(DataLogicSystem.class);
+        resourceService = app.getBean(ResourceService.class);
+        dlSystem = (resourceService instanceof DataLogicSystem) ? (DataLogicSystem) resourceService : null;
         customerService = app.getBean(CustomerService.class);
         dlCustomers = (customerService instanceof DataLogicCustomers) ? (DataLogicCustomers) customerService : app.getBean(DataLogicCustomers.class);
 
@@ -253,7 +257,7 @@ public abstract class JPaymentSelect extends javax.swing.JDialog implements JPay
 
         @Override
         public JPaymentInterface createJPayment() {
-            return new JPaymentCashPos(JPaymentSelect.this, dlSystem);
+            return new JPaymentCashPos(JPaymentSelect.this, resourceService);
         }
 
         @Override

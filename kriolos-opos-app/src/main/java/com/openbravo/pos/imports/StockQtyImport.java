@@ -58,6 +58,8 @@ public class StockQtyImport extends JPanel implements JPanelView {
   // the db connection session
   private Session dbSession;
   private DataLogicInventory m_dlInventory;
+  private ResourceService resourceService;
+  @Deprecated
   private DataLogicSystem m_dlSystem;
   private ImportService m_importService;
   private DataLogicImport m_dlImport;
@@ -117,8 +119,18 @@ public class StockQtyImport extends JPanel implements JPanelView {
     // Set db tables
     m_dlInventory = new DataLogicInventory();
     m_dlInventory.init(dbSession);
-    m_dlSystem = new DataLogicSystem();
-    m_dlSystem.init(dbSession);
+    ResourceService resolvedResource = null;
+    try {
+      resolvedResource = appView.getBean(ResourceService.class);
+    } catch (BeanFactoryException ignored) {
+    }
+    if (resolvedResource == null) {
+      DataLogicSystem fallback = new DataLogicSystem();
+      fallback.init(dbSession);
+      resolvedResource = fallback;
+    }
+    this.resourceService = resolvedResource;
+    this.m_dlSystem = (resourceService instanceof DataLogicSystem) ? (DataLogicSystem) resourceService : null;
 
     ImportService resolvedImport = null;
     try {
@@ -136,7 +148,7 @@ public class StockQtyImport extends JPanel implements JPanelView {
     invService = new InventoryServiceImpl(m_dlInventory, dbSession);
 
     // Get terminal'dbSession current resource property settings
-    Properties m_propsdb = m_dlSystem.getResourceAsProperties(m_props.getHost() + "/properties");
+    Properties m_propsdb = (resourceService != null) ? resourceService.getResourceAsProperties(m_props.getHost() + "/properties") : new Properties();
 
     // Get terminal'dbSession set Location property <entry key="location">0</entry>
     m_sInventoryLocation = m_propsdb.getProperty("location");

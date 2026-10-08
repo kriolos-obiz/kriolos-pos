@@ -77,6 +77,8 @@ public class JTicketsBagShared extends JTicketsBag {
     private SharedTicketService dlReceipts = null;
     private TicketLifecycleService ticketLifecycleService = null;
     private AuditService auditService = null;
+    private ResourceService resourceService;
+    @Deprecated
     private DataLogicSystem dlSystem;
     private Boolean hasPermissionShowSharedList;
 
@@ -93,7 +95,8 @@ public class JTicketsBagShared extends JTicketsBag {
         dlReceipts = app.getBean(SharedTicketService.class);
         ticketLifecycleService = app.getBean(TicketLifecycleService.class);
         auditService = app.getBean(AuditService.class);
-        dlSystem = m_App.getBean(DataLogicSystem.class);
+        resourceService = m_App.getBean(ResourceService.class);
+        dlSystem = (resourceService instanceof DataLogicSystem) ? (DataLogicSystem) resourceService : null;
 
         hasPermissionShowSharedList = m_App.hasPermission("sales.ShowList");
 

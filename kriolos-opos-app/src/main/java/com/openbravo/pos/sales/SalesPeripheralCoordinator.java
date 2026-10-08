@@ -22,6 +22,7 @@ import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.forms.DataLogicSales;
 import com.openbravo.pos.forms.DataLogicSystem;
+import com.openbravo.pos.forms.ResourceService;
 import com.openbravo.pos.hardware.PosHardwareManager;
 import com.openbravo.pos.printer.TicketParser;
 import com.openbravo.pos.printer.TicketPrinterException;
@@ -60,26 +61,41 @@ public class SalesPeripheralCoordinator {
     private static final Logger LOGGER = System.getLogger(SalesPeripheralCoordinator.class.getName());
 
     private final AppView app;
+    @Deprecated
     private final DataLogicSystem dlSystem;
+    private final ResourceService resourceService;
     private final TicketParser ticketParser;
     private final Function<String, String> textResourceResolver;
     private final Function<String, String> xmlResourceResolver;
 
-    public SalesPeripheralCoordinator(AppView app, DataLogicSystem dlSystem) {
-        this(app, dlSystem,
+    public SalesPeripheralCoordinator(AppView app, ResourceService resourceService) {
+        this(app, resourceService,
                 app != null ? app.createTicketParser() : null,
-                dlSystem != null ? dlSystem::getResourceAsText : key -> null,
-                dlSystem != null ? dlSystem::getResourceAsXML : key -> null);
+                resourceService != null ? resourceService::getResourceAsText : key -> null,
+                resourceService != null ? resourceService::getResourceAsXML : key -> null);
     }
 
-    SalesPeripheralCoordinator(AppView app, DataLogicSystem dlSystem, TicketParser ticketParser,
+    @Deprecated
+    public SalesPeripheralCoordinator(AppView app, DataLogicSystem dlSystem) {
+        this(app, (ResourceService) dlSystem);
+    }
+
+    SalesPeripheralCoordinator(AppView app, ResourceService resourceService, TicketParser ticketParser,
                                Function<String, String> textResourceResolver,
                                Function<String, String> xmlResourceResolver) {
         this.app = Objects.requireNonNull(app, "AppView cannot be null");
-        this.dlSystem = dlSystem;
+        this.resourceService = resourceService;
+        this.dlSystem = (resourceService instanceof DataLogicSystem) ? (DataLogicSystem) resourceService : null;
         this.ticketParser = ticketParser;
-        this.textResourceResolver = textResourceResolver != null ? textResourceResolver : (dlSystem != null ? dlSystem::getResourceAsText : key -> null);
-        this.xmlResourceResolver = xmlResourceResolver != null ? xmlResourceResolver : (dlSystem != null ? dlSystem::getResourceAsXML : key -> null);
+        this.textResourceResolver = textResourceResolver != null ? textResourceResolver : (resourceService != null ? resourceService::getResourceAsText : key -> null);
+        this.xmlResourceResolver = xmlResourceResolver != null ? xmlResourceResolver : (resourceService != null ? resourceService::getResourceAsXML : key -> null);
+    }
+
+    @Deprecated
+    SalesPeripheralCoordinator(AppView app, DataLogicSystem dlSystem, TicketParser ticketParser,
+                               Function<String, String> textResourceResolver,
+                               Function<String, String> xmlResourceResolver) {
+        this(app, (ResourceService) dlSystem, ticketParser, textResourceResolver, xmlResourceResolver);
     }
 
     /**
@@ -409,7 +425,7 @@ public class SalesPeripheralCoordinator {
         }
         var deviceDisplay = deviceTicket.getDeviceDisplay();
         if (deviceDisplay != null && PosHardwareManager.isAdvanceDisplay(deviceDisplay)) {
-            JTicketLines secondaryLines = new JTicketLines(dlSystem.getResourceAsXML(TicketConstants.RES_TICKET_LINES));
+            JTicketLines secondaryLines = new JTicketLines(xmlResourceResolver.apply(TicketConstants.RES_TICKET_LINES));
             secondaryLines.setTicketTableFont(new Font("Arial", Font.PLAIN, 18));
 
             sourceLines.addListSelectionListener((ListSelectionEvent e) -> {

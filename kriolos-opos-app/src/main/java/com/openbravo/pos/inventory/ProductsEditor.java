@@ -91,6 +91,7 @@ public final class ProductsEditor extends com.openbravo.pos.panels.ValidationPan
     private SupplierService dlSuppliers;
     private CatalogService catalogService;
     private DataLogicPIM dataLogicPIM;
+    @Deprecated
     private DataLogicSystem dlSystem; 
 
 
@@ -106,7 +107,7 @@ public final class ProductsEditor extends com.openbravo.pos.panels.ValidationPan
         taxService = app.getBean(TaxService.class);
         dlTax = (taxService instanceof DataLogicTax) ? (DataLogicTax) taxService : null;
         stockService = app.getBean(StockService.class);
-        dlSystem = app.getBean(DataLogicSystem.class);
+        dlSystem = null;
         dlSuppliers = app.getBean(SupplierService.class);
         catalogService = app.getBean(CatalogService.class);
         dataLogicPIM = (catalogService instanceof DataLogicPIM) ? (DataLogicPIM) catalogService : null;

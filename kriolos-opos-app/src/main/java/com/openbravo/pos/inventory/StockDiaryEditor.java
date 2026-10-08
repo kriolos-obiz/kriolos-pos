@@ -21,6 +21,7 @@ import com.openbravo.data.user.EditorRecord;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.forms.DataLogicSystem;
+import com.openbravo.pos.forms.ResourceService;
 import com.openbravo.pos.suppliers.SupplierService;
 import java.awt.Component;
 import com.openbravo.basic.BasicException;
@@ -49,6 +50,7 @@ import javax.swing.JOptionPane;
 public final class StockDiaryEditor extends javax.swing.JPanel implements EditorRecord {
     
     private final AppView m_App;
+    @Deprecated
     private final DataLogicSystem m_dlSystem;    
     private final InventoryService inventoryService;
     private final SupplierService m_dlSuppliers;    
@@ -85,7 +87,8 @@ public final class StockDiaryEditor extends javax.swing.JPanel implements Editor
     public StockDiaryEditor(AppView app, DirtyManager dirty) {
         
         m_App = app;
-        m_dlSystem = m_App.getBean(DataLogicSystem.class);
+        ResourceService resService = m_App.getBean(ResourceService.class);
+        m_dlSystem = (resService instanceof DataLogicSystem) ? (DataLogicSystem) resService : null;
         inventoryService = m_App.getBean(InventoryService.class);
         m_dlSuppliers = m_App.getBean(SupplierService.class);   
         catalogService = app.getBean(CatalogService.class);

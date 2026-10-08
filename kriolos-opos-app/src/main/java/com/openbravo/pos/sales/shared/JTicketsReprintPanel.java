@@ -21,6 +21,7 @@ import com.openbravo.data.gui.modal.PosUIModal;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.forms.DataLogicSystem;
+import com.openbravo.pos.forms.ResourceService;
 import com.openbravo.pos.sales.TicketLifecycleService;
 import com.openbravo.pos.hardware.PosHardwareManager;
 import com.openbravo.pos.printer.TicketParser;
@@ -59,13 +60,16 @@ public class JTicketsReprintPanel extends JPanel {
     private String currentTicketId;
     private AppView appView;
 
+    private final ResourceService resourceService;
+    @Deprecated
     private final DataLogicSystem dlSystem;
     private final TicketLifecycleService ticketLifecycleService;
     private PosUIModal modalContext;
 
     public JTicketsReprintPanel(AppView app) {
         this.appView = app;
-        this.dlSystem = appView.getBean(DataLogicSystem.class);
+        this.resourceService = appView.getBean(ResourceService.class);
+        this.dlSystem = (resourceService instanceof DataLogicSystem) ? (DataLogicSystem) resourceService : null;
         this.ticketLifecycleService = appView.getBean(TicketLifecycleService.class);
         initComponents();
         initDomainAdapters();
@@ -174,7 +178,7 @@ public class JTicketsReprintPanel extends JPanel {
     private void printTicket(TicketInfo ticket, Object ticketext) {
 
         String sresourcename = "Printer.ReprintLastTicket";
-        String sresource = dlSystem.getResourceAsXML(sresourcename);
+        String sresource = (resourceService != null) ? resourceService.getResourceAsXML(sresourcename) : null;
         try {
             ScriptEngine script = ScriptFactory.getScriptEngine(ScriptFactory.VELOCITY);
             script.put("taxes", ticket.getTaxLines());

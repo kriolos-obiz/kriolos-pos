@@ -27,6 +27,7 @@ import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.forms.DataLogicSales;
 import com.openbravo.pos.forms.DataLogicSystem;
+import com.openbravo.pos.forms.ResourceService;
 import com.openbravo.pos.ticket.TicketInfo;
 import com.openbravo.pos.ticket.TicketLineInfo;
 import java.awt.Component;
@@ -238,14 +239,15 @@ public class TicketLineController {
      * @return Optional containing the updated remaining ticket if split and closed successfully, or empty if cancelled/failed
      */
     public Optional<TicketInfo> splitTicket(Component parent, TicketInfo currentTicket, String ticketExt,
-                                            DataLogicSystem dlSystem, CustomerService customerService,
+                                            ResourceService resourceService, CustomerService customerService,
                                             TaxesLogic taxesLogic, Predicate<TicketInfo> ticketCloser) {
         if (currentTicket == null || currentTicket.getLinesCount() <= 0) {
             return Optional.empty();
         }
 
         ReceiptSplit splitdialog = ReceiptSplit.getDialog(parent,
-                dlSystem.getResourceAsXML(TicketConstants.RES_TICKET_LINES), customerService, taxesLogic);
+                resourceService != null ? resourceService.getResourceAsXML(TicketConstants.RES_TICKET_LINES) : null,
+                customerService, taxesLogic);
 
         TicketInfo ticket1 = currentTicket.copyTicket();
         TicketInfo ticket2 = new TicketInfo();
@@ -257,6 +259,13 @@ public class TicketLineController {
             }
         }
         return Optional.empty();
+    }
+
+    @Deprecated
+    public Optional<TicketInfo> splitTicket(Component parent, TicketInfo currentTicket, String ticketExt,
+                                            DataLogicSystem dlSystem, CustomerService customerService,
+                                            TaxesLogic taxesLogic, Predicate<TicketInfo> ticketCloser) {
+        return splitTicket(parent, currentTicket, ticketExt, (ResourceService) dlSystem, customerService, taxesLogic, ticketCloser);
     }
 
     @Deprecated

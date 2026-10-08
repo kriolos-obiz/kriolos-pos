@@ -21,6 +21,7 @@ import com.openbravo.pos.customers.CustomerInfoExt;
 import com.openbravo.pos.forms.AppConfig;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.DataLogicSystem;
+import com.openbravo.pos.forms.ResourceService;
 import com.openbravo.pos.scripting.ScriptEngine;
 import com.openbravo.pos.scripting.ScriptException;
 import com.openbravo.pos.scripting.ScriptFactory;
@@ -53,9 +54,9 @@ public class JPaymentCashPos extends javax.swing.JPanel implements JPaymentInter
      * Creates new form JPaymentCash
      *
      * @param notifier
-     * @param dlSystem
+     * @param resourceService
      */
-    public JPaymentCashPos(JPaymentNotifier notifier, DataLogicSystem dlSystem) {
+    public JPaymentCashPos(JPaymentNotifier notifier, ResourceService resourceService) {
 
         m_notifier = notifier;
 
@@ -73,17 +74,22 @@ public class JPaymentCashPos extends javax.swing.JPanel implements JPaymentInter
         }
 //        m_config=null;
 
-        String code = dlSystem.getResourceAsXML("payment.cash");
+        String code = (resourceService != null) ? resourceService.getResourceAsXML("payment.cash") : null;
         if (code != null) {
             try {
                 ScriptEngine script = ScriptFactory.getScriptEngine(ScriptFactory.BEANSHELL);
-                script.put("payment", new ScriptPaymentCash(dlSystem));
+                script.put("payment", new ScriptPaymentCash(resourceService));
                 script.eval(code);
             } catch (ScriptException e) {
                 MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE, AppLocal.getIntString("message.cannotexecute"), e);
                 msg.show(this);
             }
         }
+    }
+
+    @Deprecated
+    public JPaymentCashPos(JPaymentNotifier notifier, DataLogicSystem dlSystem) {
+        this(notifier, (ResourceService) dlSystem);
     }
 
     @Override
@@ -141,27 +147,34 @@ public class JPaymentCashPos extends javax.swing.JPanel implements JPaymentInter
 
     public class ScriptPaymentCash {
 
+        private final ResourceService resourceService;
+        @Deprecated
         private final DataLogicSystem dlSystem;
         private final ThumbNailBuilder tnbbutton;
         private final AppConfig m_config;
 
-        public ScriptPaymentCash(DataLogicSystem dlSystem) {
-            
+        public ScriptPaymentCash(ResourceService resourceService) {
             this.m_config = AppConfig.getInstance();
-            this.dlSystem = dlSystem;
+            this.resourceService = resourceService;
+            this.dlSystem = (resourceService instanceof DataLogicSystem) ? (DataLogicSystem) resourceService : null;
             tnbbutton = new ThumbNailBuilder(64, 48, "com/openbravo/images/cash.png");
+        }
+
+        @Deprecated
+        public ScriptPaymentCash(DataLogicSystem dlSystem) {
+            this((ResourceService) dlSystem);
         }
 
         public void addButton(String image, double amount) {
             JButton btn = new JButton();
             try {
                 if ((m_config.getProperty("payments.textoverlay")).equals("false")) {
-                    btn.setIcon(new ImageIcon(tnbbutton.getThumbNail(dlSystem.getResourceAsImage(image))));
+                    btn.setIcon(new ImageIcon(tnbbutton.getThumbNail(resourceService.getResourceAsImage(image))));
                 } else {
-                    btn.setIcon(new ImageIcon(tnbbutton.getThumbNail(dlSystem.getResourceAsImage(image), Formats.CURRENCY.formatValue(amount))));
+                    btn.setIcon(new ImageIcon(tnbbutton.getThumbNail(resourceService.getResourceAsImage(image), Formats.CURRENCY.formatValue(amount))));
                 }
             } catch (Exception e) {
-                btn.setIcon(new ImageIcon(tnbbutton.getThumbNail(dlSystem.getResourceAsImage(image), Formats.CURRENCY.formatValue(amount))));
+                btn.setIcon(new ImageIcon(tnbbutton.getThumbNail(resourceService != null ? resourceService.getResourceAsImage(image) : null, Formats.CURRENCY.formatValue(amount))));
             }
 
             btn.setFocusPainted(false);

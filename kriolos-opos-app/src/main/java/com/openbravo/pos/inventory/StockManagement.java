@@ -79,6 +79,8 @@ public class StockManagement extends JPanel implements JPanelView {
     private final AppView m_App;
     private final String user;
 
+    private final ResourceService resourceService;
+    @Deprecated
     private final DataLogicSystem m_dlSystem;
     private final StockService stockService;
     private final SupplierService m_dlSuppliers;
@@ -125,7 +127,8 @@ public class StockManagement extends JPanel implements JPanelView {
     public StockManagement(AppView app) {
 
         m_App = app;
-        m_dlSystem = m_App.getBean(DataLogicSystem.class);
+        resourceService = m_App.getBean(ResourceService.class);
+        m_dlSystem = (resourceService instanceof DataLogicSystem) ? (DataLogicSystem) resourceService : null;
         stockService = m_App.getBean(StockService.class);
         m_dlSuppliers = m_App.getBean(SupplierService.class);
         catalogService = app.getBean(CatalogService.class);
@@ -556,7 +559,7 @@ public class StockManagement extends JPanel implements JPanelView {
     }
 
     private void printTicket(InventoryRecord invrec) {
-        String sresource = m_dlSystem.getResourceAsXML("Printer.Inventory");
+        String sresource = (resourceService != null) ? resourceService.getResourceAsXML("Printer.Inventory") : null;
         if (sresource == null) {
             MessageInf msg = new MessageInf(MessageInf.SGN_WARNING,
                     AppLocal.getIntString("message.cannotprintticket"));

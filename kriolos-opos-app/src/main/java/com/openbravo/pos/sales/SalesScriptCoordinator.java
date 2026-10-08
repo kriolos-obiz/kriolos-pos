@@ -19,6 +19,7 @@ package com.openbravo.pos.sales;
 import com.openbravo.data.gui.MessageInf;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.DataLogicSystem;
+import com.openbravo.pos.forms.ResourceService;
 import com.openbravo.pos.scripting.ScriptEngine;
 import com.openbravo.pos.scripting.ScriptException;
 import com.openbravo.pos.scripting.ScriptFactory;
@@ -40,8 +41,13 @@ public class SalesScriptCoordinator {
     private final Function<String, String> xmlResourceResolver;
     private final Supplier<JPanelButtons> buttonConfigSupplier;
 
+    public SalesScriptCoordinator(ResourceService resourceService, Supplier<JPanelButtons> buttonConfigSupplier) {
+        this(resourceService != null ? resourceService::getResourceAsXML : resource -> null, buttonConfigSupplier);
+    }
+
+    @Deprecated
     public SalesScriptCoordinator(DataLogicSystem dlSystem, Supplier<JPanelButtons> buttonConfigSupplier) {
-        this(dlSystem != null ? dlSystem::getResourceAsXML : resource -> null, buttonConfigSupplier);
+        this((ResourceService) dlSystem, buttonConfigSupplier);
     }
 
     public SalesScriptCoordinator(Function<String, String> xmlResourceResolver,

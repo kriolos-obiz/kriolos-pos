@@ -26,6 +26,7 @@ import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.catalog.CatalogService;
 import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.forms.DataLogicSystem;
+import com.openbravo.pos.forms.ResourceService;
 import com.openbravo.pos.forms.JPanelView;
 import com.openbravo.pos.payment.JPaymentSelect;
 import com.openbravo.pos.payment.JPaymentSelectReceipt;
@@ -81,6 +82,8 @@ public class ModernOne extends JPanel implements JPanelView, TicketsEditor {
     private TaxService taxService;
     private CatalogService catalogService;
     private DataLogicPIM dlPim;
+    private ResourceService resourceService;
+    @Deprecated
     private DataLogicSystem dlSystem;
     private SharedTicketService dlReceipts;
     private CustomerService customerService;
@@ -123,7 +126,8 @@ public class ModernOne extends JPanel implements JPanelView, TicketsEditor {
         taxService = app.getBean(TaxService.class);
         catalogService = app.getBean(CatalogService.class);
         dlPim = (catalogService instanceof DataLogicPIM) ? (DataLogicPIM) catalogService : null;
-        dlSystem = app.getBean(DataLogicSystem.class);
+        resourceService = app.getBean(ResourceService.class);
+        dlSystem = (resourceService instanceof DataLogicSystem) ? (DataLogicSystem) resourceService : null;
         dlReceipts = app.getBean(SharedTicketService.class);
         customerService = app.getBean(CustomerService.class);
         dlCustomers = (customerService instanceof DataLogicCustomers) ? (DataLogicCustomers) customerService : app.getBean(DataLogicCustomers.class);
@@ -448,7 +452,7 @@ public class ModernOne extends JPanel implements JPanelView, TicketsEditor {
         if (ticket == null || ticketParser == null)
             return;
         try {
-            String template = dlSystem.getResourceAsXML("Printer.Ticket");
+            String template = (resourceService != null) ? resourceService.getResourceAsXML("Printer.Ticket") : null;
             if (template != null && !template.isBlank()) {
                 ticketParser.printTicket(template, ticket);
             }

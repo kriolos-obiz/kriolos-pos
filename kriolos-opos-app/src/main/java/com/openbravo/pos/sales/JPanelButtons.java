@@ -19,6 +19,7 @@ import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppUser;
 import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.forms.DataLogicSystem;
+import com.openbravo.pos.forms.ResourceService;
 import com.openbravo.pos.util.SAXParserUtils;
 import com.openbravo.pos.util.ThumbNailBuilder;
 import java.awt.Component;
@@ -54,6 +55,8 @@ public class JPanelButtons extends javax.swing.JPanel {
 
     private Properties props;
     private Map<String, String> events;
+    private ResourceService resourceService;
+    @Deprecated
     private DataLogicSystem dlSystem;
     private JPanelButtonListener bListener;
 
@@ -62,7 +65,8 @@ public class JPanelButtons extends javax.swing.JPanel {
         props = new Properties();
         events = new HashMap<>();
         this.bListener = bListener;
-        dlSystem = app.getBean(DataLogicSystem.class);
+        resourceService = app.getBean(ResourceService.class);
+        dlSystem = (resourceService instanceof DataLogicSystem) ? (DataLogicSystem) resourceService : null;
         try {
             SAXParserFactory spf = SAXParserUtils.newSecureInstance();
             SAXParser m_sp = spf.newSAXParser();
@@ -202,7 +206,7 @@ public class JPanelButtons extends javax.swing.JPanel {
             setName(sKey);
             setText(title);
             setToolTipText(title);
-            setIcon(new ImageIcon(tnbmacro.getThumbNail(dlSystem.getResourceAsImage(sImage))));
+            setIcon(new ImageIcon(tnbmacro.getThumbNail(resourceService != null ? resourceService.getResourceAsImage(sImage) : null)));
             setFocusPainted(false);
             setFocusable(false);
             setRequestFocusEnabled(false);

@@ -24,6 +24,7 @@ import com.openbravo.pos.cash.CashManagementService;
 import com.openbravo.pos.cash.CashManagementServiceImpl;
 import com.openbravo.pos.cash.CashRegister;
 import com.openbravo.pos.forms.AppProperties.DatabaseConfig;
+import com.openbravo.pos.inventory.InventoryService;
 import com.openbravo.pos.hardware.PosHardwareManager;
 import com.openbravo.pos.printer.DeviceTicket;
 import com.openbravo.pos.printer.TicketParser;
@@ -59,6 +60,8 @@ public class ApplicationShell extends JPanel implements AppView {
 
     private final AppProperties appProperties;
     private Session session;
+    private SystemService systemService;
+    @Deprecated
     private DataLogicSystem dlogicSystem;
     private CashManagementService cashManagementService;
 
@@ -101,7 +104,7 @@ public class ApplicationShell extends JPanel implements AppView {
 
     private void setTitlePanel() {
 
-        String customTile = dlogicSystem.getResourceAsText("Window.Title");
+        String customTile = (systemService != null) ? systemService.getResourceAsText("Window.Title") : null;
 
         appTitleLabel.setText(customTile);
         appTitleLabel.repaint();
@@ -119,7 +122,9 @@ public class ApplicationShell extends JPanel implements AppView {
         if (inventoryLocation == null) {
             inventoryLocation = "0";
             hostSavedProperties.setProperty(HOST_PROP_KEY_LOCATION, inventoryLocation);
-            dlogicSystem.setResourceAsProperties(getHostPropertyId(), hostSavedProperties);
+            if (systemService != null) {
+                systemService.setResourceAsProperties(getHostPropertyId(), hostSavedProperties);
+            }
         }
     }
 
@@ -199,7 +204,7 @@ public class ApplicationShell extends JPanel implements AppView {
 
     private String readDataBaseVersion() {
         try {
-            return dlogicSystem.findVersion();
+            return (systemService != null) ? systemService.findVersion() : null;
         }
         catch (BasicException ed) {
             return null;
@@ -249,7 +254,9 @@ public class ApplicationShell extends JPanel implements AppView {
         activeCash.setEndDate(endDate);
 
         hostSavedProperties.setProperty(HOST_PROP_KEY_ACTIVECASH, activeCash.getMoney());
-        dlogicSystem.setResourceAsProperties(getHostPropertyId(), hostSavedProperties);
+        if (systemService != null) {
+            systemService.setResourceAsProperties(getHostPropertyId(), hostSavedProperties);
+        }
     }
 
     @Override
@@ -292,7 +299,7 @@ public class ApplicationShell extends JPanel implements AppView {
 
     private void printerStart() {
 
-        String sresource = dlogicSystem.getResourceAsXML("Printer.Start");
+        String sresource = (systemService != null) ? systemService.getResourceAsXML("Printer.Start") : null;
 
         deviceTicket.getDeviceDisplay().writeVisor(AppLocal.APP_NAME, AppLocal.APP_VERSION);
 
@@ -388,7 +395,7 @@ public class ApplicationShell extends JPanel implements AppView {
     private void showLoginPanel() {
         LOGGER.log(Level.INFO, "Showing Authentication Panel");
         if (mAuthPanel == null) {
-            mAuthPanel = new AuthenticationPanel(this, (SecurityService) dlogicSystem, appProperties, new AuthenticationPanel.AuthListener() {
+            mAuthPanel = new AuthenticationPanel(this, (SecurityService) systemService, appProperties, new AuthenticationPanel.AuthListener() {
                 @Override
                 public void onSucess(AppUser user) {
                     openAppView(user);
@@ -397,7 +404,7 @@ public class ApplicationShell extends JPanel implements AppView {
             contentContainerPanel.add(mAuthPanel, "login");
 
             // Auto-activate initial default database if not yet connected
-            if (dlogicSystem == null && mAuthPanel.getSelectedDatabase() != null) {
+            if (systemService == null && mAuthPanel.getSelectedDatabase() != null) {
                 SwingUtilities.invokeLater(() -> mAuthPanel.activateSelectedDatabase());
             }
         }
@@ -425,9 +432,9 @@ public class ApplicationShell extends JPanel implements AppView {
                 new Object[]{dbConfig.name(), dbConfig.url()});
         waitCursorBegin();
 
-        javax.swing.SwingWorker<DataLogicSystem, String> worker = new javax.swing.SwingWorker<>() {
+        javax.swing.SwingWorker<SystemService, String> worker = new javax.swing.SwingWorker<>() {
             @Override
-            protected DataLogicSystem doInBackground() throws Exception {
+            protected SystemService doInBackground() throws Exception {
                 publish("A verificar parâmetros da base de dados...");
                 AppConfig.testConnection(dbConfig);
 
@@ -446,13 +453,18 @@ public class ApplicationShell extends JPanel implements AppView {
                 com.openbravo.pos.data.DBMigrator.execDBMigration(session);
 
                 publish("A inicializar serviços do sistema...");
-                dlogicSystem = null;
-                dlogicSystem = getBean(DataLogicSystem.class);
-                dlogicSystem.init(session);
+                systemService = getBean(SystemService.class);
+                if (systemService instanceof BeanFactoryApp) {
+                    ((BeanFactoryApp) systemService).init(ApplicationShell.this);
+                }
+                dlogicSystem = (systemService instanceof DataLogicSystem) ? (DataLogicSystem) systemService : null;
+                if (dlogicSystem != null) {
+                    dlogicSystem.init(session);
+                }
      
                 cashManagementService= null;
                 cashManagementService = new CashManagementServiceImpl(session);
-                hostSavedProperties = dlogicSystem.getResourceAsProperties(getHostPropertyId());
+                hostSavedProperties = systemService.getResourceAsProperties(getHostPropertyId());
 
                 publish("A inicializar active Cash and Inventory..");
                 setInventoryLocation();
@@ -470,7 +482,7 @@ public class ApplicationShell extends JPanel implements AppView {
                 logStartup();
 
 
-                return dlogicSystem;
+                return systemService;
             }
 
             @Override
@@ -483,10 +495,10 @@ public class ApplicationShell extends JPanel implements AppView {
             @Override
             protected void done() {
                 try {
-                    DataLogicSystem dl = get();
+                    SystemService ss = get();
                     LOGGER.log(Level.INFO, "Successfully completed activation of database: {0}", dbConfig.name());
                     if (callback != null) {
-                        callback.onSuccess(dbConfig, dl);
+                        callback.onSuccess(dbConfig, ss);
                     }
                 }
                 catch (Exception ex) {
@@ -521,7 +533,8 @@ public class ApplicationShell extends JPanel implements AppView {
         String sWareHouse;
 
         try {
-            sWareHouse = dlogicSystem.findLocationName(inventoryLocation);
+            InventoryService invService = getBean(InventoryService.class);
+            sWareHouse = (invService != null) ? invService.findLocationName(inventoryLocation) : "";
         }
         catch (BasicException e) {
             sWareHouse = "";

@@ -41,7 +41,9 @@ public class WordspacePanel extends JPanel implements AppUserView {
 
     private final ApplicationShell appRootPanel;
     private final AppUser appCurrentUser;
+    @Deprecated
     private final DataLogicSystem dataLogicSystem;
+    private final ResourceService resourceService;
     private final JLabel notificatorLabel;
 
     private Icon menuOpenIcon;
@@ -65,7 +67,8 @@ public class WordspacePanel extends JPanel implements AppUserView {
         appRootPanel = appview;
         appCurrentUser = appuser;
 
-        dataLogicSystem = appRootPanel.getBean(DataLogicSystem.class);
+        resourceService = appRootPanel.getBean(ResourceService.class);
+        dataLogicSystem = (resourceService instanceof DataLogicSystem) ? (DataLogicSystem) resourceService : null;
         SecurityService securityService = appRootPanel.getBean(SecurityService.class);
         AppUserPermissionsLoader aupLoader = new AppUserPermissionsLoader(securityService);
         Set<String> userPermissions = aupLoader.getPermissionsForRole(appCurrentUser.getRole());
@@ -84,7 +87,7 @@ public class WordspacePanel extends JPanel implements AppUserView {
         menuColapsePanel.add(Box.createVerticalStrut(50), 0);
         menuContainerPanel.getVerticalScrollBar().setPreferredSize(new Dimension(35, 35));
         rootMenu = new JRootMenu(this, this);
-        rootMenu.setRootMenu(menuContainerPanel, dataLogicSystem);
+        rootMenu.setRootMenu(menuContainerPanel, resourceService);
         setMenuIcon();
         assignMenuButtonIcon();
 

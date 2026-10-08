@@ -32,6 +32,7 @@ import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppProperties;
 import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.forms.DataLogicSystem;
+import com.openbravo.pos.forms.ResourceService;
 import com.openbravo.pos.hardware.PosHardwareManager;
 import com.openbravo.pos.printer.DeviceTicket;
 import com.openbravo.pos.printer.TicketParser;
@@ -53,6 +54,8 @@ import com.openbravo.pos.sales.SalesServiceImpl;
 public class JTicketsBagTicket extends JTicketsBag {
 
     private static final Logger LOGGER = Logger.getLogger(JTicketsBagTicket.class.getName());
+    private ResourceService resourceService = null;
+    @Deprecated
     private DataLogicSystem m_dlSystem = null;
     private CustomerService customerService = null;
     @Deprecated
@@ -90,7 +93,8 @@ public class JTicketsBagTicket extends JTicketsBag {
         m_App = app;
 
         m_panelticketedit = panelticket;
-        m_dlSystem = m_App.getBean(DataLogicSystem.class);
+        resourceService = m_App.getBean(ResourceService.class);
+        m_dlSystem = (resourceService instanceof DataLogicSystem) ? (DataLogicSystem) resourceService : null;
         ticketLifecycleService = m_App.getBean(TicketLifecycleService.class);
         taxService = m_App.getBean(TaxService.class);
         customerService = m_App.getBean(CustomerService.class);
@@ -322,7 +326,7 @@ public class JTicketsBagTicket extends JTicketsBag {
                     script.put("ticket", m_ticket);
                     script.put("taxes", m_ticket.getTaxLines());
                     previewTicketParser
-                            .printTicket(script.eval(m_dlSystem.getResourceAsXML("Printer.TicketPreview")).toString());
+                            .printTicket(script.eval(resourceService.getResourceAsXML("Printer.TicketPreview")).toString());
                 } catch (ScriptException | TicketPrinterException e) {
                     LOGGER.log(Level.WARNING, null, e);
                     MessageInf msg = new MessageInf(MessageInf.SGN_WARNING,
@@ -335,7 +339,7 @@ public class JTicketsBagTicket extends JTicketsBag {
                     script.put("ticket", m_ticket);
                     script.put("taxes", m_ticket.getTaxLines());
                     systemTicketParser
-                            .printTicket(script.eval(m_dlSystem.getResourceAsXML("Printer.TicketPreview")).toString());
+                            .printTicket(script.eval(resourceService.getResourceAsXML("Printer.TicketPreview")).toString());
                 } catch (ScriptException | TicketPrinterException e) {
                     LOGGER.log(Level.WARNING, null, e);
                     JMessagePanel.showMessage(this, new MessageInf(MessageInf.SGN_NOTICE,

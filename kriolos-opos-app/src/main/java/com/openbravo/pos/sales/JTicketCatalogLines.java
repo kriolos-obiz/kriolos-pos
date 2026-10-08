@@ -19,7 +19,7 @@ package com.openbravo.pos.sales;
 import com.openbravo.basic.BasicException;
 import com.openbravo.pos.catalog.CatalogSelector;
 import com.openbravo.pos.forms.AppView;
-import com.openbravo.pos.forms.DataLogicSystem;
+import com.openbravo.pos.forms.ResourceService;
 import com.openbravo.pos.ticket.TicketLineInfo;
 import java.awt.CardLayout;
 import java.awt.Dimension;
@@ -43,11 +43,11 @@ public class JTicketCatalogLines extends javax.swing.JPanel {
             int width, 
             int height) {
         
-        DataLogicSystem dlSystem = app.getBean(DataLogicSystem.class);
+        ResourceService resourceService = app.getBean(ResourceService.class);
         
         initComponents();
         
-        refoundLines = new JRefundLines(dlSystem, jTicketEdit);        
+        refoundLines = new JRefundLines(resourceService, jTicketEdit);        
         add(refoundLines, "reflines");
         
         catalogExplorer = (CatalogSelector) com.openbravo.pos.ui.api.catalog.CatalogManager.createDefaultCatalog(app);
