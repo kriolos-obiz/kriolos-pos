@@ -47,9 +47,9 @@ public class LeavesPanel extends JPanelTable {
      */
     @Override
     protected void init() {
-        DataLogicPresenceManagement dlPresenceManagement  = app.getBean(DataLogicPresenceManagement.class);
-        tleaves = dlPresenceManagement.getTableLeaves();
-        jeditor = new LeavesView(app, dirty);
+        ShiftService shiftService = app.getBean(ShiftService.class);
+        tleaves = shiftService.getTableLeaves();
+        jeditor = new LeavesView(app, dirty, shiftService);
     }
 
     /**

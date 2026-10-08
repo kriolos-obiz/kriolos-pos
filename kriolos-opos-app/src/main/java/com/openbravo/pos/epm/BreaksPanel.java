@@ -49,9 +49,9 @@ public class BreaksPanel extends JPanelTable {
      */
     @Override
     protected void init() {
-        DataLogicPresenceManagement dlPresenceManagement  = app.getBean(DataLogicPresenceManagement.class);
-        tbreaks = dlPresenceManagement.getTableBreaks();
-        jeditor = new BreaksView(app, dirty);
+        ShiftService shiftService = app.getBean(ShiftService.class);
+        tbreaks = shiftService.getTableBreaks();
+        jeditor = new BreaksView(app, dirty, shiftService);
     }
 
     /**

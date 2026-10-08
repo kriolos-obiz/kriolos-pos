@@ -33,17 +33,19 @@ import java.util.UUID;
 public final class BreaksView extends javax.swing.JPanel implements EditorRecord {
 
     private String m_oId;
-    private SentenceList m_sentcat;
+    private final ShiftService shiftService;
     private DirtyManager m_Dirty;
 
     /** Creates new form BreaksView
      * @param app
      * @param dirty */
     public BreaksView(AppView app, DirtyManager dirty) {
+        this(app, dirty, null);
+    }
 
-        DataLogicPresenceManagement dlPresenceManagement = app.getBean(DataLogicPresenceManagement.class);
+    public BreaksView(AppView app, DirtyManager dirty, ShiftService shiftService) {
+        this.shiftService = shiftService != null ? shiftService : app.getBean(ShiftService.class);
         initComponents();
-        m_sentcat = dlPresenceManagement.getBreaksList();
         m_Dirty = dirty;
         m_jBreakName.getDocument().addDocumentListener(dirty);
         m_jVisible.addActionListener(dirty);
@@ -52,7 +54,7 @@ public final class BreaksView extends javax.swing.JPanel implements EditorRecord
     }
 
     void activate() throws BasicException {
-        List a = m_sentcat.list();
+        List<BreaksInfo> a = shiftService.getBreaksListAll();
         a.add(0, null);
     }
 

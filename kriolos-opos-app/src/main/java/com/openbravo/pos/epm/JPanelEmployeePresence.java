@@ -38,7 +38,7 @@ import javax.swing.*;
 public class JPanelEmployeePresence extends javax.swing.JPanel implements JPanelView, BeanFactoryApp {
 
     private AppView app;
-    private DataLogicPresenceManagement dlpresencemanagement;
+    private ShiftService shiftService;
     private JFlowPanel jBreaks;
     
     /** Creates new form JPanelEmployeePresence */
@@ -55,7 +55,12 @@ public class JPanelEmployeePresence extends javax.swing.JPanel implements JPanel
     @Override
     public void init(AppView app) throws BeanFactoryException {
         this.app = app;
-        dlpresencemanagement = app.getBean(DataLogicPresenceManagement.class);
+        shiftService = app.getBean(ShiftService.class);
+    }
+
+    @Deprecated
+    public DataLogicPresenceManagement getDataLogicPresenceManagement() {
+        return shiftService instanceof DataLogicPresenceManagement dl ? dl : null;
     }
 
     private void listBreaks()
@@ -64,7 +69,7 @@ public class JPanelEmployeePresence extends javax.swing.JPanel implements JPanel
             jScrollPane1.getViewport().setView(null);
             jBreaks = new JFlowPanel();
             jBreaks.applyComponentOrientation(getComponentOrientation());
-            java.util.List breaks = dlpresencemanagement.listBreaksVisible();
+            java.util.List<Break> breaks = shiftService.listBreaksVisible();
             for (int i = 0; i < breaks.size(); i++) {
 
                 Break m_break = (Break) breaks.get(i);
@@ -103,7 +108,7 @@ public class JPanelEmployeePresence extends javax.swing.JPanel implements JPanel
         @Override
         public void actionPerformed(ActionEvent evt) {
             try {
-                dlpresencemanagement.StartBreak(app.getAppUserView().getUser().getId(), m_break.getId());
+                shiftService.startBreak(app.getAppUserView().getUser().getId(), m_break.getId());
                 message.setText(app.getAppUserView().getUser().getName()+" "+AppLocal.getIntString("message.leavefor")+" "+ m_break.getName()+" "+AppLocal.getIntString("message.at")+" "+Formats.TIMESTAMP.formatValue(new Date()));
                 BreakAction();
             } catch (BasicException ex) {
@@ -127,19 +132,19 @@ public class JPanelEmployeePresence extends javax.swing.JPanel implements JPanel
      */
     @Override
     public void activate() throws BasicException {
-        boolean isOnLeave = dlpresencemanagement.IsOnLeave(app.getAppUserView().getUser().getId());
+        boolean isOnLeave = shiftService.isOnLeave(app.getAppUserView().getUser().getId());
         listBreaks();
         if (isOnLeave) {
             message.setText(app.getAppUserView().getUser().getName()+" "+AppLocal.getIntString("message.leavecontrol"));
             LeaveAction();
         } else {
-            boolean isCheckedIn = dlpresencemanagement.IsCheckedIn(app.getAppUserView().getUser().getId());
+            boolean isCheckedIn = shiftService.isCheckedIn(app.getAppUserView().getUser().getId());
             if (isCheckedIn) {
-                Date lastCheckIn = dlpresencemanagement.GetLastCheckIn(app.getAppUserView().getUser().getId());
+                Date lastCheckIn = shiftService.getLastCheckIn(app.getAppUserView().getUser().getId());
                 message.setText(app.getAppUserView().getUser().getName()+" "+AppLocal.getIntString("message.checkedin")+" "+Formats.TIMESTAMP.formatValue(lastCheckIn));
                 CheckInAction();
             } else {
-                Date lastCheckOut = dlpresencemanagement.GetLastCheckOut(app.getAppUserView().getUser().getId());
+                Date lastCheckOut = shiftService.getLastCheckOut(app.getAppUserView().getUser().getId());
                 if (lastCheckOut != null) {
                     message.setText(app.getAppUserView().getUser().getName()+" "+AppLocal.getIntString("message.checkedout")+" "+Formats.TIMESTAMP.formatValue(lastCheckOut));
                 } else {
@@ -147,10 +152,10 @@ public class JPanelEmployeePresence extends javax.swing.JPanel implements JPanel
                 }
                 CheckOutAction();
             }
-            boolean isOnBreak = dlpresencemanagement.IsOnBreak(app.getAppUserView().getUser().getId());
+            boolean isOnBreak = shiftService.isOnBreak(app.getAppUserView().getUser().getId());
             if (isOnBreak) {
-                Object[] LastBreak = (Object[]) dlpresencemanagement.GetLastBreak(app.getAppUserView().getUser().getId());
-                message.setText(app.getAppUserView().getUser().getName()+" "+AppLocal.getIntString("message.leavefor")+" "+(String) LastBreak[0] +" "+AppLocal.getIntString("message.at")+" "+ Formats.TIMESTAMP.formatValue((Date) LastBreak[1]));
+                ShiftBreakActivity lastBreak = shiftService.getLastBreakActivity(app.getAppUserView().getUser().getId());
+                message.setText(app.getAppUserView().getUser().getName()+" "+AppLocal.getIntString("message.leavefor")+" "+ lastBreak.breakName() +" "+AppLocal.getIntString("message.at")+" "+ Formats.TIMESTAMP.formatValue(lastBreak.startTime()));
                 BreakAction();
             }
         }
@@ -286,12 +291,12 @@ public class JPanelEmployeePresence extends javax.swing.JPanel implements JPanel
 
     private void btnCheckInActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCheckInActionPerformed
         try {
-            boolean isOnBreak = dlpresencemanagement.IsOnBreak(app.getAppUserView().getUser().getId());
+            boolean isOnBreak = shiftService.isOnBreak(app.getAppUserView().getUser().getId());
             if (isOnBreak) {
-                dlpresencemanagement.EndBreak(app.getAppUserView().getUser().getId());
+                shiftService.endBreak(app.getAppUserView().getUser().getId());
                 message.setText(app.getAppUserView().getUser().getName()+AppLocal.getIntString("message.breakoverandcheckedin")+" "+Formats.TIMESTAMP.formatValue(new Date()));
             } else {
-                dlpresencemanagement.CheckIn(app.getAppUserView().getUser().getId());
+                shiftService.checkIn(app.getAppUserView().getUser().getId());
                 message.setText(app.getAppUserView().getUser().getName()+" "+AppLocal.getIntString("message.checkedin")+" "+Formats.TIMESTAMP.formatValue(new Date()));
             }
         } catch (BasicException ex) {
@@ -303,14 +308,14 @@ public class JPanelEmployeePresence extends javax.swing.JPanel implements JPanel
 
     private void btnCheckOutActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCheckOutActionPerformed
         try {
-            boolean isOnBreak = dlpresencemanagement.IsOnBreak(app.getAppUserView().getUser().getId());
+            boolean isOnBreak = shiftService.isOnBreak(app.getAppUserView().getUser().getId());
             if (isOnBreak) {
-                dlpresencemanagement.EndBreak(app.getAppUserView().getUser().getId());
+                shiftService.endBreak(app.getAppUserView().getUser().getId());
                 message.setText(app.getAppUserView().getUser().getName()+" "+AppLocal.getIntString("message.breakoverandcheckedout")+" "+Formats.TIMESTAMP.formatValue(new Date()));
             } else {
                 message.setText(app.getAppUserView().getUser().getName()+" "+AppLocal.getIntString("message.checkedout")+" "+Formats.TIMESTAMP.formatValue(new Date()));
             }
-            dlpresencemanagement.CheckOut(app.getAppUserView().getUser().getId());
+            shiftService.checkOut(app.getAppUserView().getUser().getId());
         } catch (BasicException ex) {
             MessageInf msg = new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.cannotcheckout"));
             msg.show(this);

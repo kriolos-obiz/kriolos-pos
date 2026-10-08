@@ -40,7 +40,7 @@ public final class LeavesView extends com.openbravo.pos.panels.ValidationPanel i
     private Date endDate;
 
     private DirtyManager m_Dirty;
-    private DataLogicPresenceManagement dlPresenceManagement;
+    private ShiftService shiftService;
 
     /**
      * Creates new form LeavesView
@@ -49,8 +49,11 @@ public final class LeavesView extends com.openbravo.pos.panels.ValidationPanel i
      * @param dirty
      */
     public LeavesView(AppView app, DirtyManager dirty) {
+        this(app, dirty, null);
+    }
 
-        dlPresenceManagement = app.getBean(DataLogicPresenceManagement.class);
+    public LeavesView(AppView app, DirtyManager dirty, ShiftService shiftService) {
+        this.shiftService = shiftService != null ? shiftService : app.getBean(ShiftService.class);
         initComponents();
 
         m_Dirty = dirty;
@@ -60,6 +63,11 @@ public final class LeavesView extends com.openbravo.pos.panels.ValidationPanel i
         m_jLeaveNote.getDocument().addDocumentListener(dirty);
         writeValueEOF();
         initValidator();
+    }
+
+    @Deprecated
+    public DataLogicPresenceManagement getDataLogicPresenceManagement() {
+        return shiftService instanceof DataLogicPresenceManagement dl ? dl : null;
     }
 
     private void initValidator() {
@@ -170,12 +178,12 @@ public final class LeavesView extends com.openbravo.pos.panels.ValidationPanel i
         leaves[3] = Formats.TIMESTAMP.parseValue(m_jStartDate.getText());
         leaves[4] = Formats.TIMESTAMP.parseValue(m_jEndDate.getText());
         leaves[5] = m_jLeaveNote.getText();
-        boolean isCheckedIn = dlPresenceManagement.IsCheckedIn(m_employeeid);
+        boolean isCheckedIn = shiftService.isCheckedIn(m_employeeid);
         Date startDate = Formats.TIMESTAMP.parseValue(m_jStartDate.getText());
         Date endDate = Formats.TIMESTAMP.parseValue(m_jEndDate.getText());
         Date systemDate = new Date();
         if (isCheckedIn && startDate.before(systemDate) && endDate.after(systemDate)) {
-            dlPresenceManagement.BlockEmployee(m_employeeid);
+            shiftService.blockEmployee(m_employeeid);
         }
         return leaves;
     }
@@ -373,7 +381,7 @@ public final class LeavesView extends com.openbravo.pos.panels.ValidationPanel i
 
     private void btnEmployeeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEmployeeActionPerformed
 
-        JEmployeeFinder finder = JEmployeeFinder.getEmployeeFinder(this, dlPresenceManagement);
+        JEmployeeFinder finder = JEmployeeFinder.getEmployeeFinder(this, shiftService);
         finder.search(null);
         finder.setVisible(true);
 

@@ -53,9 +53,14 @@ public class JEmployeeFinderPanel extends JPanel implements EditorCreator {
         initDomainAdapters();
     }
 
-    public JEmployeeFinderPanel(DataLogicPresenceManagement dlPresenceManagement) {
-        init(dlPresenceManagement);
+    public JEmployeeFinderPanel(ShiftService shiftService) {
+        init(shiftService);
         initDomainAdapters();
+    }
+
+    @Deprecated
+    public JEmployeeFinderPanel(DataLogicPresenceManagement dlPresenceManagement) {
+        this((ShiftService) dlPresenceManagement);
     }
 
     private void initDomainAdapters() {
@@ -71,12 +76,12 @@ public class JEmployeeFinderPanel extends JPanel implements EditorCreator {
         this.modalContext = modalContext;
     }
 
-    public static EmployeeInfo show(Component parent, DataLogicPresenceManagement dlPresenceManagement) {
-        return show(parent, dlPresenceManagement, null);
+    public static EmployeeInfo show(Component parent, ShiftService shiftService) {
+        return show(parent, shiftService, null);
     }
 
-    public static EmployeeInfo show(Component parent, DataLogicPresenceManagement dlPresenceManagement, EmployeeInfo initialEmployee) {
-        JEmployeeFinderPanel panel = new JEmployeeFinderPanel(dlPresenceManagement);
+    public static EmployeeInfo show(Component parent, ShiftService shiftService, EmployeeInfo initialEmployee) {
+        JEmployeeFinderPanel panel = new JEmployeeFinderPanel(shiftService);
         if (initialEmployee != null) {
             panel.search(initialEmployee);
         }
@@ -89,17 +94,27 @@ public class JEmployeeFinderPanel extends JPanel implements EditorCreator {
         return panel.getSelectedEmployee();
     }
 
+    @Deprecated
+    public static EmployeeInfo show(Component parent, DataLogicPresenceManagement dlPresenceManagement) {
+        return show(parent, (ShiftService) dlPresenceManagement);
+    }
+
+    @Deprecated
+    public static EmployeeInfo show(Component parent, DataLogicPresenceManagement dlPresenceManagement, EmployeeInfo initialEmployee) {
+        return show(parent, (ShiftService) dlPresenceManagement, initialEmployee);
+    }
+
     public EmployeeInfo getSelectedEmployee() {
         return selectedEmployee;
     }
 
-    private void init(DataLogicPresenceManagement dlPresenceManagement) {
+    private void init(ShiftService shiftService) {
         initComponents();
 
         jScrollPane1.getVerticalScrollBar().setPreferredSize(new Dimension(35, 35));
         m_jtxtName.addEditorKeys(m_jKeys);
         m_jtxtName.reset();
-        lpr = new ListProviderCreator(dlPresenceManagement.getEmployeeList(), this);
+        lpr = shiftService.getEmployeeListProvider(this);
         jListEmployees.setCellRenderer(new EmployeeRenderer());
 
         if (getRootPane() != null) {
