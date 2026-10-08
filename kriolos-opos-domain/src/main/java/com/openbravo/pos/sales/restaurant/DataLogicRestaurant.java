@@ -29,14 +29,20 @@ import com.openbravo.data.loader.SerializerWriteBasicExt;
 import com.openbravo.data.loader.Session;
 import com.openbravo.data.loader.StaticSentence;
 import com.openbravo.data.loader.TableDefinition;
+import com.openbravo.data.user.DefaultSaveProvider;
+import com.openbravo.data.user.EditorCreator;
+import com.openbravo.data.user.ListProvider;
+import com.openbravo.data.user.ListProviderCreator;
+import com.openbravo.data.user.SaveProvider;
 import com.openbravo.format.Formats;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.BeanFactoryDataSingle;
+import java.util.List;
 
 /**
  * Data access logic for Restaurant / Hospitality domain (Floors, Places, Reservations).
  */
-public class DataLogicRestaurant extends BeanFactoryDataSingle {
+public class DataLogicRestaurant extends BeanFactoryDataSingle implements RestaurantService {
 
     private Session sessionDB;
 
@@ -58,6 +64,31 @@ public class DataLogicRestaurant extends BeanFactoryDataSingle {
         this.sessionDB = s;
     }
 
+    public Session getSession() {
+        return sessionDB;
+    }
+
+    @Override
+    public List<FloorsInfo> getFloorsListAll() throws BasicException {
+        return getFloorsList().list();
+    }
+
+    @Override
+    public List<FloorsInfo> getFloorTablesListAll() throws BasicException {
+        return getFloorTablesList().list();
+    }
+
+    @Override
+    public ListProvider getReservationsListProvider(EditorCreator filter) {
+        return new ListProviderCreator(getReservationsList(), filter);
+    }
+
+    @Override
+    public SaveProvider getReservationsSaveProvider() {
+        return new DefaultSaveProvider(getReservationsUpdate(), getReservationsInsert(), getReservationsDelete());
+    }
+
+    @Override
     public SentenceList<FloorsInfo> getFloorsList() {
         return new StaticSentence(sessionDB,
                 "SELECT ID, NAME FROM floors ORDER BY NAME",

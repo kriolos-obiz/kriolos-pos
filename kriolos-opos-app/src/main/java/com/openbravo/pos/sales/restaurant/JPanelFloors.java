@@ -47,8 +47,8 @@ public class JPanelFloors extends JPanelTable {
      */
     @Override
     protected void init() {
-        DataLogicRestaurant dlRestaurant = app.getBean(DataLogicRestaurant.class);
-        tfloors = dlRestaurant.getTableFloors();
+        RestaurantService restaurantService = app.getBean(RestaurantService.class);
+        tfloors = restaurantService.getTableFloors();
         jeditor = new FloorsEditor(dirty); 
     }
     

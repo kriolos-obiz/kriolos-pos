@@ -27,6 +27,7 @@ import com.openbravo.data.user.*;
 
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
+import com.openbravo.pos.forms.BeanFactoryException;
 import com.openbravo.format.Formats;
 import com.openbravo.basic.BasicException;
 import com.openbravo.pos.customers.DataLogicCustomers;
@@ -42,6 +43,7 @@ public class JTicketsBagRestaurantRes extends javax.swing.JPanel implements Edit
     private final JTicketsBagRestaurantMap m_restaurantmap;
     
     private DataLogicCustomers dlCustomers = null;
+    private RestaurantService restaurantService = null;
     private DataLogicRestaurant dlRestaurant = null;
     
     private final DirtyManager m_Dirty;
@@ -67,7 +69,16 @@ public class JTicketsBagRestaurantRes extends javax.swing.JPanel implements Edit
         m_restaurantmap = restaurantmap;
         
         dlCustomers = oApp.getBean(DataLogicCustomers.class);
-        dlRestaurant = oApp.getBean(DataLogicRestaurant.class);
+        try {
+            restaurantService = oApp.getBean(RestaurantService.class);
+        } catch (BeanFactoryException ignored) {
+        }
+        if (restaurantService == null) {
+            dlRestaurant = oApp.getBean(DataLogicRestaurant.class);
+            restaurantService = dlRestaurant;
+        } else if (restaurantService instanceof DataLogicRestaurant) {
+            dlRestaurant = (DataLogicRestaurant) restaurantService;
+        }
 
         m_dcurrentday = null;
         
@@ -107,9 +118,8 @@ public class JTicketsBagRestaurantRes extends javax.swing.JPanel implements Edit
         
         writeValueEOF();
         
-        ListProvider lpr = new ListProviderCreator(dlRestaurant.getReservationsList(), new MyDateFilter());            
-        DefaultSaveProvider spr = new DefaultSaveProvider(dlRestaurant.getReservationsUpdate(), 
-            dlRestaurant.getReservationsInsert(), dlRestaurant.getReservationsDelete());        
+        ListProvider lpr = restaurantService.getReservationsListProvider(new MyDateFilter());            
+        SaveProvider spr = restaurantService.getReservationsSaveProvider();        
         
         m_bd = new BrowsableEditableData(lpr, spr, new CompareReservations(), this, m_Dirty);           
         
@@ -698,4 +708,15 @@ public class JTicketsBagRestaurantRes extends javax.swing.JPanel implements Edit
     private com.openbravo.editor.JEditorString txtCustomer;
     // End of variables declaration//GEN-END:variables
     
+    public RestaurantService getRestaurantService() {
+        return restaurantService;
+    }
+
+    @Deprecated
+    public DataLogicRestaurant getDataLogicRestaurant() {
+        if (dlRestaurant == null && restaurantService instanceof DataLogicRestaurant) {
+            return (DataLogicRestaurant) restaurantService;
+        }
+        return dlRestaurant;
+    }
 }

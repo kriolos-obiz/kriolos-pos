@@ -26,6 +26,7 @@ import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.BeanFactoryDataSingle;
 import com.openbravo.pos.forms.BeanFactoryException;
 import com.openbravo.pos.sales.restaurant.DataLogicRestaurant;
+import com.openbravo.pos.sales.restaurant.RestaurantService;
 import java.util.Date;
 import java.util.List;
 
@@ -131,8 +132,29 @@ public class DataLogicCustomers extends BeanFactoryDataSingle implements Custome
         });
     }
 
+    public RestaurantService getRestaurantService() {
+        if (app != null) {
+            try {
+                return app.getBean(RestaurantService.class);
+            } catch (BeanFactoryException ignored) {
+            }
+        }
+        return getDataLogicRestaurant();
+    }
+
+    /**
+     * @deprecated Use {@link #getRestaurantService()} instead.
+     */
+    @Deprecated
     public DataLogicRestaurant getDataLogicRestaurant() {
         if (app != null) {
+            try {
+                RestaurantService svc = app.getBean(RestaurantService.class);
+                if (svc instanceof DataLogicRestaurant) {
+                    return (DataLogicRestaurant) svc;
+                }
+            } catch (BeanFactoryException ignored) {
+            }
             try {
                 return app.getBean(DataLogicRestaurant.class);
             } catch (BeanFactoryException ignored) {
@@ -145,35 +167,35 @@ public class DataLogicCustomers extends BeanFactoryDataSingle implements Custome
 
     // <editor-fold defaultstate="collapsed" desc="Reservation">
     /**
-     * @deprecated Use {@link DataLogicRestaurant#getReservationsList()} instead.
+     * @deprecated Use {@link RestaurantService#getReservationsList()} instead.
      */
     @Deprecated
     public final SentenceList getReservationsList() {
-        return getDataLogicRestaurant().getReservationsList();
+        return getRestaurantService().getReservationsList();
     }
 
     /**
-     * @deprecated Use {@link DataLogicRestaurant#getReservationsUpdate()} instead.
+     * @deprecated Use {@link RestaurantService#getReservationsUpdate()} instead.
      */
     @Deprecated
     public final SentenceExec getReservationsUpdate() {
-        return getDataLogicRestaurant().getReservationsUpdate();
+        return getRestaurantService().getReservationsUpdate();
     }
 
     /**
-     * @deprecated Use {@link DataLogicRestaurant#getReservationsDelete()} instead.
+     * @deprecated Use {@link RestaurantService#getReservationsDelete()} instead.
      */
     @Deprecated
     public final SentenceExec getReservationsDelete() {
-        return getDataLogicRestaurant().getReservationsDelete();
+        return getRestaurantService().getReservationsDelete();
     }
 
     /**
-     * @deprecated Use {@link DataLogicRestaurant#getReservationsInsert()} instead.
+     * @deprecated Use {@link RestaurantService#getReservationsInsert()} instead.
      */
     @Deprecated
     public final SentenceExec getReservationsInsert() {
-        return getDataLogicRestaurant().getReservationsInsert();
+        return getRestaurantService().getReservationsInsert();
     }
     // </editor-fold>
 

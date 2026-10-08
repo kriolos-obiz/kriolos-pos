@@ -44,9 +44,9 @@ public class JPanelPlaces extends JPanelTable {
 
     @Override
     protected void init() {
-        DataLogicRestaurant dlRestaurant = app.getBean(DataLogicRestaurant.class);
-        tplaces = dlRestaurant.getTablePlaces();
-        jeditor = new PlacesEditor(dlRestaurant, dirty);
+        RestaurantService restaurantService = app.getBean(RestaurantService.class);
+        tplaces = restaurantService.getTablePlaces();
+        jeditor = new PlacesEditor(restaurantService, dirty);
     }
 
     @Override
