@@ -469,5 +469,22 @@ To transform the legacy monolith into clean, modular components, the 13 `DataLog
    * Created domain unit test suite:
      ** `SharedTicketServiceTest` (`com.openbravo.pos.sales.SharedTicketServiceTest`): Tests container resolution of `SharedTicketService` to `DataLogicReceipts` (both via String key and Class literal) and verifies full contract compliance (CRUD, pickup IDs, user filtering, lock/unlock lifecycle).
    * Maintained 100% binary backwards compatibility with `@Deprecated` legacy methods and constructor overloads across all classes.
-27. **Next Decoupling Targets:**
-   * Review Catalog & Product Information Management (`CatalogService` vs `DataLogicPIM`).
+27. **Product Information Management (PIM) Deconstruction & Architectural Layering (Completed):**
+   * **Decomposed Legacy `DataLogicPIM`:** Broken down the legacy monolith (1,328 LOC) into focused, single-responsibility components in `com.openbravo.pos.pim`:
+     ** `DataLogicCategories`: Standalone category data access managing the `categories` table.
+     ** `DataLogicUom`: Standalone unit of measure data access managing the `uom` table.
+     ** `DataLogicProducts`: Standalone product data access managing `products`, `products_cat`, `products_com`, `products_bundle`, and `attributeset`.
+     ** `UomInfo`: Created canonical model in `com.openbravo.pos.pim.UomInfo` with modern Java conventions, Javadoc, and `@author KriolOS`. Legacy `com.openbravo.pos.inventory.UomInfo` retained as `@Deprecated` alias.
+   * **Service Coordination Layer:**
+     ** `CatalogServiceImpl`: Upper-layer business service implementation coordinating `DataLogicProducts`, `DataLogicCategories`, and `DataLogicUom`. Registered as the container implementation for `CatalogService`.
+     ** `DataLogicPIM`: Converted into a deprecated transition class extending `CatalogServiceImpl` annotated with `@Deprecated(since = "10.0.0", forRemoval = true)` to ensure full backward compatibility across legacy app callers.
+     ** `DataLogicSales` & `DataLogicInventory`: Decoupled from `DataLogicPIM`. `DataLogicSales` routes catalog operations through `CatalogService`; `DataLogicInventory` manages `products_bundle` directly.
+   * **Architectural Layering & DDD Rules Established (`.agents/rules/`):**
+     ** `architecture-layering.md`: Strict separation — DataLogics never call DataLogics; Services never call Services; Services coordinate DataLogics from the upper layer; Upper-layer components may call DataLogics directly only for maintenance/CRUD panels without cross-package coupling.
+     ** `domain-driven-design.md`: Services receive and return domain models (never raw `Object` or `Object[]`, and never `com.openbravo.data.*` primitives like `Sentence`, `Row`, `TableDefinition`, `SaveProvider`); multi-parameter methods must define records; eliminate magic strings/numbers; DataLogics must be type-safe.
+     ** `modern-java-conventions.md`: Strict ban on Hungarian prefixes (`m_sName`); standard JavaBean/record conventions; Java 17/21 idioms.
+     ** `javadoc-and-license.md`: Javadoc required for packages, classes, and methods; author strictly `@author KriolOS`; opportunistic removal of legacy file license headers when touching files.
+28: **Next Decoupling Targets:**
+   * Modernize legacy UI panels calling `com.openbravo.data.*` persistence primitives to consume dedicated DataLogics directly rather than leaking through `CatalogService`.
+   * Continue replacing `Object[]` parameter arrays in remaining DataLogics with Java records.
+
