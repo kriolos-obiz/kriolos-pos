@@ -8,19 +8,36 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Thread-safe IoC / Bean Container for static factory and service resolution.
- * Guarantees atomic initialization and type-safe casting operations.
+ * Thread-safe IoC (Inversion of Control) / Service Locator container for KriolOS POS.
+ * <p>
+ * This container manages the lifecycle, caching, and resolution of application services,
+ * data logic layers, and view beans. It guarantees:
+ * <ul>
+ *   <li><b>Singleton caching:</b> Beans are instantiated once and cached across the application session.</li>
+ *   <li><b>Thread safety & reentrancy:</b> Uses double-checked locking on {@link ConcurrentHashMap}
+ *       to allow re-entrant, nested bean resolutions during bean construction or {@link BeanFactoryApp#init(AppView)}
+ *       without risking {@link IllegalStateException} from concurrent map operations.</li>
+ *   <li><b>Legacy class migration:</b> Maps legacy Openbravo POS class names and report paths to their
+ *       modern ports and implementations.</li>
+ *   <li><b>Polymorphic instantiation:</b> Automatically handles beans implementing {@link BeanFactory},
+ *       beans requiring an {@link AppView} constructor, and BeanShell report scripts.</li>
+ * </ul>
  *
- * @author KriolOS
+ * @author KriolOS Team
  */
 public final class BeanContainer {
 
     private static final Logger LOGGER = Logger.getLogger(BeanContainer.class.getName());
 
-    // Thread-safe registry cache to prevent race conditions during heavy concurrent access
+    /**
+     * Thread-safe cache holding instantiated bean factories indexed by their resolved target key.
+     */
     private static final Map<String, BeanFactory> BEAN_FACTORIES = new ConcurrentHashMap<>();
 
-    // Immutable lookup table for legacy class migrations to eliminate memory overhead
+    /**
+     * Immutable lookup table for legacy class name migrations, service port decouplings,
+     * and report script redirects.
+     */
     private static final Map<String, String> OLD_CLASSES_MAP = Map.ofEntries(
             Map.entry("com.openbravo.pos.reports.JReportCustomers", "/com/openbravo/reports/customers.bs"),
             Map.entry("com.openbravo.pos.reports.JReportCustomersB", "/com/openbravo/reports/customersb.bs"),
@@ -62,28 +79,38 @@ public final class BeanContainer {
             Map.entry("com.openbravo.pos.sales.restaurant.RestaurantService", "com.openbravo.pos.sales.restaurant.DataLogicRestaurant")
     );
 
-    // Private constructor prevents accidental instantiation of this static utility class
+    /**
+     * Private constructor to prevent direct instantiation of this utility class.
+     *
+     * @throws UnsupportedOperationException always
+     */
     private BeanContainer() {
         throw new UnsupportedOperationException("Utility class cannot be instantiated");
     }
 
     /**
-     * Clears all cached bean factories from memory. Useful for context resets,
-     * user logouts, or tearing down test suites.
+     * Clears all cached bean factories from memory.
+     * <p>
+     * Thread-safe operation synchronized on {@link BeanContainer#getClass()} to ensure
+     * ongoing bean instantiation is not corrupted during cache invalidation.
+     * Typically invoked during session teardown, user logout, or unit testing reset.
      */
     public static void cleanAll() {
-        BEAN_FACTORIES.clear();
+        synchronized (BeanContainer.class) {
+            BEAN_FACTORIES.clear();
+        }
         LOGGER.log(Level.INFO, "BeanContainer registry cache has been successfully cleared.");
     }
 
     /**
-     * Retrieves a bean using the class name as the factory key and handles
-     * casting automatically.
+     * Resolves and retrieves a bean using its target Class literal, handling casting automatically.
      *
-     * @param <T> The expected type of the Bean.
-     * @param beanClass The target class type to resolve and cast the bean to.
-     * @param appView The Application View context.
-     * @return The type-safe bean instance, or null if a casting error occurs.
+     * @param <T> The expected return type of the bean.
+     * @param beanClass The target class literal serving as resolution key and cast target. Must not be null.
+     * @param appView The Application View context passed to the bean constructor or initializer.
+     * @return The type-safe bean instance, or {@code null} if casting fails.
+     * @throws NullPointerException if {@code beanClass} is null.
+     * @throws BeanFactoryException if instantiation or lookup fails.
      */
     public static <T> T getBean(Class<T> beanClass, AppView appView) {
         Objects.requireNonNull(beanClass, "Parameter 'beanClass' cannot be null");
@@ -91,15 +118,16 @@ public final class BeanContainer {
     }
 
     /**
-     * Retrieves a bean by its String factory key and handles casting
-     * automatically.
+     * Resolves and retrieves a bean by its String factory key, safely casting the instance
+     * to the requested target class type.
      *
-     * @param <T> The expected type of the Bean.
-     * @param beanfactory The name of the class or script path acting as the
-     * key.
-     * @param beanClass The expected class type to cast the bean to.
+     * @param <T> The expected return type of the bean.
+     * @param beanfactory The name of the class, interface, or script path acting as the key. Must not be null.
+     * @param beanClass The expected class literal to cast the resolved bean to. Must not be null.
      * @param appView The Application View context.
-     * @return The type-safe bean instance, or null if a casting error occurs.
+     * @return The type-safe bean instance, or {@code null} if the bean cannot be cast to {@code beanClass}.
+     * @throws NullPointerException if {@code beanfactory} or {@code beanClass} is null.
+     * @throws BeanFactoryException if instantiation or lookup fails.
      */
     public static <T> T getBean(String beanfactory, Class<T> beanClass, AppView appView) {
         Objects.requireNonNull(beanClass, "Parameter 'beanClass' cannot be null");
@@ -120,38 +148,69 @@ public final class BeanContainer {
     }
 
     /**
-     * Resolves and retrieves a bean by its String factory key name in a
-     * strictly atomic manner.
+     * Resolves and retrieves a bean by its String factory key or class name.
+     * <p>
+     * Follows the double-checked locking idiom on {@link ConcurrentHashMap}:
+     * <ol>
+     *   <li>Resolves any legacy alias or service port mapping via {@link #mapNewClass(String)}.</li>
+     *   <li>Performs a lock-free check on the internal cache for an already created {@link BeanFactory}.</li>
+     *   <li>If missing, enters a synchronized block to guarantee single instantiation across threads
+     *       while safely supporting re-entrant calls when a bean requests other beans in its constructor
+     *       or {@link BeanFactoryApp#init(AppView)}.</li>
+     *   <li>Initializes the factory if it implements {@link BeanFactoryApp} and caches it.</li>
+     * </ol>
      *
-     * @param beanfactory The name of the class or the script path acting as the
-     * key.
+     * @param beanfactory The class name or script path representing the bean. Must not be null.
      * @param appView The Application View context.
-     * @return The instantiated bean instance.
+     * @return The instantiated bean instance returned by {@link BeanFactory#getBean()}.
+     * @throws NullPointerException if {@code beanfactory} is null.
+     * @throws BeanFactoryException if reflection or script resolution fails.
      */
     public static Object getBean(String beanfactory, AppView appView) {
         Objects.requireNonNull(beanfactory, "Parameter 'beanfactory' cannot be null");
 
         String targetKey = mapNewClass(beanfactory);
 
-        // computeIfAbsent locks only the specific bucket to guarantee single initialization across threads
-        BeanFactory factory = BEAN_FACTORIES.computeIfAbsent(targetKey, key -> {
-            BeanFactory bf = createFactoryInstance(key, appView);
-            if (bf instanceof BeanFactoryApp beanFactoryApp) {
-                beanFactoryApp.init(appView);
+        BeanFactory factory = BEAN_FACTORIES.get(targetKey);
+        if (factory == null) {
+            synchronized (BeanContainer.class) {
+                factory = BEAN_FACTORIES.get(targetKey);
+                if (factory == null) {
+                    factory = createFactoryInstance(targetKey, appView);
+                    if (factory instanceof BeanFactoryApp beanFactoryApp) {
+                        beanFactoryApp.init(appView);
+                    }
+                    BEAN_FACTORIES.put(targetKey, factory);
+                }
             }
-            return bf;
-        });
+        }
 
         return factory.getBean();
     }
 
+    /**
+     * Maps legacy class names or interfaces to modern implementations or scripts.
+     *
+     * @param classname The raw class name or resource path.
+     * @return The mapped target class name or script path, or the original name if no mapping exists.
+     */
     private static String mapNewClass(String classname) {
         return OLD_CLASSES_MAP.getOrDefault(classname, classname);
     }
 
     /**
-     * Isolates Reflection logic to maintain architectural readability and
-     * performance.
+     * Instantiates a new {@link BeanFactory} for the specified class name or script.
+     * <ul>
+     *   <li>If the path starts with {@code "/"}, returns a {@link BeanFactoryScript}.</li>
+     *   <li>If the class implements {@link BeanFactory}, instantiates it using its no-arg constructor.</li>
+     *   <li>Otherwise, instantiates the target class using its {@code (AppView)} constructor and wraps
+     *       the resulting instance in a {@link BeanFactoryObj}.</li>
+     * </ul>
+     *
+     * @param className The fully qualified class name or script resource path.
+     * @param appView The Application View context.
+     * @return A newly created {@link BeanFactory} instance.
+     * @throws BeanFactoryException if the class cannot be found, accessed, or instantiated.
      */
     private static BeanFactory createFactoryInstance(String className, AppView appView) {
         if (className.startsWith("/")) {

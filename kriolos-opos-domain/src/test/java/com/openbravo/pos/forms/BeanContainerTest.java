@@ -170,4 +170,63 @@ class BeanContainerTest {
         assertTrue(finished, "All threads should complete within timeout");
         assertEquals(threadCount, successCount.get(), "All concurrent resolutions must succeed");
     }
+
+    @Test
+    @DisplayName("Should resolve nested bean dependencies recursively without IllegalStateException")
+    void shouldResolveNestedBeanDependenciesRecursively() {
+        RecursiveConstructorBean bean = BeanContainer.getBean(RecursiveConstructorBean.class, appViewProxy);
+        assertNotNull(bean, "Parent bean should be resolved");
+        assertNotNull(bean.getChild(), "Nested child bean resolved during constructor should be present");
+        assertInstanceOf(ChildDependencyBean.class, bean.getChild());
+    }
+
+    @Test
+    @DisplayName("Should resolve nested bean dependencies in BeanFactoryApp init without recursion error")
+    void shouldResolveNestedBeansInBeanFactoryAppInit() {
+        RecursiveInitBean bean = BeanContainer.getBean(RecursiveInitBean.class, appViewProxy);
+        assertNotNull(bean, "Parent bean should be resolved");
+        assertNotNull(bean.getChild(), "Nested child bean resolved during init() should be present");
+        assertInstanceOf(ChildDependencyBean.class, bean.getChild());
+    }
+
+    public static class ChildDependencyBean {
+        public ChildDependencyBean(AppView app) {
+            // Leaf bean
+        }
+    }
+
+    public static class RecursiveConstructorBean {
+        private final ChildDependencyBean child;
+
+        public RecursiveConstructorBean(AppView app) {
+            // Resolves child bean during constructor instantiation
+            this.child = BeanContainer.getBean(ChildDependencyBean.class, app);
+        }
+
+        public ChildDependencyBean getChild() {
+            return child;
+        }
+    }
+
+    public static class RecursiveInitBean implements BeanFactoryApp {
+        private ChildDependencyBean child;
+
+        public RecursiveInitBean() {
+        }
+
+        @Override
+        public void init(AppView app) {
+            // Resolves child bean during BeanFactoryApp lifecycle init
+            this.child = BeanContainer.getBean(ChildDependencyBean.class, app);
+        }
+
+        @Override
+        public Object getBean() {
+            return this;
+        }
+
+        public ChildDependencyBean getChild() {
+            return child;
+        }
+    }
 }
