@@ -111,8 +111,9 @@ public class DataLogicCategories extends BeanFactoryDataSingle {
      * @throws BasicException on query error
      */
     public int getCategoriesCount() throws BasicException {
-        Integer result = new StaticSentence<Integer>(sessionDB,
+        Integer result = new StaticSentence<Void, Integer>(sessionDB,
                 "SELECT COUNT(*) as count FROM categories",
+                null,
                 com.openbravo.data.loader.SerializerReadInteger.INSTANCE)
                 .find();
         return result == null ? 0 : result;
