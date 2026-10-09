@@ -456,5 +456,18 @@ To transform the legacy monolith into clean, modular components, the 13 `DataLog
    * Created domain unit test suite:
      ** `SystemServiceTest`: Validates container resolution of `SystemService` and `ResourceService` to `DataLogicSystem`, contract compliance, and resource query operations.
    * Maintained 100% binary backwards compatibility with `@Deprecated` legacy methods and constructor overloads across all modified classes.
-26. **Next Decoupling Targets:**
-   * Review remaining legacy DataLogic classes (e.g., Reports / `DataLogicReports`).
+26. **Shared / Parked Ticket Domain Decoupling Verification (`SharedTicketService` & `DataLogicReceipts`) (Completed):**
+   * Verified pure domain service port interface `SharedTicketService` (`com.openbravo.pos.sales.SharedTicketService`):
+     ** Comprehensive CRUD, lock management, pickup IDs, and user filtering operations for parked tickets: `getSharedTicket()`, `getSharedTicketList()`, `getUserSharedTicketList()`, `getSharedTicketInfo()`, `insertSharedTicket()`, `updateSharedTicket()`, `updateRSharedTicket()`, `insertRSharedTicket()`, `lockSharedTicket()`, `unlockSharedTicket()`, `getLockState()`, `getPickupId()`, `getUserId()`, `deleteSharedTicket()`.
+     ** `DataLogicReceipts` implements `SharedTicketService` and is mapped in `BeanContainer` (`com.openbravo.pos.sales.SharedTicketService -> com.openbravo.pos.sales.DataLogicReceipts`).
+   * Validated complete decoupling in `kriolos-opos-app`:
+     ** `JTicketsBagSharedList`: Exposes `SharedTicketService` methods, retaining `@Deprecated` overloads for `DataLogicReceipts`.
+     ** `JTicketsBagSharedPanel`: Exposes `loadTickets` and `show` taking `SharedTicketService`, retaining `@Deprecated` overloads.
+     ** `JTicketsBagShared`: Injects `SharedTicketService` via `app.getBean(SharedTicketService.class)`.
+     ** `RestaurantMapController`: Injects `SharedTicketService`, retaining deprecated legacy accessor.
+     ** Zero direct operational dependencies on `DataLogicReceipts` remain in `kriolos-opos-app` business logic.
+   * Created domain unit test suite:
+     ** `SharedTicketServiceTest` (`com.openbravo.pos.sales.SharedTicketServiceTest`): Tests container resolution of `SharedTicketService` to `DataLogicReceipts` (both via String key and Class literal) and verifies full contract compliance (CRUD, pickup IDs, user filtering, lock/unlock lifecycle).
+   * Maintained 100% binary backwards compatibility with `@Deprecated` legacy methods and constructor overloads across all classes.
+27. **Next Decoupling Targets:**
+   * Review Catalog & Product Information Management (`CatalogService` vs `DataLogicPIM`).
