@@ -31,7 +31,6 @@ import javax.swing.JPanel;
 public class JEditorTextPanel extends JPanel {
 
     private static final long serialVersionUID = 1L;
-    private static LocaleResources m_resources;
 
     private final JEditorKeys m_jKeyPad = new JEditorKeys();
     private JEditorText m_jtextEditor = new JEditorString();
@@ -62,10 +61,6 @@ public class JEditorTextPanel extends JPanel {
         jPanelKe.add(m_jKeyPad);
         jPanelInput.add(m_jtextEditor);
 
-        if (m_resources == null) {
-            m_resources = new LocaleResources();
-            m_resources.addBundleName("beans_messages");
-        }
 
         m_jtextEditor.addEditorKeys(m_jKeyPad);
         m_jtextEditor.reset();

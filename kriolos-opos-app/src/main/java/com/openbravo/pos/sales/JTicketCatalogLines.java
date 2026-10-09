@@ -18,10 +18,8 @@ package com.openbravo.pos.sales;
 
 import com.openbravo.basic.BasicException;
 import com.openbravo.pos.catalog.CatalogSelector;
-import com.openbravo.pos.catalog.JCatalog;
 import com.openbravo.pos.forms.AppView;
-import com.openbravo.pos.forms.DataLogicSales;
-import com.openbravo.pos.forms.DataLogicSystem;
+import com.openbravo.pos.forms.ResourceService;
 import com.openbravo.pos.ticket.TicketLineInfo;
 import java.awt.CardLayout;
 import java.awt.Dimension;
@@ -34,8 +32,8 @@ import java.util.List;
  */
 public class JTicketCatalogLines extends javax.swing.JPanel {
     
-    private JRefundLines m_reflines;
-    private CatalogSelector m_catalog;
+    private JRefundLines refoundLines;
+    private CatalogSelector catalogExplorer;
 
     public JTicketCatalogLines(
             AppView app, 
@@ -45,18 +43,16 @@ public class JTicketCatalogLines extends javax.swing.JPanel {
             int width, 
             int height) {
         
-        DataLogicSystem dlSystem = app.getBean(DataLogicSystem.class);
-        DataLogicSales dlSales = app.getBean(DataLogicSales.class);
+        ResourceService resourceService = app.getBean(ResourceService.class);
         
         initComponents();
         
-        m_reflines = new JRefundLines(dlSystem, jTicketEdit);        
-        add(m_reflines, "reflines");
+        refoundLines = new JRefundLines(resourceService, jTicketEdit);        
+        add(refoundLines, "reflines");
         
-        m_catalog = (CatalogSelector) com.openbravo.pos.ui.api.catalog.CatalogManager.createDefaultCatalog(app);
-        m_catalog.getComponent().setPreferredSize(new Dimension(0, 245));
-        // m_catalog.addActionListener(new CatalogListener());        
-        add(m_catalog.getComponent(), "catalog");
+        catalogExplorer = (CatalogSelector) com.openbravo.pos.ui.api.catalog.CatalogManager.createDefaultCatalog(app);
+        catalogExplorer.getComponent().setPreferredSize(new Dimension(0, 245));      
+        add(catalogExplorer.getComponent(), "catalog");
     }
 
     public void showCatalog() {
@@ -64,20 +60,20 @@ public class JTicketCatalogLines extends javax.swing.JPanel {
     }
 
     public void loadCatalog() throws BasicException {
-        m_catalog.loadCatalog();
+        catalogExplorer.loadCatalog();
     }
 
     public void addActionListener(ActionListener l) {
-        m_catalog.addActionListener(l);
+        catalogExplorer.addActionListener(l);
     }
 
     public void removeActionListener(ActionListener l) {
-        m_catalog.addActionListener(l);
+        catalogExplorer.addActionListener(l);
     }
 
     public void showRefundLines(List<TicketLineInfo> aRefundLines) {
         // anado las lineas de refund
-        m_reflines.setLines(aRefundLines);
+        refoundLines.setLines(aRefundLines);
         showView("reflines");
     }   
     

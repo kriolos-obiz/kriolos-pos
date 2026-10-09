@@ -51,15 +51,18 @@ public class PeopleView extends JPanel implements EditorRecord<Object> {
     
     private final ComboBoxValModel<String> m_ReasonModel;        
     
-    /** Creates new form PeopleEditor
-     * @param dlAdmin
-     * @param dirty */
-    public PeopleView(DataLogicAdmin dlAdmin, DirtyManager dirty) {
+    /**
+     * Creates new form PeopleEditor using domain service port.
+     *
+     * @param peopleService Domain service port for user/role queries
+     * @param dirty Dirty manager
+     */
+    public PeopleView(PeopleService peopleService, DirtyManager dirty) {
 
         initComponents();
                 
         // El modelo de roles
-        m_sentrole = dlAdmin.getRolesList();
+        m_sentrole = peopleService.getRolesList();
         m_RoleModel = new ComboBoxValModel<>();
         
         m_Dirty = dirty;
@@ -80,6 +83,14 @@ public class PeopleView extends JPanel implements EditorRecord<Object> {
         
         cleanFields();
         disableFields();
+    }
+
+    /**
+     * @deprecated Use {@link #PeopleView(PeopleService, DirtyManager)} instead.
+     */
+    @Deprecated
+    public PeopleView(DataLogicAdmin dlAdmin, DirtyManager dirty) {
+        this((PeopleService) dlAdmin, dirty);
     }
 
     private void cleanFields(){

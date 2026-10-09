@@ -513,22 +513,20 @@ public final class TicketInfo implements SerializableRead, Externalizable {
 
     public TicketTaxInfo[] getTaxLines() {
 
-        Map<String, TicketTaxInfo> m = new HashMap<>();
+        Map<String, TicketTaxInfo> ticketTaxInfoMap = new HashMap<>();
 
-        TicketLineInfo oLine;
-        for (Iterator<TicketLineInfo> i = ticketLines.iterator(); i.hasNext();) {
-            oLine = i.next();
+        for (TicketLineInfo ticketLineInfo : ticketLines) {
 
-            TicketTaxInfo t = m.get(oLine.getTaxInfo().getId());
-            if (t == null) {
-                t = new TicketTaxInfo(oLine.getTaxInfo());
-                m.put(t.getTaxInfo().getId(), t);
+            TicketTaxInfo existTicketTaxInfo = ticketTaxInfoMap.get(ticketLineInfo.getTaxInfo().getId());
+            if (existTicketTaxInfo == null) {
+                existTicketTaxInfo = new TicketTaxInfo(ticketLineInfo.getTaxInfo());
+                ticketTaxInfoMap.put(existTicketTaxInfo.getTaxInfo().getId(), existTicketTaxInfo);
             }
-            t.add(oLine.getSubValue());
+            existTicketTaxInfo.add(ticketLineInfo.getSubValue());
         }
 
         // return dSuma;       
-        Collection<TicketTaxInfo> avalues = m.values();
+        Collection<TicketTaxInfo> avalues = ticketTaxInfoMap.values();
         return avalues.toArray(new TicketTaxInfo[avalues.size()]);
     }
 

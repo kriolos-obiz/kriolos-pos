@@ -21,10 +21,11 @@ import com.openbravo.data.user.EditorListener;
 import com.openbravo.data.user.EditorRecord;
 import com.openbravo.data.user.ListProviderCreator;
 import com.openbravo.data.user.DefaultSaveProvider;
+import com.openbravo.pos.catalog.CatalogService;
 import com.openbravo.pos.forms.AppLocal;
-import com.openbravo.pos.forms.DataLogicSales;
 import com.openbravo.pos.panels.JPanelTable2;
 import com.openbravo.pos.pim.DataLogicPIM;
+import com.openbravo.pos.scanpal2.DeviceScanner;
 import com.openbravo.pos.ticket.ProductFilter;
 
 import java.awt.Component;
@@ -40,6 +41,7 @@ public class ProductsPanel extends JPanelTable2 implements EditorListener {
     private ProductsEditor jeditor;
     private ProductFilter jproductfilter = null;        
     
+    private CatalogService catalogService;
     private DataLogicPIM dataLogicPIM = null;
     
     public ProductsPanel() {
@@ -50,19 +52,17 @@ public class ProductsPanel extends JPanelTable2 implements EditorListener {
      */
     @Override
     protected void init() {   
-        dataLogicPIM = (DataLogicPIM) app.getBean("com.openbravo.pos.pim.DataLogicPIM");
+        catalogService = app.getBean(CatalogService.class);
+        dataLogicPIM = (catalogService instanceof DataLogicPIM) ? (DataLogicPIM) catalogService : null;
         
         jproductfilter = new ProductFilter();     
         jproductfilter.init(app);
 
-        row = dataLogicPIM.getProductsRow();
+        row = catalogService.getProductsRow();
 
-        lpr =  new ListProviderCreator(dataLogicPIM.getProductCatQBF());
+        lpr = catalogService.getProductListProvider();
 
-        spr = new DefaultSaveProvider(
-            dataLogicPIM.productUpdate(),
-            dataLogicPIM.productInsert(),
-            dataLogicPIM.getProductCatDelete());
+        spr = catalogService.getProductSaveProvider();
         
         jeditor = new ProductsEditor(app, dirty);       
     }
@@ -93,7 +93,7 @@ public class ProductsPanel extends JPanelTable2 implements EditorListener {
         
         JButton btnScanPal = new JButton();
         btnScanPal.setText("ScanPal");
-        btnScanPal.setVisible(app.getDeviceScanner() != null);
+        btnScanPal.setVisible(app.hasScanner());
         btnScanPal.addActionListener(new java.awt.event.ActionListener() {
             @Override
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -106,7 +106,7 @@ public class ProductsPanel extends JPanelTable2 implements EditorListener {
     
     private void btnScanPalActionPerformed(java.awt.event.ActionEvent evt) {                                           
   
-        JDlgUploadProducts.showMessage(this, app.getDeviceScanner(), bd);
+        JUploadProductsPanel.showMessage(this, bd);
     }
 
     /**
@@ -135,6 +135,15 @@ public class ProductsPanel extends JPanelTable2 implements EditorListener {
      *
      * @param value
      */
+    public CatalogService getCatalogService() {
+        return catalogService;
+    }
+
+    @Deprecated
+    public DataLogicPIM getDataLogicPIM() {
+        return dataLogicPIM;
+    }
+
     @Override
     public void updateValue(Object value) {
     }    

@@ -5,14 +5,6 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://gnu.org>.
  */
 package com.openbravo.pos.printer.ticket;
 
@@ -24,18 +16,30 @@ import java.awt.geom.AffineTransform;
  * Uses Font.MONOSPACED to guarantee that text width metrics calculations 
  * for center and right alignments match pixels perfectly.
  * 
+ * The font is intentionally scaled vertically to mimic the taller 
+ * character rendering typical of physical ESC/POS thermal printers.
+ * 
  * @author JG uniCenta
  * @author KriolOS
  */
 public class BasicTicketForScreen extends BasicTicket {
 
-    // Using Font.MONOSPACED ensures alignment math doesn't break across operating systems
-    private static final Font BASE_FONT = new Font(Font.MONOSPACED, Font.PLAIN, 12)
-            .deriveFont(AffineTransform.getScaleInstance(1.0, 1.20)); // Adjusted vertical scale to match line metrics
-            
-    private static final int FONT_HEIGHT = 16; // Perfectly bound to 12pt font geometry
+    // --- Configuration Constants ---
+    private static final int FONT_SIZE = 12;
+    private static final double SCALE_X = 1.0;
+    private static final double SCALE_Y = 1.20; // 20% taller characters for ESC/POS realism
+    
+    /** 
+     * The fixed pixel height allocated for each text line. 
+     * Bound to FONT_SIZE * SCALE_Y + line spacing. (12 * 1.20 = 14.4 + leading ≈ 16)
+     */
+    private static final int FONT_HEIGHT = 16; 
     private static final double IMAGE_SCALE = 1.0;
 
+    // Using Font.MONOSPACED ensures alignment math doesn't break across operating systems
+    private static final Font BASE_FONT = new Font(Font.MONOSPACED, Font.PLAIN, FONT_SIZE)
+            .deriveFont(AffineTransform.getScaleInstance(SCALE_X, SCALE_Y));
+            
     /**
      * @return The immutable monospaced font instance for correct pixel-width calculations
      */

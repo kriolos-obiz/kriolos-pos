@@ -24,8 +24,10 @@ import com.openbravo.pos.forms.*;
 import com.openbravo.pos.inventory.ProductStock;
 import com.openbravo.pos.ticket.ProductInfoExt;
 
+import com.openbravo.pos.catalog.CatalogService;
 import com.openbravo.pos.inventory.InventoryService;
 import com.openbravo.pos.inventory.InventoryServiceImpl;
+import com.openbravo.pos.inventory.DataLogicInventory;
 import com.openbravo.pos.pim.DataLogicPIM;
 
 import javax.swing.*;
@@ -55,10 +57,14 @@ public class StockQtyImport extends JPanel implements JPanelView {
 
   // the db connection session
   private Session dbSession;
-  private DataLogicSales m_dlSales;
+  private DataLogicInventory m_dlInventory;
+  private ResourceService resourceService;
+  @Deprecated
   private DataLogicSystem m_dlSystem;
+  private ImportService m_importService;
   private DataLogicImport m_dlImport;
   private InventoryService invService;
+  private CatalogService catalogService;
   private DataLogicPIM dataLogicPIM;
 
   private ProductInfoExt prodInfo;
@@ -97,27 +103,57 @@ public class StockQtyImport extends JPanel implements JPanelView {
 
     dbSession = appView.getSession();
     
-    dataLogicPIM = new DataLogicPIM(); 
-    dataLogicPIM.init(dbSession);
+    CatalogService resolvedCatalog = null;
+    try {
+      resolvedCatalog = appView.getBean(CatalogService.class);
+    } catch (BeanFactoryException ignored) {
+    }
+    if (resolvedCatalog == null) {
+      DataLogicPIM fallback = new DataLogicPIM();
+      fallback.init(dbSession);
+      resolvedCatalog = fallback;
+    }
+    this.catalogService = resolvedCatalog;
+    this.dataLogicPIM = (this.catalogService instanceof DataLogicPIM) ? (DataLogicPIM) this.catalogService : null;
 
     // Set db tables
-    m_dlSales = new DataLogicSales();
-    m_dlSales.init(dbSession);
-    m_dlSystem = new DataLogicSystem();
-    m_dlSystem.init(dbSession);
+    m_dlInventory = new DataLogicInventory();
+    m_dlInventory.init(dbSession);
+    ResourceService resolvedResource = null;
+    try {
+      resolvedResource = appView.getBean(ResourceService.class);
+    } catch (BeanFactoryException ignored) {
+    }
+    if (resolvedResource == null) {
+      DataLogicSystem fallback = new DataLogicSystem();
+      fallback.init(dbSession);
+      resolvedResource = fallback;
+    }
+    this.resourceService = resolvedResource;
+    this.m_dlSystem = (resourceService instanceof DataLogicSystem) ? (DataLogicSystem) resourceService : null;
 
-    m_dlImport = new DataLogicImport();
-    m_dlImport.init(dbSession);
+    ImportService resolvedImport = null;
+    try {
+      resolvedImport = appView.getBean(ImportService.class);
+    } catch (BeanFactoryException ignored) {
+    }
+    if (resolvedImport == null) {
+      DataLogicImport fallback = new DataLogicImport();
+      fallback.init(dbSession);
+      resolvedImport = fallback;
+    }
+    m_importService = resolvedImport;
+    m_dlImport = (m_importService instanceof DataLogicImport) ? (DataLogicImport) m_importService : null;
 
-    invService = new InventoryServiceImpl(m_dlSales, dbSession);
+    invService = new InventoryServiceImpl(m_dlInventory, dbSession);
 
     // Get terminal'dbSession current resource property settings
-    Properties m_propsdb = m_dlSystem.getResourceAsProperties(m_props.getHost() + "/properties");
+    Properties m_propsdb = (resourceService != null) ? resourceService.getResourceAsProperties(m_props.getHost() + "/properties") : new Properties();
 
     // Get terminal'dbSession set Location property <entry key="location">0</entry>
     m_sInventoryLocation = m_propsdb.getProperty("location");
     try {
-      Location = m_dlSystem.findLocationName(m_sInventoryLocation);
+      Location = m_dlInventory.findLocationName(m_sInventoryLocation);
     } catch (BasicException ex) {
       LOGGER.log(Level.WARNING, null, ex);
     }
@@ -338,10 +374,10 @@ public class StockQtyImport extends JPanel implements JPanelView {
 
       String sCode = products.get(0);
 
-      prodInfo = dataLogicPIM.getProductInfoByCode(sCode);
+      prodInfo = catalogService.getProductInfoByCode(sCode);
 
       if (prodInfo != null) {
-        prodStock = m_dlSales.getProductStockState(prodInfo.getID(), m_sInventoryLocation);
+        prodStock = m_dlInventory.getProductStockState(prodInfo.getID(), m_sInventoryLocation);
         productBarcode = products.get(0);
         oldQty = prodStock.getUnits();
         newQty = Double.valueOf(products.get(1));
@@ -367,10 +403,10 @@ public class StockQtyImport extends JPanel implements JPanelView {
 
       String sCode = products.get(0);
 
-      prodInfo = dataLogicPIM.getProductInfoByCode(sCode);
+      prodInfo = catalogService.getProductInfoByCode(sCode);
 
       if (prodInfo != null) {
-        prodStock = m_dlSales.getProductStockState(prodInfo.getID(), m_sInventoryLocation);
+        prodStock = m_dlInventory.getProductStockState(prodInfo.getID(), m_sInventoryLocation);
         productQty = 0.;
 
         deleteStockCurrent(m_sInventoryLocation, prodInfo.getID(), productQty);
@@ -435,10 +471,22 @@ public class StockQtyImport extends JPanel implements JPanelView {
     myprod[5] = newQty; // Product Quantity
 
     try {
-      m_dlImport.execCSVStockUpdate(myprod);
+      m_importService.execCSVStockUpdate(myprod);
     } catch (BasicException ex) {
       LOGGER.log(Level.WARNING, null, ex);
     }
+  }
+
+  public ImportService getImportService() {
+    return m_importService;
+  }
+
+  @Deprecated
+  public DataLogicImport getDataLogicImport() {
+    if (m_dlImport == null && m_importService instanceof DataLogicImport) {
+      return (DataLogicImport) m_importService;
+    }
+    return m_dlImport;
   }
 
   /**
@@ -834,5 +882,14 @@ public class StockQtyImport extends JPanel implements JPanelView {
     private javax.swing.JButton jbtnReset;
     private javax.swing.JLabel m_jLocation;
     private javax.swing.JProgressBar webPBar;
-    // End of variables declaration//GEN-END:variables
+  public CatalogService getCatalogService() {
+    return catalogService;
+  }
+
+  @Deprecated
+  public DataLogicPIM getDataLogicPIM() {
+    return dataLogicPIM;
+  }
+
+  // End of variables declaration//GEN-END:variables
 }

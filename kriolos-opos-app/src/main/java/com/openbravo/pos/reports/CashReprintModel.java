@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import com.openbravo.pos.forms.BeanFactoryException;
-import com.openbravo.pos.forms.DataLogicSystem;
 import com.openbravo.pos.cash.CashManagementService;
 import com.openbravo.pos.cash.CashManagementServiceImpl;
 import com.openbravo.pos.cash.CashRegister;

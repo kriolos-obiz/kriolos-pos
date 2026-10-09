@@ -16,14 +16,14 @@
 package com.openbravo.pos.sales.shared;
 
 import com.openbravo.basic.BasicException;
-import com.openbravo.beans.JIntegerPanel;
 import com.openbravo.beans.JPasswordPanel;
 import com.openbravo.data.gui.MessageInf;
 import com.openbravo.pos.forms.*;
-import com.openbravo.pos.sales.DataLogicReceipts;
+import com.openbravo.pos.sales.AuditService;
 import com.openbravo.pos.sales.JTicketsBag;
-import com.openbravo.pos.sales.ReprintTicketInfo;
 import com.openbravo.pos.sales.SharedTicketInfo;
+import com.openbravo.pos.sales.SharedTicketService;
+import com.openbravo.pos.sales.TicketLifecycleService;
 import com.openbravo.pos.sales.TicketsEditor;
 import com.openbravo.pos.ticket.TicketInfo;
 import java.util.ArrayList;
@@ -36,25 +36,30 @@ import javax.swing.SwingUtilities;
 /**
  * A shared, multi-ticket implementation of the {@link JTicketsBag} controller.
  * <p>
- * This class manages a "layaway" or suspended ticket workflow where multiple active sales receipts
- * can be temporarily stored in the database (as shared tickets) and resumed later. This is
- * particularly useful in retail and bar environments, allowing an operator to put a customer's
- * transaction on hold to serve someone else without losing progress.
+ * This class manages a "layaway" or suspended ticket workflow where multiple
+ * active sales receipts can be temporarily stored in the database (as shared
+ * tickets) and resumed later. This is particularly useful in retail and bar
+ * environments, allowing an operator to put a customer's transaction on hold to
+ * serve someone else without losing progress.
  * </p>
  *
  * <h3>Core Features & Business Logic:</h3>
  * <ul>
- *   <li><b>Permission-Based Visibility:</b> Filters the list of shared tickets based on user roles.
- *       Managers or users with override rights see all global tickets, while standard operators
- *       are restricted to their own active entries.</li>
- *   <li><b>Data Persistence Safety:</b> Automatically saves work-in-progress carts to the temporary database
- *       ({@link DataLogicReceipts}) during screen transitions or new ticket instantiation, provided
- *       the cart contains at least one line item.</li>
- *   <li><b>Secure Transaction Voiding:</b> Enforces supervisor validation checks (PIN entry via
- *       {@link JPasswordDialog}) before allowing terminal users to delete or void a running invoice.</li>
- *   <li><b>Asynchronous Lookups:</b> Dispatches heavy database lookups—such as fetching shared lists
- *       or closed historical tickets for reprinting—safely onto the Swing Event Dispatch Thread (EDT)
- *       to keep the point-of-sale layout smooth and responsive.</li>
+ * <li><b>Permission-Based Visibility:</b> Filters the list of shared tickets
+ * based on user roles. Managers or users with override rights see all global
+ * tickets, while standard operators are restricted to their own active
+ * entries.</li>
+ * <li><b>Data Persistence Safety:</b> Automatically saves work-in-progress
+ * carts to the temporary database ({@link DataLogicReceipts}) during screen
+ * transitions or new ticket instantiation, provided the cart contains at least
+ * one line item.</li>
+ * <li><b>Secure Transaction Voiding:</b> Enforces supervisor validation checks
+ * (PIN entry via {@link JPasswordDialog}) before allowing terminal users to
+ * delete or void a running invoice.</li>
+ * <li><b>Asynchronous Lookups:</b> Dispatches heavy database lookups—such as
+ * fetching shared lists or closed historical tickets for reprinting—safely onto
+ * the Swing Event Dispatch Thread (EDT) to keep the point-of-sale layout smooth
+ * and responsive.</li>
  * </ul>
  *
  * @author KriolOS / JG uniCenta
@@ -63,11 +68,17 @@ import javax.swing.SwingUtilities;
  * @see com.openbravo.pos.sales.shared.JTicketsBagSharedList
  * @see javax.swing.JPanel
  */
-
+@Deprecated
+/**
+ * Deprecated: Use {@link com.openbravo.pos.sales.JTicketsBagMode} with {@link com.openbravo.pos.sales.BagMode#SHARED}.
+ */
 public class JTicketsBagShared extends JTicketsBag {
 
-    private DataLogicReceipts dlReceipts = null;
-    private DataLogicSales dlSales = null;
+    private SharedTicketService dlReceipts = null;
+    private TicketLifecycleService ticketLifecycleService = null;
+    private AuditService auditService = null;
+    private ResourceService resourceService;
+    @Deprecated
     private DataLogicSystem dlSystem;
     private Boolean hasPermissionShowSharedList;
 
@@ -81,9 +92,11 @@ public class JTicketsBagShared extends JTicketsBag {
 
         super(app, panelticket);
 
-        dlReceipts = (DataLogicReceipts) app.getBean("com.openbravo.pos.sales.DataLogicReceipts");
-        dlSales = (DataLogicSales) app.getBean("com.openbravo.pos.forms.DataLogicSales");
-        dlSystem = (DataLogicSystem) m_App.getBean("com.openbravo.pos.forms.DataLogicSystem");
+        dlReceipts = app.getBean(SharedTicketService.class);
+        ticketLifecycleService = app.getBean(TicketLifecycleService.class);
+        auditService = app.getBean(AuditService.class);
+        resourceService = m_App.getBean(ResourceService.class);
+        dlSystem = (resourceService instanceof DataLogicSystem) ? (DataLogicSystem) resourceService : null;
 
         hasPermissionShowSharedList = m_App.hasPermission("sales.ShowList");
 
@@ -124,7 +137,7 @@ public class JTicketsBagShared extends JTicketsBag {
     @Override
     public void deleteTicket() {
 
-        dlSales.addTicketDeleted(m_App.getAppUserView().getUser().getName());
+        auditService.addTicketDeleted(m_App.getAppUserView().getUser().getName());
         updateCount();
     }
 
@@ -160,55 +173,67 @@ public class JTicketsBagShared extends JTicketsBag {
     protected JComponent getNullComponent() {
         return new JPanel();
     }
+    
+    private void ensureTicketUser(TicketInfo ticket) {
+        if (ticket != null && ticket.getUser() == null) {
+            if (getAppView() != null && getAppView().getAppUserView() != null && getAppView().getAppUserView().getUser() != null) {
+                ticket.setUser(getAppView().getAppUserView().getUser().getUserInfo());
+            }
+        }
+    }
 
+    private void saveOrUpdateSharedTicket(TicketInfo ticketInfo) {
+        if (ticketInfo != null && ticketInfo.getLinesCount() > 0 && dlReceipts != null) {
+            ensureTicketUser(ticketInfo);
+            if (ticketInfo.getUser() == null) {
+                LOGGER.log(System.Logger.Level.WARNING, "Cannot save shared ticket: authenticated user is not available.");
+                return;
+            }
+            try {
+                
+                String ticketID = ticketInfo.getId();
+                int pickupId = ticketInfo.getPickupId();
+                
+                LOGGER.log(System.Logger.Level.INFO, "Save shared ticket: "+ticketID);
+                
+                TicketInfo foundTicket = dlReceipts.getSharedTicket(ticketID);
+                if(foundTicket == null){
+                    dlReceipts.insertSharedTicket(ticketID, ticketInfo, pickupId);
+                }else {
+                    dlReceipts.updateSharedTicket(ticketID, ticketInfo, pickupId);
+                }
+                
+            } catch (Exception e) {
+                LOGGER.log(System.Logger.Level.WARNING, "Failed to save or update shared ticket", e);
+            }
+        }
+    }
     private void saveCurrentTicket() {
 
-        TicketInfo ticketInfo = m_panelticket.getActiveTicket();
-        if (ticketInfo != null) {
-            String ticketID = m_panelticket.getActiveTicket().getId();
-            int pickupId = m_panelticket.getActiveTicket().getPickupId();
-            try {
-                //SAVE Ticket with at less One line
-                if (ticketInfo.getLinesCount() >= 1) {
-                    dlReceipts.insertSharedTicket(ticketID, m_panelticket.getActiveTicket(), pickupId);
-
-                    m_jListTickets.setText("*");
-                    LOGGER.log(System.Logger.Level.INFO, "SAVED Current Ticket ID: " + ticketID);
-                } else {
-                    LOGGER.log(System.Logger.Level.INFO, "NOT SAVED Current Ticket because has no line/item, Ticket ID: " + ticketID);
-                    //new MessageInf(new BasicException("Cannot save current Ticket because has no line/item")).show(this);
-                }
-            }
-            catch (BasicException e) {
-                LOGGER.log(System.Logger.Level.WARNING, "Exception saveCurrentTicket: " + ticketID, e);
-                new MessageInf(e).show(this);
-            }
-        } else {
-            LOGGER.log(System.Logger.Level.INFO, "NOT SAVED Current Ticket because ActiveTicket is NULL");
-        }
-
+        m_jListTickets.setText("?");
+        saveOrUpdateSharedTicket(m_panelticket.getActiveTicket());
         updateCount();
     }
 
-    private void setActiveTicket(String id) throws BasicException {
+    private void setActiveTicket(String ticketUUID) throws BasicException {
 
-        TicketInfo ticket = dlReceipts.getSharedTicket(id);
+        TicketInfo ticket = dlReceipts.getSharedTicket(ticketUUID);
         if (ticket == null) {
             m_jListTickets.setText("");
-            LOGGER.log(System.Logger.Level.WARNING, "NOT FOUND Shared TICKET for id: " + id);
+            LOGGER.log(System.Logger.Level.WARNING, "NOT FOUND Shared TICKET for id: " + ticketUUID);
             throw new BasicException(AppLocal.getIntString("message.noticket"));
         } else {
-            Integer pickUp = dlReceipts.getPickupId(id);
-            dlReceipts.deleteSharedTicket(id);
-            m_panelticket.setActiveTicket(ticket, null);
+            Integer pickUp = dlReceipts.getPickupId(ticketUUID);
             ticket.setPickupId(pickUp);
+            m_panelticket.setActiveTicket(ticket, null);
+            dlReceipts.deleteSharedTicket(ticketUUID);
         }
 
         updateCount();
     }
 
     private void setActiveReprintTicket(String id) throws BasicException {
-        TicketInfo ticket = dlSales.getReprintTicket(id);
+        TicketInfo ticket = ticketLifecycleService.getReprintTicket(id);
         JOptionPane.showMessageDialog(this, AppLocal.getIntString("NOT IMPLEMENTED YET"));
         LOGGER.log(System.Logger.Level.WARNING, "NOT IMPLEMENTED setActiveReprintTicket");
     }
@@ -243,7 +268,7 @@ public class JTicketsBagShared extends JTicketsBag {
             } else {
                 listSharedTicket = dlReceipts.getUserSharedTicketList(appuser.getId());
             }
-            
+
             LOGGER.log(System.Logger.Level.DEBUG, "Shared ticket found " + listSharedTicket.size() + " tickets for  user: " + appuser.getName());
         }
         catch (BasicException e) {
@@ -492,10 +517,7 @@ public class JTicketsBagShared extends JTicketsBag {
                             
                         }
                          */
-
-                        List<ReprintTicketInfo> l = dlSales.getReprintTicketList();
-                        JTicketsReprintList listDialog = JTicketsReprintList.newJDialog(JTicketsBagShared.this);
-                        String id = listDialog.showTicketsList(l, dlSales);
+                        String id = JTicketsReprintPanel.show(JTicketsBagShared.this, getAppView());
 
                         if (id != null) {
                             saveCurrentTicket();

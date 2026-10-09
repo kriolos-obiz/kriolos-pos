@@ -38,8 +38,8 @@ public class NullAnimator implements DisplayAnimator {
      * @param line2
      */
     public NullAnimator(String line1, String line2) {
-        currentLine1 = DeviceTicket.alignLeft(line1, 20);
-        currentLine2 = DeviceTicket.alignLeft(line2, 20);
+        currentLine1 = PrinterTextUtils.alignLeft(line1, 20);
+        currentLine2 = PrinterTextUtils.alignLeft(line2, 20);
     }
 
     /**

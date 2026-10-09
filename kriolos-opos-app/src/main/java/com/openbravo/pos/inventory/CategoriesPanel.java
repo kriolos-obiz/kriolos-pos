@@ -25,9 +25,8 @@ import com.openbravo.data.user.ListProvider;
 import com.openbravo.data.user.ListProviderCreator;
 import com.openbravo.data.user.DefaultSaveProvider;
 import com.openbravo.pos.forms.AppLocal;
-import com.openbravo.pos.forms.DataLogicSales;
 import com.openbravo.pos.panels.JPanelTable;
-import com.openbravo.pos.pim.DataLogicPIM;
+import com.openbravo.pos.catalog.CatalogService;
 import javax.swing.ListCellRenderer;
 
 /**
@@ -50,8 +49,8 @@ public class CategoriesPanel extends JPanelTable {
      */
     @Override
     protected void init() {   
-        DataLogicPIM dataLogicPIM = (DataLogicPIM) app.getBean("com.openbravo.pos.pim.DataLogicPIM");           
-        tcategories = dataLogicPIM.getTableCategories();
+        CatalogService catalogService = app.getBean(CatalogService.class);           
+        tcategories = catalogService.getTableCategories();
         jeditor = new CategoriesEditor(app, dirty);    
     }
     

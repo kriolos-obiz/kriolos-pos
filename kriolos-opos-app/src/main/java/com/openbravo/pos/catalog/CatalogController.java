@@ -18,6 +18,7 @@ package com.openbravo.pos.catalog;
 
 import com.openbravo.basic.BasicException;
 import com.openbravo.pos.forms.DataLogicSales;
+import com.openbravo.pos.sales.TaxService;
 import com.openbravo.pos.sales.TaxesLogic;
 import com.openbravo.pos.pim.CategoryInfo;
 import com.openbravo.pos.pim.DataLogicPIM;
@@ -27,6 +28,7 @@ import com.openbravo.pos.util.ThumbNailBuilder;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -50,25 +52,23 @@ public class CatalogController {
     private final ThumbNailBuilder tnbbutton;
     private final ThumbNailBuilder tnbsubcat;
 
-    private DataLogicPIM dataLogicPIM;
-    private DataLogicSales dlLogicSales;
-    private TaxesLogic taxeslogic;
+    private final CatalogService catalogService;
+    private final TaxService taxService;
+    private final TaxesLogic taxeslogic;
     
-    public CatalogController(DataLogicSales dlSales, DataLogicPIM dataLogicPIM){
-    
-        this.dataLogicPIM = dataLogicPIM;
-        this.dlLogicSales = dlSales;
-        try {
-            this.taxeslogic = new TaxesLogic(dlLogicSales.getTaxList().list());
-        }
-        catch (BasicException ex) {
-            LOGGER.log(Level.WARNING,"construct taxe logic",ex);
-        }
+    public CatalogController(TaxService taxService, CatalogService catalogService) {
+        this.taxService = taxService;
+        this.catalogService = catalogService;
+        this.taxeslogic = new TaxesLogic(taxService != null ? taxService.getTaxListAll() : Collections.emptyList());
         
         tnbcat = new ThumbNailBuilder(CAT_DEFAULT_WIDTH, CAT_DEFAULT_HEIGHT, "com/openbravo/images/category.png");
         tnbsubcat = new ThumbNailBuilder(CAT_DEFAULT_WIDTH, CAT_DEFAULT_HEIGHT, "com/openbravo/images/subcategory.png");
         tnbbutton = new ThumbNailBuilder(TAB_DEFAULT_WIDTH, TAB_DEFAULT_HEIGHT, "com/openbravo/images/null.png");
+    }
 
+    @Deprecated
+    public CatalogController(DataLogicSales dlSales, DataLogicPIM dataLogicPIM) {
+        this(dlSales != null ? dlSales.getTaxService() : null, dataLogicPIM);
     }
     
     public TaxesLogic getTaxesLogic(){
@@ -79,7 +79,7 @@ public class CatalogController {
         
         List<CategoryInfo> list = new ArrayList<>();
         try {
-            list = filterCategories(dataLogicPIM.getRootCategories());
+            list = filterCategories(catalogService.getRootCategories());
         }
         catch (BasicException ex) {
             LOGGER.log(Level.WARNING,"get root categories",ex);
@@ -95,7 +95,7 @@ public class CatalogController {
     List<ProductInfoExt> getProductConstant() {
         List<ProductInfoExt> list = new ArrayList<>();
         try {
-            list = dataLogicPIM.getProductConstant();
+            list = catalogService.getProductConstant();
         }
         catch (BasicException ex) {
             LOGGER.log(Level.WARNING,"get constant products",ex);
@@ -107,7 +107,7 @@ public class CatalogController {
        
        List<CategoryInfo> list = new ArrayList<>();
         try {
-            list = filterCategories(dataLogicPIM.getSubcategories(categoryId));
+            list = filterCategories(catalogService.getSubcategories(categoryId));
         }
         catch (BasicException ex) {
             LOGGER.log(Level.WARNING,"get subcategories: "+categoryId, ex);
@@ -119,7 +119,7 @@ public class CatalogController {
     List<ProductInfoExt> findProductByCategory(String categoryId) {
         List<ProductInfoExt> list = new ArrayList<>();
         try {
-            list = dataLogicPIM.getProductCatalog(categoryId);
+            list = catalogService.getProductCatalog(categoryId);
         }
         catch (BasicException ex) {
             LOGGER.log(Level.WARNING,"find product by category: "+categoryId, ex);
@@ -134,7 +134,7 @@ public class CatalogController {
     List<ProductInfoExt> getProductCompanion(String productId) {
         List<ProductInfoExt> list = new ArrayList<>();
         try {
-            list = dataLogicPIM.getProductComposite(productId);
+            list = catalogService.getProductComposite(productId);
         }
         catch (BasicException ex) {
             LOGGER.log(Level.WARNING,"get companion products: "+productId, ex);
@@ -145,7 +145,7 @@ public class CatalogController {
     ProductInfoExt getProductInfo(String productId) {
         ProductInfoExt data = null;
         try {
-            data = dataLogicPIM.getProductInfo(productId);
+            data = catalogService.getProductInfo(productId);
         }
         catch (BasicException ex) {
             LOGGER.log(Level.WARNING,"get product info: "+productId,ex);

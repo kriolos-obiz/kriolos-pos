@@ -13,13 +13,17 @@ import com.openbravo.data.loader.DataRead;
 import com.openbravo.data.loader.Datas;
 import com.openbravo.basic.BasicException;
 
-public class DataLogicImport extends BeanFactoryDataSingle {
+public class DataLogicImport extends BeanFactoryDataSingle implements ImportService {
 
     protected Session sessionDB;
 
     @Override
     public void init(Session s) {
         sessionDB = s;
+    }
+
+    public Session getSession() {
+        return sessionDB;
     }
 
     public final void execCSVStockUpdate(Object[] csv) throws BasicException {

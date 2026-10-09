@@ -21,10 +21,13 @@ import com.openbravo.data.gui.ComboBoxValModel;
 import com.openbravo.data.loader.*;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
+import com.openbravo.pos.inventory.AttributeInfo;
+import com.openbravo.pos.inventory.AttributeService;
 import com.openbravo.pos.inventory.DataLogicAttribute;
 import com.openbravo.pos.reports.ReportEditorCreator;
 import java.awt.Component;
 import java.awt.event.ActionListener;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -33,7 +36,7 @@ import java.util.List;
  */
 public class AttributeFilter extends javax.swing.JPanel implements ReportEditorCreator {
 
-    private SentenceList attsent;
+    private AttributeService attributeService;
     private ComboBoxValModel attmodel;
 
     /** Creates new form AttributeUseFilter */
@@ -48,9 +51,10 @@ public class AttributeFilter extends javax.swing.JPanel implements ReportEditorC
     @Override
     public void init(AppView app) {
 
-        DataLogicAttribute dlAttribute = (DataLogicAttribute) app
-                .getBean("com.openbravo.pos.inventory.DataLogicAttribute");
-        attsent = dlAttribute.attributeListSent;
+        attributeService = app.getBean(AttributeService.class);
+        if (attributeService == null) {
+            attributeService = app.getBean(DataLogicAttribute.class);
+        }
         attmodel = new ComboBoxValModel();
     }
 
@@ -60,7 +64,7 @@ public class AttributeFilter extends javax.swing.JPanel implements ReportEditorC
      */
     @Override
     public void activate() throws BasicException {
-        List a = attsent.list();
+        List<AttributeInfo> a = attributeService != null ? attributeService.getAttributeList() : Collections.emptyList();
         attmodel = new ComboBoxValModel(a);
         attmodel.setSelectedFirst();
         jAttr.setModel(attmodel);

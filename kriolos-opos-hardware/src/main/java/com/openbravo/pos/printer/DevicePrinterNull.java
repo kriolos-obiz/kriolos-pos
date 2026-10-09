@@ -147,4 +147,10 @@ public class DevicePrinterNull implements DevicePrinter {
     public void printLogo() {
         
     }
+
+    @Override
+    public boolean isConnected() {
+        return false;
+    }
 }
+

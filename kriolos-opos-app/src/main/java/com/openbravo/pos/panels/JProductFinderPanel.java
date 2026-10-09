@@ -20,6 +20,7 @@ import com.openbravo.basic.BasicException;
 import com.openbravo.data.gui.modal.PosUIModal;
 import com.openbravo.data.user.ListProvider;
 import com.openbravo.data.user.ListProviderCreator;
+import com.openbravo.pos.catalog.CatalogService;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.pim.DataLogicPIM;
@@ -45,16 +46,19 @@ public class JProductFinderPanel extends JPanel {
 
     private ProductInfoExt m_ReturnProduct;
     private ListProvider lpr;
+    private CatalogService catalogService;
     private DataLogicPIM dataLogicPIM;
     private PosUIModal modalContext;
 
     public JProductFinderPanel() {
         initComponents();
+        setPreferredSize(new Dimension(758, 634));
         initDomainAdapters();
     }
 
     public JProductFinderPanel(AppView app, int productsType) {
         initComponents();
+        setPreferredSize(new Dimension(758, 634));
         init(app, productsType);
         initDomainAdapters();
     }
@@ -86,6 +90,7 @@ public class JProductFinderPanel extends JPanel {
 
         PosUIModal modal = PosUIModal.create(parent, panel)
                 .setTitle(AppLocal.getIntString("form.productslist"))
+                .setPreferredSize(new Dimension(758, 634))
                 .setModal(true)
                 .setResizable(true);
 
@@ -97,23 +102,27 @@ public class JProductFinderPanel extends JPanel {
 
     private void init(AppView app, int productsType) {
 
-        dataLogicPIM = (DataLogicPIM) app.getBean("com.openbravo.pos.pim.DataLogicPIM");
+        catalogService = app.getBean(CatalogService.class);
+        dataLogicPIM = (catalogService instanceof DataLogicPIM) ? (DataLogicPIM) catalogService : null;
 
         jScrollPane1.getVerticalScrollBar().setPreferredSize(new Dimension(35, 35));
         jScrollPane1.getHorizontalScrollBar().setPreferredSize(new Dimension(35, 35));
 
         ProductFilterSales jproductfilter = new ProductFilterSales(app, m_jKeys);
         jproductfilter.activate();
+        jproductfilter.setPreferredSize(new Dimension(440, 240));
         m_jProductSelect.add(jproductfilter, BorderLayout.CENTER);
+        m_jProductSelect.revalidate();
+        m_jProductSelect.repaint();
         switch (productsType) {
             case PRODUCT_NORMAL:
-                lpr = new ListProviderCreator(dataLogicPIM.getProductListNormal(), jproductfilter);
+                lpr = new ListProviderCreator(catalogService.getProductListNormal(), jproductfilter);
                 break;
             case PRODUCT_AUXILIAR:
-                lpr = new ListProviderCreator(dataLogicPIM.getProductListAuxiliar(), jproductfilter);
+                lpr = new ListProviderCreator(catalogService.getProductListAuxiliar(), jproductfilter);
                 break;
             default: // PRODUCT_ALL
-                lpr = new ListProviderCreator(dataLogicPIM.getProductList(), jproductfilter);
+                lpr = new ListProviderCreator(catalogService.getProductList(), jproductfilter);
                 break;
         }
         jListProducts.setCellRenderer(new ProductRenderer());
@@ -122,6 +131,8 @@ public class JProductFinderPanel extends JPanel {
             getRootPane().setDefaultButton(jcmdOK);
         }
         m_ReturnProduct = null;
+        revalidate();
+        repaint();
     }
 
     private static class MyListData extends javax.swing.AbstractListModel {
@@ -267,7 +278,7 @@ public class JProductFinderPanel extends JPanel {
             jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel6Layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jImageViewerProduct, javax.swing.GroupLayout.DEFAULT_SIZE, 280, Short.MAX_VALUE)
+                .addComponent(jImageViewerProduct, javax.swing.GroupLayout.DEFAULT_SIZE, 288, Short.MAX_VALUE)
                 .addContainerGap())
         );
         jPanel6Layout.setVerticalGroup(
@@ -339,6 +350,15 @@ public class JProductFinderPanel extends JPanel {
     private void m_jKeysActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_m_jKeysActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_m_jKeysActionPerformed
+
+    public CatalogService getCatalogService() {
+        return catalogService;
+    }
+
+    @Deprecated
+    public DataLogicPIM getDataLogicPIM() {
+        return dataLogicPIM;
+    }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButton3;

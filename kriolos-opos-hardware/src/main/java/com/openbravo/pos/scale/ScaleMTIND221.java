@@ -153,4 +153,10 @@ public class ScaleMTIND221 extends AbstractSerialScale implements Scale, SerialP
     protected SerialPortParams getSerialPortParams() {
         return new SerialPortParams(9600, 8, 1, 0);
     }
+
+    @Override
+    public com.openbravo.pos.spi.hardware.scale.ScaleProtocol getProtocol() {
+        return com.openbravo.pos.spi.hardware.scale.ScaleProtocol.MT_IND221;
+    }
 }
+

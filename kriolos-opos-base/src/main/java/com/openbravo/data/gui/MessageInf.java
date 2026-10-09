@@ -15,7 +15,7 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package com.openbravo.data.gui;
 
-import com.openbravo.data.loader.LocalRes;
+import com.openbravo.pos.forms.AppLocal;
 import java.awt.*;
 import javax.swing.*;
 
@@ -224,25 +224,25 @@ public class MessageInf {
         int iSignalWord = getSignalWord();
         switch (iSignalWord) {
             case SGN_DANGER:
-                sb.append(LocalRes.getIntString("sgn.danger"));
+                sb.append(AppLocal.getIntString("sgn.danger"));
                 break;
             case SGN_WARNING:
-                sb.append(LocalRes.getIntString("sgn.warning"));
+                sb.append(AppLocal.getIntString("sgn.warning"));
                 break;
             case SGN_CAUTION:
-                sb.append(LocalRes.getIntString("sgn.caution"));
+                sb.append(AppLocal.getIntString("sgn.caution"));
                 break;
             case SGN_NOTICE:
-                sb.append(LocalRes.getIntString("sgn.notice"));
+                sb.append(AppLocal.getIntString("sgn.notice"));
                 break;
             case SGN_IMPORTANT:
-                sb.append(LocalRes.getIntString("sgn.important"));
+                sb.append(AppLocal.getIntString("sgn.important"));
                 break;
             case SGN_SUCCESS:
-                sb.append(LocalRes.getIntString("sgn.success"));
+                sb.append(AppLocal.getIntString("sgn.success"));
                 break;
             default:
-                sb.append(LocalRes.getIntString("sgn.unknown"));
+                sb.append(AppLocal.getIntString("sgn.unknown"));
                 break;
         }
         sb.append(m_infMessage);
@@ -262,25 +262,25 @@ public class MessageInf {
         int iSignalWord = getSignalWord();
         switch (iSignalWord) {
             case SGN_DANGER:
-                sb.append(LocalRes.getIntString("sgn.danger"));
+                sb.append(AppLocal.getIntString("sgn.danger"));
                 break;
             case SGN_WARNING:
-                sb.append(LocalRes.getIntString("sgn.warning"));
+                sb.append(AppLocal.getIntString("sgn.warning"));
                 break;
             case SGN_CAUTION:
-                sb.append(LocalRes.getIntString("sgn.caution"));
+                sb.append(AppLocal.getIntString("sgn.caution"));
                 break;
             case SGN_NOTICE:
-                sb.append(LocalRes.getIntString("sgn.notice"));
+                sb.append(AppLocal.getIntString("sgn.notice"));
                 break;
             case SGN_IMPORTANT:
-                sb.append(LocalRes.getIntString("sgn.important"));
+                sb.append(AppLocal.getIntString("sgn.important"));
                 break;
             case SGN_SUCCESS:
-                sb.append(LocalRes.getIntString("sgn.success"));
+                sb.append(AppLocal.getIntString("sgn.success"));
                 break;
             default:
-                sb.append(LocalRes.getIntString("sgn.unknown"));
+                sb.append(AppLocal.getIntString("sgn.unknown"));
                 break;
         }
         return sb.toString();

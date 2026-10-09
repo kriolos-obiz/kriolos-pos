@@ -1,5 +1,5 @@
 //    KriolOS POS
-//    Copyright (c) 2019-2023 KriolOS
+//    Copyright (c) 2019-2026 KriolOS
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -18,6 +18,9 @@ package com.openbravo.pos.epm;
 
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.loader.*;
+import com.openbravo.data.user.EditorCreator;
+import com.openbravo.data.user.ListProvider;
+import com.openbravo.data.user.ListProviderCreator;
 import com.openbravo.format.Formats;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.BeanFactoryDataSingle;
@@ -26,14 +29,12 @@ import java.util.List;
 import java.util.UUID;
 
 /**
+ * Legacy DataLogic provider implementing {@link ShiftService}.
  *
  * @author Ali Safdar and Aneeqa Baber
  */
-public class DataLogicPresenceManagement extends BeanFactoryDataSingle {
+public class DataLogicPresenceManagement extends BeanFactoryDataSingle implements ShiftService {
 
-    /**
-     *
-     */
     protected Session s;
 
     private SentenceExec m_checkin;
@@ -58,20 +59,18 @@ public class DataLogicPresenceManagement extends BeanFactoryDataSingle {
     private TableDefinition tbreaks;
     private TableDefinition tleaves;
 
-    /**
-     *
-     */
     public DataLogicPresenceManagement() {
     }
+
+    public Session getSession() {
+        return s;
+    }
     
-    /**
-     *
-     * @param s
-     */
     @Override
     public void init(Session s){
-
         this.s = s;
+        String dbTrue = (s != null && s.DB != null) ? s.DB.TRUE() : "1";
+
         breakread = new SerializerRead() {
             @Override
             public Object readValues(DataRead dr) throws BasicException {
@@ -92,7 +91,7 @@ public class DataLogicPresenceManagement extends BeanFactoryDataSingle {
             , new int[] {0}
         );
 
-         tleaves = new TableDefinition(s
+        tleaves = new TableDefinition(s
             , "leaves"
             , new String[] { "ID", "PPLID", "NAME", "STARTDATE", "ENDDATE", "NOTES"}
             , new String[] { "ID", AppLocal.getIntString("label.epm.employee.id"), AppLocal.getIntString("label.epm.employee"), AppLocal.getIntString("label.StartDate"), AppLocal.getIntString("label.EndDate"), AppLocal.getIntString("label.notes")}
@@ -102,33 +101,32 @@ public class DataLogicPresenceManagement extends BeanFactoryDataSingle {
         );
 
         m_breaksvisible = new StaticSentence(s
-            , "SELECT ID, NAME, NOTES, VISIBLE FROM breaks WHERE VISIBLE = " + s.DB.TRUE()
+            , "SELECT ID, NAME, NOTES, VISIBLE FROM breaks WHERE VISIBLE = " + dbTrue
             , null
             , breakread);
 
-        m_checkin =  new PreparedSentence(s
+        m_checkin = new PreparedSentence(s
                 , "INSERT INTO shifts(ID, STARTSHIFT, PPLID) VALUES (?, ?, ?)"
                 , new SerializerWriteBasic(new Datas[] {Datas.STRING, Datas.TIMESTAMP, Datas.STRING}));
 
         m_checkout = new StaticSentence(s
                 , "UPDATE shifts SET ENDSHIFT = ? WHERE ENDSHIFT IS NULL AND PPLID = ?"
-                ,new SerializerWriteBasic(new Datas[] {Datas.TIMESTAMP, Datas.STRING}));
+                , new SerializerWriteBasic(new Datas[] {Datas.TIMESTAMP, Datas.STRING}));
 
         m_checkdate = new StaticSentence(s
             , "SELECT COUNT(*) FROM shifts WHERE ENDSHIFT IS NULL AND PPLID = ?"
             , SerializerWriteString.INSTANCE
             , SerializerReadString.INSTANCE);
 
-        m_startbreak =  new PreparedSentence(s
+        m_startbreak = new PreparedSentence(s
                 , "INSERT INTO shift_breaks(ID, SHIFTID, BREAKID, STARTTIME) VALUES (?, ?, ?, ?)"
                 , new SerializerWriteBasic(new Datas[] {Datas.STRING, Datas.STRING, Datas.STRING, Datas.TIMESTAMP}));
 
         m_endbreak = new StaticSentence(s
                 , "UPDATE shift_breaks SET ENDTIME = ? WHERE ENDTIME IS NULL AND SHIFTID = ?"
-                ,new SerializerWriteBasic(new Datas[] {Datas.TIMESTAMP, Datas.STRING}));
+                , new SerializerWriteBasic(new Datas[] {Datas.TIMESTAMP, Datas.STRING}));
 
         m_isonbreak = new StaticSentence(s
-//            , "SELECT COUNT(*) FROM shift_breaks WHERE ENDTIME IS NULL AND SHIFTID = ?"
             , "SELECT COUNT(*) FROM shift_breaks WHERE ENDTIME IS NULL"                
             , SerializerWriteString.INSTANCE
             , SerializerReadString.INSTANCE);
@@ -137,7 +135,6 @@ public class DataLogicPresenceManagement extends BeanFactoryDataSingle {
             , "SELECT ID FROM shifts WHERE ENDSHIFT IS NULL AND PPLID = ?"
             , SerializerWriteString.INSTANCE
             , SerializerReadString.INSTANCE);
-        
 
         m_lastcheckin = new StaticSentence(s
             , "SELECT STARTSHIFT FROM shifts WHERE ENDSHIFT IS NULL AND PPLID = ?"
@@ -166,259 +163,265 @@ public class DataLogicPresenceManagement extends BeanFactoryDataSingle {
     }
 
     /**
-     *
-     * @return
+     * @deprecated Use {@link #getBreaksListAll()} instead.
      */
+    @Deprecated
     public final SentenceList getBreaksList() {
         return new StaticSentence(s
             , "SELECT ID, NAME FROM breaks ORDER BY NAME"
             , null
-            , new SerializerRead() {@Override
- public Object readValues(DataRead dr) throws BasicException {
-                return new BreaksInfo(dr.getString(1), dr.getString(2));
-            }});
+            , new SerializerRead() {
+                @Override
+                public Object readValues(DataRead dr) throws BasicException {
+                    return new BreaksInfo(dr.getString(1), dr.getString(2));
+                }
+            });
     }
 
     /**
-     *
-     * @return
+     * @deprecated Use {@link #getLeavesListAll()} instead.
      */
+    @Deprecated
     public final SentenceList getLeavesList() {
         return new StaticSentence(s
             , "SELECT ID, PPLID, NAME, STARTDATE, ENDDATE, NOTES FROM leaves ORDER BY NAME"
             , null
-            , new SerializerRead() {@Override
- public Object readValues(DataRead dr) throws BasicException {
-                return new LeavesInfo(dr.getString(1), dr.getString(2), dr.getString(3), dr.getString(4), dr.getString(5), dr.getString(6));
-            }});
+            , new SerializerRead() {
+                @Override
+                public Object readValues(DataRead dr) throws BasicException {
+                    return new LeavesInfo(dr.getString(1), dr.getString(2), dr.getString(3), dr.getString(4), dr.getString(5), dr.getString(6));
+                }
+            });
     }
 
-    /**
-     *
-     * @return
-     * @throws BasicException
-     */
-    public final List listBreaksVisible()throws BasicException {
+    @Override
+    @SuppressWarnings("unchecked")
+    public final List<BreaksInfo> getBreaksListAll() throws BasicException {
+        return (List<BreaksInfo>) getBreaksList().list();
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public final List<LeavesInfo> getLeavesListAll() throws BasicException {
+        return (List<LeavesInfo>) getLeavesList().list();
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public final List<Break> listBreaksVisible() throws BasicException {
         return m_breaksvisible.list();
     }      
 
-    /**
-     *
-     * @param user
-     * @throws BasicException
-     */
-    public final void CheckIn(String user) throws BasicException {
+    @Override
+    public final void checkIn(String user) throws BasicException {
         Object[] value = new Object[] {UUID.randomUUID().toString(), new Date(), user};
         m_checkin.exec(value);
     }
 
-    /**
-     *
-     * @param user
-     * @throws BasicException
-     */
-    public final void CheckOut(String user) throws BasicException {
+    @Deprecated
+    public final void CheckIn(String user) throws BasicException {
+        checkIn(user);
+    }
+
+    @Override
+    public final void checkOut(String user) throws BasicException {
         Object[] value = new Object[] {new Date(), user};
         m_checkout.exec(value);
     }
 
-    /**
-     *
-     * @param user
-     * @return
-     * @throws BasicException
-     */
-    public final boolean IsCheckedIn(String user) throws BasicException {
-        String Data = (String) m_checkdate.find(user);
-        // "0" rows shows user is not checked in
-        if (Data.equals("0")) {
-            return false;
-        }
-        return true;
+    @Deprecated
+    public final void CheckOut(String user) throws BasicException {
+        checkOut(user);
     }
 
-    /**
-     *
-     * @param UserID
-     * @param BreakID
-     * @throws BasicException
-     */
-    public final void StartBreak(String UserID,  String BreakID) throws BasicException {
-        String ShiftID = GetShiftID(UserID);
-        Object[] value = new Object[] {UUID.randomUUID().toString(), ShiftID, BreakID, new Date()};
+    @Override
+    public final boolean isCheckedIn(String user) throws BasicException {
+        String data = (String) m_checkdate.find(user);
+        return data != null && !data.equals("0");
+    }
+
+    @Deprecated
+    public final boolean IsCheckedIn(String user) throws BasicException {
+        return isCheckedIn(user);
+    }
+
+    @Override
+    public final void startBreak(String userId, String breakId) throws BasicException {
+        String shiftId = getShiftId(userId);
+        Object[] value = new Object[] {UUID.randomUUID().toString(), shiftId, breakId, new Date()};
         m_startbreak.exec(value);
     }
 
-    /**
-     *
-     * @param UserID
-     * @throws BasicException
-     */
-    public final void EndBreak(String UserID) throws BasicException {
-        String ShiftID = GetShiftID(UserID);
-        Object[] value = new Object[] {new Date(), ShiftID};
+    @Deprecated
+    public final void StartBreak(String userId, String breakId) throws BasicException {
+        startBreak(userId, breakId);
+    }
+
+    @Override
+    public final void endBreak(String userId) throws BasicException {
+        String shiftId = getShiftId(userId);
+        Object[] value = new Object[] {new Date(), shiftId};
         m_endbreak.exec(value);
     }
 
-    /**
-     *
-     * @param user
-     * @return
-     * @throws BasicException
-     */
-    public final boolean IsOnBreak(String user) throws BasicException {
-        String ShiftID = GetShiftID(user);
-        String Data = (String) m_isonbreak.find(ShiftID);
-        // "0" rows shows user is not on break
-        if (Data.equals("0")) {
-            return false;
-        }
-        return true;
+    @Deprecated
+    public final void EndBreak(String userId) throws BasicException {
+        endBreak(userId);
     }
 
-    /**
-     *
-     * @param user
-     * @return
-     * @throws BasicException
-     */
-    public final String GetShiftID(String user) throws BasicException {
+    @Override
+    public final boolean isOnBreak(String user) throws BasicException {
+        String shiftId = getShiftId(user);
+        String data = (String) m_isonbreak.find(shiftId);
+        return data != null && !data.equals("0");
+    }
+
+    @Deprecated
+    public final boolean IsOnBreak(String user) throws BasicException {
+        return isOnBreak(user);
+    }
+
+    @Override
+    public final String getShiftId(String user) throws BasicException {
         return (String) m_shiftid.find(user);
     }
 
-    /**
-     *
-     * @param user
-     * @return
-     * @throws BasicException
-     */
-    public final Date GetLastCheckIn(String user) throws BasicException {
+    @Deprecated
+    public final String GetShiftID(String user) throws BasicException {
+        return getShiftId(user);
+    }
+
+    @Override
+    public final Date getLastCheckIn(String user) throws BasicException {
         return (Date) m_lastcheckin.find(user);
     }
 
-    /**
-     *
-     * @param user
-     * @return
-     * @throws BasicException
-     */
-    public final Date GetLastCheckOut(String user) throws BasicException {
+    @Deprecated
+    public final Date GetLastCheckIn(String user) throws BasicException {
+        return getLastCheckIn(user);
+    }
+
+    @Override
+    public final Date getLastCheckOut(String user) throws BasicException {
         return (Date) m_lastcheckout.find(user);
     }
 
-    /**
-     *
-     * @param ShiftID
-     * @return
-     * @throws BasicException
-     */
-    public final Date GetStartBreakTime(String ShiftID) throws BasicException {
-        return (Date) m_startbreaktime.find(ShiftID);
+    @Deprecated
+    public final Date GetLastCheckOut(String user) throws BasicException {
+        return getLastCheckOut(user);
     }
 
-    /**
-     *
-     * @param ShiftID
-     * @return
-     * @throws BasicException
-     */
-    public final String GetLastBreakID(String ShiftID) throws BasicException {
-        return (String) m_lastbreakid.find(ShiftID);
+    @Override
+    public final Date getStartBreakTime(String shiftId) throws BasicException {
+        return (Date) m_startbreaktime.find(shiftId);
     }
 
-    /**
-     *
-     * @param ShiftID
-     * @return
-     * @throws BasicException
-     */
-    public final String GetLastBreakName(String ShiftID) throws BasicException {
-        String BreakID = GetLastBreakID(ShiftID);
-        return (String) m_breakname.find(BreakID);
+    @Deprecated
+    public final Date GetStartBreakTime(String shiftId) throws BasicException {
+        return getStartBreakTime(shiftId);
     }
 
-    /**
-     *
-     * @param user
-     * @return
-     * @throws BasicException
-     */
-    public final Object [] GetLastBreak(String user) throws BasicException {
-        String ShiftID = GetShiftID(user);
-        Date StartBreakTime = GetStartBreakTime(ShiftID);
-        String BreakName = GetLastBreakName(ShiftID);
-        return new Object[] {BreakName, StartBreakTime};
+    @Override
+    public final String getLastBreakId(String shiftId) throws BasicException {
+        return (String) m_lastbreakid.find(shiftId);
     }
 
-    /**
-     *
-     * @param user
-     * @return
-     * @throws BasicException
-     */
-    public final boolean IsOnLeave(String user) throws BasicException {
+    @Deprecated
+    public final String GetLastBreakID(String shiftId) throws BasicException {
+        return getLastBreakId(shiftId);
+    }
+
+    @Override
+    public final String getLastBreakName(String shiftId) throws BasicException {
+        String breakId = getLastBreakId(shiftId);
+        return (String) m_breakname.find(breakId);
+    }
+
+    @Deprecated
+    public final String GetLastBreakName(String shiftId) throws BasicException {
+        return getLastBreakName(shiftId);
+    }
+
+    @Override
+    public final ShiftBreakActivity getLastBreakActivity(String userId) throws BasicException {
+        String shiftId = getShiftId(userId);
+        Date startBreakTime = getStartBreakTime(shiftId);
+        String breakName = getLastBreakName(shiftId);
+        return new ShiftBreakActivity(breakName, startBreakTime);
+    }
+
+    @Override
+    public final Object[] getLastBreak(String user) throws BasicException {
+        ShiftBreakActivity activity = getLastBreakActivity(user);
+        return new Object[] {activity.breakName(), activity.startTime()};
+    }
+
+    @Deprecated
+    public final Object[] GetLastBreak(String user) throws BasicException {
+        return getLastBreak(user);
+    }
+
+    @Override
+    public final boolean isOnLeave(String user) throws BasicException {
         Object[] value = new Object[] {new Date(), new Date(), user};
         
         SentenceFind m_isonleave = new StaticSentence(s
             , "SELECT COUNT(*) FROM leaves WHERE STARTDATE < ? AND ENDDATE > ? AND PPLID = ?"
             , new SerializerWriteBasic(new Datas[] {Datas.TIMESTAMP, Datas.TIMESTAMP, Datas.STRING})
             , SerializerReadInteger.INSTANCE);
-        Integer Data = (Integer) m_isonleave.find(value);
-        // "0" rows shows user is not on leave
-        if (Data.equals("0")) {
-            return false;
-        }
-        return true;
+        Integer data = (Integer) m_isonleave.find(value);
+        return data != null && data > 0;
     }
 
-    // EmployeeList list
-    // Changed ='4' to !='0' --it lists all the users except admin who doesn´t clock in
+    @Deprecated
+    public final boolean IsOnLeave(String user) throws BasicException {
+        return isOnLeave(user);
+    }
 
-    /**
-     *
-     * @return
-     */
-        public SentenceList getEmployeeList() {
+    public SentenceList getEmployeeList() {
+        String dbTrue = (s != null && s.DB != null) ? s.DB.TRUE() : "1";
         return new StaticSentence(s
-            , new QBFBuilder("SELECT ID, NAME FROM people WHERE ROLE != '0' AND VISIBLE = " + s.DB.TRUE() + " AND ?(QBF_FILTER) ORDER BY NAME", new String[] {"NAME"})
+            , new QBFBuilder("SELECT ID, NAME FROM people WHERE ROLE != '0' AND VISIBLE = " + dbTrue + " AND ?(QBF_FILTER) ORDER BY NAME", new String[] {"NAME"})
             , new SerializerWriteBasic(new Datas[] {Datas.OBJECT, Datas.STRING})
             , new SerializerRead() {
-            @Override
-                    public Object readValues(DataRead dr) throws BasicException {
-                        EmployeeInfo c = new EmployeeInfo(dr.getString(1));
-                        c.setName(dr.getString(2));
-                        return c;
-                    }
-                });
+                @Override
+                public Object readValues(DataRead dr) throws BasicException {
+                    EmployeeInfo c = new EmployeeInfo(dr.getString(1));
+                    c.setName(dr.getString(2));
+                    return c;
+                }
+            });
     }
 
-    /**
-     *
-     * @param user
-     * @throws BasicException
-     */
-    public void BlockEmployee(String user) throws BasicException {
-        boolean isOnBreak = IsOnBreak(user);
-        if (isOnBreak) {
-            EndBreak(user);
+    @Override
+    public ListProvider getEmployeeListProvider(EditorCreator filter) {
+        return new ListProviderCreator(getEmployeeList(), filter);
+    }
+
+    @Override
+    public void blockEmployee(String user) throws BasicException {
+        if (isOnBreak(user)) {
+            endBreak(user);
         }
-        CheckOut(user);
+        checkOut(user);
     }
 
-    TableDefinition getTableBreaks() {
+    @Deprecated
+    public void BlockEmployee(String user) throws BasicException {
+        blockEmployee(user);
+    }
+
+    @Override
+    public TableDefinition getTableBreaks() {
         return tbreaks;
     }
 
-    TableDefinition getTableLeaves() {
+    @Override
+    public TableDefinition getTableLeaves() {
         return tleaves;
     }
 
-    /**
-     *
-     * @param id
-     * @return
-     * @throws BasicException
-     */
+    @Override
     public EmployeeInfoExt loadEmployeeExt(String id) throws BasicException {
         return (EmployeeInfoExt) new PreparedSentence(s
                 , "SELECT ID, NAME FROM people WHERE ID = ?"
@@ -426,17 +429,7 @@ public class DataLogicPresenceManagement extends BeanFactoryDataSingle {
                 , new EmployeeExtRead()).find(id);
     }
 
-    /**
-     *
-     */
     protected static class EmployeeExtRead implements SerializerRead {
-
-        /**
-         *
-         * @param dr
-         * @return
-         * @throws BasicException
-         */
         @Override
         public Object readValues(DataRead dr) throws BasicException {
             EmployeeInfoExt c = new EmployeeInfoExt(dr.getString(1));

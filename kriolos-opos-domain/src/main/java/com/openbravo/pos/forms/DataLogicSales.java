@@ -19,9 +19,11 @@ import com.openbravo.pos.ticket.TicketTaxInfo;
 import com.openbravo.pos.ticket.TicketInfo;
 import com.openbravo.pos.ticket.TicketLineInfo;
 import com.openbravo.pos.ticket.TaxInfo;
+import com.openbravo.pos.sales.TaxService;
+import com.openbravo.pos.sales.DataLogicTax;
 import com.openbravo.pos.ticket.ProductInfoExt;
 import com.openbravo.pos.ticket.FindTicketsInfo;
-import com.openbravo.pos.inventory.UomInfo;
+import com.openbravo.pos.pim.UomInfo;
 import com.openbravo.pos.inventory.LocationInfo;
 import com.openbravo.pos.inventory.ProductsBundleInfo;
 import com.openbravo.pos.inventory.TaxCustCategoryInfo;
@@ -38,11 +40,19 @@ import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.BeanFactoryDataSingle;
 import com.openbravo.pos.inventory.*;
 import com.openbravo.pos.sales.restaurant.FloorsInfo;
+import com.openbravo.pos.sales.restaurant.DataLogicRestaurant;
+import com.openbravo.pos.sales.restaurant.RestaurantService;
+import com.openbravo.pos.sales.DataLogicAudit;
+import com.openbravo.pos.payment.DataLogicPayments;
 import com.openbravo.pos.payment.PaymentInfo;
 import com.openbravo.pos.payment.PaymentInfoTicket;
-import com.openbravo.pos.pim.DataLogicPIM;
+import com.openbravo.pos.payment.TreasuryService;
+import com.openbravo.pos.catalog.CatalogService;
+import com.openbravo.pos.catalog.CatalogServiceImpl;
 import com.openbravo.pos.sales.ReprintTicketInfo;
+import com.openbravo.pos.sales.TicketLifecycleService;
 import com.openbravo.pos.voucher.DataLogicVouchers;
+import com.openbravo.pos.voucher.VoucherService;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -57,7 +67,7 @@ import java.util.logging.Logger;
  * @author adrianromero
  * @author jackgerrard
  */
-public class DataLogicSales extends BeanFactoryDataSingle {
+public class DataLogicSales extends BeanFactoryDataSingle implements TicketLifecycleService {
 
     protected Session sessionDB;
 
@@ -73,14 +83,17 @@ public class DataLogicSales extends BeanFactoryDataSingle {
     private static final String PREPAY = "prepay";
     private static final Logger LOGGER = Logger.getLogger("com.openbravo.pos.forms.DataLogicSales");
 
-    // SQL constants for inventory panel queries
-    public static final String SQL_BUNDLE_LIST = "SELECT B.ID, B.PRODUCT, B.PRODUCT_BUNDLE, B.QUANTITY, P.REFERENCE, P.CODE, P.NAME "
-            + "FROM products_bundle B, products P "
-            + "WHERE B.PRODUCT_BUNDLE = P.ID AND B.PRODUCT = ?";
+    /**
+     * @deprecated Use {@link DataLogicInventory#SQL_BUNDLE_LIST} instead.
+     */
+    @Deprecated
+    public static final String SQL_BUNDLE_LIST = DataLogicInventory.SQL_BUNDLE_LIST;
 
-    public static final String SQL_AUXILIAR_LIST = "SELECT COM.ID, COM.PRODUCT, COM.PRODUCT2, P.REFERENCE, P.CODE, P.NAME "
-            + "FROM products_com COM, products P "
-            + "WHERE COM.PRODUCT2 = P.ID AND COM.PRODUCT = ?";
+    /**
+     * @deprecated Use {@link DataLogicInventory#SQL_AUXILIAR_LIST} instead.
+     */
+    @Deprecated
+    public static final String SQL_AUXILIAR_LIST = DataLogicInventory.SQL_AUXILIAR_LIST;
 
     public DataLogicSales() {
         stockdiaryDatas = new Datas[]{
@@ -88,10 +101,7 @@ public class DataLogicSales extends BeanFactoryDataSingle {
             Datas.STRING, Datas.STRING, Datas.DOUBLE, Datas.DOUBLE,
             Datas.STRING, Datas.STRING, Datas.STRING};
 
-        paymenttabledatas = new Datas[]{
-            Datas.STRING, Datas.STRING, Datas.TIMESTAMP,
-            Datas.STRING, Datas.STRING, Datas.DOUBLE,
-            Datas.STRING};
+        paymenttabledatas = null;
 
         stockdatas = new Datas[]{
             Datas.STRING, Datas.STRING, Datas.STRING,
@@ -107,37 +117,7 @@ public class DataLogicSales extends BeanFactoryDataSingle {
             Datas.STRING, Datas.STRING, Datas.STRING,
             Datas.STRING, Datas.STRING, Datas.STRING};
 
-        // creating customers object here for now for future global reuse
-        // LOYALTY, MEMBERSHIP & etc as will be more system centric than customer
-        customersRow = new Row(
-                new Field("ID", Datas.STRING, Formats.STRING),
-                new Field("SEARCHKEY", Datas.STRING, Formats.STRING),
-                new Field("TAXID", Datas.STRING, Formats.STRING),
-                new Field("NAME", Datas.STRING, Formats.STRING),
-                new Field("TAXCATEGORY", Datas.STRING, Formats.STRING),
-                new Field("CARD", Datas.STRING, Formats.STRING),
-                new Field("MAXDEBT", Datas.DOUBLE, Formats.CURRENCY),
-                new Field("ADDRESS", Datas.STRING, Formats.STRING),
-                new Field("ADDRESS2", Datas.STRING, Formats.STRING),
-                new Field("POSTAL", Datas.STRING, Formats.STRING),
-                new Field("CITY", Datas.STRING, Formats.STRING),
-                new Field("REGION", Datas.STRING, Formats.STRING),
-                new Field("COUNTRY", Datas.STRING, Formats.STRING),
-                new Field("FIRSTNAME", Datas.STRING, Formats.STRING),
-                new Field("LASTNAME", Datas.STRING, Formats.STRING),
-                new Field("EMAIL", Datas.STRING, Formats.STRING),
-                new Field("PHONE", Datas.STRING, Formats.STRING),
-                new Field("PHONE2", Datas.STRING, Formats.STRING),
-                new Field("FAX", Datas.STRING, Formats.STRING),
-                new Field("NOTES", Datas.STRING, Formats.STRING),
-                new Field("VISIBLE", Datas.BOOLEAN, Formats.BOOLEAN),
-                new Field("CURDATE", Datas.STRING, Formats.TIMESTAMP),
-                new Field("CURDEBT", Datas.DOUBLE, Formats.CURRENCY),
-                new Field("IMAGE", Datas.BYTES, Formats.NULL),
-                new Field("ISVIP", Datas.BOOLEAN, Formats.BOOLEAN),
-                new Field("DISCOUNT", Datas.DOUBLE, Formats.CURRENCY),
-                new Field("MEMODATE", Datas.STRING, Formats.TIMESTAMP));
-
+        customersRow = null;
     }
 
     /**
@@ -149,88 +129,184 @@ public class DataLogicSales extends BeanFactoryDataSingle {
         this.sessionDB = s;
     }
 
-    // End Import Creates
+    /**
+     * @deprecated Use {@link DataLogicCustomers#getCustomersRow()} instead.
+     */
+    @Deprecated
     public final Row getCustomersRow() {
-        return customersRow;
+        return getCustomerDataLogic().getCustomersRow();
+    }
+
+    public DataLogicInventory getDataLogicInventory() {
+        if (app != null) {
+            try {
+                return app.getBean(DataLogicInventory.class);
+            } catch (BeanFactoryException ignored) {
+            }
+        }
+        DataLogicInventory fallback = new DataLogicInventory();
+        fallback.init(sessionDB);
+        return fallback;
+    }
+
+    public StockService getStockService() {
+        if (app != null) {
+            try {
+                return app.getBean(StockService.class);
+            } catch (BeanFactoryException ignored) {
+            }
+        }
+        return getDataLogicInventory();
+    }
+
+    public InventoryService getInventoryService() {
+        if (app != null) {
+            try {
+                return app.getBean(InventoryService.class);
+            } catch (BeanFactoryException ignored) {
+            }
+        }
+        return getDataLogicInventory();
+    }
+
+    public TaxService getTaxService() {
+        if (app != null) {
+            try {
+                return app.getBean(TaxService.class);
+            } catch (BeanFactoryException ignored) {
+            }
+        }
+        return getDataLogicTax();
+    }
+
+    @Deprecated
+    public DataLogicTax getDataLogicTax() {
+        if (app != null) {
+            try {
+                return app.getBean(DataLogicTax.class);
+            } catch (BeanFactoryException ignored) {
+            }
+        }
+        DataLogicTax fallback = new DataLogicTax();
+        fallback.init(sessionDB);
+        return fallback;
+    }
+
+    public RestaurantService getRestaurantService() {
+        if (app != null) {
+            try {
+                return app.getBean(RestaurantService.class);
+            } catch (BeanFactoryException ignored) {
+            }
+        }
+        return getDataLogicRestaurant();
     }
 
     /**
-     * JG Oct 2016 Called from JPanelTicket
-     *
-     * @param pId
-     * @param location
-     * @return
-     * @throws BasicException
+     * @deprecated Use {@link #getRestaurantService()} instead.
      */
+    @Deprecated
+    public DataLogicRestaurant getDataLogicRestaurant() {
+        if (app != null) {
+            try {
+                RestaurantService svc = app.getBean(RestaurantService.class);
+                if (svc instanceof DataLogicRestaurant) {
+                    return (DataLogicRestaurant) svc;
+                }
+            } catch (BeanFactoryException ignored) {
+            }
+            try {
+                return app.getBean(DataLogicRestaurant.class);
+            } catch (BeanFactoryException ignored) {
+            }
+        }
+        DataLogicRestaurant fallback = new DataLogicRestaurant();
+        fallback.init(sessionDB);
+        return fallback;
+    }
+
+    public CatalogService getCatalogService() {
+        if (app != null) {
+            try {
+                return app.getBean(CatalogService.class);
+            } catch (BeanFactoryException ignored) {
+            }
+        }
+        CatalogServiceImpl fallback = new CatalogServiceImpl();
+        fallback.init(sessionDB);
+        return fallback;
+    }
+
+    public DataLogicPayments getDataLogicPayments() {
+        if (app != null) {
+            try {
+                return app.getBean(DataLogicPayments.class);
+            } catch (BeanFactoryException ignored) {
+            }
+        }
+        DataLogicPayments fallback = new DataLogicPayments();
+        fallback.init(sessionDB);
+        return fallback;
+    }
+
+    public TreasuryService getTreasuryService() {
+        if (app != null) {
+            try {
+                return app.getBean(TreasuryService.class);
+            } catch (BeanFactoryException ignored) {
+            }
+        }
+        return getDataLogicPayments();
+    }
+
+    public VoucherService getVoucherService() {
+        if (app != null) {
+            try {
+                return app.getBean(VoucherService.class);
+            } catch (BeanFactoryException ignored) {
+            }
+        }
+        return getDataLogicVouchers();
+    }
+
+    public DataLogicVouchers getDataLogicVouchers() {
+        if (app != null) {
+            try {
+                return app.getBean(DataLogicVouchers.class);
+            } catch (BeanFactoryException ignored) {
+            }
+        }
+        DataLogicVouchers fallback = new DataLogicVouchers();
+        fallback.init(sessionDB);
+        return fallback;
+    }
+
+    public DataLogicAudit getDataLogicAudit() {
+        if (app != null) {
+            try {
+                return app.getBean(DataLogicAudit.class);
+            } catch (BeanFactoryException ignored) {
+            }
+        }
+        DataLogicAudit fallback = new DataLogicAudit();
+        fallback.init(sessionDB);
+        return fallback;
+    }
+
+    /**
+     * @deprecated Use {@link DataLogicInventory#getProductStockState(String, String)} instead.
+     */
+    @Deprecated
     public final ProductStock getProductStockState(String pId, String location) throws BasicException {
-
-        PreparedSentence preparedSentence = new PreparedSentence(sessionDB,
-                "SELECT "
-                + "products.id, "
-                + "locations.id as Location, "
-                + "stockcurrent.units AS Current, "
-                + "stocklevel.stocksecurity AS Minimum, "
-                + "stocklevel.stockmaximum AS Maximum, "
-                + "products.pricebuy, "
-                + "products.pricesell, "
-                + "products.memodate "
-                + "FROM locations "
-                + "INNER JOIN ((products "
-                + "INNER JOIN stockcurrent "
-                + "ON products.id = stockcurrent.product) "
-                + "LEFT JOIN stocklevel ON products.id = stocklevel.product) "
-                + "ON locations.id = stockcurrent.location "
-                + "WHERE products.id = ? "
-                + "AND locations.id = ?",
-                SerializerWriteString.INSTANCE,
-                ProductStock.getSerializerRead());
-
-        ProductStock productStock = (ProductStock) preparedSentence.find(pId, location);
-
-        return productStock;
+        return getDataLogicInventory().getProductStockState(pId, location);
     }
 
     /**
-     * JG May 2016 Called from StockManagement
-     *
-     * @param pId
-     * @return
-     * @throws BasicException
+     * @deprecated Use {@link DataLogicInventory#getProductStockList(String)} instead.
      */
+    @Deprecated
     public final List<ProductStock> getProductStockList(String pId) throws BasicException {
-
-        String SQL_STOCK = """
-                                SELECT
-                                    P.ID AS product_id,
-                                    L.name AS location_name,
-                                    COALESCE(MAX(SC.units), 0) AS current_stock,
-                                    MAX(SL.stocksecurity) AS minimum_stock,
-                                    MAX(SL.stockmaximum) AS maximum_stock,
-                                    ROUND(P.pricebuy, 2) AS price_buy,
-                                    -- Standard calculation for price sell + tax
-                                    ROUND((P.pricesell * MAX(T.rate)) + P.pricesell, 2) AS price_sell,
-                                    P.memodate
-                                FROM
-                                    products P
-                                INNER JOIN
-                                    taxcategories TC ON P.TAXCAT = TC.ID
-                                INNER JOIN
-                                    taxes T ON TC.ID = T.category
-                                LEFT OUTER JOIN
-                                    stocklevel SL ON SL.product = P.ID
-                                LEFT OUTER JOIN
-                                    stockcurrent SC ON P.ID = SC.product
-                                INNER JOIN
-                                    locations L ON SC.location = L.ID
-                                WHERE
-                                    P.ID = ?
-                                GROUP BY
-                                    P.ID, L.name, P.pricebuy, P.pricesell, P.memodate;
-                                """;
-        return new PreparedSentence(sessionDB,
-                SQL_STOCK,
-                SerializerWriteString.INSTANCE,
-                ProductStock.getSerializerRead()).list(pId);
+        return getDataLogicInventory().getProductStockList(pId);
     }
 
     /**
@@ -344,69 +420,36 @@ public class DataLogicSales extends BeanFactoryDataSingle {
                 new SerializerReadClass(FindTicketsInfo.class));
     }
 
-    // User list
     /**
-     *
-     * @return
+     * @deprecated Use {@link TaxService#getTaxCategoryInfoList()} instead.
      */
+    @Deprecated
     public final SentenceList<TaxCategoryInfo> getTaxCategoryInfoList() {
-        return getTaxCategoriesList();
+        return getTaxService().getTaxCategoryInfoList();
     }
 
     /**
-     * @deprecated since Nov/2025
-     * @return
+     * @deprecated Use {@link TaxService#getTaxList()} instead.
      */
+    @Deprecated
     public final SentenceList<TaxInfo> getTaxList() {
-        return new StaticSentence(sessionDB,
-                "SELECT "
-                + "ID, "
-                + "NAME, "
-                + "CATEGORY, "
-                + "CUSTCATEGORY, "
-                + "PARENTID, "
-                + "RATE, "
-                + "RATECASCADE, "
-                + "RATEORDER "
-                + "FROM taxes "
-                + "ORDER BY NAME",
-                null,
-                (DataRead dr) -> new TaxInfo(
-                        dr.getString(1),
-                        dr.getString(2),
-                        dr.getString(3),
-                        dr.getString(4),
-                        dr.getString(5),
-                        dr.getDouble(6),
-                        dr.getBoolean(7),
-                        dr.getInt(8)));
-    }
-
-    public final List<TaxInfo> getTaxListAll() {
-        List<TaxInfo> list = null;
-        try {
-            list = this.getTaxList().list();
-        } catch (BasicException ex) {
-            LOGGER.log(Level.WARNING, "Cannot get Tax list", ex);
-        }
-        return list;
+        return getTaxService().getTaxList();
     }
 
     /**
-     *
-     * @return
+     * @deprecated Use {@link TaxService#getTaxListAll()} instead.
      */
+    @Deprecated
+    public final List<TaxInfo> getTaxListAll() {
+        return getTaxService().getTaxListAll();
+    }
+
+    /**
+     * @deprecated Use {@link TaxService#getTaxCustCategoriesList()} instead.
+     */
+    @Deprecated
     public final SentenceList<TaxCustCategoryInfo> getTaxCustCategoriesList() {
-        return new StaticSentence<>(sessionDB,
-                "SELECT "
-                + "ID, "
-                + "NAME "
-                + "FROM taxcustcategories "
-                + "ORDER BY NAME",
-                null,
-                (DataRead dr) -> new TaxCustCategoryInfo(
-                        dr.getString(1),
-                        dr.getString(2)));
+        return getTaxService().getTaxCustCategoriesList();
     }
 
     /**
@@ -415,138 +458,81 @@ public class DataLogicSales extends BeanFactoryDataSingle {
      * @param cId
      * @return
      * @throws BasicException
+     * @deprecated Use {@link DataLogicCustomers#getCustomersTransactionList(String)} instead.
      */
+    @Deprecated
     public final List<CustomerTransaction> getCustomersTransactionList(String cId) throws BasicException {
-
-        // TODO: TICKETLINE MUST STORE: _tax_value, _line_amount(Qty x price)
-        // _line_total (Price x Qty x Tax), line_prod_name
-        // TODO: CALCULATION MUST BE DONE Java using BigDecimal
-        return new PreparedSentence<>(sessionDB, """
-            SELECT 
-                tickets.TICKETID, 
-                products.NAME AS PNAME, 
-                SUM(ticketlines.UNITS) AS UNITS, 
-                SUM(ticketlines.UNITS * ticketlines.PRICE) AS AMOUNT, 
-                SUM(ticketlines.UNITS * ticketlines.PRICE * (1.0 + taxes.RATE)) AS TOTAL, 
-                receipts.DATENEW, 
-                customers.ID AS CID 
-            FROM ticketlines ticketlines 
-            INNER JOIN taxes taxes ON ticketlines.TAXID = taxes.ID 
-            INNER JOIN tickets tickets ON tickets.ID = ticketlines.TICKET 
-            INNER JOIN customers customers ON customers.ID = tickets.CUSTOMER 
-            INNER JOIN receipts receipts ON tickets.ID = receipts.ID 
-            LEFT OUTER JOIN products products ON ticketlines.PRODUCT = products.ID 
-            WHERE tickets.CUSTOMER = ? 
-            GROUP BY 
-                customers.ID, 
-                receipts.DATENEW, 
-                tickets.TICKETID, 
-                products.NAME
-            ORDER BY receipts.DATENEW DESC
-            """,
-                SerializerWriteString.INSTANCE,
-                CustomerTransaction.getSerializerRead()).list(cId);
+        return getDataLogicCustomers().getCustomersTransactionList(cId);
     }
 
     /**
-     * @deprecated Since Nov/2025
-     * @return
+     * @deprecated Use {@link TaxService#getTaxCategoriesList()} instead.
      */
+    @Deprecated
     public final SentenceList<TaxCategoryInfo> getTaxCategoriesList() {
-        return new StaticSentence<>(sessionDB,
-                "SELECT "
-                + "ID, "
-                + "NAME "
-                + "FROM taxcategories "
-                + "ORDER BY NAME",
-                null,
-                (DataRead dr) -> new TaxCategoryInfo(dr.getString(1), dr.getString(2)));
+        return getTaxService().getTaxCategoriesList();
     }
 
     /**
-     *
-     * @return
+     * @deprecated Use {@link TaxService#getTaxCategoriesListAll()} instead.
      */
+    @Deprecated
     public final List<TaxCategoryInfo> getTaxCategoriesListAll() {
-        List<TaxCategoryInfo> list = null;
-        try {
-            list = this.getTaxCategoriesList().list();
-        } catch (BasicException ex) {
-            LOGGER.log(Level.WARNING, "Cannot get TaxCategoryInfo list", ex);
-        }
-        return list;
+        return getTaxService().getTaxCategoriesListAll();
     }
 
     /**
-     * @deprecated Since Nov/2025
+     * @deprecated Use {@link CatalogService#getAttributeSetListAll()} instead.
      * @return
      */
+    @Deprecated
     public final SentenceList<AttributeSetInfo> getAttributeSetList() {
-        return new StaticSentence(sessionDB,
-                "SELECT "
-                + "ID, "
-                + "NAME "
-                + "FROM attributeset "
-                + "ORDER BY NAME",
-                null,
+        return new StaticSentence<>(sessionDB, "SELECT ID, NAME FROM attributeset ORDER BY NAME", null,
                 (DataRead dr) -> new AttributeSetInfo(dr.getString(1), dr.getString(2)));
     }
 
+    /**
+     * @deprecated Use {@link CatalogService#getAttributeSetListAll()} instead.
+     * @return
+     */
+    @Deprecated
     public final List<AttributeSetInfo> getAttributeSetListAll() {
-        List<AttributeSetInfo> list = null;
-        try {
-            list = this.getAttributeSetList().list();
-        } catch (BasicException ex) {
-            LOGGER.log(Level.WARNING, "Cannot get AttributeSetInfo list", ex);
-        }
-        return list;
+        return getCatalogService().getAttributeSetListAll();
     }
 
     /**
      * @deprecated Since Nov/2025
      * @return
+    /**
+     * @deprecated Use {@link InventoryService#getLocationsList()} instead.
      */
-    public final SentenceList<LocationInfo> getLocationsList() {
-        return new StaticSentence(sessionDB,
-                "SELECT "
-                + "ID, "
-                + "NAME, "
-                + "ADDRESS FROM locations "
-                + "ORDER BY NAME",
-                null,
-                new SerializerReadClass(LocationInfo.class));
+    @Deprecated
+    public final List<LocationInfo> getLocationsList() throws BasicException {
+        return getDataLogicInventory().getLocationsList();
     }
 
+    /**
+     * @deprecated Use {@link DataLogicInventory#getLocationsListAll()} instead.
+     */
+    @Deprecated
     public final List<LocationInfo> getLocationsListAll() {
-        List<LocationInfo> list = null;
-        try {
-            list = this.getLocationsList().list();
-        } catch (BasicException ex) {
-            LOGGER.log(Level.WARNING, "Cannot get AttributeSetInfo list", ex);
-        }
-        return list;
+        return getDataLogicInventory().getLocationsListAll();
     }
 
     /**
-     *
-     * @return
+     * @deprecated Use {@link RestaurantService#getFloorsList()} or {@link RestaurantService#getFloorsListAll()} instead.
      */
+    @Deprecated
     public final SentenceList<FloorsInfo> getFloorsList() {
-        return new StaticSentence(sessionDB,
-                "SELECT ID, NAME FROM floors ORDER BY NAME",
-                null,
-                new SerializerReadClass(FloorsInfo.class));
+        return getRestaurantService().getFloorsList();
     }
 
     /**
-     *
-     * @return
+     * @deprecated Use {@link RestaurantService#getFloorTablesList()} or {@link RestaurantService#getFloorTablesListAll()} instead.
      */
+    @Deprecated
     public final SentenceList<FloorsInfo> getFloorTablesList() {
-        return new StaticSentence(sessionDB,
-                "SELECT ID, NAME, SEATS FROM places ORDER BY NAME",
-                null,
-                new SerializerReadClass(FloorsInfo.class));
+        return getRestaurantService().getFloorTablesList();
     }
 
     /**
@@ -558,8 +544,7 @@ public class DataLogicSales extends BeanFactoryDataSingle {
      */
     public final TicketInfo loadTicket(final int tickettype, final int ticketid) throws BasicException {
 
-        SerializerWrite<Object[]> sw = new SerializerWriteBasicExt(new Datas[]{Datas.INT, Datas.INT},
-                new int[]{0, 1});
+        SerializerWrite<Object[]> sw = new SerializerWriteBasicExt(new Datas[]{Datas.INT, Datas.INT}, new int[]{0, 1});
         Object[] params = new Object[]{tickettype, ticketid};
 
         TicketInfo ticket = (TicketInfo) new PreparedSentence(sessionDB,
@@ -583,15 +568,71 @@ public class DataLogicSales extends BeanFactoryDataSingle {
                 new SerializerReadClass(TicketInfo.class))
                 .find(params);
 
+        setTicketData(ticket);
+
+        return ticket;
+    }
+    
+    /**
+     * 
+     * @param ticketType
+     * @return
+     * @throws BasicException 
+     */
+    public final TicketInfo loadLastTicket(final int ticketType) throws BasicException {
+
+        SerializerWrite<Object[]> serialWriter = new SerializerWriteBasicExt(new Datas[]{Datas.INT}, new int[]{0});
+        Object[] params = new Object[]{ticketType};
+
+        TicketInfo ticket = (TicketInfo) new PreparedSentence(sessionDB,
+                "SELECT "
+                + "T.ID, "
+                + "T.TICKETTYPE, "
+                + "T.TICKETID, "
+                + "R.DATENEW, "
+                + "R.MONEY, "
+                + "R.ATTRIBUTES, "
+                + "P.ID, "
+                + "P.NAME, "
+                + "T.CUSTOMER, "
+                + "T.STATUS "
+                + "FROM receipts R "
+                + "JOIN tickets T ON R.ID = T.ID "
+                + "LEFT OUTER JOIN people P ON T.PERSON = P.ID "
+                + "WHERE T.TICKETTYPE = ?  "
+                + "ORDER BY R.DATENEW DESC LIMIT 1",
+                serialWriter,
+                new SerializerReadClass(TicketInfo.class))
+                .find(params);
+
+        setTicketData(ticket);
+
+        return ticket;
+    }
+
+    public DataLogicCustomers getDataLogicCustomers() {
+        if (app != null) {
+            try {
+                return app.getBean(DataLogicCustomers.class);
+            } catch (BeanFactoryException ignored) {
+            }
+        }
+        DataLogicCustomers fallback = new DataLogicCustomers();
+        fallback.init(sessionDB);
+        return fallback;
+    }
+
+    public DataLogicCustomers getCustomerDataLogic() {
+        return getDataLogicCustomers();
+    }
+
+    private void setTicketData(TicketInfo ticket) throws BasicException {
         if (ticket != null) {
 
             String customerid = ticket.getCustomerId();
 
-            //TODO MUST move this datalogic
             if (customerid != null) {
-                DataLogicCustomers customerDataLogic = new DataLogicCustomers();
-                customerDataLogic.init(sessionDB);
-                ticket.setCustomer(customerDataLogic.findCustomerInfoExtById(customerid));
+                ticket.setCustomer(getCustomerDataLogic().findCustomerInfoExtById(customerid));
             }
 
             ticket.setLines(new PreparedSentence(sessionDB,
@@ -608,7 +649,6 @@ public class DataLogicSales extends BeanFactoryDataSingle {
                     SerializerWriteString.INSTANCE,
                     new SerializerReadClass(PaymentInfoTicket.class)).list(ticket.getId()));
         }
-        return ticket;
     }
 
     /**
@@ -653,7 +693,8 @@ public class DataLogicSales extends BeanFactoryDataSingle {
                     ByteArrayOutputStream o = new ByteArrayOutputStream();
                     ticket.getProperties().storeToXML(o, AppLocal.APP_NAME, "UTF-8");
                     properties = o.toByteArray();
-                } catch (IOException e) {
+                }
+                catch (IOException e) {
                     LOGGER.log(Level.WARNING, "Cannot convert ticket properties to XML ", e);
                 }
 
@@ -720,18 +761,19 @@ public class DataLogicSales extends BeanFactoryDataSingle {
                     ticketlineinsert.exec(l);
 
                     if (l.getProductID() != null && l.isProductService() != true) {
-                        getStockDiaryInsert().exec(new Object[]{
+                        getStockService().recordStockMovement(
                             UUID.randomUUID().toString(),
                             ticket.getDate(),
                             l.getMultiply() < 0.0
-                            ? MovementReason.IN_REFUND.getKey()
-                            : MovementReason.OUT_SALE.getKey(),
+                            ? (Integer) MovementReason.IN_REFUND.getKey()
+                            : (Integer) MovementReason.OUT_SALE.getKey(),
                             location,
                             l.getProductID(),
-                            l.getProductAttSetInstId(), -l.getMultiply(),
+                            l.getProductAttSetInstId(),
+                            -l.getMultiply(),
                             l.getPrice(),
                             ticket.getUser().getName()
-                        });
+                        );
                     }
                 }
 
@@ -815,7 +857,7 @@ public class DataLogicSales extends BeanFactoryDataSingle {
     }
 
     private int updateVoucherNonActive(String voucherNumber) throws BasicException {
-        return DataLogicVouchers.updateVoucherNonActive(voucherNumber, sessionDB);
+        return getVoucherService().deactivateVoucher(voucherNumber);
     }
 
     private boolean isPaymentMethodCustomerDebt(String paymentMethod) {
@@ -840,19 +882,19 @@ public class DataLogicSales extends BeanFactoryDataSingle {
                 for (int ticketLineNumber = 0; ticketLineNumber < ticket.getLinesCount(); ticketLineNumber++) {
 
                     if (ticket.getLine(ticketLineNumber).getProductID() != null) {
-                        getStockDiaryInsert().exec(new Object[]{
+                        getStockService().recordStockMovement(
                             UUID.randomUUID().toString(),
                             nowDate,
                             ticket.getLine(ticketLineNumber).getMultiply() >= 0.0
-                            ? MovementReason.IN_REFUND.getKey()
-                            : MovementReason.OUT_SALE.getKey(),
+                            ? (Integer) MovementReason.IN_REFUND.getKey()
+                            : (Integer) MovementReason.OUT_SALE.getKey(),
                             location,
                             ticket.getLine(ticketLineNumber).getProductID(),
                             ticket.getLine(ticketLineNumber).getProductAttSetInstId(),
                             ticket.getLine(ticketLineNumber).getMultiply(),
                             ticket.getLine(ticketLineNumber).getPrice(),
                             ticket.getUser().getName()
-                        });
+                        );
                     }
                     // For productBundle
                     List<ProductsBundleInfo> bundle = getProductsBundle((String) ticket.getLine(ticketLineNumber).getProductID());
@@ -862,15 +904,15 @@ public class DataLogicSales extends BeanFactoryDataSingle {
                             ProductInfoExt bundleProduct = getProductInfoExtById(
                                     bundleComponent.getProductBundleId());
 
-                            getStockDiaryInsert().exec(new Object[]{
+                            getStockService().recordStockMovement(
                                 UUID.randomUUID().toString(),
                                 nowDate,
                                 ticket.getLine(ticketLineNumber).getMultiply()
                                 * bundleComponent
                                 .getQuantity() >= 0.0
-                                ? MovementReason.IN_REFUND
+                                ? (Integer) MovementReason.IN_REFUND
                                 .getKey()
-                                : MovementReason.OUT_SALE
+                                : (Integer) MovementReason.OUT_SALE
                                 .getKey(),
                                 location,
                                 bundleComponent.getProductBundleId(),
@@ -878,7 +920,8 @@ public class DataLogicSales extends BeanFactoryDataSingle {
                                 ticket.getLine(ticketLineNumber).getMultiply()
                                 * bundleComponent.getQuantity(),
                                 bundleProduct.getPriceSell(),
-                                ticket.getUser().getName()});
+                                ticket.getUser().getName()
+                            );
                         }
                     }
                 }
@@ -957,12 +1000,18 @@ public class DataLogicSales extends BeanFactoryDataSingle {
     /**
      *
      * @return @throws BasicException
+     * @deprecated Use {@link DataLogicPayments#getNextTicketPaymentIndex()} instead.
      */
+    @Deprecated
     public final Integer getNextTicketPaymentIndex() throws BasicException {
-        return (Integer) sessionDB.DB.getSequenceSentence(sessionDB, "ticketsnum_payment").find();
+        return getDataLogicPayments().getNextTicketPaymentIndex();
     }
 
     // JG 3 Feb 16 - Product load speedup
+    /**
+     * @deprecated Use {@link CatalogService#getProductImage(String)} instead.
+     */
+    @Deprecated
     public final SentenceFind getProductImage() {
         return new PreparedSentence(sessionDB,
                 "SELECT IMAGE FROM products WHERE ID = ?",
@@ -970,31 +1019,22 @@ public class DataLogicSales extends BeanFactoryDataSingle {
                 (DataRead dr) -> ImageUtils.readImage(dr.getBytes(1)));
     }
 
+    /**
+     * @deprecated Use {@link CatalogService#getProductImage(String)} instead.
+     */
+    @Deprecated
     public final BufferedImage getProductImage(String imageId) {
-
-        try {
-            return (BufferedImage) getProductImage().find(imageId);
-        } catch (BasicException e) {
-            return null;
-        }
+        return getCatalogService().getProductImage(imageId);
     }
 
     /**
      *
      * @return
+     * @deprecated Use {@link DataLogicCustomers#updateCustomerDebt(String, Double, Date)} instead.
      */
+    @Deprecated
     public final int updateCustomerDebt(String customerId, Double accDebt, Date date) throws BasicException {
-
-        return new PreparedSentence(sessionDB,
-                "UPDATE customers SET CURDEBT = ?, CURDATE = ? WHERE ID = ?",
-                SerializerWriteParams.INSTANCE).exec(new DataParams() {
-            @Override
-            public void writeValues() throws BasicException {
-                setDouble(1, accDebt);
-                setTimestamp(2, date);
-                setString(3, customerId);
-            }
-        });
+        return getDataLogicCustomers().updateCustomerDebt(customerId, accDebt, date);
     }
 
     /**
@@ -1002,268 +1042,78 @@ public class DataLogicSales extends BeanFactoryDataSingle {
      *
      * @return
      */
+    /**
+     * @deprecated Use {@link DataLogicInventory#getStockDiaryInsert()} instead.
+     */
+    @Deprecated
     public final SentenceExec getStockDiaryInsert() {
-        return new SentenceExecTransaction(sessionDB) {
-            @Override
-            /**
-             * @param params[0] String STOCKDIARY.ID
-             * @param params[1] Date Timestamp
-             * @param params[2] Integer Reason
-             * @param params[3] String Location
-             * @param params[4] String Product ID
-             * @param params[5] String Attribute instance ID
-             * @param params[6] Double Units
-             * @param params[7] Double Price
-             * @param params[8] String Application User
-             */
-            public int execInTransaction(Object[] params) throws BasicException {
-
-                Object[] adjustParams = new Object[4];
-                Object[] paramsArray = (Object[]) params;
-                adjustParams[0] = paramsArray[4]; // product ->Location
-                adjustParams[1] = paramsArray[3]; // location -> Product
-                adjustParams[2] = paramsArray[5]; // attributesetinstance
-                adjustParams[3] = paramsArray[6]; // units
-                adjustStock(adjustParams);
-
-                return new PreparedSentence(sessionDB,
-                        "INSERT INTO stockdiary (ID, DATENEW, REASON, LOCATION, "
-                        + "PRODUCT, ATTRIBUTESETINSTANCE_ID, "
-                        + "UNITS, PRICE, AppUser) "
-                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                        new SerializerWriteBasicExt(stockdiaryDatas,
-                                new int[]{0, 1, 2, 3, 4, 5, 6, 7, 8}))
-                        .exec(params);
-            }
-        };
+        return getDataLogicInventory().getStockDiaryInsert();
     }
 
     /**
-     *
-     * @return
+     * @deprecated Use {@link DataLogicInventory#getStockDiaryInsert1()} instead.
      */
+    @Deprecated
     public final SentenceExec getStockDiaryInsert1() {
-        return new SentenceExecTransaction(sessionDB) {
-            @Override
-            public int execInTransaction(Object[] params) throws BasicException {
-                int updateresult = params[5] == null
-                        ? new PreparedSentence(sessionDB,
-                                "UPDATE stockcurrent SET UNITS = (UNITS + ?) "
-                                + "WHERE LOCATION = ? AND PRODUCT = ? "
-                                + "AND ATTRIBUTESETINSTANCE_ID IS NULL",
-                                new SerializerWriteBasicExt(stockdiaryDatas,
-                                        new int[]{6, 3, 4}))
-                                .exec(params)
-                        : new PreparedSentence(sessionDB,
-                                "UPDATE stockcurrent SET UNITS = (UNITS + ?) "
-                                + "WHERE LOCATION = ? AND PRODUCT = ? "
-                                + "AND ATTRIBUTESETINSTANCE_ID = ?",
-                                new SerializerWriteBasicExt(stockdiaryDatas,
-                                        new int[]{6, 3, 4, 5}))
-                                .exec(params);
-
-                if (updateresult == 0) {
-                    new PreparedSentence(sessionDB,
-                            "INSERT INTO stockcurrent (LOCATION, PRODUCT, "
-                            + "ATTRIBUTESETINSTANCE_ID, UNITS) "
-                            + "VALUES (?, ?, ?, ?)",
-                            new SerializerWriteBasicExt(stockdiaryDatas,
-                                    new int[]{3, 4, 5, 6}))
-                            .exec(params);
-                }
-                return new PreparedSentence(sessionDB,
-                        "INSERT INTO stockdiary (ID, DATENEW, REASON, LOCATION, PRODUCT, "
-                        + "ATTRIBUTESETINSTANCE_ID, UNITS, PRICE, AppUser, "
-                        + "SUPPLIER, SUPPLIERDOC) "
-                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                        new SerializerWriteBasicExt(stockdiaryDatas,
-                                new int[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10}))
-                        .exec(params);
-
-            }
-        };
-    }
-
-    public final void saveStockDiary(ProductStockTransaction prodStock) throws BasicException {
-
-        getStockDiaryInsert1().exec(new Object[]{
-            prodStock.getId(),
-            prodStock.getTransactionDate(),
-            prodStock.getReasonId(),
-            prodStock.getLocationId(),
-            prodStock.getProductId(),
-            prodStock.getProductAttribSetId(),
-            prodStock.getUnits(),
-            prodStock.getPrice(),
-            prodStock.getUserId(),
-            prodStock.getSupplierId(),
-            prodStock.getSupplierDoc()
-        });
+        return getDataLogicInventory().getStockDiaryInsert1();
     }
 
     /**
-     *
-     * @return
+     * @deprecated Use {@link DataLogicInventory#saveStockDiary(ProductStockTransaction)} instead.
      */
-    public final SentenceExec getStockDiaryDelete() {
-        return new SentenceExecTransaction(sessionDB) {
-            @Override
-            public int execInTransaction(Object[] params) throws BasicException {
-                int updateresult = ((Object[]) params)[5] == null // if ATTRIBUTESETINSTANCE_ID is null
-                        ? new PreparedSentence(sessionDB,
-                                "UPDATE stockcurrent SET UNITS = (UNITS - ?) "
-                                + "WHERE LOCATION = ? AND PRODUCT = ? "
-                                + "AND ATTRIBUTESETINSTANCE_ID IS NULL",
-                                new SerializerWriteBasicExt(stockdiaryDatas,
-                                        new int[]{6, 3, 4}))
-                                .exec(params)
-                        : new PreparedSentence(sessionDB,
-                                "UPDATE stockcurrent SET UNITS = (UNITS - ?) "
-                                + "WHERE LOCATION = ? AND PRODUCT = ? "
-                                + "AND ATTRIBUTESETINSTANCE_ID = ?",
-                                new SerializerWriteBasicExt(stockdiaryDatas,
-                                        new int[]{6, 3, 4, 5}))
-                                .exec(params);
-
-                if (updateresult == 0) {
-                    new PreparedSentence(sessionDB,
-                            "INSERT INTO stockcurrent (LOCATION, PRODUCT, "
-                            + "ATTRIBUTESETINSTANCE_ID, UNITS) "
-                            + "VALUES (?, ?, ?, -(?))",
-                            new SerializerWriteBasicExt(stockdiaryDatas,
-                                    new int[]{3, 4, 5, 6}))
-                            .exec(params);
-                }
-                return new PreparedSentence(sessionDB,
-                        "DELETE FROM stockdiary WHERE ID = ?",
-                        new SerializerWriteBasicExt(stockdiaryDatas, new int[]{0}))
-                        .exec(params);
-            }
-        };
+    @Deprecated
+    public final void saveStockDiary(ProductStockTransaction prodStock) throws BasicException {
+        getDataLogicInventory().saveStockDiary(prodStock);
     }
 
-    private void adjustStock(Object[] params) throws BasicException {
-
-        List<ProductsBundleInfo> bundle = getProductsBundle((String) params[0]);
-
-        if (bundle.size() > 0) {
-
-            for (ProductsBundleInfo component : bundle) {
-                Object[] adjustParams = new Object[4];
-                adjustParams[0] = component.getProductBundleId();
-                adjustParams[1] = ((Object[]) params)[1];
-                adjustParams[2] = ((Object[]) params)[2];
-                adjustParams[3] = ((Double) ((Object[]) params)[3]) * component.getQuantity();
-                adjustStock(adjustParams);
-            }
-        } else {
-
-            int updateresult = ((Object[]) params)[2] == null
-                    ? new PreparedSentence(sessionDB,
-                            "UPDATE stockcurrent SET UNITS = (UNITS + ?) "
-                            + "WHERE LOCATION = ? AND PRODUCT = ? "
-                            + "AND ATTRIBUTESETINSTANCE_ID IS NULL",
-                            new SerializerWriteBasicExt(stockAdjustDatas,
-                                    new int[]{3, 1, 0}))
-                            .exec(params)
-                    : new PreparedSentence(sessionDB,
-                            "UPDATE stockcurrent SET UNITS = (UNITS + ?) "
-                            + "WHERE LOCATION = ? AND PRODUCT = ? "
-                            + "AND ATTRIBUTESETINSTANCE_ID = ?",
-                            new SerializerWriteBasicExt(stockAdjustDatas,
-                                    new int[]{3, 1, 0, 2}))
-                            .exec(params);
-
-            if (updateresult == 0) {
-
-                new PreparedSentence(sessionDB,
-                        "INSERT INTO stockcurrent (LOCATION, PRODUCT, "
-                        + "ATTRIBUTESETINSTANCE_ID, UNITS) "
-                        + "VALUES (?, ?, ?, ?)",
-                        new SerializerWriteBasicExt(stockAdjustDatas,
-                                new int[]{1, 0, 2, 3}))
-                        .exec(params);
-            }
-        }
+    /**
+     * @deprecated Use {@link DataLogicInventory#getStockDiaryDelete()} instead.
+     */
+    @Deprecated
+    public final SentenceExec getStockDiaryDelete() {
+        return getDataLogicInventory().getStockDiaryDelete();
     }
 
     /**
      *
      */
     private List<ProductsBundleInfo> getProductsBundle(String productId) throws BasicException {
-        return DataLogicPIM.getProductsBundle(productId, sessionDB);
+        return new PreparedSentence(sessionDB,
+                "SELECT ID, PRODUCT, PRODUCT_BUNDLE, QUANTITY FROM products_bundle WHERE PRODUCT = ?",
+                SerializerWriteString.INSTANCE,
+                ProductsBundleInfo.getSerializerRead()).list(productId);
     }
 
     private ProductInfoExt getProductInfoExtById(String productId) throws BasicException {
-        return DataLogicPIM.getProductInfoExtById(productId, sessionDB);
+        return getCatalogService().getProductInfo(productId);
     }
 
     /**
      *
      * @return
+     * @deprecated Use {@link DataLogicPayments#getPaymentMovementInsert()} instead.
      */
+    @Deprecated
     public final SentenceExec getPaymentMovementInsert() {
-        return new SentenceExecTransaction(sessionDB) {
-            @Override
-            public int execInTransaction(Object[] params) throws BasicException {
-                new PreparedSentence(sessionDB,
-                        "INSERT INTO receipts (ID, MONEY, DATENEW) "
-                        + "VALUES (?, ?, ?)",
-                        new SerializerWriteBasicExt(paymenttabledatas,
-                                new int[]{0, 1, 2}))
-                        .exec(params);
-                return new PreparedSentence(sessionDB,
-                        "INSERT INTO payments (ID, RECEIPT, PAYMENT, TOTAL, NOTES) "
-                        + "VALUES (?, ?, ?, ?, ?)",
-                        new SerializerWriteBasicExt(paymenttabledatas,
-                                new int[]{3, 0, 4, 5, 6}))
-                        .exec(params);
-            }
-        };
+        return getDataLogicPayments().getPaymentMovementInsert();
     }
 
     /**
      *
      * @return
+     * @deprecated Use {@link DataLogicPayments#getPaymentMovementDelete()} instead.
      */
+    @Deprecated
     public final SentenceExec getPaymentMovementDelete() {
-        return new SentenceExecTransaction(sessionDB) {
-            @Override
-            public int execInTransaction(Object[] params) throws BasicException {
-                new PreparedSentence(sessionDB,
-                        "DELETE FROM payments WHERE ID = ?",
-                        new SerializerWriteBasicExt(paymenttabledatas, new int[]{3}))
-                        .exec(params);
-                return new PreparedSentence(sessionDB,
-                        "DELETE FROM receipts WHERE ID = ?",
-                        new SerializerWriteBasicExt(paymenttabledatas, new int[]{0}))
-                        .exec(params);
-            }
-        };
+        return getDataLogicPayments().getPaymentMovementDelete();
     }
 
     /**
-     *
-     * @param warehouse
-     * @param id
-     * @param attsetinstid
-     * @return
-     * @throws BasicException
+     * @deprecated Use {@link DataLogicInventory#findProductStock(String, String, String)} instead.
      */
+    @Deprecated
     public final double findProductStock(String warehouse, String id, String attsetinstid) throws BasicException {
-
-        PreparedSentence p = attsetinstid == null
-                ? new PreparedSentence(sessionDB, "SELECT UNITS FROM stockcurrent "
-                        + "WHERE LOCATION = ? AND PRODUCT = ? AND ATTRIBUTESETINSTANCE_ID IS NULL",
-                        new SerializerWriteBasic(Datas.STRING, Datas.STRING),
-                        SerializerReadDouble.INSTANCE)
-                : new PreparedSentence(sessionDB, "SELECT UNITS FROM stockcurrent "
-                        + "WHERE LOCATION = ? AND PRODUCT = ? AND ATTRIBUTESETINSTANCE_ID = ?",
-                        new SerializerWriteBasic(Datas.STRING, Datas.STRING, Datas.STRING),
-                        SerializerReadDouble.INSTANCE);
-
-        Double d = (Double) p.find(warehouse, id, attsetinstid);
-        return d == null ? 0.0 : d;
+        return getDataLogicInventory().findProductStock(warehouse, id, attsetinstid);
     }
 
     /**
@@ -1271,288 +1121,131 @@ public class DataLogicSales extends BeanFactoryDataSingle {
      *
      * @param categoryId
      * @return num added of products
+     * @deprecated Use {@link CatalogService#addProductsToCatalogWithCategoryId(String)} instead.
      */
+    @Deprecated
     public final int addProductsToCatalogWithCategoryId(String categoryId) throws BasicException {
-        StaticSentence sentence = new StaticSentence(sessionDB,
-                "INSERT INTO products_cat(PRODUCT, CATORDER) SELECT ID, " + sessionDB.DB.INTEGER_NULL()
-                + " FROM products WHERE CATEGORY = ?",
-                SerializerWriteString.INSTANCE);
-
-        return sentence.exec(categoryId);
+        return getCatalogService().addProductsToCatalogWithCategoryId(categoryId);
     }
 
     /**
      *
      * @param categoryId
      * @return number of removed products
+     * @deprecated Use {@link CatalogService#removeProductsFromCatalogWithCategoryId(String)} instead.
      */
+    @Deprecated
     public final int removeProductsFromCatalogWithCategoryId(String categoryId) throws BasicException {
-        StaticSentence sentence = new StaticSentence(sessionDB,
-                "DELETE FROM products_cat WHERE PRODUCT IN (SELECT ID "
-                + "FROM products WHERE CATEGORY = ?)",
-                SerializerWriteString.INSTANCE);
-
-        return sentence.exec(categoryId);
+        return getCatalogService().removeProductsFromCatalogWithCategoryId(categoryId);
     }
 
+    /**
+     * @deprecated Use {@link TaxService#getTableTaxes()} instead.
+     */
+    @Deprecated
     public final TableDefinition getTableTaxes() {
-        return new TableDefinition(sessionDB,
-                "taxes",
-                new String[]{"ID", "NAME", "CATEGORY", "CUSTCATEGORY", "PARENTID", "RATE",
-                    "RATECASCADE",
-                    "RATEORDER"},
-                new String[]{"ID", AppLocal.getIntString("label.name"),
-                    AppLocal.getIntString("label.taxcategory"),
-                    AppLocal.getIntString("label.custtaxcategory"),
-                    AppLocal.getIntString("label.taxparent"),
-                    AppLocal.getIntString("label.dutyrate"),
-                    AppLocal.getIntString("label.cascade"),
-                    AppLocal.getIntString("label.order")},
-                new Datas[]{Datas.STRING, Datas.STRING, Datas.STRING, Datas.STRING, Datas.STRING,
-                    Datas.DOUBLE,
-                    Datas.BOOLEAN, Datas.INT},
-                new Formats[]{Formats.STRING, Formats.STRING, Formats.STRING, Formats.STRING,
-                    Formats.STRING,
-                    Formats.PERCENT, Formats.BOOLEAN, Formats.INT},
-                new int[]{0});
+        return getTaxService().getTableTaxes();
     }
 
+    /**
+     * @deprecated Use {@link TaxService#getTableTaxCustCategories()} instead.
+     */
+    @Deprecated
     public final TableDefinition getTableTaxCustCategories() {
-        return new TableDefinition(sessionDB,
-                "taxcustcategories",
-                new String[]{"ID", "NAME"},
-                new String[]{"ID", AppLocal.getIntString("label.name")},
-                new Datas[]{Datas.STRING, Datas.STRING},
-                new Formats[]{Formats.STRING, Formats.STRING},
-                new int[]{0});
+        return getTaxService().getTableTaxCustCategories();
     }
 
     /**
-     *
-     * @return
+     * @deprecated Use {@link TaxService#getTableTaxCategories()} instead.
      */
+    @Deprecated
     public final TableDefinition getTableTaxCategories() {
-        return new TableDefinition(sessionDB,
-                "taxcategories",
-                new String[]{"ID", "NAME"},
-                new String[]{"ID", AppLocal.getIntString("label.name")},
-                new Datas[]{Datas.STRING, Datas.STRING},
-                new Formats[]{Formats.STRING, Formats.STRING},
-                new int[]{0});
+        return getTaxService().getTableTaxCategories();
     }
 
     /**
-     *
-     * @return
+     * @deprecated Use {@link DataLogicInventory#getTableLocations()} instead.
      */
+    @Deprecated
     public final TableDefinition getTableLocations() {
-        return new TableDefinition(sessionDB,
-                "locations",
-                new String[]{"ID", "NAME", "ADDRESS"},
-                new String[]{"ID", AppLocal.getIntString("label.locationname"),
-                    AppLocal.getIntString("label.locationaddress")},
-                new Datas[]{Datas.STRING, Datas.STRING, Datas.STRING},
-                new Formats[]{Formats.STRING, Formats.STRING, Formats.STRING},
-                new int[]{0});
+        return getDataLogicInventory().getTableLocations();
     }
 
+    /**
+     * @deprecated Use {@link CatalogService#getUomInfoById(String)} instead.
+     */
+    @Deprecated
     public final UomInfo getUomInfoById(String id) throws BasicException {
-        return (UomInfo) new PreparedSentence(sessionDB,
-                "SELECT "
-                + "id, name "
-                + "FROM uom "
-                + "WHERE id = ?",
-                SerializerWriteString.INSTANCE, UomInfo.getSerializerRead()).find(id);
+        return getCatalogService().getUomInfoById(id);
     }
 
+    /**
+     * @deprecated Use {@link CatalogService#getTableUom()} instead.
+     */
+    @Deprecated
     public final TableDefinition getTableUom() {
-        return new TableDefinition(sessionDB,
-                "uom",
-                new String[]{"id", "name"},
-                new String[]{"id",
-                    AppLocal.getIntString("label.name")},
-                new Datas[]{
-                    Datas.STRING, Datas.STRING},
-                new Formats[]{
-                    Formats.STRING, Formats.STRING},
-                new int[]{0});
+        return getCatalogService().getTableUom();
     }
 
+    /**
+     * @deprecated Use {@link CatalogService#getUomListAll()} instead.
+     */
+    @Deprecated
     public final SentenceList<UomInfo> getUomList() {
-        return new StaticSentence(sessionDB, "SELECT ID, NAME  FROM uom ORDER BY NAME", null,
+        return new StaticSentence<>(sessionDB, "SELECT ID, NAME FROM uom ORDER BY NAME", null,
                 UomInfo.getSerializerRead());
     }
 
+    /**
+     * @deprecated Use {@link CatalogService#getUomListAll()} instead.
+     */
+    @Deprecated
     public final List<UomInfo> getUomListAll() {
-        List<UomInfo> list = null;
-        try {
-            list = this.getUomList().list();
-        } catch (BasicException ex) {
-            LOGGER.log(Level.WARNING, "Cannot get UomInfo list", ex);
-        }
-        return list;
+        return getCatalogService().getUomListAll();
     }
 
     /**
      *
      * @return
+     * @deprecated Use {@link DataLogicCustomers#getCustomerInsert()} instead.
      */
+    @Deprecated
     public final SentenceExec getCustomerInsert() {
-        return new SentenceExecTransaction(sessionDB) {
-            @Override
-            public int execInTransaction(Object[] params) throws BasicException {
-                int i = new PreparedSentence(sessionDB,
-                        "INSERT INTO customers ("
-                        + "ID, "
-                        + "SEARCHKEY, "
-                        + "TAXID, "
-                        + "NAME, "
-                        + "TAXCATEGORY, "
-                        + "CARD, "
-                        + "MAXDEBT, "
-                        + "ADDRESS, "
-                        + "ADDRESS2, "
-                        + "POSTAL, "
-                        + "CITY, "
-                        + "REGION, "
-                        + "COUNTRY, "
-                        + "FIRSTNAME, "
-                        + "LASTNAME, "
-                        + "EMAIL, "
-                        + "PHONE, "
-                        + "PHONE2, "
-                        + "FAX, "
-                        + "NOTES, "
-                        + "VISIBLE, "
-                        + "CURDATE, "
-                        + "CURDEBT, "
-                        + "IMAGE, "
-                        + "ISVIP, "
-                        + "DISCOUNT, "
-                        + "MEMODATE ) "
-                        + "VALUES ("
-                        + "?, ?, ?, ?, ?, ?, "
-                        + "?, ?, ?, ?, ?, ?, "
-                        + "?, ?, ?, ?, ?, ?, "
-                        + "?, ?, ?, ?, ?, ?, "
-                        + "?, ?, ?)",
-                        new SerializerWriteBasicExt(customersRow.getDatas(),
-                                new int[]{0,
-                                    1, 2, 3, 4, 5, 6,
-                                    7, 8, 9, 10, 11, 12,
-                                    13, 14, 15, 16, 17, 18,
-                                    19, 20, 21, 22, 23, 24,
-                                    25, 26}))
-                        .exec(params);
-                return i;
-            }
-        };
+        return getDataLogicCustomers().getCustomerInsert();
     }
 
     /**
      *
      * @return
+     * @deprecated Use {@link DataLogicCustomers#getCustomerUpdate()} instead.
      */
+    @Deprecated
     public final SentenceExec getCustomerUpdate() {
-        return new SentenceExecTransaction(sessionDB) {
-            @Override
-            public int execInTransaction(Object[] params) throws BasicException {
-
-                int i = new PreparedSentence(sessionDB,
-                        "UPDATE customers SET "
-                        + "ID = ?, "
-                        + "SEARCHKEY = ?, "
-                        + "TAXID = ?, "
-                        + "NAME = ?, "
-                        + "TAXCATEGORY = ?, "
-                        + "CARD = ?, "
-                        + "MAXDEBT = ?, "
-                        + "ADDRESS = ?, "
-                        + "ADDRESS2 = ?, "
-                        + "POSTAL = ?, "
-                        + "CITY = ?, "
-                        + "REGION = ?, "
-                        + "COUNTRY = ?, "
-                        + "FIRSTNAME = ?, "
-                        + "LASTNAME = ?, "
-                        + "EMAIL = ?, "
-                        + "PHONE = ?, "
-                        + "PHONE2 = ?, "
-                        + "FAX = ?,  "
-                        + "NOTES = ?,"
-                        + "VISIBLE = ?, "
-                        + "CURDATE = ?, "
-                        + "CURDEBT = ?, "
-                        + "IMAGE = ?, "
-                        + "ISVIP = ?, "
-                        + "DISCOUNT = ?, "
-                        + "MEMODATE = ? "
-                        + "WHERE ID = ?",
-                        new SerializerWriteBasicExt(customersRow.getDatas(),
-                                new int[]{0,
-                                    1, 2, 3, 4, 5,
-                                    6, 7, 8, 9, 10,
-                                    11, 12, 13, 14, 15,
-                                    16, 17, 18, 19, 20,
-                                    21, 22, 23, 24, 25,
-                                    26, 0}))
-                        .exec(params);
-                return i;
-            }
-        };
+        return getDataLogicCustomers().getCustomerUpdate();
     }
 
+    /**
+     * @deprecated Use {@link DataLogicCustomers#getCustomerDelete()} instead.
+     */
+    @Deprecated
     public final SentenceExec getCustomerDelete() {
-        return new SentenceExecTransaction(sessionDB) {
-            @Override
-            public int execInTransaction(Object[] params) throws BasicException {
-                return new PreparedSentence(sessionDB,
-                        "DELETE FROM customers WHERE ID = ?",
-                        new SerializerWriteBasicExt(customersRow.getDatas(),
-                                new int[]{0}))
-                        .exec(params);
-            }
-        };
+        return getDataLogicCustomers().getCustomerDelete();
     }
 
+    /**
+     * @deprecated Use {@link DataLogicAudit#addTicketLineRemoved(String, String, String, String, double)} instead.
+     */
+    @Deprecated
     public final void addTicketLineRemoved(String username, String ticketId, String productId, String productName, double quantity) {
-
-        final SentenceExec m_lineremoved = new StaticSentence(this.sessionDB,
-                """
-                INSERT INTO lineremoved (NAME, TICKETID, PRODUCTID, PRODUCTNAME, UNITS, REMOVEDDATE)
-                    VALUES (?, ?, ?, ?, ?, ?)
-                """,
-                new SerializerWriteBasic(new Datas[]{
-            Datas.STRING, Datas.STRING,
-            Datas.STRING, Datas.STRING,
-            Datas.DOUBLE, Datas.TIMESTAMP
-        }));
-
-        try {
-            Object[] line = new Object[]{username, ticketId, productId, productName, quantity, new Date()};
-
-            m_lineremoved.exec(line);
-        } catch (BasicException e) {
-            LOGGER.log(Level.SEVERE, "Exception on execute line removed: ", e);
-        }
+        getDataLogicAudit().addTicketLineRemoved(username, ticketId, productId, productName, quantity);
     }
 
+    /**
+     * @deprecated Use {@link DataLogicAudit#addTicketDeleted(String)} instead.
+     */
+    @Deprecated
     public final void addTicketDeleted(String username) {
-        final SentenceExec m_ticketremoved = new StaticSentence(this.sessionDB,
-                """
-                INSERT INTO lineremoved (NAME, TICKETID, PRODUCTNAME, UNITS, REMOVEDDATE)
-                    VALUES (?, ?, ?, ?, ?)
-                """,
-                new SerializerWriteBasic(new Datas[]{
-            Datas.STRING, Datas.STRING,
-            Datas.STRING, Datas.DOUBLE, Datas.TIMESTAMP
-        }));
-        try {
-            Object[] ticketDeleted = new Object[]{username, "Void", "Ticket Deleted", 0.0, new Date()};
-            m_ticketremoved.exec(ticketDeleted);
-        } catch (BasicException e) {
-            LOGGER.log(Level.SEVERE, "Exception on execute ticket removed: ", e);
-        }
+        getDataLogicAudit().addTicketDeleted(username);
     }
 
 }

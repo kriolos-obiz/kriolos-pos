@@ -22,7 +22,7 @@ import com.openbravo.data.model.*;
 import com.openbravo.data.user.EditorRecord;
 import com.openbravo.format.Formats;
 import com.openbravo.pos.forms.AppLocal;
-import com.openbravo.pos.forms.DataLogicSales;
+import com.openbravo.pos.inventory.DataLogicInventory;
 import com.openbravo.pos.panels.AuxiliarFilter;
 import com.openbravo.pos.panels.JPanelTable2;
 import com.openbravo.pos.ticket.ProductInfoExt;
@@ -64,7 +64,7 @@ public class AuxiliarPanel extends JPanelTable2 {
                 new Column("PRODUCT2"));
 
         lpr = row.getListProvider(app.getSession(),
-                DataLogicSales.SQL_AUXILIAR_LIST, filter);
+                StockService.SQL_AUXILIAR_LIST, filter);
         spr = row.getSaveProvider(app.getSession(), table);
 
         editor = new AuxiliarEditor(app, dirty);

@@ -18,33 +18,29 @@ package com.openbravo.pos.customers;
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.loader.*;
 import com.openbravo.data.user.DefaultSaveProvider;
+import com.openbravo.data.user.EditorCreator;
+import com.openbravo.data.user.ListProvider;
+import com.openbravo.data.user.ListProviderCreator;
 import com.openbravo.data.user.SaveProvider;
+import com.openbravo.data.model.Field;
+import com.openbravo.data.model.Row;
 import com.openbravo.format.Formats;
-import com.openbravo.pos.customers.CustomerInfo;
-import com.openbravo.pos.customers.CustomerInfoExt;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.BeanFactoryDataSingle;
-import com.openbravo.pos.voucher.VoucherInfo;
+import com.openbravo.pos.forms.BeanFactoryException;
+import com.openbravo.pos.sales.restaurant.DataLogicRestaurant;
+import com.openbravo.pos.sales.restaurant.RestaurantService;
+import java.util.Date;
+import java.util.List;
 
 /**
  * @author JG uniCenta
  * @author adrianromero
  */
-public class DataLogicCustomers extends BeanFactoryDataSingle {
+public class DataLogicCustomers extends BeanFactoryDataSingle implements CustomerService {
 
     protected Session s;
-    private static final Datas[] RESERVATION_DATA = new Datas[]{
-        Datas.STRING, //R.ID 
-        Datas.TIMESTAMP, //R.CREATED
-        Datas.TIMESTAMP, //R.DATENEW
-        Datas.STRING, //C.CUSTOMER
-        Datas.STRING, //customers.TAXID
-        Datas.STRING, //customers.SEARCHKEY
-        Datas.STRING, //COALESCE(customers.NAME, R.TITLE)
-        Datas.INT, //R.CHAIRS
-        Datas.BOOLEAN, //R.ISDONE
-        Datas.STRING //R.DESCRIPTION
-    };
+    private Row customersRow;
 
     private static final Datas[] CUSTOMER_DATA = new Datas[]{
         Datas.OBJECT, Datas.STRING, //TAXID
@@ -58,6 +54,46 @@ public class DataLogicCustomers extends BeanFactoryDataSingle {
     @Override
     public void init(Session s) {
         this.s = s;
+        initCustomersRow();
+    }
+
+    private void initCustomersRow() {
+        customersRow = new Row(
+                new Field("ID", Datas.STRING, Formats.STRING),
+                new Field("SEARCHKEY", Datas.STRING, Formats.STRING),
+                new Field("TAXID", Datas.STRING, Formats.STRING),
+                new Field("NAME", Datas.STRING, Formats.STRING),
+                new Field("TAXCATEGORY", Datas.STRING, Formats.STRING),
+                new Field("CARD", Datas.STRING, Formats.STRING),
+                new Field("MAXDEBT", Datas.DOUBLE, Formats.CURRENCY),
+                new Field("ADDRESS", Datas.STRING, Formats.STRING),
+                new Field("ADDRESS2", Datas.STRING, Formats.STRING),
+                new Field("POSTAL", Datas.STRING, Formats.STRING),
+                new Field("CITY", Datas.STRING, Formats.STRING),
+                new Field("REGION", Datas.STRING, Formats.STRING),
+                new Field("COUNTRY", Datas.STRING, Formats.STRING),
+                new Field("FIRSTNAME", Datas.STRING, Formats.STRING),
+                new Field("LASTNAME", Datas.STRING, Formats.STRING),
+                new Field("EMAIL", Datas.STRING, Formats.STRING),
+                new Field("PHONE", Datas.STRING, Formats.STRING),
+                new Field("PHONE2", Datas.STRING, Formats.STRING),
+                new Field("FAX", Datas.STRING, Formats.STRING),
+                new Field("NOTES", Datas.STRING, Formats.STRING),
+                new Field("VISIBLE", Datas.BOOLEAN, Formats.BOOLEAN),
+                new Field("CURDATE", Datas.TIMESTAMP, Formats.TIMESTAMP),
+                new Field("CURDEBT", Datas.DOUBLE, Formats.CURRENCY),
+                new Field("IMAGE", Datas.IMAGE, Formats.NULL),
+                new Field("ISVIP", Datas.BOOLEAN, Formats.BOOLEAN),
+                new Field("DISCOUNT", Datas.DOUBLE, Formats.PERCENT),
+                new Field("MEMODATE", Datas.TIMESTAMP, Formats.TIMESTAMP)
+        );
+    }
+
+    public Row getCustomersRow() {
+        if (customersRow == null) {
+            initCustomersRow();
+        }
+        return customersRow;
     }
 
     public SentenceList<CustomerInfo> getCustomerList() {
@@ -72,6 +108,7 @@ public class DataLogicCustomers extends BeanFactoryDataSingle {
                 new CustomerInfoRead());
     }
 
+    @Override
     public final CustomerInfo getCustomerInfo(String id) throws BasicException {
         return (CustomerInfo) new PreparedSentence(s,
                 "SELECT "
@@ -83,6 +120,7 @@ public class DataLogicCustomers extends BeanFactoryDataSingle {
                 new CustomerInfoRead()).find(id);
     }
 
+    @Override
     public int updateCustomerExt(final CustomerInfoExt customer) throws BasicException {
 
         return new PreparedSentence(s,
@@ -97,73 +135,70 @@ public class DataLogicCustomers extends BeanFactoryDataSingle {
         });
     }
 
+    public RestaurantService getRestaurantService() {
+        if (app != null) {
+            try {
+                return app.getBean(RestaurantService.class);
+            } catch (BeanFactoryException ignored) {
+            }
+        }
+        return getDataLogicRestaurant();
+    }
+
+    /**
+     * @deprecated Use {@link #getRestaurantService()} instead.
+     */
+    @Deprecated
+    public DataLogicRestaurant getDataLogicRestaurant() {
+        if (app != null) {
+            try {
+                RestaurantService svc = app.getBean(RestaurantService.class);
+                if (svc instanceof DataLogicRestaurant) {
+                    return (DataLogicRestaurant) svc;
+                }
+            } catch (BeanFactoryException ignored) {
+            }
+            try {
+                return app.getBean(DataLogicRestaurant.class);
+            } catch (BeanFactoryException ignored) {
+            }
+        }
+        DataLogicRestaurant fallback = new DataLogicRestaurant();
+        fallback.init(s);
+        return fallback;
+    }
+
     // <editor-fold defaultstate="collapsed" desc="Reservation">
+    /**
+     * @deprecated Use {@link RestaurantService#getReservationsList()} instead.
+     */
+    @Deprecated
     public final SentenceList getReservationsList() {
-        return new PreparedSentence(s,
-                "SELECT "
-                + "R.ID, R.CREATED, R.DATENEW, C.CUSTOMER, customers.TAXID, customers.SEARCHKEY, "
-                + "COALESCE(customers.NAME, R.TITLE),  R.CHAIRS, R.ISDONE, R.DESCRIPTION "
-                + "FROM reservations R "
-                + "LEFT OUTER JOIN reservation_customers C ON R.ID = C.ID "
-                + "LEFT OUTER JOIN customers ON C.CUSTOMER = customers.ID "
-                + "WHERE R.DATENEW >= ? AND R.DATENEW < ?",
-                new SerializerWriteBasic(new Datas[]{Datas.TIMESTAMP, Datas.TIMESTAMP}),
-                new SerializerReadBasic(RESERVATION_DATA));
+        return getRestaurantService().getReservationsList();
     }
 
+    /**
+     * @deprecated Use {@link RestaurantService#getReservationsUpdate()} instead.
+     */
+    @Deprecated
     public final SentenceExec getReservationsUpdate() {
-        return new SentenceExecTransaction(s) {
-            @Override
-            public int execInTransaction(Object[] params) throws BasicException {
-
-                new PreparedSentence(s,
-                        "DELETE FROM reservation_customers WHERE ID = ?",
-                        new SerializerWriteBasicExt(RESERVATION_DATA, new int[]{0})).exec(params);
-
-                if (params[3] != null) {
-                    new PreparedSentence(s,
-                            "INSERT INTO reservation_customers (ID, CUSTOMER) VALUES (?, ?)",
-                            new SerializerWriteBasicExt(RESERVATION_DATA, new int[]{0, 3})).exec(params);
-                }
-                return new PreparedSentence(s,
-                        "UPDATE reservations SET ID = ?, CREATED = ?, DATENEW = ?, TITLE = ?, CHAIRS = ?, ISDONE = ?, DESCRIPTION = ? WHERE ID = ?",
-                        new SerializerWriteBasicExt(RESERVATION_DATA, new int[]{0, 1, 2, 6, 7, 8, 9, 0})).exec(params);
-            }
-        };
+        return getRestaurantService().getReservationsUpdate();
     }
 
+    /**
+     * @deprecated Use {@link RestaurantService#getReservationsDelete()} instead.
+     */
+    @Deprecated
     public final SentenceExec getReservationsDelete() {
-        return new SentenceExecTransaction(s) {
-            @Override
-            public int execInTransaction(Object[] params) throws BasicException {
-
-                new PreparedSentence(s,
-                        "DELETE FROM reservation_customers WHERE ID = ?",
-                        new SerializerWriteBasicExt(RESERVATION_DATA, new int[]{0})).exec(params);
-                return new PreparedSentence(s,
-                        "DELETE FROM reservations WHERE ID = ?",
-                        new SerializerWriteBasicExt(RESERVATION_DATA, new int[]{0})).exec(params);
-            }
-        };
+        return getRestaurantService().getReservationsDelete();
     }
 
+    /**
+     * @deprecated Use {@link RestaurantService#getReservationsInsert()} instead.
+     */
+    @Deprecated
     public final SentenceExec getReservationsInsert() {
-        return new SentenceExecTransaction(s) {
-            @Override
-            public int execInTransaction(Object[] params) throws BasicException {
-
-                int i = new PreparedSentence(s,
-                        "INSERT INTO reservations (ID, CREATED, DATENEW, TITLE, CHAIRS, ISDONE, DESCRIPTION) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                        new SerializerWriteBasicExt(RESERVATION_DATA, new int[]{0, 1, 2, 6, 7, 8, 9})).exec(params);
-
-                if (params[3] != null) {
-                    new PreparedSentence(s,
-                            "INSERT INTO reservation_customers (ID, CUSTOMER) VALUES (?, ?)",
-                            new SerializerWriteBasicExt(RESERVATION_DATA, new int[]{0, 3})).exec(params);
-                }
-                return i;
-            }
-        };
+        return getRestaurantService().getReservationsInsert();
     }
     // </editor-fold>
 
@@ -377,6 +412,7 @@ public class DataLogicCustomers extends BeanFactoryDataSingle {
      * @return
      * @throws BasicException
      */
+    @Override
     public CustomerInfoExt findCustomerInfoExtByCard(String card) throws BasicException {
         return (CustomerInfoExt) new PreparedSentence(this.s,
                 "SELECT "
@@ -420,6 +456,7 @@ public class DataLogicCustomers extends BeanFactoryDataSingle {
      * @return
      * @throws BasicException
      */
+    @Override
     public CustomerInfoExt findCustomerInfoExtByName(String name) throws BasicException {
         return (CustomerInfoExt) new PreparedSentence(this.s,
                 "SELECT "
@@ -463,6 +500,7 @@ public class DataLogicCustomers extends BeanFactoryDataSingle {
      * @return
      * @throws BasicException
      */
+    @Override
     public final CustomerInfoExt findCustomerInfoExtById(String id) throws BasicException {
         return new PreparedSentence<String, CustomerInfoExt>(this.s,
                 "SELECT "
@@ -496,6 +534,87 @@ public class DataLogicCustomers extends BeanFactoryDataSingle {
                 + "FROM customers WHERE ID = ?",
                 SerializerWriteString.INSTANCE,
                 new CustomerInfoExtRead()).find(id);
+    }
+
+    @Override
+    public ListProvider<CustomerInfo> getCustomerListProvider(EditorCreator filter) {
+        return new ListProviderCreator<>(getCustomerList(), filter);
+    }
+
+    @Override
+    public CustomerInfoExt findCustomerInfoExtBySearchKey(String searchKey) throws BasicException {
+        return (CustomerInfoExt) new PreparedSentence(this.s,
+                "SELECT "
+                + "ID, "
+                + "SEARCHKEY, "
+                + "TAXID, "
+                + "NAME, "
+                + "TAXCATEGORY, "
+                + "CARD, "
+                + "MAXDEBT, "
+                + "ADDRESS, "
+                + "ADDRESS2, "
+                + "POSTAL, "
+                + "CITY, "
+                + "REGION, "
+                + "COUNTRY, "
+                + "FIRSTNAME, "
+                + "LASTNAME, "
+                + "EMAIL, "
+                + "PHONE, "
+                + "PHONE2, "
+                + "FAX, "
+                + "NOTES, "
+                + "VISIBLE, "
+                + "CURDATE, "
+                + "CURDEBT, "
+                + "IMAGE, "
+                + "ISVIP, "
+                + "DISCOUNT, "
+                + "MEMODATE "
+                + "FROM customers "
+                + "WHERE SEARCHKEY = ? AND VISIBLE = " + this.s.DB.TRUE() + " "
+                + "ORDER BY NAME",
+                SerializerWriteString.INSTANCE,
+                new CustomerInfoExtRead()).find(searchKey);
+    }
+
+    @Override
+    public CustomerInfoExt findCustomerInfoExtByTaxId(String taxId) throws BasicException {
+        return (CustomerInfoExt) new PreparedSentence(this.s,
+                "SELECT "
+                + "ID, "
+                + "SEARCHKEY, "
+                + "TAXID, "
+                + "NAME, "
+                + "TAXCATEGORY, "
+                + "CARD, "
+                + "MAXDEBT, "
+                + "ADDRESS, "
+                + "ADDRESS2, "
+                + "POSTAL, "
+                + "CITY, "
+                + "REGION, "
+                + "COUNTRY, "
+                + "FIRSTNAME, "
+                + "LASTNAME, "
+                + "EMAIL, "
+                + "PHONE, "
+                + "PHONE2, "
+                + "FAX, "
+                + "NOTES, "
+                + "VISIBLE, "
+                + "CURDATE, "
+                + "CURDEBT, "
+                + "IMAGE, "
+                + "ISVIP, "
+                + "DISCOUNT, "
+                + "MEMODATE "
+                + "FROM customers "
+                + "WHERE TAXID = ? AND VISIBLE = " + this.s.DB.TRUE() + " "
+                + "ORDER BY NAME",
+                SerializerWriteString.INSTANCE,
+                new CustomerInfoExtRead()).find(taxId);
     }
 
     protected static class CustomerInfoExtRead implements SerializerRead<CustomerInfoExt> {
@@ -535,4 +654,157 @@ public class DataLogicCustomers extends BeanFactoryDataSingle {
         }
     }
 
+    @Override
+    public final List<CustomerTransaction> getCustomersTransactionList(String cId) throws BasicException {
+        return new PreparedSentence<>(s, """
+            SELECT 
+                tickets.TICKETID, 
+                products.NAME AS PNAME, 
+                SUM(ticketlines.UNITS) AS UNITS, 
+                SUM(ticketlines.UNITS * ticketlines.PRICE) AS AMOUNT, 
+                SUM(ticketlines.UNITS * ticketlines.PRICE * (1.0 + taxes.RATE)) AS TOTAL, 
+                receipts.DATENEW, 
+                customers.ID AS CID 
+            FROM ticketlines ticketlines 
+            INNER JOIN taxes taxes ON ticketlines.TAXID = taxes.ID 
+            INNER JOIN tickets tickets ON tickets.ID = ticketlines.TICKET 
+            INNER JOIN customers customers ON customers.ID = tickets.CUSTOMER 
+            INNER JOIN receipts receipts ON tickets.ID = receipts.ID 
+            LEFT OUTER JOIN products products ON ticketlines.PRODUCT = products.ID 
+            WHERE tickets.CUSTOMER = ? 
+            GROUP BY 
+                customers.ID, 
+                receipts.DATENEW, 
+                tickets.TICKETID, 
+                products.NAME
+            ORDER BY receipts.DATENEW DESC
+            """,
+                SerializerWriteString.INSTANCE,
+                CustomerTransaction.getSerializerRead()).list(cId);
+    }
+
+    @Override
+    public final int updateCustomerDebt(String customerId, Double accDebt, Date date) throws BasicException {
+        return new PreparedSentence(s,
+                "UPDATE customers SET CURDEBT = ?, CURDATE = ? WHERE ID = ?",
+                SerializerWriteParams.INSTANCE).exec(new DataParams() {
+            @Override
+            public void writeValues() throws BasicException {
+                setDouble(1, accDebt);
+                setTimestamp(2, date);
+                setString(3, customerId);
+            }
+        });
+    }
+
+    public final SentenceExec getCustomerInsert() {
+        return new SentenceExecTransaction(s) {
+            @Override
+            public int execInTransaction(Object[] params) throws BasicException {
+                return new PreparedSentence(s,
+                        "INSERT INTO customers ("
+                        + "ID, "
+                        + "SEARCHKEY, "
+                        + "TAXID, "
+                        + "NAME, "
+                        + "TAXCATEGORY, "
+                        + "CARD, "
+                        + "MAXDEBT, "
+                        + "ADDRESS, "
+                        + "ADDRESS2, "
+                        + "POSTAL, "
+                        + "CITY, "
+                        + "REGION, "
+                        + "COUNTRY, "
+                        + "FIRSTNAME, "
+                        + "LASTNAME, "
+                        + "EMAIL, "
+                        + "PHONE, "
+                        + "PHONE2, "
+                        + "FAX, "
+                        + "NOTES, "
+                        + "VISIBLE, "
+                        + "CURDATE, "
+                        + "CURDEBT, "
+                        + "IMAGE, "
+                        + "ISVIP, "
+                        + "DISCOUNT, "
+                        + "MEMODATE ) "
+                        + "VALUES ("
+                        + "?, ?, ?, ?, ?, ?, "
+                        + "?, ?, ?, ?, ?, ?, "
+                        + "?, ?, ?, ?, ?, ?, "
+                        + "?, ?, ?, ?, ?, ?, "
+                        + "?, ?, ?)",
+                        new SerializerWriteBasicExt(getCustomersRow().getDatas(),
+                                new int[]{0,
+                                    1, 2, 3, 4, 5, 6,
+                                    7, 8, 9, 10, 11, 12,
+                                    13, 14, 15, 16, 17, 18,
+                                    19, 20, 21, 22, 23, 24,
+                                    25, 26}))
+                        .exec(params);
+            }
+        };
+    }
+
+    public final SentenceExec getCustomerUpdate() {
+        return new SentenceExecTransaction(s) {
+            @Override
+            public int execInTransaction(Object[] params) throws BasicException {
+                return new PreparedSentence(s,
+                        "UPDATE customers SET "
+                        + "ID = ?, "
+                        + "SEARCHKEY = ?, "
+                        + "TAXID = ?, "
+                        + "NAME = ?, "
+                        + "TAXCATEGORY = ?, "
+                        + "CARD = ?, "
+                        + "MAXDEBT = ?, "
+                        + "ADDRESS = ?, "
+                        + "ADDRESS2 = ?, "
+                        + "POSTAL = ?, "
+                        + "CITY = ?, "
+                        + "REGION = ?, "
+                        + "COUNTRY = ?, "
+                        + "FIRSTNAME = ?, "
+                        + "LASTNAME = ?, "
+                        + "EMAIL = ?, "
+                        + "PHONE = ?, "
+                        + "PHONE2 = ?, "
+                        + "FAX = ?,  "
+                        + "NOTES = ?,"
+                        + "VISIBLE = ?, "
+                        + "CURDATE = ?, "
+                        + "CURDEBT = ?, "
+                        + "IMAGE = ?, "
+                        + "ISVIP = ?, "
+                        + "DISCOUNT = ?, "
+                        + "MEMODATE = ? "
+                        + "WHERE ID = ?",
+                        new SerializerWriteBasicExt(getCustomersRow().getDatas(),
+                                new int[]{0,
+                                    1, 2, 3, 4, 5,
+                                    6, 7, 8, 9, 10,
+                                    11, 12, 13, 14, 15,
+                                    16, 17, 18, 19, 20,
+                                    21, 22, 23, 24, 25,
+                                    26, 0}))
+                        .exec(params);
+            }
+        };
+    }
+
+    public final SentenceExec getCustomerDelete() {
+        return new SentenceExecTransaction(s) {
+            @Override
+            public int execInTransaction(Object[] params) throws BasicException {
+                return new PreparedSentence(s,
+                        "DELETE FROM customers WHERE ID = ?",
+                        new SerializerWriteBasicExt(getCustomersRow().getDatas(),
+                                new int[]{0}))
+                        .exec(params);
+            }
+        };
+    }
 }

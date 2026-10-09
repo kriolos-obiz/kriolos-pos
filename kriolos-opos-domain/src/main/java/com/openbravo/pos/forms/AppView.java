@@ -19,8 +19,7 @@ package com.openbravo.pos.forms;
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.loader.Session;
 import com.openbravo.pos.printer.DeviceTicket;
-import com.openbravo.pos.scale.DeviceScale;
-import com.openbravo.pos.scanpal2.DeviceScanner;
+import com.openbravo.pos.printer.TicketParser;
 import java.util.Date;
 
 /**
@@ -29,9 +28,29 @@ import java.util.Date;
  */
 public interface AppView {
     
-    public DeviceScale getDeviceScale();
     public DeviceTicket getDeviceTicket();
-    public DeviceScanner getDeviceScanner();
+
+    /**
+     * Checks if a hardware scale is configured and operational.
+     *
+     * @return true if scale is available
+     */
+    public boolean hasScale();
+
+    /**
+     * Reads weight from the configured hardware scale.
+     *
+     * @return the measured weight or null if unavailable
+     */
+    public Double readWeight();
+
+    /**
+     * Checks if a handheld scanner is configured.
+     *
+     * @return true if scanner device is configured
+     */
+    public boolean hasScanner();
+
     public Session getSession();
     public AppProperties getProperties();
 
@@ -63,6 +82,39 @@ public interface AppView {
     public boolean closeAppView();
     
     public void switchDatabase() throws BasicException;
+
+    /**
+     * Creates a {@link TicketParser} bound to this application's ticket device
+     * and data-logic system. Callers need no extra arguments — all dependencies
+     * are already owned by the {@code AppView}.
+     *
+     * @return a ready-to-use {@link TicketParser}
+     */
+    default TicketParser createTicketParser() {
+        try {
+            DataLogicSystem dlSystem = getBean(DataLogicSystem.class);
+            return new TicketParser(getDeviceTicket(), dlSystem);
+        } catch (BeanFactoryException e) {
+            throw new IllegalStateException("DataLogicSystem not available in AppView", e);
+        }
+    }
+
+    /**
+     * Creates a {@link TicketParser} bound to a custom {@link DeviceTicket}
+     * (e.g. a preview/reprint ticket device) but still using this application's
+     * data-logic system.
+     *
+     * @param deviceTicket the ticket device to bind (e.g. a preview device)
+     * @return a ready-to-use {@link TicketParser}
+     */
+    default TicketParser createTicketParser(DeviceTicket deviceTicket) {
+        try {
+            DataLogicSystem dlSystem = getBean(DataLogicSystem.class);
+            return new TicketParser(deviceTicket, dlSystem);
+        } catch (BeanFactoryException e) {
+            throw new IllegalStateException("DataLogicSystem not available in AppView", e);
+        }
+    }
 
 }
 

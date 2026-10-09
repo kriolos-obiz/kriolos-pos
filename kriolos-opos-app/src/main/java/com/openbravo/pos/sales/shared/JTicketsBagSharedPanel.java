@@ -5,6 +5,7 @@ import com.openbravo.data.gui.modal.PosUIModal;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.sales.DataLogicReceipts;
 import com.openbravo.pos.sales.SharedTicketInfo;
+import com.openbravo.pos.sales.SharedTicketService;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
@@ -50,7 +51,7 @@ public class JTicketsBagSharedPanel extends JPanel {
         return selectedTicketId;
     }
 
-    public void loadTickets(List<SharedTicketInfo> tickets, DataLogicReceipts dlReceipts) {
+    public void loadTickets(List<SharedTicketInfo> tickets, SharedTicketService sharedTicketService) {
         selectedTicketId = null;
         ticketsPanel.removeAll();
 
@@ -61,7 +62,7 @@ public class JTicketsBagSharedPanel extends JPanel {
             var ticketDate = "";
 
             try {
-                var ticket = dlReceipts.getSharedTicket(ticketInfo.getId());
+                var ticket = sharedTicketService.getSharedTicket(ticketInfo.getId());
                 if (ticket != null) {
                     totalText = ticket.printTotal();
                     ticketDate = ticket.printDate(); // Correctly assigning the date here
@@ -80,7 +81,15 @@ public class JTicketsBagSharedPanel extends JPanel {
         repaint();
     }
 
-    public static String show(Component parent, List<SharedTicketInfo> tickets, DataLogicReceipts dlReceipts) {
+    /**
+     * @deprecated Use {@link #loadTickets(List, SharedTicketService)} instead.
+     */
+    @Deprecated
+    public void loadTickets(List<SharedTicketInfo> tickets, DataLogicReceipts dlReceipts) {
+        loadTickets(tickets, (SharedTicketService) dlReceipts);
+    }
+
+    public static String show(Component parent, List<SharedTicketInfo> tickets, SharedTicketService sharedTicketService) {
         if (tickets == null || tickets.isEmpty()) {
             JOptionPane.showMessageDialog(parent,
                     AppLocal.getIntString("message.nosharedtickets"),
@@ -90,7 +99,7 @@ public class JTicketsBagSharedPanel extends JPanel {
         }
 
         var panel = new JTicketsBagSharedPanel();
-        panel.loadTickets(tickets, dlReceipts);
+        panel.loadTickets(tickets, sharedTicketService);
         panel.setPreferredSize(new Dimension(500, 600));
 
         var modal = PosUIModal.create(parent, panel)
@@ -102,6 +111,14 @@ public class JTicketsBagSharedPanel extends JPanel {
         modal.show();
         
         return panel.getSelectedTicketId();
+    }
+
+    /**
+     * @deprecated Use {@link #show(Component, List, SharedTicketService)} instead.
+     */
+    @Deprecated
+    public static String show(Component parent, List<SharedTicketInfo> tickets, DataLogicReceipts dlReceipts) {
+        return show(parent, tickets, (SharedTicketService) dlReceipts);
     }
 
     private class JButtonTicket extends JButton {

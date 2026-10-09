@@ -30,7 +30,7 @@ import java.util.logging.Logger;
 /**
  * @author JG uniCenta
  */
-public class DataLogicSuppliers extends BeanFactoryDataSingle {
+public class DataLogicSuppliers extends BeanFactoryDataSingle implements SupplierService {
 
     private static final Logger LOGGER = Logger.getLogger(DataLogicSuppliers.class.getName());
     /**

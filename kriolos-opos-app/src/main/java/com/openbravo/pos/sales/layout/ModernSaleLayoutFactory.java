@@ -19,7 +19,7 @@ package com.openbravo.pos.sales.layout;
 import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.sales.TicketsEditor;
 import com.openbravo.pos.sales.modern.one.ModernOne;
-import com.openbravo.pos.sales.modern.two.ModernTwoSalesLayout;
+import com.openbravo.pos.sales.modern.two.ModernTwo;
 import com.openbravo.pos.ui.api.sales.SaleLayoutDefinition;
 import com.openbravo.pos.ui.api.sales.SaleLayoutFactory;
 import java.util.Collection;
@@ -80,12 +80,12 @@ public class ModernSaleLayoutFactory implements SaleLayoutFactory {
         TicketsEditor editor = (TicketsEditor) panelticket;
 
         if (layoutId == null) {
-            return new ModernTwoSalesLayout(appView, editor);
+            return new ModernTwo(appView, editor);
         }
         return switch (layoutId.toLowerCase()) {
             case MODERN_ONE -> new ModernOne(appView, editor);
-            case MODERN_TWO -> new ModernTwoSalesLayout(appView, editor);
-            default -> new ModernTwoSalesLayout(appView, editor);
+            case MODERN_TWO -> new ModernTwo(appView, editor);
+            default -> new ModernTwo(appView, editor);
         };
     }
 

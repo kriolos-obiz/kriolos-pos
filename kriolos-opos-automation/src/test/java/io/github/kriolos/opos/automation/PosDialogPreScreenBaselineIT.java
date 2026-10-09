@@ -2,7 +2,8 @@ package io.github.kriolos.opos.automation;
 
 import com.openbravo.basic.BasicException;
 import com.openbravo.beans.DinerNumberPanel;
-import com.openbravo.beans.JCalendarDlgPanel;
+import com.openbravo.beans.JCalendarPanel;
+import com.openbravo.beans.JCalendarPanel2;
 import com.openbravo.beans.JDoublePanel;
 import com.openbravo.beans.JEditorTextPanel;
 import com.openbravo.beans.JIntegerPanel;
@@ -149,7 +150,7 @@ public class PosDialogPreScreenBaselineIT {
     @DisplayName("Pre-Screen MODAL-003: JCalendarDialog Date Picker")
     public void testPreScreen_MODAL003_CalendarDialogDate() throws Exception {
         captureAndDismiss("03_calendar_dialog_date_DIALOG", () -> {
-            JCalendarDlgPanel.showCalendar(dummyParent, new Date());
+            JCalendarPanel2.showCalendar(dummyParent, new Date());
         });
     }
 
@@ -157,7 +158,7 @@ public class PosDialogPreScreenBaselineIT {
     @DisplayName("Pre-Screen MODAL-004: JCalendarDialog Date and Time Picker")
     public void testPreScreen_MODAL004_CalendarDialogTime() throws Exception {
         captureAndDismiss("04_calendar_dialog_time_DIALOG", () -> {
-            JCalendarDlgPanel.showCalendarTime(dummyParent, new Date());
+            JCalendarPanel2.showCalendarTime(dummyParent, new Date());
         });
     }
 
@@ -165,7 +166,7 @@ public class PosDialogPreScreenBaselineIT {
     @DisplayName("Modal Migration 03: JCalendarDlgPanel Date Picker via PosUIModal")
     public void testModal_003_CalendarPanelDate() throws Exception {
         captureAndDismiss("03_calendar_dialog_date_MODAL_FIXED", () -> {
-            com.openbravo.beans.JCalendarDlgPanel.showCalendar(dummyParent, new Date());
+            com.openbravo.beans.JCalendarPanel2.showCalendar(dummyParent, new Date());
         });
     }
 
@@ -173,7 +174,7 @@ public class PosDialogPreScreenBaselineIT {
     @DisplayName("Modal Migration 04: JCalendarDlgPanel Date and Time Picker via PosUIModal")
     public void testModal_004_CalendarPanelTime() throws Exception {
         captureAndDismiss("04_calendar_dialog_time_MODAL_FIXED", () -> {
-            com.openbravo.beans.JCalendarDlgPanel.showCalendarTime(dummyParent, new Date());
+            com.openbravo.beans.JCalendarPanel2.showCalendarTime(dummyParent, new Date());
         });
     }
 

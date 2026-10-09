@@ -21,6 +21,7 @@ import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppUser;
 import com.openbravo.pos.forms.AppUserView;
 import com.openbravo.pos.forms.DataLogicSystem;
+import com.openbravo.pos.forms.ResourceService;
 import com.openbravo.pos.forms.JPanelView;
 import com.openbravo.pos.forms.menu.Menu;
 import com.openbravo.pos.scripting.ScriptEngine;
@@ -62,12 +63,12 @@ public class JRootMenu {
         return viewManager;
     }
 
-    public void setRootMenu(JScrollPane objJScrollPane, DataLogicSystem dlSystem) {
+    public void setRootMenu(JScrollPane objJScrollPane, ResourceService resourceService) {
         Component menuComponent = null;
         
         LOGGER.log(Level.FINE, "Loading Root.Menu from database resource");
         try {
-            String menuScrip = dlSystem.getResourceAsText("Menu.Root");
+            String menuScrip = (resourceService != null) ? resourceService.getResourceAsText("Menu.Root") : null;
             menuComponent = getScriptMenu(menuScrip);
 
             if (menuComponent == null) {
@@ -86,6 +87,11 @@ public class JRootMenu {
         catch (IOException ex) {
             LOGGER.log(Level.SEVERE, "Exception on setup Root.Menu", ex);
         }
+    }
+
+    @Deprecated
+    public void setRootMenu(JScrollPane objJScrollPane, DataLogicSystem dlSystem) {
+        setRootMenu(objJScrollPane, (ResourceService) dlSystem);
     }
 
     private Component getScriptMenu(String menutext) {
@@ -274,7 +280,7 @@ public class JRootMenu {
                 String sNewPassword = JPasswordPanel.changePassword(parent, m_appuser.getPassword());
  
                 if (sNewPassword != null) {
-                    DataLogicSystem m_dlSystem = (DataLogicSystem) appview.getBean("com.openbravo.pos.forms.DataLogicSystem");
+                    DataLogicSystem m_dlSystem = appview.getBean(DataLogicSystem.class);
                     m_dlSystem.execChangePassword(new Object[]{sNewPassword, m_appuser.getId()});
                     m_appuser.setPassword(sNewPassword);
                 }

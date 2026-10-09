@@ -144,7 +144,7 @@ public class JMessagePanelStateTest {
 
 /**
  * Classe Mock temporária para permitir a compilação e o isolamento do teste 
- * em ambientes onde o ficheiro MessageInf ou LocalRes nativos ainda não foram integrados.
+ * em ambientes onde o ficheiro MessageInf ou AppLocal nativos ainda não foram integrados.
  */
 class MessageInf {
     public final static int SGN_DANGER = 0xFF000000;
@@ -176,7 +176,7 @@ class MessageInf {
 }
 
 /** Mock complementar do ficheiro de propriedades nativo */
-class LocalRes {
+class AppLocal {
     public static String getIntString(String key) {
         if ("button.details".equals(key)) return "Detalhes";
         if ("button.cancel".equals(key)) return "CANCELAR";

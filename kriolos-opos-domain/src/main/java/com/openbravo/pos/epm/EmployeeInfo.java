@@ -13,72 +13,59 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package com.openbravo.pos.epm;
 
+import com.openbravo.basic.BasicException;
+import com.openbravo.data.loader.DataRead;
+import com.openbravo.data.loader.IKeyed;
+import com.openbravo.data.loader.SerializableRead;
 import com.openbravo.pos.util.StringUtils;
-import java.io.Serializable;
 
 /**
  *
  * @author Ali Safdar and Aneeqa Baber
  */
-public class EmployeeInfo implements Serializable {
-    
+public class EmployeeInfo implements SerializableRead, IKeyed<String> {
+
     private static final long serialVersionUID = 9083257536541L;
 
-    /**
-     *
-     */
     protected String id;
-
-    /**
-     *
-     */
     protected String name;
-    
-    /** Creates a new instance of EmployeeInfo
-     * @param id */
+
     public EmployeeInfo(String id) {
         this.id = id;
         this.name = null;
     }
-    
-    /**
-     *
-     * @return
-     */
+
     public String getId() {
         return id;
     }
-    
-    /**
-     *
-     * @return
-     */
+
     public String getName() {
         return name;
-    }   
+    }
 
-    /**
-     *
-     * @param name
-     */
     public void setName(String name) {
         this.name = name;
     }
 
-    /**
-     *
-     * @return
-     */
     public String printName() {
         return StringUtils.encodeXML(name);
     }
-    
+
     @Override
     public String toString() {
         return getName();
-    }    
-}
+    }
 
+    @Override
+    public String getKey() {
+        return id;
+    }
+
+    @Override
+    public void readValues(DataRead dr) throws BasicException {
+        id = dr.getString(1);
+        name = dr.getString(2);
+    }
+}

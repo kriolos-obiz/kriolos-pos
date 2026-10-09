@@ -22,7 +22,7 @@ import com.openbravo.data.model.*;
 import com.openbravo.data.user.EditorRecord;
 import com.openbravo.format.Formats;
 import com.openbravo.pos.forms.AppLocal;
-import com.openbravo.pos.forms.DataLogicSales;
+import com.openbravo.pos.inventory.DataLogicInventory;
 import com.openbravo.pos.panels.BundleFilter;
 import com.openbravo.pos.panels.JPanelTable2;
 import com.openbravo.pos.ticket.ProductInfoExt;
@@ -62,7 +62,7 @@ public class BundlePanel extends JPanelTable2 {
                 new Column("QUANTITY"));
 
         lpr = row.getListProvider(app.getSession(),
-                DataLogicSales.SQL_BUNDLE_LIST, filter);
+                StockService.SQL_BUNDLE_LIST, filter);
         spr = row.getSaveProvider(app.getSession(), table);
 
         editor = new BundleEditor(app, dirty);

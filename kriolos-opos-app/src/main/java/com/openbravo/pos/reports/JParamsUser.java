@@ -22,7 +22,7 @@ import com.openbravo.data.loader.QBFCompareEnum;
 import com.openbravo.data.loader.SerializerWrite;
 import com.openbravo.data.loader.SerializerWriteBasic;
 import com.openbravo.pos.admin.PeopleInfo;
-import com.openbravo.pos.admin.DataLogicAdmin;
+import com.openbravo.pos.admin.PeopleService;
 import com.openbravo.pos.admin.JPeopleFinder;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
@@ -36,7 +36,7 @@ import javax.swing.event.DocumentListener;
  */
 public class JParamsUser extends javax.swing.JPanel implements ReportEditorCreator {
     
-    private DataLogicAdmin dlPeople;
+    private PeopleService dlPeople;
     private PeopleInfo currentpeople;
     
     /** Creates new form JParamsUser */
@@ -66,7 +66,7 @@ public class JParamsUser extends javax.swing.JPanel implements ReportEditorCreat
      */
     @Override
     public void init(AppView app) {
-        dlPeople = (DataLogicAdmin) app.getBean("com.openbravo.pos.admin.DataLogicAdmin");
+        dlPeople = app.getBean(PeopleService.class);
     }
     
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 KriolOS
+ * Copyright (C) 2026 KriolOS
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://gnu.org>.
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 package com.openbravo.pos.printer.screen;
 
@@ -24,6 +24,7 @@ import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
 import javax.swing.JComponent;
 import javax.swing.JScrollPane;
+import javax.swing.SwingUtilities;
 
 /**
  * Visual panel to preview printed tickets on screen.
@@ -33,36 +34,69 @@ import javax.swing.JScrollPane;
  */
 public class DevicePrinterPanel extends javax.swing.JPanel implements DevicePrinter {
     
+    private static final long serialVersionUID = 1L;
+
     private final String printerName;
     private final JTicketContainer ticketContainer;    
     private BasicTicket currentTicket;
+    private javax.swing.JScrollPane m_jScrollView;
     
     /** 
      * Creates new form DevicePrinterPanel 
      */
     public DevicePrinterPanel() {
+        ticketContainer = new JTicketContainer();
         initComponents();
         
         printerName = AppLocal.getIntString("printer.screen");
         currentTicket = null;
-       
-        ticketContainer = new JTicketContainer();
-        m_jScrollView.setViewportView(ticketContainer); 
-        m_jScrollView.getVerticalScrollBar().setValue(0);
-        m_jScrollView.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
+    }
+    
+    // =========================================================================
+    // ZOOM & PRINT INTEGRATION
+    // =========================================================================
+    
+    /**
+     * Triggers the OS print dialog for the current preview.
+     */
+    public void printTickets() {
+        ticketContainer.printTickets();
     }
     
     /**
-     * Public option to manually purge all active tickets from the container panel.
-     * Can be invoked directly from external control buttons or view managers.
+     * Sets an absolute zoom scale.
+     * @param zoom 1.0 is 100%, 1.5 is 150%, etc.
      */
+    public void setZoom(double zoom) {
+        ticketContainer.setZoom(zoom);
+    }
+    
+    public double getZoom() {
+        return ticketContainer.getZoom();
+    }
+    
+    /**
+     * Helper to zoom in by 10%
+     */
+    public void zoomIn() {
+        setZoom(getZoom() + 0.1);
+    }
+    
+    /**
+     * Helper to zoom out by 10%
+     */
+    public void zoomOut() {
+        setZoom(getZoom() - 0.1);
+    }
+
+    // =========================================================================
+    // DEVICE PRINTER IMPLEMENTATION
+    // =========================================================================
+
     public void clearAllTickets() {
         reset();
     }
     
-    /**
-     * @return The localized name of the screen printer
-     */
     @Override
     public String getPrinterName() {
         return printerName;
@@ -73,17 +107,11 @@ public class DevicePrinterPanel extends javax.swing.JPanel implements DevicePrin
         // No logo implementation needed for screen preview
     }
 
-    /**
-     * @return Description of the printer, or null if none provided
-     */
     @Override
     public String getPrinterDescription() {
         return null;
     }       
 
-    /**
-     * @return This JPanel component instance for rendering in Swing
-     */
     @Override
     public JComponent getPrinterComponent() {
         return this;
@@ -93,7 +121,6 @@ public class DevicePrinterPanel extends javax.swing.JPanel implements DevicePrin
     public void reset() {
         currentTicket = null;
         ticketContainer.removeAllTickets();
-        ticketContainer.repaint();
     }
     
     @Override
@@ -146,8 +173,15 @@ public class DevicePrinterPanel extends javax.swing.JPanel implements DevicePrin
     @Override
     public void endReceipt() {
         if (currentTicket != null) {
-            ticketContainer.addTicket(new JTicket(currentTicket));
+            final BasicTicket ticketToRender = currentTicket;
             currentTicket = null;
+            
+            // Garante que o componente de interface é criado e adicionado na EDT
+            if (SwingUtilities.isEventDispatchThread()) {
+                ticketContainer.addTicket(new JTicket(ticketToRender));
+            } else {
+                SwingUtilities.invokeLater(() -> ticketContainer.addTicket(new JTicket(ticketToRender)));
+            }
         }
     }
     
@@ -156,25 +190,25 @@ public class DevicePrinterPanel extends javax.swing.JPanel implements DevicePrin
         Toolkit.getDefaultToolkit().beep();
     }     
        
-    /** This method is called from within the constructor to
-     * initialize the form.
-     * WARNING: Do NOT modify this code. The content of this method is
-     * always regenerated by the Form Editor.
+    /** 
+     * Initializes the form components.
      */
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
-
-        m_jScrollView = new javax.swing.JScrollPane();
-
         setLayout(new java.awt.BorderLayout());
 
-        m_jScrollView.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
+        // Inicializa o ScrollPane passando logo o ticketContainer como Viewport
+        m_jScrollView = new javax.swing.JScrollPane(ticketContainer);
+        m_jScrollView.setFont(new java.awt.Font("Arial", 0, 12));
+        
+        // 1. Desativa scrollbar horizontal (força wrap vertical)
+        m_jScrollView.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        
+        // 2. Ativa scrollbar vertical automática quando o conteúdo ultrapassar a janela
+        m_jScrollView.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        
+        // 3. Velocidade suave de scroll
+        m_jScrollView.getVerticalScrollBar().setUnitIncrement(16);
+        
         add(m_jScrollView, java.awt.BorderLayout.CENTER);
-    }// </editor-fold>//GEN-END:initComponents
-    
-    
-    // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JScrollPane m_jScrollView;
-    // End of variables declaration//GEN-END:variables
-    
+    }
 }

@@ -15,6 +15,7 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package com.openbravo.data.loader;
 
+import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.basic.BasicException;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -60,53 +61,53 @@ public abstract class BatchSentence extends BaseSentence {
 
         @Override
         public Integer getInt(int columnIndex) throws BasicException {
-            throw new BasicException(LocalRes.getIntString(L10N_EXCEPTION_NODATASET));
+            throw new BasicException(AppLocal.getIntString(L10N_EXCEPTION_NODATASET));
         }
 
         @Override
         public String getString(int columnIndex) throws BasicException {
-            throw new BasicException(LocalRes.getIntString(L10N_EXCEPTION_NODATASET));
+            throw new BasicException(AppLocal.getIntString(L10N_EXCEPTION_NODATASET));
         }
 
         @Override
         public Double getDouble(int columnIndex) throws BasicException {
-            throw new BasicException(LocalRes.getIntString(L10N_EXCEPTION_NODATASET));
+            throw new BasicException(AppLocal.getIntString(L10N_EXCEPTION_NODATASET));
         }
 
         @Override
         public Boolean getBoolean(int columnIndex) throws BasicException {
-            throw new BasicException(LocalRes.getIntString(L10N_EXCEPTION_NODATASET));
+            throw new BasicException(AppLocal.getIntString(L10N_EXCEPTION_NODATASET));
         }
 
         @Override
         public java.util.Date getTimestamp(int columnIndex) throws BasicException {
-            throw new BasicException(LocalRes.getIntString(L10N_EXCEPTION_NODATASET));
+            throw new BasicException(AppLocal.getIntString(L10N_EXCEPTION_NODATASET));
         }
         
         @Override
         public Date getDate(int columnIndex) throws BasicException {
-            throw new BasicException(LocalRes.getIntString(L10N_EXCEPTION_NODATASET));
+            throw new BasicException(AppLocal.getIntString(L10N_EXCEPTION_NODATASET));
         }
 
         @Override
         public byte[] getBytes(int columnIndex) throws BasicException {
-            throw new BasicException(LocalRes.getIntString(L10N_EXCEPTION_NODATASET));
+            throw new BasicException(AppLocal.getIntString(L10N_EXCEPTION_NODATASET));
         }
 
         @Override
         public Object getObject(int columnIndex) throws BasicException {
-            throw new BasicException(LocalRes.getIntString(L10N_EXCEPTION_NODATASET));
+            throw new BasicException(AppLocal.getIntString(L10N_EXCEPTION_NODATASET));
         }
 
         @Override
         public DataField[] getDataField() throws BasicException {
-            throw new BasicException(LocalRes.getIntString(L10N_EXCEPTION_NODATASET));
+            throw new BasicException(AppLocal.getIntString(L10N_EXCEPTION_NODATASET));
         }
 
         @Override
         public BasicException getCurrent() throws BasicException {
             if (m_iIndex < 0 || m_iIndex >= excepList.size()) {
-                throw new BasicException(LocalRes.getIntString("exception.outofbounds"));
+                throw new BasicException(AppLocal.getIntString("exception.outofbounds"));
             } else {
                 return excepList.get(m_iIndex);
             }
@@ -202,12 +203,12 @@ public abstract class BatchSentence extends BaseSentence {
             br.close();
 
         } catch (IOException eIO) {
-            throw new BasicException(LocalRes.getIntString("exception.noreadfile"), eIO);
+            throw new BasicException(AppLocal.getIntString("exception.noreadfile"), eIO);
         }
 
         if (sSentence.length() > 0) {
             // ha quedado una sentencia inacabada
-            aExceptions.add(new BasicException(LocalRes.getIntString("exception.nofinishedfile")));
+            aExceptions.add(new BasicException(AppLocal.getIntString("exception.nofinishedfile")));
         }
 
         return new ExceptionsResultSet(aExceptions);

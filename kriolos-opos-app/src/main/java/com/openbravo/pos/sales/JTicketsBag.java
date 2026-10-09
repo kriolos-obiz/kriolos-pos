@@ -16,13 +16,16 @@
 
 package com.openbravo.pos.sales;
 
+import com.openbravo.pos.customers.CustomerInfoExt;
 import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.forms.DataLogicSales;
-import com.openbravo.pos.sales.restaurant.JTicketsBagRestaurantMap;
-import com.openbravo.pos.sales.shared.JTicketsBagShared;
-import com.openbravo.pos.sales.simple.JTicketsBagSimple;
-import javax.swing.JComponent;
+import com.openbravo.pos.sales.BagMode;
+import com.openbravo.pos.sales.JTicketsBagMode;
+import com.openbravo.pos.ticket.TicketInfo;
+
+
 import javax.swing.JPanel;
+import javax.swing.JComponent;
 
 /**
  * Abstract controller and container for managing active sales tickets within the POS system.
@@ -55,7 +58,13 @@ public abstract class JTicketsBag extends JPanel {
     /**
      *
      */
+    /**
+     * @deprecated Use {@link #ticketLifecycleService} instead.
+     */
+    @Deprecated
     protected DataLogicSales m_dlSales;
+
+    protected TicketLifecycleService ticketLifecycleService;
 
     /**
      *
@@ -70,7 +79,13 @@ public abstract class JTicketsBag extends JPanel {
     public JTicketsBag(AppView oApp, TicketsEditor panelticket) {        
         m_App = oApp;     
         m_panelticket = panelticket;        
-        m_dlSales = (DataLogicSales) m_App.getBean("com.openbravo.pos.forms.DataLogicSales");
+        m_dlSales = m_App != null ? m_App.getBean(DataLogicSales.class) : null;
+        ticketLifecycleService = m_App != null ? m_App.getBean(TicketLifecycleService.class) : null;
+    }
+    
+    
+    protected AppView getAppView(){
+        return m_App;
     }
     
     /**
@@ -100,7 +115,27 @@ public abstract class JTicketsBag extends JPanel {
      * @return
      */
     protected abstract JComponent getNullComponent();
-    
+
+    /**
+     * Notification callback when the customer associated with the ticket is updated or cleared.
+     * Subclasses (such as restaurant maps) may synchronize table details.
+     *
+     * @param customer updated customer info or null if cleared
+     * @param ticketId active ticket identifier
+     */
+    public void customerUpdated(CustomerInfoExt customer, String ticketId) {
+    }
+
+    /**
+     * Notification callback when a ticket checkout is completed.
+     * Subclasses (such as restaurant maps) may clear table assignments.
+     *
+     * @param ticket ticket that was closed
+     * @param ticketExt extra ticket information (e.g. table name)
+     */
+    public void ticketClosed(TicketInfo ticket, String ticketExt) {
+    }
+
     /**
      *
      * @param sName
@@ -109,10 +144,7 @@ public abstract class JTicketsBag extends JPanel {
      * @return
      */
     public static JTicketsBag createTicketsBag(String sName, AppView app, TicketsEditor panelticket) {
-        JComponent comp = com.openbravo.pos.ui.api.sales.SaleLayoutManager.createLayout(sName, app, panelticket);
-        if (comp instanceof JTicketsBag bag) {
-            return bag;
-        }
-        return new JTicketsBagSimple(app, panelticket);
+        BagMode mode = sName != null && sName.equalsIgnoreCase("simple") ? BagMode.SIMPLE : BagMode.SHARED;
+        return new JTicketsBagMode(app, panelticket, mode);
     }   
 }

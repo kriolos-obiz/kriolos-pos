@@ -24,15 +24,17 @@ import com.openbravo.pos.cash.CashManagementService;
 import com.openbravo.pos.cash.CashManagementServiceImpl;
 import com.openbravo.pos.cash.CashRegister;
 import com.openbravo.pos.forms.AppProperties.DatabaseConfig;
+import com.openbravo.pos.inventory.InventoryService;
+import com.openbravo.pos.hardware.PosHardwareManager;
 import com.openbravo.pos.printer.DeviceTicket;
 import com.openbravo.pos.printer.TicketParser;
 import com.openbravo.pos.printer.TicketPrinterException;
-import com.openbravo.pos.scale.DeviceScale;
-import com.openbravo.pos.scanpal2.DeviceScanner;
-import com.openbravo.pos.scanpal2.DeviceScannerFactory;
+import com.openbravo.pos.spi.hardware.scale.ScaleDevice;
+import com.openbravo.pos.spi.hardware.scanner.ScannerDevice;
 import com.openbravo.pos.scripting.ScriptEngine;
 import com.openbravo.pos.scripting.ScriptException;
 import com.openbravo.pos.scripting.ScriptFactory;
+import com.openbravo.pos.spi.hardware.scale.ScaleException;
 import java.awt.CardLayout;
 import java.awt.ComponentOrientation;
 import java.awt.Cursor;
@@ -58,6 +60,8 @@ public class ApplicationShell extends JPanel implements AppView {
 
     private final AppProperties appProperties;
     private Session session;
+    private SystemService systemService;
+    @Deprecated
     private DataLogicSystem dlogicSystem;
     private CashManagementService cashManagementService;
 
@@ -65,8 +69,8 @@ public class ApplicationShell extends JPanel implements AppView {
     private CashRegister activeCash = new CashRegister();
     private String inventoryLocation;
 
-    private DeviceScale deviceScale;
-    private DeviceScanner deviceScanner;
+    private ScaleDevice deviceScale;
+    private ScannerDevice deviceScanner;
     private DeviceTicket deviceTicket;
     private TicketParser ticketParser;
 
@@ -100,7 +104,7 @@ public class ApplicationShell extends JPanel implements AppView {
 
     private void setTitlePanel() {
 
-        String customTile = dlogicSystem.getResourceAsText("Window.Title");
+        String customTile = (systemService != null) ? systemService.getResourceAsText("Window.Title") : null;
 
         appTitleLabel.setText(customTile);
         appTitleLabel.repaint();
@@ -111,26 +115,28 @@ public class ApplicationShell extends JPanel implements AppView {
     }
 
     private void setInventoryLocation() {
-        if(hostSavedProperties == null){
+        if (hostSavedProperties == null) {
             return;
         }
         inventoryLocation = hostSavedProperties.getProperty(HOST_PROP_KEY_LOCATION);
         if (inventoryLocation == null) {
             inventoryLocation = "0";
             hostSavedProperties.setProperty(HOST_PROP_KEY_LOCATION, inventoryLocation);
-            dlogicSystem.setResourceAsProperties(getHostPropertyId(), hostSavedProperties);
+            if (systemService != null) {
+                systemService.setResourceAsProperties(getHostPropertyId(), hostSavedProperties);
+            }
         }
     }
 
     private void initPeripheral() {
-        deviceTicket = new DeviceTicket(this, appProperties);
+        deviceTicket = PosHardwareManager.createDeviceTicket(this, appProperties);
 
-        ticketParser = new TicketParser(getDeviceTicket(), dlogicSystem);
+        ticketParser = createTicketParser();
         printerStart();
 
-        deviceScale = new DeviceScale(this, appProperties);
+        deviceScale = PosHardwareManager.createDeviceScale(this, appProperties);
 
-        deviceScanner = DeviceScannerFactory.createInstance(appProperties);
+        deviceScanner = PosHardwareManager.createDeviceScanner(appProperties);
     }
 
     private boolean checkActiveCash() {
@@ -198,7 +204,7 @@ public class ApplicationShell extends JPanel implements AppView {
 
     private String readDataBaseVersion() {
         try {
-            return dlogicSystem.findVersion();
+            return (systemService != null) ? systemService.findVersion() : null;
         }
         catch (BasicException ed) {
             return null;
@@ -208,16 +214,6 @@ public class ApplicationShell extends JPanel implements AppView {
     @Override
     public DeviceTicket getDeviceTicket() {
         return deviceTicket;
-    }
-
-    @Override
-    public DeviceScale getDeviceScale() {
-        return deviceScale;
-    }
-
-    @Override
-    public DeviceScanner getDeviceScanner() {
-        return deviceScanner;
     }
 
     @Override
@@ -258,7 +254,9 @@ public class ApplicationShell extends JPanel implements AppView {
         activeCash.setEndDate(endDate);
 
         hostSavedProperties.setProperty(HOST_PROP_KEY_ACTIVECASH, activeCash.getMoney());
-        dlogicSystem.setResourceAsProperties(getHostPropertyId(), hostSavedProperties);
+        if (systemService != null) {
+            systemService.setResourceAsProperties(getHostPropertyId(), hostSavedProperties);
+        }
     }
 
     @Override
@@ -270,8 +268,7 @@ public class ApplicationShell extends JPanel implements AppView {
     public Object getBean(String beanfactory) throws BeanFactoryException {
         return BeanContainer.getBean(beanfactory, this);
     }
-    
-    
+
     @Override
     public <T> T getBean(Class<T> beanClass) throws BeanFactoryException {
         return BeanContainer.getBean(beanClass, this);
@@ -302,7 +299,7 @@ public class ApplicationShell extends JPanel implements AppView {
 
     private void printerStart() {
 
-        String sresource = dlogicSystem.getResourceAsXML("Printer.Start");
+        String sresource = (systemService != null) ? systemService.getResourceAsXML("Printer.Start") : null;
 
         deviceTicket.getDeviceDisplay().writeVisor(AppLocal.APP_NAME, AppLocal.APP_VERSION);
 
@@ -355,7 +352,6 @@ public class ApplicationShell extends JPanel implements AppView {
     public void tryToClose() {
 
         if (closeAppView()) {
-            releaseResources();
             if (session != null) {
                 try {
                     session.close();
@@ -377,6 +373,10 @@ public class ApplicationShell extends JPanel implements AppView {
     @Override
     public boolean closeAppView() {
 
+        BeanContainer.cleanAll();
+
+        releaseResources();
+
         if (principalApp == null) {
             return true;
         } else if (!principalApp.deactivate()) {
@@ -388,8 +388,6 @@ public class ApplicationShell extends JPanel implements AppView {
 
             contentContainerPanel.remove(principalApp);
             principalApp = null;
-
-            //showLoginPanel();
             return true;
         }
     }
@@ -397,7 +395,7 @@ public class ApplicationShell extends JPanel implements AppView {
     private void showLoginPanel() {
         LOGGER.log(Level.INFO, "Showing Authentication Panel");
         if (mAuthPanel == null) {
-            mAuthPanel = new AuthenticationPanel(this, dlogicSystem, appProperties, new AuthenticationPanel.AuthListener() {
+            mAuthPanel = new AuthenticationPanel(this, (SecurityService) systemService, appProperties, new AuthenticationPanel.AuthListener() {
                 @Override
                 public void onSucess(AppUser user) {
                     openAppView(user);
@@ -406,7 +404,7 @@ public class ApplicationShell extends JPanel implements AppView {
             contentContainerPanel.add(mAuthPanel, "login");
 
             // Auto-activate initial default database if not yet connected
-            if (dlogicSystem == null && mAuthPanel.getSelectedDatabase() != null) {
+            if (systemService == null && mAuthPanel.getSelectedDatabase() != null) {
                 SwingUtilities.invokeLater(() -> mAuthPanel.activateSelectedDatabase());
             }
         }
@@ -414,11 +412,13 @@ public class ApplicationShell extends JPanel implements AppView {
     }
 
     /**
-     * Activates a database asynchronously using a background SwingWorker, reporting
-     * real-time progress steps and completing on the Event Dispatch Thread.
+     * Activates a database asynchronously using a background SwingWorker,
+     * reporting real-time progress steps and completing on the Event Dispatch
+     * Thread.
      *
      * @param dbConfig The target database configuration to connect to.
-     * @param callback Optional callback for real-time progress, success, and error notifications.
+     * @param callback Optional callback for real-time progress, success, and
+     * error notifications.
      */
     public void activateDatabase(DatabaseConfig dbConfig, DatabaseActivationCallback callback) {
         if (dbConfig == null) {
@@ -432,51 +432,57 @@ public class ApplicationShell extends JPanel implements AppView {
                 new Object[]{dbConfig.name(), dbConfig.url()});
         waitCursorBegin();
 
-        javax.swing.SwingWorker<DataLogicSystem, String> worker = new javax.swing.SwingWorker<>() {
+        javax.swing.SwingWorker<SystemService, String> worker = new javax.swing.SwingWorker<>() {
             @Override
-            protected DataLogicSystem doInBackground() throws Exception {
-                publish("A verificar parâmetros da base de dados...");
+            protected SystemService doInBackground() throws Exception {
+                publish(AppLocal.getIntString("label.database.checkingparams"));
                 AppConfig.testConnection(dbConfig);
 
-                publish("A ligar à base de dados...");
+                publish(AppLocal.getIntString("label.database.connectingto", dbConfig.name()));
                 if (session != null) {
                     try {
                         session.close();
-                    } catch (SQLException ex) {
+                    }
+                    catch (SQLException ex) {
                         LOGGER.log(Level.WARNING, "Error closing previous session: ", ex);
                     }
                 }
-                Session newSession = new Session(dbConfig.url(), dbConfig.username(), dbConfig.password());
+                session = new Session(dbConfig.url(), dbConfig.username(), dbConfig.password());
 
-                publish("A executar migrações de dados...");
-                com.openbravo.pos.data.DBMigrator.execDBMigration(newSession);
+                publish(AppLocal.getIntString("label.database.runningmigrations"));
+                com.openbravo.pos.data.DBMigrator.execDBMigration(session);
 
-                publish("A inicializar serviços do sistema...");
-                session = newSession;
-                DataLogicSystem newDl = (DataLogicSystem) getBean("com.openbravo.pos.forms.DataLogicSystem");
-                newDl.init(session);
-                dlogicSystem = newDl;
-
+                publish(AppLocal.getIntString("label.database.initsystemservices"));
+                systemService = getBean(SystemService.class);
+                if (systemService instanceof BeanFactoryApp) {
+                    ((BeanFactoryApp) systemService).init(ApplicationShell.this);
+                }
+                dlogicSystem = (systemService instanceof DataLogicSystem) ? (DataLogicSystem) systemService : null;
+                if (dlogicSystem != null) {
+                    dlogicSystem.init(session);
+                }
+     
+                cashManagementService= null;
                 cashManagementService = new CashManagementServiceImpl(session);
-                hostSavedProperties = dlogicSystem.getResourceAsProperties(getHostPropertyId());
+                hostSavedProperties = systemService.getResourceAsProperties(getHostPropertyId());
 
+                publish(AppLocal.getIntString("label.database.initcashinventory"));
+                setInventoryLocation();
                 if (checkActiveCash()) {
                     throw new BasicException("Falha ao verificar ActiveCash");
                 }
 
-                publish("A configurar interface e periféricos...");
-                setInventoryLocation();
+                publish(AppLocal.getIntString("label.database.configinterfaceperipherals"));
+                initPeripheral();
+                
+                
+                publish(AppLocal.getIntString("label.database.configstatuspanel"));
                 setTitlePanel();
                 setStatusBarPanel();
+                logStartup();
 
-                if (deviceTicket == null) {
-                    initPeripheral();
-                    logStartup();
-                } else {
-                    ticketParser = new TicketParser(getDeviceTicket(), dlogicSystem);
-                }
 
-                return dlogicSystem;
+                return systemService;
             }
 
             @Override
@@ -489,12 +495,13 @@ public class ApplicationShell extends JPanel implements AppView {
             @Override
             protected void done() {
                 try {
-                    DataLogicSystem dl = get();
+                    SystemService ss = get();
                     LOGGER.log(Level.INFO, "Successfully completed activation of database: {0}", dbConfig.name());
                     if (callback != null) {
-                        callback.onSuccess(dbConfig, dl);
+                        callback.onSuccess(dbConfig, ss);
                     }
-                } catch (Exception ex) {
+                }
+                catch (Exception ex) {
                     Throwable cause = (ex instanceof java.util.concurrent.ExecutionException && ex.getCause() != null)
                             ? ex.getCause()
                             : ex;
@@ -502,7 +509,8 @@ public class ApplicationShell extends JPanel implements AppView {
                     if (callback != null) {
                         callback.onError(cause);
                     }
-                } finally {
+                }
+                finally {
                     waitCursorEnd();
                 }
             }
@@ -525,7 +533,8 @@ public class ApplicationShell extends JPanel implements AppView {
         String sWareHouse;
 
         try {
-            sWareHouse = dlogicSystem.findLocationName(inventoryLocation);
+            InventoryService invService = getBean(InventoryService.class);
+            sWareHouse = (invService != null) ? invService.findLocationName(inventoryLocation) : "";
         }
         catch (BasicException e) {
             sWareHouse = "";
@@ -538,7 +547,7 @@ public class ApplicationShell extends JPanel implements AppView {
         catch (SQLException e) {
             url = "";
         }
-        appInfoLabel.setText("<html>" + appProperties.getHost() + " ;<b>WareHouse<b>: " + sWareHouse + "<br>" + url + "</html>");
+        appInfoLabel.setText("<html>" + appProperties.getHost() + " ;<b>" + AppLocal.getIntString("label.warehouse") + "<b>: " + sWareHouse + "<br>" + url + "</html>");
     }
 
     /**
@@ -570,7 +579,7 @@ public class ApplicationShell extends JPanel implements AppView {
 
         appTitleLabel.setFont(new java.awt.Font("Arial", 1, 16)); // NOI18N
         appTitleLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        appTitleLabel.setText("Point of Sales (POS)");
+        appTitleLabel.setText(AppLocal.getIntString("label.apptitle"));
         appTitleLabel.setEnabled(false);
         topPanel.add(appTitleLabel, java.awt.BorderLayout.CENTER);
 
@@ -647,5 +656,25 @@ public class ApplicationShell extends JPanel implements AppView {
     private javax.swing.JPanel statusBarSecondPanel;
     private javax.swing.JPanel topPanel;
     // End of variables declaration//GEN-END:variables
+
+    @Override
+    public boolean hasScale() {
+        return deviceScale.existsScale();
+    }
+
+    @Override
+    public Double readWeight() {
+        try {
+            return deviceScale.readWeight();
+        }
+        catch (ScaleException ex) {
+            return null;
+        }
+    }
+
+    @Override
+    public boolean hasScanner() {
+        return deviceScale.existsScale();
+    }
 
 }

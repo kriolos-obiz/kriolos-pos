@@ -5,7 +5,44 @@ Peripheral chapter Hardware/Device
 
 === Overview
 
-<TODO> 
+KriolOS POS provides a modular, Service Provider Interface (SPI) architecture for hardware peripherals located in `kriolos-opos-spi` under package `com.openbravo.pos.spi.hardware`.
+
+The unified façade `PeripheralManager` dynamically discovers and loads peripheral drivers via Java's `java.util.ServiceLoader`, decoupling application modules from low-level serial communication and vendor-specific protocol details.
+
+==== Architecture Principles
+
+* **Unified Entry Point (`PeripheralManager`)**: Static registry and loader querying all registered `PeripheralProvider` instances.
+* **URN & Selector Classification (`DeviceType`)**: Every peripheral category maps to a standard URN (`urn:kriolos:hardware:*`) and selector code (`hardware:*`):
+** `urn:kriolos:hardware:scale` (`hardware:scale`) -> Weight Scales (`com.openbravo.pos.spi.hardware.scale`)
+** `urn:kriolos:hardware:printer` (`hardware:printer`) -> Receipt and Kitchen Printers (`com.openbravo.pos.spi.hardware.printer`)
+** `urn:kriolos:hardware:display` (`hardware:display`) -> Customer Facing Visors (`com.openbravo.pos.spi.hardware.display`)
+** `urn:kriolos:hardware:scanner` (`hardware:scanner`) -> Handheld & Fixed Barcode Scanners (`com.openbravo.pos.spi.hardware.scanner`)
+** `urn:kriolos:hardware:fiscal_printer` (`hardware:fiscal_printer`) -> Fiscal Memory Units (`com.openbravo.pos.spi.hardware.printer`)
+* **Connector & Transport Schemes (`ConnectorType`)**: Standardized connection enum with canonical URNs:
+** `urn:kriolos:hardware:connector:serial` (`serial`, `rxtx`, `comm`, `rs232`)
+** `urn:kriolos:hardware:connector:network` (`network`, `tcp`, `socket`)
+** `urn:kriolos:hardware:connector:usb` (`usb`, `hid`)
+** `urn:kriolos:hardware:connector:file` (`file`)
+** `urn:kriolos:hardware:connector:pipe` (`pipe`)
+** `urn:kriolos:hardware:connector:system` (`system`, `printer`, `spooler`)
+** `urn:kriolos:hardware:connector:screen` (`screen`, `window`, `dual`)
+* **Semantic Configuration Triplet**:
+Every peripheral configuration strictly separates 3 distinct layers without ambiguous parameters:
+[source, text]
+----
+[Protocol / Dialect] : [Connector / Transport Scheme] , [Target / Address / Endpoint]
+    e.g. "epson"     :           "serial"             ,       "/dev/ttyUSB0"
+    e.g. "star"      :          "network"             ,     "192.168.1.50:9100"
+    e.g. "caspdii"   :           "serial"             ,       "/dev/ttyS0"
+----
+* **Null Object Fallbacks**: When hardware is not connected or misconfigured, typed Null Device instances (`NullScaleDevice`, `NullPrinterDevice`, `NullDisplayDevice`, `NullScannerDevice`) prevent runtime `NullPointerException`s across UI panels.
+
+==== Registering a Custom Peripheral Provider
+
+To supply alternative or third-party hardware drivers (e.g. IoT MQTT scale, Webhook printer):
+1. Implement `com.openbravo.pos.spi.hardware.PeripheralProvider`.
+2. Annotate with `@AutoService(PeripheralProvider.class)` and `@PluginMetadata`.
+3. Register under `META-INF/services/com.openbravo.pos.spi.hardware.PeripheralProvider`.
 
 === Common 
 

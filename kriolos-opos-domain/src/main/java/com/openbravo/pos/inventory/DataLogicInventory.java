@@ -1,19 +1,57 @@
 package com.openbravo.pos.inventory;
 
-import com.openbravo.pos.forms.BeanFactoryDataSingle;
-import com.openbravo.data.loader.Session;
+import com.openbravo.basic.BasicException;
+import com.openbravo.data.loader.Datas;
+import com.openbravo.data.loader.PreparedSentence;
 import com.openbravo.data.loader.SentenceExec;
+import com.openbravo.data.loader.SentenceExecTransaction;
 import com.openbravo.data.loader.SentenceList;
 import com.openbravo.data.loader.SerializerRead;
-import com.openbravo.data.loader.SerializerWriteBasicExt;
+import com.openbravo.data.loader.SerializerReadDouble;
+import com.openbravo.data.loader.SerializerReadString;
 import com.openbravo.data.loader.SerializerWriteBasic;
-import com.openbravo.data.loader.PreparedSentence;
-import com.openbravo.data.loader.Datas;
-import com.openbravo.basic.BasicException;
+import com.openbravo.data.loader.SerializerWriteBasicExt;
+import com.openbravo.data.loader.SerializerWriteString;
+import com.openbravo.data.loader.Session;
+import com.openbravo.pos.forms.BeanFactoryDataSingle;
+import com.openbravo.format.Formats;
+import com.openbravo.pos.forms.AppLocal;
+import com.openbravo.data.loader.DataRead;
+import com.openbravo.data.loader.SerializerReadClass;
+import com.openbravo.data.loader.StaticSentence;
+import com.openbravo.data.loader.TableDefinition;
+import com.openbravo.data.user.DefaultSaveProvider;
+import com.openbravo.data.user.EditorCreator;
+import com.openbravo.data.user.ListProvider;
+import com.openbravo.data.user.ListProviderCreator;
+import com.openbravo.data.user.SaveProvider;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-public class DataLogicInventory extends BeanFactoryDataSingle {
+public class DataLogicInventory extends BeanFactoryDataSingle implements StockService {
     
+    private static final Logger LOGGER = Logger.getLogger(DataLogicInventory.class.getName());
     protected Session sessionDB;
+
+    public static final Datas[] STOCK_DIARY_DATAS = new Datas[]{
+        Datas.STRING, Datas.TIMESTAMP, Datas.INT, Datas.STRING, Datas.STRING,
+        Datas.STRING, Datas.DOUBLE, Datas.DOUBLE, Datas.STRING, Datas.STRING, Datas.STRING
+    };
+
+    public static final Datas[] STOCK_ADJUST_DATAS = new Datas[]{
+        Datas.STRING, Datas.STRING, Datas.STRING, Datas.DOUBLE
+    };
+
+    public static final String SQL_BUNDLE_LIST = "SELECT B.ID, B.PRODUCT, B.PRODUCT_BUNDLE, B.QUANTITY, P.REFERENCE, P.CODE, P.NAME "
+            + "FROM products_bundle B, products P "
+            + "WHERE B.PRODUCT_BUNDLE = P.ID AND B.PRODUCT = ?";
+
+    public static final String SQL_AUXILIAR_LIST = "SELECT COM.ID, COM.PRODUCT, COM.PRODUCT2, P.REFERENCE, P.CODE, P.NAME "
+            + "FROM products_com COM, products P "
+            + "WHERE COM.PRODUCT2 = P.ID AND COM.PRODUCT = ?";
 
     public static final String SQL_WAREHOUSE_STOCK_LIST = """
         SELECT 
@@ -47,26 +85,452 @@ public class DataLogicInventory extends BeanFactoryDataSingle {
         sessionDB = s;
     }
 
+    @Override
+    public ListProvider getWarehouseStockListProvider(EditorCreator filter) {
+        return new ListProviderCreator(getWarehouseStockList(new SerializerRead() {
+            @Override
+            public Object readValues(DataRead dr) throws BasicException {
+                return new Object[]{
+                    dr.getString(1),
+                    dr.getString(2),
+                    dr.getString(3),
+                    dr.getString(4),
+                    filter != null && filter.createValue() != null ? ((Object[]) filter.createValue())[1] : null,
+                    dr.getDouble(5),
+                    dr.getDouble(6),
+                    dr.getDouble(7)
+                };
+            }
+        }), filter);
+    }
+
+    @Override
     public final SentenceList getWarehouseStockList(SerializerRead sr) {
-            return new PreparedSentence(sessionDB,
-                    SQL_WAREHOUSE_STOCK_LIST,
-                    new SerializerWriteBasicExt(new Datas[] { Datas.OBJECT, Datas.STRING }, new int[] { 1, 1 }),
-                    sr);
+        return new PreparedSentence(sessionDB,
+                SQL_WAREHOUSE_STOCK_LIST,
+                new SerializerWriteBasicExt(new Datas[] { Datas.OBJECT, Datas.STRING }, new int[] { 1, 1 }),
+                sr);
     }
 
     public final SentenceExec getStockLevelInsert() {
-            return new PreparedSentence(sessionDB, SQL_STOCKLEVEL_INSERT,
-                    new SerializerWriteBasic(new Datas[] {Datas.STRING, Datas.STRING, Datas.STRING, Datas.DOUBLE, Datas.DOUBLE}));
+        return new PreparedSentence(sessionDB, SQL_STOCKLEVEL_INSERT,
+                new SerializerWriteBasic(new Datas[] {Datas.STRING, Datas.STRING, Datas.STRING, Datas.DOUBLE, Datas.DOUBLE}));
     }
 
     public final SentenceExec getStockLevelUpdate() {
-            return new PreparedSentence(sessionDB, SQL_STOCKLEVEL_UPDATE,
-                    new SerializerWriteBasic(new Datas[] {Datas.DOUBLE, Datas.DOUBLE, Datas.STRING}));
+        return new PreparedSentence(sessionDB, SQL_STOCKLEVEL_UPDATE,
+                new SerializerWriteBasic(new Datas[] {Datas.DOUBLE, Datas.DOUBLE, Datas.STRING}));
     }
 
     public final SentenceExec getStockCurrentInsert() {
-            return new PreparedSentence(sessionDB,
-                    "INSERT INTO stockcurrent ( LOCATION, PRODUCT, UNITS) VALUES (?, ?, ?)",
-                    new SerializerWriteBasic(new Datas[]{Datas.STRING, Datas.STRING, Datas.DOUBLE}));
+        return new PreparedSentence(sessionDB,
+                "INSERT INTO stockcurrent ( LOCATION, PRODUCT, UNITS) VALUES (?, ?, ?)",
+                new SerializerWriteBasic(new Datas[]{Datas.STRING, Datas.STRING, Datas.DOUBLE}));
+    }
+
+    public final SentenceList<LocationInfo> getLocationsSentence() {
+        return new StaticSentence(sessionDB,
+                "SELECT ID, "
+                + "NAME, "
+                + "ADDRESS FROM locations "
+                + "ORDER BY NAME",
+                null,
+                new SerializerReadClass(LocationInfo.class));
+    }
+
+    @Override
+    public final List<LocationInfo> getLocationsList() throws BasicException {
+        return getLocationsSentence().list();
+    }
+
+    @Override
+    public final List<LocationInfo> getLocationsListAll() {
+        List<LocationInfo> list = null;
+        try {
+            list = this.getLocationsList();
+        }
+        catch (BasicException ex) {
+            LOGGER.log(Level.WARNING, "Cannot get LocationInfo list", ex);
+        }
+        return list != null ? list : Collections.emptyList();
+    }
+
+    public final TableDefinition getTableLocations() {
+        return new TableDefinition(sessionDB,
+                "locations",
+                new String[]{"ID", "NAME", "ADDRESS"},
+                new String[]{"ID", AppLocal.getIntString("label.locationname"),
+                    AppLocal.getIntString("label.locationaddress")},
+                new Datas[]{Datas.STRING, Datas.STRING, Datas.STRING},
+                new Formats[]{Formats.STRING, Formats.STRING, Formats.STRING},
+                new int[]{0});
+    }
+
+    public final ProductStock getProductStockState(String pId, String location) throws BasicException {
+        PreparedSentence preparedSentence = new PreparedSentence(sessionDB,
+                "SELECT "
+                + "products.id, "
+                + "locations.id as Location, "
+                + "stockcurrent.units AS Current, "
+                + "stocklevel.stocksecurity AS Minimum, "
+                + "stocklevel.stockmaximum AS Maximum, "
+                + "products.pricebuy, "
+                + "products.pricesell, "
+                + "products.memodate "
+                + "FROM locations "
+                + "INNER JOIN ((products "
+                + "INNER JOIN stockcurrent "
+                + "ON products.id = stockcurrent.product) "
+                + "LEFT JOIN stocklevel ON products.id = stocklevel.product) "
+                + "ON locations.id = stockcurrent.location "
+                + "WHERE products.id = ? "
+                + "AND locations.id = ?",
+                SerializerWriteString.INSTANCE,
+                ProductStock.getSerializerRead());
+
+        return (ProductStock) preparedSentence.find(pId, location);
+    }
+
+    public final List<ProductStock> getProductStockList(String pId) throws BasicException {
+        String SQL_STOCK = """
+                                SELECT
+                                    P.ID AS product_id,
+                                    L.name AS location_name,
+                                    COALESCE(MAX(SC.units), 0) AS current_stock,
+                                    MAX(SL.stocksecurity) AS minimum_stock,
+                                    MAX(SL.stockmaximum) AS maximum_stock,
+                                    ROUND(P.pricebuy, 2) AS price_buy,
+                                    ROUND((P.pricesell * MAX(T.rate)) + P.pricesell, 2) AS price_sell,
+                                    P.memodate
+                                FROM
+                                    products P
+                                INNER JOIN
+                                    taxcategories TC ON P.TAXCAT = TC.ID
+                                INNER JOIN
+                                    taxes T ON TC.ID = T.category
+                                LEFT OUTER JOIN
+                                    stocklevel SL ON SL.product = P.ID
+                                LEFT OUTER JOIN
+                                    stockcurrent SC ON P.ID = SC.product
+                                INNER JOIN
+                                    locations L ON SC.location = L.ID
+                                WHERE
+                                    P.ID = ?
+                                GROUP BY
+                                    P.ID, L.name, P.pricebuy, P.pricesell, P.memodate;
+                                """;
+        return new PreparedSentence(sessionDB,
+                SQL_STOCK,
+                SerializerWriteString.INSTANCE,
+                ProductStock.getSerializerRead()).list(pId);
+    }
+
+    public final SentenceExec getStockDiaryInsert() {
+        return new SentenceExecTransaction(sessionDB) {
+            @Override
+            public int execInTransaction(Object[] params) throws BasicException {
+                Object[] adjustParams = new Object[4];
+                Object[] paramsArray = (Object[]) params;
+                adjustParams[0] = paramsArray[4];
+                adjustParams[1] = paramsArray[3];
+                adjustParams[2] = paramsArray[5];
+                adjustParams[3] = paramsArray[6];
+                adjustStock(adjustParams);
+
+                return new PreparedSentence(sessionDB,
+                        "INSERT INTO stockdiary (ID, DATENEW, REASON, LOCATION, "
+                        + "PRODUCT, ATTRIBUTESETINSTANCE_ID, "
+                        + "UNITS, PRICE, AppUser) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                        new SerializerWriteBasicExt(STOCK_DIARY_DATAS,
+                                new int[]{0, 1, 2, 3, 4, 5, 6, 7, 8}))
+                        .exec(params);
+            }
+        };
+    }
+
+    public final SentenceExec getStockDiaryInsert1() {
+        return new SentenceExecTransaction(sessionDB) {
+            @Override
+            public int execInTransaction(Object[] params) throws BasicException {
+                int updateresult = params[5] == null
+                        ? new PreparedSentence(sessionDB,
+                                "UPDATE stockcurrent SET UNITS = (UNITS + ?) "
+                                + "WHERE LOCATION = ? AND PRODUCT = ? "
+                                + "AND ATTRIBUTESETINSTANCE_ID IS NULL",
+                                new SerializerWriteBasicExt(STOCK_DIARY_DATAS,
+                                        new int[]{6, 3, 4}))
+                                .exec(params)
+                        : new PreparedSentence(sessionDB,
+                                "UPDATE stockcurrent SET UNITS = (UNITS + ?) "
+                                + "WHERE LOCATION = ? AND PRODUCT = ? "
+                                + "AND ATTRIBUTESETINSTANCE_ID = ?",
+                                new SerializerWriteBasicExt(STOCK_DIARY_DATAS,
+                                        new int[]{6, 3, 4, 5}))
+                                .exec(params);
+
+                if (updateresult == 0) {
+                    new PreparedSentence(sessionDB,
+                            "INSERT INTO stockcurrent (LOCATION, PRODUCT, "
+                            + "ATTRIBUTESETINSTANCE_ID, UNITS) "
+                            + "VALUES (?, ?, ?, ?)",
+                            new SerializerWriteBasicExt(STOCK_DIARY_DATAS,
+                                    new int[]{3, 4, 5, 6}))
+                            .exec(params);
+                }
+                return new PreparedSentence(sessionDB,
+                        "INSERT INTO stockdiary (ID, DATENEW, REASON, LOCATION, PRODUCT, "
+                        + "ATTRIBUTESETINSTANCE_ID, UNITS, PRICE, AppUser, "
+                        + "SUPPLIER, SUPPLIERDOC) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                        new SerializerWriteBasicExt(STOCK_DIARY_DATAS,
+                                new int[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10}))
+                        .exec(params);
+            }
+        };
+    }
+
+    public final void saveStockDiary(ProductStockTransaction prodStock) throws BasicException {
+        getStockDiaryInsert1().exec(new Object[]{
+            prodStock.getId(),
+            prodStock.getTransactionDate(),
+            prodStock.getReasonId(),
+            prodStock.getLocationId(),
+            prodStock.getProductId(),
+            prodStock.getProductAttribSetId(),
+            prodStock.getUnits(),
+            prodStock.getPrice(),
+            prodStock.getUserId(),
+            prodStock.getSupplierId(),
+            prodStock.getSupplierDoc()
+        });
+    }
+
+    public final SentenceExec getStockDiaryDelete() {
+        return new SentenceExecTransaction(sessionDB) {
+            @Override
+            public int execInTransaction(Object[] params) throws BasicException {
+                int updateresult = ((Object[]) params)[5] == null
+                        ? new PreparedSentence(sessionDB,
+                                "UPDATE stockcurrent SET UNITS = (UNITS - ?) "
+                                + "WHERE LOCATION = ? AND PRODUCT = ? "
+                                + "AND ATTRIBUTESETINSTANCE_ID IS NULL",
+                                new SerializerWriteBasicExt(STOCK_DIARY_DATAS,
+                                        new int[]{6, 3, 4}))
+                                .exec(params)
+                        : new PreparedSentence(sessionDB,
+                                "UPDATE stockcurrent SET UNITS = (UNITS - ?) "
+                                + "WHERE LOCATION = ? AND PRODUCT = ? "
+                                + "AND ATTRIBUTESETINSTANCE_ID = ?",
+                                new SerializerWriteBasicExt(STOCK_DIARY_DATAS,
+                                        new int[]{6, 3, 4, 5}))
+                                .exec(params);
+
+                if (updateresult == 0) {
+                    new PreparedSentence(sessionDB,
+                            "INSERT INTO stockcurrent (LOCATION, PRODUCT, "
+                            + "ATTRIBUTESETINSTANCE_ID, UNITS) "
+                            + "VALUES (?, ?, ?, -(?))",
+                            new SerializerWriteBasicExt(STOCK_DIARY_DATAS,
+                                    new int[]{3, 4, 5, 6}))
+                            .exec(params);
+                }
+                return new PreparedSentence(sessionDB,
+                        "DELETE FROM stockdiary WHERE ID = ?",
+                        new SerializerWriteBasicExt(STOCK_DIARY_DATAS, new int[]{0}))
+                        .exec(params);
+            }
+        };
+    }
+
+    public void adjustStock(Object[] params) throws BasicException {
+        List<ProductsBundleInfo> bundle = getProductsBundle((String) params[0]);
+
+        if (bundle.size() > 0) {
+            for (ProductsBundleInfo component : bundle) {
+                Object[] adjustParams = new Object[4];
+                adjustParams[0] = component.getProductBundleId();
+                adjustParams[1] = ((Object[]) params)[1];
+                adjustParams[2] = ((Object[]) params)[2];
+                adjustParams[3] = ((Double) ((Object[]) params)[3]) * component.getQuantity();
+                adjustStock(adjustParams);
+            }
+        } else {
+            int updateresult = ((Object[]) params)[2] == null
+                    ? new PreparedSentence(sessionDB,
+                            "UPDATE stockcurrent SET UNITS = (UNITS + ?) "
+                            + "WHERE LOCATION = ? AND PRODUCT = ? "
+                            + "AND ATTRIBUTESETINSTANCE_ID IS NULL",
+                            new SerializerWriteBasicExt(STOCK_ADJUST_DATAS,
+                                    new int[]{3, 1, 0}))
+                            .exec(params)
+                    : new PreparedSentence(sessionDB,
+                            "UPDATE stockcurrent SET UNITS = (UNITS + ?) "
+                            + "WHERE LOCATION = ? AND PRODUCT = ? "
+                            + "AND ATTRIBUTESETINSTANCE_ID = ?",
+                            new SerializerWriteBasicExt(STOCK_ADJUST_DATAS,
+                                    new int[]{3, 1, 0, 2}))
+                            .exec(params);
+
+            if (updateresult == 0) {
+                new PreparedSentence(sessionDB,
+                        "INSERT INTO stockcurrent (LOCATION, PRODUCT, "
+                        + "ATTRIBUTESETINSTANCE_ID, UNITS) "
+                        + "VALUES (?, ?, ?, ?)",
+                        new SerializerWriteBasicExt(STOCK_ADJUST_DATAS,
+                                new int[]{1, 0, 2, 3}))
+                        .exec(params);
+            }
+        }
+    }
+
+    private List<ProductsBundleInfo> getProductsBundle(String productId) throws BasicException {
+        return new PreparedSentence(sessionDB,
+                "SELECT ID, PRODUCT, PRODUCT_BUNDLE, QUANTITY FROM products_bundle WHERE PRODUCT = ?",
+                SerializerWriteString.INSTANCE,
+                ProductsBundleInfo.getSerializerRead()).list(productId);
+    }
+
+    public final double findProductStock(String warehouse, String id, String attsetinstid) throws BasicException {
+        PreparedSentence p = attsetinstid == null
+                ? new PreparedSentence(sessionDB, "SELECT UNITS FROM stockcurrent "
+                        + "WHERE LOCATION = ? AND PRODUCT = ? AND ATTRIBUTESETINSTANCE_ID IS NULL",
+                        new SerializerWriteBasic(Datas.STRING, Datas.STRING),
+                        SerializerReadDouble.INSTANCE)
+                : new PreparedSentence(sessionDB, "SELECT UNITS FROM stockcurrent "
+                        + "WHERE LOCATION = ? AND PRODUCT = ? AND ATTRIBUTESETINSTANCE_ID = ?",
+                        new SerializerWriteBasic(Datas.STRING, Datas.STRING, Datas.STRING),
+                        SerializerReadDouble.INSTANCE);
+
+        Double d = (Double) p.find(warehouse, id, attsetinstid);
+        return d == null ? 0.0 : d;
+    }
+
+    public final String findLocationName(String iLocation) throws BasicException {
+        PreparedSentence locationFind = new PreparedSentence(this.sessionDB,
+                "SELECT NAME FROM locations WHERE ID = ?",
+                SerializerWriteString.INSTANCE,
+                SerializerReadString.INSTANCE);
+        return (String) locationFind.find(iLocation);
+    }
+
+    @Override
+    public ProductStock getStock(String productId, String locationId) throws BasicException {
+        return getProductStockState(productId, locationId);
+    }
+
+    @Override
+    public void addStockEntry(StockEntry entry) throws BasicException {
+        if (entry == null) {
+            return;
+        }
+        addStockEntry(entry.locationId(), entry.productId(), entry.attributeSetInstanceId(), entry.units());
+    }
+
+    @Override
+    public void addStockEntry(String locationId, String productId, double units) throws BasicException {
+        addStockEntry(locationId, productId, null, units);
+    }
+
+    @Override
+    public void addStockEntry(String locationId, String productId, String attributeSetInstanceId, double units) throws BasicException {
+        if (attributeSetInstanceId == null) {
+            getStockCurrentInsert().exec(new Object[]{locationId, productId, units});
+        } else {
+            new PreparedSentence(sessionDB,
+                    "INSERT INTO stockcurrent (LOCATION, PRODUCT, ATTRIBUTESETINSTANCE_ID, UNITS) VALUES (?, ?, ?, ?)",
+                    new SerializerWriteBasic(new Datas[]{Datas.STRING, Datas.STRING, Datas.STRING, Datas.DOUBLE}))
+                    .exec(new Object[]{locationId, productId, attributeSetInstanceId, units});
+        }
+    }
+
+    @Override
+    public void createStock(String locationId, String productId, double units) throws BasicException {
+        addStockEntry(locationId, productId, units);
+    }
+
+    @Override
+    public void updateStock(String locationId, String productId, double units) throws BasicException {
+        PreparedSentence sentence = new PreparedSentence(sessionDB,
+                "UPDATE stockcurrent SET UNITS = ? WHERE LOCATION = ? AND PRODUCT = ?",
+                new SerializerWriteBasicExt(new Datas[]{Datas.DOUBLE, Datas.STRING, Datas.STRING},
+                        new int[]{0, 1, 2}));
+        sentence.exec(new Object[]{units, locationId, productId});
+    }
+
+    @Override
+    public void recordStockMovement(
+            String id,
+            Date date,
+            int reasonKey,
+            String location,
+            String productId,
+            String attSetInstId,
+            double units,
+            double price,
+            String appUser
+    ) throws BasicException {
+        getStockDiaryInsert().exec(new Object[]{
+            id,
+            date,
+            reasonKey,
+            location,
+            productId,
+            attSetInstId,
+            units,
+            price,
+            appUser
+        });
+    }
+
+    @Override
+    public void revertStockMovement(
+            String diaryId,
+            String location,
+            String productId,
+            String attSetInstId,
+            double units
+    ) throws BasicException {
+        getStockDiaryDelete().exec(new Object[]{
+            diaryId,
+            null,
+            null,
+            location,
+            productId,
+            attSetInstId,
+            units
+        });
+    }
+
+    @Override
+    public SaveProvider getStockDiarySaveProvider() {
+        return new DefaultSaveProvider(null, getStockDiaryInsert(), getStockDiaryDelete());
+    }
+
+    @Override
+    public void insertStockLevel(String id, String locationId, String productId, Double stockSecurity, Double stockMaximum) throws BasicException {
+        getStockLevelInsert().exec(new Object[]{id, locationId, productId, stockSecurity, stockMaximum});
+    }
+
+    @Override
+    public void updateStockLevel(String id, Double stockSecurity, Double stockMaximum) throws BasicException {
+        getStockLevelUpdate().exec(new Object[]{stockSecurity, stockMaximum, id});
+    }
+
+    @Override
+    public SaveProvider getWarehouseStockSaveProvider() {
+        SentenceExec updatesent = new SentenceExecTransaction(sessionDB) {
+            @Override
+            public int execInTransaction(Object[] params) throws BasicException {
+                Object[] values = params;
+                if (values[0] == null) {
+                    values[0] = java.util.UUID.randomUUID().toString();
+                    return getStockLevelInsert().exec(new Object[]{values[0], values[4], values[1], values[5], values[6]});
+                } else {
+                    return getStockLevelUpdate().exec(new Object[]{values[5], values[6], values[0]});
+                }
+            }
+        };
+        return new DefaultSaveProvider(updatesent, null, null);
     }
 }

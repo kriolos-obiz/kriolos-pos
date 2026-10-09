@@ -16,7 +16,7 @@
  */
 package com.openbravo.pos.printer.escpos;
     
-import com.openbravo.pos.printer.DeviceTicket;
+import com.openbravo.pos.printer.PrinterTextUtils;
 
 /**
  *
@@ -66,8 +66,8 @@ public class DeviceDisplayESCPOS extends DeviceDisplaySerial {
         display.write(ESCPOS.SELECT_DISPLAY);
         display.write(ESCPOS.VISOR_CLEAR);
         display.write(ESCPOS.VISOR_HOME);
-        display.write(trans.transString(DeviceTicket.alignLeft(baseDeviceDisplay.getLine1(), 20)));
-        display.write(trans.transString(DeviceTicket.alignLeft(baseDeviceDisplay.getLine2(), 20)));        
+        display.write(trans.transString(PrinterTextUtils.alignLeft(baseDeviceDisplay.getLine1(), 20)));
+        display.write(trans.transString(PrinterTextUtils.alignLeft(baseDeviceDisplay.getLine2(), 20)));        
         display.flush();
     }
 }

@@ -32,21 +32,37 @@ public class JSupplierFinder {
     private final Component parent;
     private final JSupplierFinderPanel panel;
 
-    private JSupplierFinder(Component parent, DataLogicSuppliers dlSuppliers) {
+    private JSupplierFinder(Component parent, SupplierService supplierService) {
         this.parent = parent;
-        this.panel = new JSupplierFinderPanel(dlSuppliers);
+        this.panel = new JSupplierFinderPanel(supplierService);
+    }
+
+    private JSupplierFinder(Component parent, DataLogicSuppliers dlSuppliers) {
+        this(parent, (SupplierService) dlSuppliers);
+    }
+
+    public static JSupplierFinder getSupplierFinder(Component parent, SupplierService supplierService) {
+        return new JSupplierFinder(parent, supplierService);
     }
 
     public static JSupplierFinder getSupplierFinder(Component parent, DataLogicSuppliers dlSuppliers) {
-        return new JSupplierFinder(parent, dlSuppliers);
+        return new JSupplierFinder(parent, (SupplierService) dlSuppliers);
+    }
+
+    public static SupplierInfo show(Component parent, SupplierService supplierService) {
+        return JSupplierFinderPanel.show(parent, supplierService);
+    }
+
+    public static SupplierInfo show(Component parent, SupplierService supplierService, SupplierInfo supplier) {
+        return JSupplierFinderPanel.show(parent, supplierService, supplier);
     }
 
     public static SupplierInfo show(Component parent, DataLogicSuppliers dlSuppliers) {
-        return JSupplierFinderPanel.show(parent, dlSuppliers);
+        return JSupplierFinderPanel.show(parent, (SupplierService) dlSuppliers);
     }
 
     public static SupplierInfo show(Component parent, DataLogicSuppliers dlSuppliers, SupplierInfo supplier) {
-        return JSupplierFinderPanel.show(parent, dlSuppliers, supplier);
+        return JSupplierFinderPanel.show(parent, (SupplierService) dlSuppliers, supplier);
     }
 
     public void setAppView(AppView appView) {

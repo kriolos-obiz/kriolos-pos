@@ -31,5 +31,9 @@ public class ScaleFake implements Scale {
     public Double readWeight() throws ScaleException {
         return Math.random() * 2.0;
     }
-    
+
+    @Override
+    public com.openbravo.pos.spi.hardware.scale.ScaleProtocol getProtocol() {
+        return com.openbravo.pos.spi.hardware.scale.ScaleProtocol.FAKE;
+    }
 }

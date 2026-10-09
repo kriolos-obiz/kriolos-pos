@@ -28,6 +28,8 @@ import com.openbravo.pos.forms.AppView;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.*;
 
 /**
@@ -38,20 +40,33 @@ import javax.swing.*;
 public class JCustomerFinderPanel extends javax.swing.JPanel implements EditorCreator {
 
     private static final long serialVersionUID = 1L;
+    private static final Logger LOGGER = Logger.getLogger(JCustomerFinderPanel.class.getName());
 
     private CustomerInfo m_ReturnCustomer;
-    private ListProvider lpr;
+    private ListProvider<CustomerInfo> lpr;
     private AppView appView;
     private PosUIModal modalContext;
 
     public JCustomerFinderPanel() {
         initComponents();
+        setPreferredSize(new Dimension(758, 634));
         initDomainAdapters();
     }
 
-    public JCustomerFinderPanel(DataLogicCustomers dlCustomers) {
-        init(dlCustomers);
+    public JCustomerFinderPanel(CustomerService customerService) {
+        initComponents();
+        setPreferredSize(new Dimension(758, 634));
+        init(customerService);
         initDomainAdapters();
+        cleanSearch();
+    }
+
+    /**
+     * @deprecated Use {@link #JCustomerFinderPanel(CustomerService)} instead.
+     */
+    @Deprecated
+    public JCustomerFinderPanel(DataLogicCustomers dlCustomers) {
+        this((CustomerService) dlCustomers);
     }
 
     private void initDomainAdapters() {
@@ -67,22 +82,39 @@ public class JCustomerFinderPanel extends javax.swing.JPanel implements EditorCr
         this.modalContext = modalContext;
     }
 
-    public static CustomerInfo show(Component parent, DataLogicCustomers dlCustomers) {
-        return show(parent, dlCustomers, null);
+    public static CustomerInfo show(Component parent, CustomerService customerService) {
+        return show(parent, customerService, null);
     }
 
-    public static CustomerInfo show(Component parent, DataLogicCustomers dlCustomers, CustomerInfo initialCustomer) {
-        JCustomerFinderPanel panel = new JCustomerFinderPanel(dlCustomers);
+    public static CustomerInfo show(Component parent, CustomerService customerService, CustomerInfo initialCustomer) {
+        JCustomerFinderPanel panel = new JCustomerFinderPanel(customerService);
         if (initialCustomer != null) {
             panel.search(initialCustomer);
         }
         PosUIModal modal = PosUIModal.create(parent, panel)
                 .setTitle(AppLocal.getIntString("form.customertitle"))
+                .setPreferredSize(new Dimension(758, 634))
                 .setModal(true)
                 .setResizable(true);
         panel.setModalContext(modal);
         modal.show();
         return panel.getSelectedCustomer();
+    }
+
+    /**
+     * @deprecated Use {@link #show(Component, CustomerService)} instead.
+     */
+    @Deprecated
+    public static CustomerInfo show(Component parent, DataLogicCustomers dlCustomers) {
+        return show(parent, (CustomerService) dlCustomers, null);
+    }
+
+    /**
+     * @deprecated Use {@link #show(Component, CustomerService, CustomerInfo)} instead.
+     */
+    @Deprecated
+    public static CustomerInfo show(Component parent, DataLogicCustomers dlCustomers, CustomerInfo initialCustomer) {
+        return show(parent, (CustomerService) dlCustomers, initialCustomer);
     }
 
     public void searchKey() {
@@ -111,7 +143,7 @@ public class JCustomerFinderPanel extends javax.swing.JPanel implements EditorCr
         return m_ReturnCustomer;
     }
 
-    private void init(DataLogicCustomers dlCustomers) {
+    private void init(CustomerService customerService) {
 
         initComponents();
 
@@ -133,7 +165,7 @@ public class JCustomerFinderPanel extends javax.swing.JPanel implements EditorCr
 
         m_jtxtTaxID.activate();
 
-        lpr = new ListProviderCreator(dlCustomers.getCustomerList(), this);
+        lpr = new ListProviderCreator<>(customerService.getCustomerList(), this);
 
         jListCustomers.setCellRenderer(new BusinessPartnerListCellRenderer());
 
@@ -142,6 +174,11 @@ public class JCustomerFinderPanel extends javax.swing.JPanel implements EditorCr
         }
 
         m_ReturnCustomer = null;
+    }
+
+    @Deprecated
+    private void init(DataLogicCustomers dlCustomers) {
+        init((CustomerService) dlCustomers);
     }
 
     public void search(CustomerInfo customer) {
@@ -180,7 +217,7 @@ public class JCustomerFinderPanel extends javax.swing.JPanel implements EditorCr
         m_jtxtPostal.setText("");
         m_jtxtPhone.setText("");
         m_jtxtEmail.setText("");
-        jListCustomers.setModel(new MyListData(new ArrayList()));
+        jListCustomers.setModel(new CustomerInfoListModel(new ArrayList()));
     }
 
     /**
@@ -189,7 +226,7 @@ public class JCustomerFinderPanel extends javax.swing.JPanel implements EditorCr
     public void executeSearch() {
         
         try {
-            jListCustomers.setModel(new MyListData(lpr.loadData()));
+            jListCustomers.setModel(new CustomerInfoListModel(lpr.loadData()));
             if (jListCustomers.getModel().getSize() > 0) {
                 jListCustomers.setSelectedIndex(0);
             } else {
@@ -202,17 +239,21 @@ public class JCustomerFinderPanel extends javax.swing.JPanel implements EditorCr
                         JOptionPane.YES_NO_OPTION);
 
                     if (n != 1) {
-                        this.setVisible(false);
+                        if (modalContext != null) {
+                            modalContext.close();
+                        }
                         if (appView != null) {
                             appView.getAppUserView().showTask("com.openbravo.pos.customers.CustomersPanel");
+                        } else {
+                            JOptionPane.showMessageDialog(this,
+                                    "You must complete Account to add to Ticket",
+                                    "Create Supplier", JOptionPane.OK_OPTION);
                         }
-                        JOptionPane.showMessageDialog(this, 
-                            "You must complete Account and Search Key Then Save to add to Ticket",
-                            "Create Customer",JOptionPane.OK_OPTION);
                     }
                 }
             }
-        } catch (BasicException e) {
+        } catch (BasicException ex) {
+            LOGGER.log(Level.WARNING, "Exception search: ", ex);
         }
     }
 
@@ -278,16 +319,18 @@ public class JCustomerFinderPanel extends javax.swing.JPanel implements EditorCr
         return afilter;
     }
 
-    private static class MyListData extends javax.swing.AbstractListModel {
+    private static class CustomerInfoListModel extends javax.swing.AbstractListModel<CustomerInfo> {
 
-        private final java.util.List m_data;
+        private static final long serialVersionUID = 1L;
 
-        public MyListData(java.util.List data) {
+        private final java.util.List<CustomerInfo> m_data;
+
+        public CustomerInfoListModel(java.util.List<CustomerInfo> data) {
             m_data = data;
         }
 
         @Override
-        public Object getElementAt(int index) {
+        public CustomerInfo getElementAt(int index) {
             return m_data.get(index);
         }
 

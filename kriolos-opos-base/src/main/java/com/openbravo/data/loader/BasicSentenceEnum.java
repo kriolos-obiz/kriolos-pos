@@ -16,6 +16,7 @@
 
 package com.openbravo.data.loader;
 
+import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.basic.BasicException;
 
 /**
@@ -61,7 +62,7 @@ public class BasicSentenceEnum implements SentenceEnum {
     @Override
     public Object getCurrent() throws BasicException {
         if (SRS == null) {
-            throw new BasicException(LocalRes.getIntString("exception.nodataset"));
+            throw new BasicException(AppLocal.getIntString("exception.nodataset"));
         } 
         
         return SRS.getCurrent();  
@@ -75,7 +76,7 @@ public class BasicSentenceEnum implements SentenceEnum {
     @Override
     public boolean next() throws BasicException {
         if (SRS == null) {
-            throw new BasicException(LocalRes.getIntString("exception.nodataset"));
+            throw new BasicException(AppLocal.getIntString("exception.nodataset"));
         } 
         
         if (SRS.next()) {

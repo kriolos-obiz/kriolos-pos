@@ -25,8 +25,9 @@ import com.openbravo.data.gui.JMessagePanel;
 import com.openbravo.data.gui.MessageInf;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
-import com.openbravo.pos.forms.DataLogicSales;
+import com.openbravo.pos.sales.TicketLifecycleService;
 import com.openbravo.pos.forms.DataLogicSystem;
+import com.openbravo.pos.forms.ResourceService;
 import com.openbravo.pos.forms.ApplicationShell;
 import com.openbravo.pos.printer.TicketParser;
 import com.openbravo.pos.printer.TicketPrinterException;
@@ -34,8 +35,6 @@ import com.openbravo.pos.scripting.ScriptEngine;
 import com.openbravo.pos.scripting.ScriptException;
 import com.openbravo.pos.scripting.ScriptFactory;
 import com.openbravo.pos.ticket.TicketInfo;
-import com.openbravo.pos.ticket.TicketLineInfo;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.*;
@@ -50,10 +49,12 @@ public class JTicketsBagRestaurant extends javax.swing.JPanel {
     private final AppView appView;
     private final JTicketsBagRestaurantMap ticketsBagRestaurantMap;
     private TicketInfo ticketInfo;
+    @Deprecated
     private final DataLogicSystem dataLogicSystem;
-    private final DataLogicSales dataLogicSales;
+    private final ResourceService resourceService;
+    private final TicketLifecycleService ticketLifecycleService;
     private final TicketParser ticketParser;
-    private final RestaurantDBUtils restDB;
+    private final PlaceService restDB;
 
     public JTicketsBagRestaurant(AppView app, JTicketsBagRestaurantMap restaurant) {
         appView = app;
@@ -61,12 +62,13 @@ public class JTicketsBagRestaurant extends javax.swing.JPanel {
 
         initComponents();
 
-        restDB = new RestaurantDBUtils(appView);
+        restDB = new PlaceServiceImpl(appView.getSession());
 
-        dataLogicSystem = (DataLogicSystem) appView.getBean("com.openbravo.pos.forms.DataLogicSystem");
-        dataLogicSales = (DataLogicSales) appView.getBean("com.openbravo.pos.forms.DataLogicSales");
+        resourceService = appView.getBean(ResourceService.class);
+        dataLogicSystem = (resourceService instanceof DataLogicSystem) ? (DataLogicSystem) resourceService : null;
+        ticketLifecycleService = appView.getBean(TicketLifecycleService.class);
 
-        ticketParser = new TicketParser(appView.getDeviceTicket(), dataLogicSystem);
+        ticketParser = appView.createTicketParser();
         j_btnKitchen.setVisible(true);
 
         m_TablePlan.setVisible(appView.getAppUserView().getUser().
@@ -110,7 +112,7 @@ public class JTicketsBagRestaurant extends javax.swing.JPanel {
 
             if (ticket.getPickupId() == 0) {
                 try {
-                    ticket.setPickupId(dataLogicSales.getNextPickupIndex());
+                    ticket.setPickupId(ticketLifecycleService.getNextPickupIndex());
                 }
                 catch (BasicException e) {
                     LOGGER.log(Level.SEVERE, "Exception print ticket", e);
@@ -125,7 +127,7 @@ public class JTicketsBagRestaurant extends javax.swing.JPanel {
                 script.put("place", table);
                 script.put("pickupid", getPickupString(ticket));
 
-                ticketParser.printTicket(script.eval(dataLogicSystem.getResourceAsXML(sresourcename)).toString());
+                ticketParser.printTicket(script.eval(resourceService.getResourceAsXML(sresourcename)).toString());
 
             }
             catch (ScriptException | TicketPrinterException e) {
@@ -275,7 +277,7 @@ public class JTicketsBagRestaurant extends javax.swing.JPanel {
 
         String scriptId = "script.SendOrder";
         try {
-            String rScript = (dataLogicSystem.getResourceAsText(scriptId));
+            String rScript = (resourceService.getResourceAsText(scriptId));
             ScriptEngine scriptEngine = ScriptFactory.getScriptEngine(ScriptFactory.BEANSHELL);
             scriptEngine.put("ticket", ticketInfo);
             scriptEngine.put("place", ticketsBagRestaurantMap.getTableName());

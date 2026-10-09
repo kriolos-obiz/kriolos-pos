@@ -17,11 +17,30 @@ public class ProductInfoExtA {
     private double taxerate;
     private double pricesellWithTax;
     
-    private String categoryId;      //Category ID
-    private boolean isComProduct;         //Companion Product
-    private boolean isScaleProduct;       //Is a Scale (product weight)
-    private boolean isConstantProduct;    //Is a constant
-    private boolean isService;     //Is a Service
+    /**
+     * Category ID
+     */
+    private String categoryId;
+    
+    /**
+     * Is a Companion Product
+     */
+    private boolean isComProduct;
+    
+    /**
+     * Is a Scale Product (Product weight)
+     */
+    private boolean isScaleProduct;    
+    
+    /**
+     * Is a constant Product
+     */
+    private boolean isConstantProduct;
+    
+    /**
+     * Is a Service
+     */
+    private boolean isService;
 
     public String getId() {
         return id;

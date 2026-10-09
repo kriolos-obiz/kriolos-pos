@@ -47,14 +47,8 @@ public class JPanelFloors extends JPanelTable {
      */
     @Override
     protected void init() {
-        tfloors = new TableDefinition(app.getSession(),
-            "floors"
-            , new String[] {"ID", "NAME", "IMAGE"}
-            , new String[] {"ID", AppLocal.getIntString("label.name"), "IMAGE"}
-            , new Datas[] {Datas.STRING, Datas.STRING, Datas.IMAGE}
-            , new Formats[] {Formats.NULL, Formats.STRING}
-            , new int[] {0}
-        );  
+        RestaurantService restaurantService = app.getBean(RestaurantService.class);
+        tfloors = restaurantService.getTableFloors();
         jeditor = new FloorsEditor(dirty); 
     }
     

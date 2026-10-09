@@ -108,4 +108,10 @@ public class DeviceFiscalPrinterNull implements DeviceFiscalPrinter {
     @Override
     public void printXReport() {
     }
+
+    @Override
+    public boolean isConnected() {
+        return false;
+    }
 }
+

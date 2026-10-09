@@ -25,8 +25,8 @@ import com.openbravo.pos.businesspartner.TicketSelector;
 import com.openbravo.pos.catalog.JCatalogTab;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
-import com.openbravo.pos.sales.DataLogicReceipts;
 import com.openbravo.pos.sales.SharedTicketInfo;
+import com.openbravo.pos.sales.SharedTicketService;
 import com.openbravo.pos.sales.TicketsEditor;
 import com.openbravo.pos.ticket.TicketInfo;
 import com.openbravo.pos.util.ThumbNailBuilder;
@@ -55,16 +55,48 @@ public class OrderSupplierList extends JPanel implements TicketSelector {
     private String currentTicket;
     protected TicketsEditor panelticket;
     protected EventListenerList listeners = new EventListenerList();
-    private final DataLogicSuppliers dataLogicSuppliers;
-    private final DataLogicReceipts dataLogicReceipts;
+    private final SupplierService supplierService;
+    private final SharedTicketService sharedTicketService;
 
-    public OrderSupplierList(DataLogicSuppliers dlSuppliers, AppView app, TicketsEditor panelticket) {
+    public OrderSupplierList(SupplierService supplierService, AppView app, TicketsEditor panelticket) {
+        this(supplierService, app, panelticket, app != null ? app.getBean(SharedTicketService.class) : null);
+    }
+
+    public OrderSupplierList(SupplierService supplierService, AppView app, TicketsEditor panelticket, SharedTicketService sharedTicketService) {
         this.application = app;
         this.panelticket = panelticket;
-        this.dataLogicSuppliers = dlSuppliers;
-        this.dataLogicReceipts = (DataLogicReceipts) application.getBean("com.openbravo.pos.sales.DataLogicReceipts");
+        this.supplierService = supplierService;
+        this.sharedTicketService = sharedTicketService != null ? sharedTicketService : (app != null ? app.getBean(SharedTicketService.class) : null);
 
         initComponents();
+    }
+
+    /**
+     * @deprecated Use {@link #OrderSupplierList(SupplierService, AppView, TicketsEditor)} instead.
+     */
+    @Deprecated
+    public OrderSupplierList(DataLogicSuppliers dlSuppliers, AppView app, TicketsEditor panelticket) {
+        this((SupplierService) dlSuppliers, app, panelticket);
+    }
+
+    /**
+     * @deprecated Use {@link #OrderSupplierList(SupplierService, AppView, TicketsEditor, SharedTicketService)} instead.
+     */
+    @Deprecated
+    public OrderSupplierList(DataLogicSuppliers dlSuppliers, AppView app, TicketsEditor panelticket, SharedTicketService sharedTicketService) {
+        this((SupplierService) dlSuppliers, app, panelticket, sharedTicketService);
+    }
+
+    /**
+     * @deprecated Use {@link #getSupplierService()} instead.
+     */
+    @Deprecated
+    public DataLogicSuppliers getDataLogicSuppliers() {
+        return supplierService instanceof DataLogicSuppliers ? (DataLogicSuppliers) supplierService : null;
+    }
+
+    public SupplierService getSupplierService() {
+        return supplierService;
     }
 
     public Component getComponent() {
@@ -95,7 +127,7 @@ public class OrderSupplierList extends JPanel implements TicketSelector {
                     LOGGER.log(Level.INFO, "Time of getSuppliersWithOutImage {0}", (System.currentTimeMillis() - time));
                     time = System.currentTimeMillis();
 
-                    ticketList = dataLogicReceipts.getSharedTicketList();
+                    ticketList = sharedTicketService.getSharedTicketList();
                     LOGGER.log(Level.INFO, "Time of getSharedTicketList {0}", (System.currentTimeMillis() - time));
                     time = System.currentTimeMillis();
                 } catch (BasicException ex) {
@@ -200,11 +232,11 @@ public class OrderSupplierList extends JPanel implements TicketSelector {
 
         currentTicket = panelticket.getActiveTicket().getId();
 
-        TicketInfo ticket = dataLogicReceipts.getSharedTicket(id);
+        TicketInfo ticket = sharedTicketService.getSharedTicket(id);
         if (ticket == null) {
             throw new BasicException(AppLocal.getIntString("message.noticket"));
         } else {
-            dataLogicReceipts.deleteSharedTicket(id);
+            sharedTicketService.deleteSharedTicket(id);
             currentTicket = id;
             panelticket.setActiveTicket(ticket, null);
             fireTicketSelectionChanged(ticket.getId());

@@ -17,6 +17,7 @@ package com.openbravo.pos.sales;
 
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.DataLogicSystem;
+import com.openbravo.pos.forms.ResourceService;
 import com.openbravo.pos.ticket.TicketLineInfo;
 import java.awt.BorderLayout;
 import java.util.List;
@@ -34,21 +35,20 @@ public class JRefundLines extends javax.swing.JPanel {
 
     private JPanelTicketEdits m_jTicketEdit;
 
-    /**
-     * Creates new form JRefundLines
-     *
-     * @param dlSystem
-     * @param jTicketEdit
-     */
-    public JRefundLines(DataLogicSystem dlSystem, JPanelTicketEdits jTicketEdit) {
+    public JRefundLines(ResourceService resourceService, JPanelTicketEdits jTicketEdit) {
 
         m_jTicketEdit = jTicketEdit;
 
         initComponents();
 
-        ticketlines = new JTicketLines(dlSystem.getResourceAsXML("Ticket.Line"));
+        ticketlines = new JTicketLines(resourceService != null ? resourceService.getResourceAsXML("Ticket.Line") : null);
 
         jPanel3.add(ticketlines, BorderLayout.CENTER);
+    }
+
+    @Deprecated
+    public JRefundLines(DataLogicSystem dlSystem, JPanelTicketEdits jTicketEdit) {
+        this((ResourceService) dlSystem, jTicketEdit);
     }
 
     /**

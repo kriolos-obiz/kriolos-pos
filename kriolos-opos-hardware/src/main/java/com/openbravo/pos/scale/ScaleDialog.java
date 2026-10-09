@@ -51,4 +51,9 @@ public class ScaleDialog implements Scale {
                 AppLocal.getIntString("label.scaleinput"), 
                 new ImageIcon(ScaleDialog.class.getResource("/com/openbravo/images/ark2.png")));
     }
+
+    @Override
+    public com.openbravo.pos.spi.hardware.scale.ScaleProtocol getProtocol() {
+        return com.openbravo.pos.spi.hardware.scale.ScaleProtocol.SCREEN;
+    }
 }

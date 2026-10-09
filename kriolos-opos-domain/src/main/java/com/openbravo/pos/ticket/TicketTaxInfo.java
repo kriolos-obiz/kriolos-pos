@@ -33,76 +33,51 @@ public class TicketTaxInfo {
     private double subtotal;
     private double taxtotal;
             
-    /** Creates a new instance of TicketTaxInfo
-     * @param tax */
+
     public TicketTaxInfo(TaxInfo tax) {
         this.tax = tax;
         
         subtotal = 0.0;
         taxtotal = 0.0;
     }
-    
-    /**
-     *
-     * @return
-     */
+
     public TaxInfo getTaxInfo() {
         return tax;
     }
-    
-    /**
-     *
-     * @param dValue
-     */
+
     public void add(double dValue) {
         subtotal += dValue;
         taxtotal = AmountCalculatorUtil.calcTaxAmount(subtotal, tax);
     }
     
-    /**
-     *
-     * @return
-     */
+    public String getTaxName() {       
+        return tax.getName();
+    }
+
     public double getSubTotal() {    
         return subtotal;
     }
-    
-    /**
-     *
-     * @return
-     */
+
     public double getTax() {       
         return taxtotal;
     }
-    
-    /**
-     *
-     * @return
-     */
+
     public double getTotal() {         
         return subtotal + taxtotal;
     }
+
+    public String printTaxName() {
+        return Formats.STRING.formatValue(getTaxName());
+    }
     
-    /**
-     *
-     * @return
-     */
     public String printSubTotal() {
         return Formats.CURRENCY.formatValue(getSubTotal());
     }
 
-    /**
-     *
-     * @return
-     */
     public String printTax() {
         return Formats.CURRENCY.formatValue(getTax());
     }    
 
-    /**
-     *
-     * @return
-     */
     public String printTotal() {
         return Formats.CURRENCY.formatValue(getTotal());
     }    

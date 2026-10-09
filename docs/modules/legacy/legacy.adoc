@@ -1,0 +1,13 @@
+= KriolOS POS - Legacy Architecture Analysis
+:author: KriolOS Team
+:revnumber: {app-version}
+:revdate: {revdate}
+:doctype: book
+:toc: left
+:toclevels: 3
+:numbered:
+:icons: font
+:source-highlighter: coderay
+:imagesdir: images
+
+include::pages/legacy-datalogic-architecture.adoc[leveloffset=+1]

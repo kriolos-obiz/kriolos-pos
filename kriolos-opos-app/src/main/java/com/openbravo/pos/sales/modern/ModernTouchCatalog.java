@@ -16,8 +16,8 @@
 
 package com.openbravo.pos.sales.modern;
 
+import com.openbravo.pos.catalog.CatalogService;
 import com.openbravo.pos.forms.AppView;
-import com.openbravo.pos.forms.DataLogicSales;
 import com.openbravo.pos.pim.CategoryInfo;
 import com.openbravo.pos.pim.DataLogicPIM;
 import com.openbravo.pos.sales.modern.two.ModernTwoCatalogPane;
@@ -69,17 +69,17 @@ public class ModernTouchCatalog extends JPanel implements CatalogSelector, com.o
             return;
         }
 
-        DataLogicPIM dlPim = app.getBean(DataLogicPIM.class);
+        CatalogService catalogService = app.getBean(CatalogService.class);
 
-        if (dlPim != null) {
+        if (catalogService != null) {
             try {
-                List<CategoryInfo> categories = dlPim.getRootCategories();
+                List<CategoryInfo> categories = catalogService.getRootCategories();
                 catalogPane.setCategories(categories);
 
                 java.util.List<ProductInfoExt> allProducts = new java.util.ArrayList<>();
                 if (categories != null) {
                     for (CategoryInfo cat : categories) {
-                        List<ProductInfoExt> prods = dlPim.getProductCatalog(cat.getID());
+                        List<ProductInfoExt> prods = catalogService.getProductCatalog(cat.getID());
                         if (prods != null) {
                             allProducts.addAll(prods);
                         }

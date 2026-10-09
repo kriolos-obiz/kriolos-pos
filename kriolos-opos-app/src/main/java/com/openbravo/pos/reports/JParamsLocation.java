@@ -21,9 +21,11 @@ import com.openbravo.data.gui.ComboBoxValModel;
 import com.openbravo.data.loader.*;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
-import com.openbravo.pos.forms.DataLogicSales;
+import com.openbravo.pos.inventory.InventoryService;
+import com.openbravo.pos.inventory.LocationInfo;
 import java.awt.Component;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -32,7 +34,7 @@ import java.util.List;
  */
 public class JParamsLocation extends javax.swing.JPanel implements ReportEditorCreator {
     
-    private SentenceList m_sentlocations;
+    private InventoryService inventoryService;
     private ComboBoxValModel m_LocationsModel;    
     
     /** Creates new form JParamsLocation */
@@ -47,10 +49,7 @@ public class JParamsLocation extends javax.swing.JPanel implements ReportEditorC
     @Override
     public void init(AppView app) {
          
-        DataLogicSales dlSales = (DataLogicSales) app.getBean("com.openbravo.pos.forms.DataLogicSales");
-        
-        // El modelo de locales
-        m_sentlocations = dlSales.getLocationsList();
+        inventoryService = app.getBean(InventoryService.class);
         m_LocationsModel = new ComboBoxValModel();   
     }
         
@@ -60,7 +59,7 @@ public class JParamsLocation extends javax.swing.JPanel implements ReportEditorC
      */
     @Override
     public void activate() throws BasicException {
-        List a = m_sentlocations.list();
+        List<LocationInfo> a = new ArrayList<>(inventoryService.getLocationsList());
         addFirst(a);
         m_LocationsModel = new ComboBoxValModel(a);
         m_LocationsModel.setSelectedFirst();

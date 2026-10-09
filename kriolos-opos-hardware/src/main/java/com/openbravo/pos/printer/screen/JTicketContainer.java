@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 KriolOS
+ * Copyright (C) 2026 KriolOS
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -12,150 +12,205 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://gnu.org>.
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 package com.openbravo.pos.printer.screen;
 
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.Insets;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.print.PageFormat;
+import java.awt.print.Printable;
+import java.awt.print.PrinterException;
+import java.awt.print.PrinterJob;
 import javax.swing.JPanel;
+import javax.swing.Scrollable;
 import javax.swing.SwingUtilities;
 
 /**
  * Container panel that stores and dynamically positions JTicket view components.
- * Uses a dynamic FlowLayout mechanism to wrap components safely without clipping.
- * Includes a public option API to clear and purge ticket history views.
+ * Uses TicketWrapLayout to ensure top-alignment of tickets with different heights.
+ * Includes APIs for zoom scaling, printing, and scroll tracking.
  * 
  * @author Adrian
  * @author KriolOS
  */
-public class JTicketContainer extends JPanel {
+public class JTicketContainer extends JPanel implements Printable, Scrollable {
 
     private static final long serialVersionUID = 1L;
 
+    private static final int DEFAULT_HEIGHT = 600;
+    private static final int DEFAULT_WITH = 700;
     private static final int HORIZONTAL_GAP = 8;
     private static final int VERTICAL_GAP = 8;
     
-    /**
-     * Creates new form JTicketContainer
-     */
+    // Smooth scroll speed per wheel click
+    private static final int SCROLL_UNIT_INCREMENT = 16; 
+    
+    private double zoomFactor = 1.0;
+
     public JTicketContainer() {
         initComponents();
-        // Align tickets to the left and apply proper gap spacing between them
-        setLayout(new FlowLayout(FlowLayout.LEFT, HORIZONTAL_GAP, VERTICAL_GAP));
+        setLayout(new TicketWrapLayout(HORIZONTAL_GAP, VERTICAL_GAP, DEFAULT_WITH, DEFAULT_HEIGHT));
     }
 
-    /**
-     * Dynamically calculates the preferred height based on the current width 
-     * of the container to ensure scrollbars trigger correctly when text sizes expand.
-     * 
-     * @return The dynamic Dimension required to fit all rows safely
-     */
+    public void setZoom(double zoom) {
+        this.zoomFactor = Math.max(0.1, zoom); 
+        revalidate(); 
+        repaint();    
+    }
+
+    public double getZoom() {
+        return zoomFactor;
+    }
+
     @Override
-    public Dimension getPreferredSize() { 
-        synchronized (getTreeLock()) {
-            int width = getWidth();
-            if (width == 0) {
-                width = 700; // Fallback initial default width if not yet rendered
-            }
-            
-            Insets ins = getInsets();
-            int maxWidth = width - ins.left - ins.right;
-            int currentX = HORIZONTAL_GAP;
-            int currentY = ins.top + VERTICAL_GAP;
-            int maxRowHeight = 0;
-            
-            int componentCount = getComponentCount();
-            for (int i = 0; i < componentCount; i++) {
+    protected void paintChildren(Graphics g) {
+        Graphics2D g2 = (Graphics2D) g.create();
+
+        // 1. Maintain sharp text rendering via sub-pixel LCD antialiasing
+        g2.setRenderingHint(java.awt.RenderingHints.KEY_TEXT_ANTIALIASING,
+                            java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+
+        // 2. Apply viewport zoom scale
+        g2.scale(zoomFactor, zoomFactor);
+        super.paintChildren(g2);
+        g2.dispose();
+
+        // 3. For zoom-out levels, draw an unscaled 1-pixel border overlay 
+        // to prevent sub-pixel border truncation on outer edges
+        if (zoomFactor < 1.0) {
+            Graphics2D gOverlay = (Graphics2D) g.create();
+            gOverlay.setColor(java.awt.Color.BLACK);
+
+            int count = getComponentCount();
+            for (int i = 0; i < count; i++) {
                 Component comp = getComponent(i);
                 if (comp.isVisible()) {
-                    Dimension dc = comp.getPreferredSize();
-                    
-                    // Wrap to the next line if the component exceeds the maximum width boundary
-                    if (currentX + dc.width > maxWidth && currentX > HORIZONTAL_GAP) {
-                        currentX = HORIZONTAL_GAP;
-                        currentY += VERTICAL_GAP + maxRowHeight;
-                        maxRowHeight = 0;
-                    }
-                    
-                    currentX += dc.width + HORIZONTAL_GAP;
-                    maxRowHeight = Math.max(maxRowHeight, dc.height);
+                    int x = (int) Math.round(comp.getX() * zoomFactor);
+                    int y = (int) Math.round(comp.getY() * zoomFactor);
+                    int w = (int) Math.round(comp.getWidth() * zoomFactor);
+                    int h = (int) Math.round(comp.getHeight() * zoomFactor);
+                    gOverlay.drawRect(x, y, w, h);
                 }
             }
-            
-            int totalHeight = currentY + maxRowHeight + VERTICAL_GAP + ins.bottom;
-            return new Dimension(width, Math.max(totalHeight, 600));
+            gOverlay.dispose();
+        }
+    }
+
+    public void printTickets() {
+        PrinterJob job = PrinterJob.getPrinterJob();
+        job.setPrintable(this);
+        if (job.printDialog()) {
+            try {
+                job.print();
+            } catch (PrinterException ex) {
+                System.err.println("Error printing tickets: " + ex.getMessage());
+            }
         }
     }
 
     @Override
-    public Dimension getMaximumSize() {
-        return getPreferredSize();
+    public int print(Graphics graphics, PageFormat pageFormat, int pageIndex) throws PrinterException {
+        if (pageIndex > 0) {
+            return NO_SUCH_PAGE;
+        }
+
+        Graphics2D g2d = (Graphics2D) graphics;
+        g2d.translate(pageFormat.getImageableX(), pageFormat.getImageableY());
+        
+        double pageWidth = pageFormat.getImageableWidth();
+        double panelWidth = this.getWidth();
+        if (panelWidth > pageWidth) {
+            double scale = pageWidth / panelWidth;
+            g2d.scale(scale, scale);
+        }
+
+        this.printAll(graphics);
+        return PAGE_EXISTS;
     }
 
-    @Override
-    public Dimension getMinimumSize() {
-        return new Dimension(700, 600);
-    }
-    
-    /**
-     * Appends a new ticket component to the layout and safely scrolls the view down.
-     * 
-     * @param ticket The visual receipt view component to display
-     */
     public void addTicket(JTicket ticket) {
         add(ticket);
         revalidate();
         repaint();
         
-        // Ensure scrolling occurs asynchronously after the component layout completes on the EDT
         SwingUtilities.invokeLater(() -> {
             int componentCount = getComponentCount();
             if (componentCount > 0) {
                 Component lastComp = getComponent(componentCount - 1);
                 Rectangle bounds = lastComp.getBounds();
+                bounds.x = (int) (bounds.x * zoomFactor);
+                bounds.y = (int) (bounds.y * zoomFactor);
+                bounds.width = (int) (bounds.width * zoomFactor);
+                bounds.height = (int) (bounds.height * zoomFactor);
                 scrollRectToVisible(bounds);
             }
         });
     }
-    
-    /**
-     * Public API option to invoke structural purge operations. 
-     * Completely removes all active ticket instances from the graphic hierarchy tree, 
-     * requests an immediate interface layout update, and resets scroll bar track bounds.
-     */
+
     public void clearAllTickets() {
         removeAllTickets();
     }
 
-    /**
-     * Purges all active ticket instances and resets the scroll position to the top.
-     */
     public void removeAllTickets() {
         removeAll();
         revalidate();
         repaint();
         scrollRectToVisible(new Rectangle(0, 0, 1, 1));   
     }
-    
-    /** This method is called from within the constructor to
-     * initialize the form.
-     * WARNING: Do NOT modify this code. The content of this method is
-     * always regenerated by the Form Editor.
-     */
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
-    private void initComponents() {
 
-        setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
-        setPreferredSize(new java.awt.Dimension(700, 600));
+    // =========================================================================
+    // SCROLLABLE INTERFACE & DYNAMIC PREFERRED SIZE
+    // =========================================================================
+
+    @Override
+    public Dimension getPreferredSize() {
+        // Delegate calculation to TicketWrapLayout to ensure dynamic height expansion
+        if (getLayout() != null) {
+            return getLayout().preferredLayoutSize(this);
+        }
+        return new Dimension(DEFAULT_WITH, DEFAULT_HEIGHT);
+    }
+
+    @Override
+    public Dimension getPreferredScrollableViewportSize() {
+        return getPreferredSize();
+    }
+
+    @Override
+    public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) {
+        return SCROLL_UNIT_INCREMENT;
+    }
+
+    @Override
+    public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) {
+        if (orientation == javax.swing.SwingConstants.VERTICAL) {
+            return visibleRect.height;
+        } else {
+            return visibleRect.width;
+        }
+    }
+
+    @Override
+    public boolean getScrollableTracksViewportWidth() {
+        // Enforce panel width to match viewport width to trigger line wrapping
+        return true; 
+    }
+
+    @Override
+    public boolean getScrollableTracksViewportHeight() {
+        // Must return false to allow vertical growth and display scrollbars
+        return false; 
+    }
+
+    /** 
+     * Clean initialization: Omits setPreferredSize() to avoid locking the container height.
+     */
+    private void initComponents() {
+        setFont(new java.awt.Font("Arial", 0, 12)); 
         setLayout(null);
-    }// </editor-fold>//GEN-END:initComponents
-    
-    
-    // Variables declaration - do not modify//GEN-BEGIN:variables
-    // End of variables declaration//GEN-END:variables
-    
+    }                        
 }

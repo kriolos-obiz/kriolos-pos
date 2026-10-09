@@ -55,9 +55,17 @@ public class JPeopleFinderPanel extends JPanel implements EditorCreator {
         initDomainAdapters();
     }
 
-    public JPeopleFinderPanel(DataLogicAdmin dlPeople) {
+    public JPeopleFinderPanel(PeopleService dlPeople) {
         init(dlPeople);
         initDomainAdapters();
+    }
+
+    /**
+     * @deprecated Use {@link #JPeopleFinderPanel(PeopleService)} instead.
+     */
+    @Deprecated
+    public JPeopleFinderPanel(DataLogicAdmin dlPeople) {
+        this((PeopleService) dlPeople);
     }
 
     private void initDomainAdapters() {
@@ -73,11 +81,11 @@ public class JPeopleFinderPanel extends JPanel implements EditorCreator {
         this.modalContext = modalContext;
     }
 
-    public static PeopleInfo show(Component parent, DataLogicAdmin dlPeople) {
+    public static PeopleInfo show(Component parent, PeopleService dlPeople) {
         return show(parent, dlPeople, null);
     }
 
-    public static PeopleInfo show(Component parent, DataLogicAdmin dlPeople, PeopleInfo initialPeople) {
+    public static PeopleInfo show(Component parent, PeopleService dlPeople, PeopleInfo initialPeople) {
         JPeopleFinderPanel panel = new JPeopleFinderPanel(dlPeople);
         if (initialPeople != null) {
             panel.search(initialPeople);
@@ -91,11 +99,27 @@ public class JPeopleFinderPanel extends JPanel implements EditorCreator {
         return panel.getSelectedPeople();
     }
 
+    /**
+     * @deprecated Use {@link #show(Component, PeopleService)} instead.
+     */
+    @Deprecated
+    public static PeopleInfo show(Component parent, DataLogicAdmin dlPeople) {
+        return show(parent, (PeopleService) dlPeople, null);
+    }
+
+    /**
+     * @deprecated Use {@link #show(Component, PeopleService, PeopleInfo)} instead.
+     */
+    @Deprecated
+    public static PeopleInfo show(Component parent, DataLogicAdmin dlPeople, PeopleInfo initialPeople) {
+        return show(parent, (PeopleService) dlPeople, initialPeople);
+    }
+
     public PeopleInfo getSelectedPeople() {
         return selectedPeople;
     }
 
-    private void init(DataLogicAdmin dlPeople) {
+    private void init(PeopleService dlPeople) {
         initComponents();
 
         jScrollPane1.getVerticalScrollBar().setPreferredSize(new Dimension(35, 35));

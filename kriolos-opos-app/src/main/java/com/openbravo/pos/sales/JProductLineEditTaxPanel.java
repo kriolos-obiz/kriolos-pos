@@ -30,7 +30,7 @@ import com.openbravo.data.gui.modal.PosUIModal;
 import com.openbravo.pos.forms.AppConfig;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
-import com.openbravo.pos.pim.DataLogicPIM;
+import com.openbravo.pos.catalog.CatalogService;
 import com.openbravo.pos.ticket.TicketLineInfo;
 
 /**
@@ -98,7 +98,7 @@ public class JProductLineEditTaxPanel extends JPanel {
         m_jName.setText(oLine.getProductName());
         m_jUnits.setDoubleValue(oLine.getMultiply());
         m_jPrice.setDoubleValue(oLine.getPrice());
-        m_jPriceTax.setDoubleValue(oLine.getPriceTax());
+        m_jPriceTax.setDoubleValue(oLine.getPriceWithTax());
         m_jTaxrateOld.setText(oLine.getTaxInfo().getName());
         m_jTaxrate.setDoubleValue(oLine.getTaxRate());
 
@@ -165,7 +165,7 @@ public class JProductLineEditTaxPanel extends JPanel {
                 m_bpriceok = false;
             } else {
                 m_oLine.setPrice(value);
-                m_jPriceTax.setDoubleValue(m_oLine.getPriceTax());
+                m_jPriceTax.setDoubleValue(m_oLine.getPriceWithTax());
                 m_bpriceok = true;
                 m_jBtnPriceUpdate.setEnabled(AppConfig.getInstance().getBoolean("db.prodpriceupdate"));
             }
@@ -609,8 +609,8 @@ public class JProductLineEditTaxPanel extends JPanel {
     private void m_jBtnPriceUpdateActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_m_jBtnPriceUpdateActionPerformed
 
         try {
-            DataLogicPIM dataLogicPIM = (DataLogicPIM) appView.getBean("com.openbravo.pos.pim.DataLogicPIM"); 
-            dataLogicPIM.updateProductPrice(productID, m_jPrice.getValue());
+            CatalogService catalogService = appView.getBean(CatalogService.class); 
+            catalogService.updateProductPrice(productID, m_jPrice.getValue());
             m_jBtnPriceUpdate.setEnabled(false);
         } catch (BasicException ex) {
             LOGGER.log(Level.WARNING, "Exception update products pricesell for ID: " + productID, ex);

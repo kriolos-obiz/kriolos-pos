@@ -132,4 +132,10 @@ public class ScaleComm extends AbstractSerialScale implements Scale, SerialPortE
                 SerialPort.STOPBITS_1,
                 SerialPort.PARITY_ODD);
     }
+
+    @Override
+    public com.openbravo.pos.spi.hardware.scale.ScaleProtocol getProtocol() {
+        return com.openbravo.pos.spi.hardware.scale.ScaleProtocol.DIALOG_1;
+    }
 }
+

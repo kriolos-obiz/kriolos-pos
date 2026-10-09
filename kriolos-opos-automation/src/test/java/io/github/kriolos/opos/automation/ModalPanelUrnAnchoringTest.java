@@ -16,7 +16,7 @@
 package io.github.kriolos.opos.automation;
 
 import com.openbravo.beans.DinerNumberPanel;
-import com.openbravo.beans.JCalendarDlgPanel;
+import com.openbravo.beans.JCalendarPanel2;
 import com.openbravo.beans.JDoublePanel;
 import com.openbravo.beans.JEditorTextPanel;
 import com.openbravo.beans.JIntegerPanel;
@@ -73,7 +73,7 @@ class ModalPanelUrnAnchoringTest {
     @Test
     @DisplayName("Rule 7.2: JCalendarDlgPanel exposes valid kriolos:calendar:* URNs")
     void testCalendarDlgPanelUrnAnchoring() {
-        JCalendarDlgPanel panel = new JCalendarDlgPanel();
+        JCalendarPanel2 panel = new JCalendarPanel2();
         assertEquals("kriolos:calendar:dialog-panel", panel.getName());
         assertNotNull(panel.getOkButton());
         assertEquals("kriolos:calendar:btn-ok", panel.getOkButton().getName());

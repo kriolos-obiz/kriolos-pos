@@ -20,21 +20,22 @@ import com.openbravo.data.user.DirtyManager;
 import com.openbravo.data.user.EditorRecord;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
-import com.openbravo.pos.forms.DataLogicSales;
 import com.openbravo.pos.forms.DataLogicSystem;
-import com.openbravo.pos.suppliers.DataLogicSuppliers;
-import com.openbravo.pos.panels.JProductFinder;
+import com.openbravo.pos.forms.ResourceService;
+import com.openbravo.pos.suppliers.SupplierService;
 import java.awt.Component;
 import com.openbravo.basic.BasicException;
 import com.openbravo.beans.DateUtils;
-import com.openbravo.beans.JCalendarDlgPanel;
+import com.openbravo.beans.JCalendarPanel2;
 import com.openbravo.data.gui.ComboBoxValModel;
 import com.openbravo.data.gui.MessageInf;
 import com.openbravo.data.loader.SentenceList;
 import com.openbravo.format.Formats;
 import com.openbravo.pos.catalog.CatalogSelector;
 import com.openbravo.pos.catalog.JCatalog;
+import com.openbravo.pos.catalog.CatalogService;
 import com.openbravo.pos.pim.DataLogicPIM;
+import com.openbravo.pos.panels.JProductFinderPanel;
 import com.openbravo.pos.printer.TicketParser;
 import com.openbravo.pos.sales.JProductAttEdit;
 import com.openbravo.pos.ticket.ProductInfoExt;
@@ -49,16 +50,17 @@ import javax.swing.JOptionPane;
 public final class StockDiaryEditor extends javax.swing.JPanel implements EditorRecord {
     
     private final AppView m_App;
+    @Deprecated
     private final DataLogicSystem m_dlSystem;    
-    private final DataLogicSales m_dlSales;
-    private final DataLogicSuppliers m_dlSuppliers;    
+    private final InventoryService inventoryService;
+    private final SupplierService m_dlSuppliers;    
+    private final CatalogService catalogService;
     private DataLogicPIM dataLogicPIM;
     private final TicketParser m_TTP;
     
     private final CatalogSelector m_cat;
     private final ComboBoxValModel m_ReasonModel;
 
-    private final SentenceList m_sentlocations;
     private ComboBoxValModel m_LocationsModel;    
     private ComboBoxValModel m_LocationsModelDes;
     
@@ -85,18 +87,18 @@ public final class StockDiaryEditor extends javax.swing.JPanel implements Editor
     public StockDiaryEditor(AppView app, DirtyManager dirty) {
         
         m_App = app;
-        m_dlSystem = (DataLogicSystem) m_App.getBean("com.openbravo.pos.forms.DataLogicSystem");
-        m_dlSales = (DataLogicSales) m_App.getBean("com.openbravo.pos.forms.DataLogicSales");
-        m_dlSuppliers = (DataLogicSuppliers) m_App.getBean("com.openbravo.pos.suppliers.DataLogicSuppliers");   
-        dataLogicPIM = (DataLogicPIM) app.getBean("com.openbravo.pos.pim.DataLogicPIM");
-        m_TTP = new TicketParser(m_App.getDeviceTicket(), m_dlSystem);
+        ResourceService resService = m_App.getBean(ResourceService.class);
+        m_dlSystem = (resService instanceof DataLogicSystem) ? (DataLogicSystem) resService : null;
+        inventoryService = m_App.getBean(InventoryService.class);
+        m_dlSuppliers = m_App.getBean(SupplierService.class);   
+        catalogService = app.getBean(CatalogService.class);
+        dataLogicPIM = (catalogService instanceof DataLogicPIM) ? (DataLogicPIM) catalogService : null;
+        m_TTP = m_App.createTicketParser();
         
         initComponents();
         
         user = m_App.getAppUserView().getUser().getName();        
-        m_sentlocations = m_dlSales.getLocationsList();
-        m_LocationsModel = new ComboBoxValModel();
-        m_LocationsModel =  new ComboBoxValModel();        
+        m_LocationsModel = new ComboBoxValModel();        
         m_LocationsModelDes = new ComboBoxValModel();  
         
         m_sentsuppliers = m_dlSuppliers.getSupplierList();
@@ -141,8 +143,8 @@ public final class StockDiaryEditor extends javax.swing.JPanel implements Editor
     public void activate() throws BasicException {
         m_cat.loadCatalog();
          
-        java.util.List l = m_sentlocations.list();
-        m_LocationsModel = new ComboBoxValModel(m_sentlocations.list());
+        java.util.List<LocationInfo> l = inventoryService.getLocationsList();
+        m_LocationsModel = new ComboBoxValModel(l);
         m_jLocation.setModel(m_LocationsModel);
         m_LocationsModelDes = new ComboBoxValModel(l);
         m_jLocationDes.setModel(m_LocationsModelDes);
@@ -443,10 +445,10 @@ public final class StockDiaryEditor extends javax.swing.JPanel implements Editor
     
     private void assignProductByCode() {
         try {
-            ProductInfoExt oProduct = dataLogicPIM.getProductInfoByCode(m_jcodebar.getText());
+            ProductInfoExt oProduct = catalogService.getProductInfoByCode(m_jcodebar.getText());
             if (oProduct == null) {       
                 assignProduct(null);
-                Toolkit.getDefaultToolkit().beep();                   
+                com.openbravo.pos.util.NotifyUtils.beep();                   
             } else {
                 assignProduct(oProduct);
             }
@@ -459,10 +461,10 @@ public final class StockDiaryEditor extends javax.swing.JPanel implements Editor
     
     private void assignProductByReference() {
         try {
-            ProductInfoExt oProduct = dataLogicPIM.getProductInfoByReference(m_jreference.getText());
+            ProductInfoExt oProduct = catalogService.getProductInfoByReference(m_jreference.getText());
             if (oProduct == null) {       
                 assignProduct(null);
-                Toolkit.getDefaultToolkit().beep();                   
+                com.openbravo.pos.util.NotifyUtils.beep();                   
             } else {
                 assignProduct(oProduct);
             }
@@ -915,7 +917,7 @@ public final class StockDiaryEditor extends javax.swing.JPanel implements Editor
         } catch (BasicException e) {
             date = null;
         }        
-        date = JCalendarDlgPanel.showCalendarTime(this, date);
+        date = JCalendarPanel2.showCalendarTime(this, date);
         if (date != null) {
             m_jdate.setText(Formats.TIMESTAMP.formatValue(date));
         }
@@ -924,7 +926,7 @@ public final class StockDiaryEditor extends javax.swing.JPanel implements Editor
 
     private void jEditProductActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jEditProductActionPerformed
         
-        assignProduct(JProductFinder.showMessage(this, m_App));
+        assignProduct(JProductFinderPanel.showMessage(this, m_App));
 
 }//GEN-LAST:event_jEditProductActionPerformed
 
@@ -990,4 +992,12 @@ public final class StockDiaryEditor extends javax.swing.JPanel implements Editor
     private javax.swing.JTextField m_junits;
     // End of variables declaration//GEN-END:variables
     
+    public CatalogService getCatalogService() {
+        return catalogService;
+    }
+
+    @Deprecated
+    public DataLogicPIM getDataLogicPIM() {
+        return dataLogicPIM != null ? dataLogicPIM : (catalogService instanceof DataLogicPIM ? (DataLogicPIM) catalogService : null);
+    }
 }

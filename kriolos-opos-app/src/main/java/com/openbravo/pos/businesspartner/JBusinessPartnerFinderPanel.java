@@ -16,6 +16,7 @@
 
 package com.openbravo.pos.businesspartner;
 
+import com.openbravo.pos.customers.CustomerService;
 import com.openbravo.pos.customers.DataLogicCustomers;
 import com.openbravo.pos.customers.CustomerInfo;
 import com.openbravo.basic.BasicException;
@@ -30,7 +31,6 @@ import java.util.ArrayList;
 import javax.swing.JFrame;
 import javax.swing.*;
 
-import java.awt.event.KeyEvent;
 
 import com.openbravo.data.gui.modal.PosUIModal;
 
@@ -53,9 +53,17 @@ public class JBusinessPartnerFinderPanel extends javax.swing.JPanel implements E
         initDomainAdapters();
     }
 
-    public JBusinessPartnerFinderPanel(DataLogicCustomers dlCustomers) {
-        init(dlCustomers);
+    public JBusinessPartnerFinderPanel(CustomerService customerService) {
+        init(customerService);
         initDomainAdapters();
+    }
+
+    /**
+     * @deprecated Use {@link #JBusinessPartnerFinderPanel(CustomerService)} instead.
+     */
+    @Deprecated
+    public JBusinessPartnerFinderPanel(DataLogicCustomers dlCustomers) {
+        this((CustomerService) dlCustomers);
     }
 
     private void initDomainAdapters() {
@@ -71,8 +79,8 @@ public class JBusinessPartnerFinderPanel extends javax.swing.JPanel implements E
         this.modalContext = modalContext;
     }
 
-    public static BusinessPartner show(Component parent, DataLogicCustomers dlCustomers) {
-        JBusinessPartnerFinderPanel panel = new JBusinessPartnerFinderPanel(dlCustomers);
+    public static BusinessPartner show(Component parent, CustomerService customerService) {
+        JBusinessPartnerFinderPanel panel = new JBusinessPartnerFinderPanel(customerService);
         PosUIModal modal = PosUIModal.create(parent, panel)
                 .setTitle(AppLocal.getIntString("form.customertitle"))
                 .setModal(true)
@@ -84,11 +92,19 @@ public class JBusinessPartnerFinderPanel extends javax.swing.JPanel implements E
         return panel.getSelectedCustomer();
     }
 
+    /**
+     * @deprecated Use {@link #show(Component, CustomerService)} instead.
+     */
+    @Deprecated
+    public static BusinessPartner show(Component parent, DataLogicCustomers dlCustomers) {
+        return show(parent, (CustomerService) dlCustomers);
+    }
+
     public BusinessPartner getSelectedCustomer() {
         return m_BPartner;
     }
 
-    private void init(DataLogicCustomers dlCustomers) {
+    private void init(CustomerService customerService) {
 
         initComponents();
 
@@ -110,7 +126,7 @@ public class JBusinessPartnerFinderPanel extends javax.swing.JPanel implements E
 
         m_jtxtTaxID.activate();
 
-        lpr = new ListProviderCreator(dlCustomers.getCustomerList(), this);
+        lpr = new ListProviderCreator(customerService.getCustomerList(), this);
 
         jListBPartner.setCellRenderer(new BusinessPartnerListCellRenderer());
 
@@ -120,6 +136,11 @@ public class JBusinessPartnerFinderPanel extends javax.swing.JPanel implements E
 
         m_BPartner = null;
 
+    }
+
+    @Deprecated
+    private void init(DataLogicCustomers dlCustomers) {
+        init((CustomerService) dlCustomers);
     }
 
     public void search(BusinessPartner bpartner) {

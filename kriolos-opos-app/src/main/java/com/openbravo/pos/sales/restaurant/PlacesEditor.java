@@ -34,18 +34,20 @@ import javax.swing.JPanel;
  */
 public final class PlacesEditor extends JPanel implements EditorRecord {
     
+    private RestaurantService restaurantService;
     private SentenceList m_sentfloor;
     private ComboBoxValModel m_FloorModel;
     
     private String m_sID;
     
     /** Creates new form PlacesEditor
-     * @param dlSales
+     * @param restaurantService
      * @param dirty */
-    public PlacesEditor(DataLogicSales dlSales, DirtyManager dirty) {
+    public PlacesEditor(RestaurantService restaurantService, DirtyManager dirty) {
         initComponents();
         
-        m_sentfloor = dlSales.getFloorsList();
+        this.restaurantService = restaurantService;
+        this.m_sentfloor = restaurantService != null ? restaurantService.getFloorsList() : null;
         m_FloorModel = new ComboBoxValModel();
         
         m_jName.getDocument().addDocumentListener(dirty);
@@ -56,14 +58,35 @@ public final class PlacesEditor extends JPanel implements EditorRecord {
         
         writeValueEOF();
     }
+
+    /**
+     * @deprecated Use {@link #PlacesEditor(RestaurantService, DirtyManager)} instead.
+     */
+    @Deprecated
+    public PlacesEditor(DataLogicRestaurant dlRestaurant, DirtyManager dirty) {
+        this((RestaurantService) dlRestaurant, dirty);
+    }
+
+    /**
+     * @deprecated Use {@link #PlacesEditor(RestaurantService, DirtyManager)} instead.
+     */
+    @Deprecated
+    public PlacesEditor(DataLogicSales dlSales, DirtyManager dirty) {
+        this(dlSales != null ? dlSales.getRestaurantService() : null, dirty);
+    }
     
     /**
      *
      * @throws BasicException
      */
     public void activate() throws BasicException {
-        
-        m_FloorModel = new ComboBoxValModel(m_sentfloor.list());
+        if (restaurantService != null) {
+            m_FloorModel = new ComboBoxValModel(restaurantService.getFloorsListAll());
+        } else if (m_sentfloor != null) {
+            m_FloorModel = new ComboBoxValModel(m_sentfloor.list());
+        } else {
+            m_FloorModel = new ComboBoxValModel();
+        }
         m_jFloor.setModel(m_FloorModel);
     }
     

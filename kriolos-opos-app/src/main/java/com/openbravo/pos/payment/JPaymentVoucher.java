@@ -20,13 +20,13 @@ import com.openbravo.data.gui.ComboBoxValModel;
 import com.openbravo.data.loader.SentenceList;
 import com.openbravo.format.Formats;
 import com.openbravo.pos.customers.CustomerInfoExt;
-import com.openbravo.pos.customers.DataLogicCustomers;
+import com.openbravo.pos.customers.CustomerInfoExt;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
-import com.openbravo.pos.forms.DataLogicSales;
 import com.openbravo.pos.util.RoundUtils;
 import com.openbravo.pos.voucher.DataLogicVouchers;
 import com.openbravo.pos.voucher.VoucherInfo;
+import com.openbravo.pos.voucher.VoucherService;
 import java.awt.Component;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -44,9 +44,7 @@ public class JPaymentVoucher extends javax.swing.JPanel implements JPaymentInter
 
     private final JPaymentNotifier paymentNotifier;
 
-    private DataLogicSales dlSales;
-    private DataLogicCustomers dlCustomers;
-    private DataLogicVouchers dataLogicVouchers;
+    private VoucherService voucherService;
     private ComboBoxValModel m_VoucherModel;
 
     private double voucherAmount;
@@ -63,28 +61,27 @@ public class JPaymentVoucher extends javax.swing.JPanel implements JPaymentInter
      * @param voucherType should be "voucherin", "voucherout"
      */
     public JPaymentVoucher(AppView app, JPaymentNotifier notifier, String voucherType) {
+        this(app, notifier, voucherType, null);
+    }
 
+    public JPaymentVoucher(AppView app, JPaymentNotifier notifier, String voucherType, VoucherService voucherService) {
         this.paymentNotifier = notifier;
         this.voucherType = voucherType;
         this.voucherAmount = 0.0;
         this.totalToPay = 0.0;
+        this.voucherService = voucherService != null ? voucherService : app.getBean(VoucherService.class);
 
-        init(app);
+        init();
 
         this.moneyEditor.addPropertyChangeListener("Edition", new RecalculateState());
     }
 
-    private void init(AppView app) {
+    private void init() {
 
         try {
-            dlSales = (DataLogicSales) app.getBean("com.openbravo.pos.forms.DataLogicSales");
-            dlCustomers = (DataLogicCustomers) app.getBean("com.openbravo.pos.customers.DataLogicCustomers");
-            dataLogicVouchers = (DataLogicVouchers) app.getBean("com.openbravo.pos.voucher.DataLogicVouchers");
-   
-
             initComponents();
 
-            List<VoucherInfo> voucherList = dataLogicVouchers.getVoucherList();
+            List<VoucherInfo> voucherList = voucherService.getVoucherList();
 
             m_VoucherModel = new ComboBoxValModel(voucherList);
             vouchersComboBox.setModel(m_VoucherModel);
@@ -315,7 +312,7 @@ public class JPaymentVoucher extends javax.swing.JPanel implements JPaymentInter
         if (m_VoucherModel.getSelectedKey() != null) {
             try {
                 String id = m_VoucherModel.getSelectedKey().toString();
-                m_voucherInfo = dataLogicVouchers.getVoucherInfo(id);
+                m_voucherInfo = voucherService.getVoucher(id);
             } catch (BasicException ex) {
                 LOGGER.log(Level.WARNING, "Exeception on select voucher: ", ex);
             }

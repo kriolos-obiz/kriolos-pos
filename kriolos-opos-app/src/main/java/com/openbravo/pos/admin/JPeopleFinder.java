@@ -31,21 +31,36 @@ public class JPeopleFinder {
     private final Component parent;
     private final JPeopleFinderPanel panel;
 
-    private JPeopleFinder(Component parent, DataLogicAdmin dlPeople) {
+    private JPeopleFinder(Component parent, PeopleService dlPeople) {
         this.parent = parent;
         this.panel = new JPeopleFinderPanel(dlPeople);
     }
 
-    public static JPeopleFinder getPeopleFinder(Component parent, DataLogicAdmin dlPeople) {
+    public static JPeopleFinder getPeopleFinder(Component parent, PeopleService dlPeople) {
         return new JPeopleFinder(parent, dlPeople);
     }
 
-    public static PeopleInfo show(Component parent, DataLogicAdmin dlPeople) {
+    @Deprecated
+    public static JPeopleFinder getPeopleFinder(Component parent, DataLogicAdmin dlPeople) {
+        return new JPeopleFinder(parent, (PeopleService) dlPeople);
+    }
+
+    public static PeopleInfo show(Component parent, PeopleService dlPeople) {
         return JPeopleFinderPanel.show(parent, dlPeople);
     }
 
-    public static PeopleInfo show(Component parent, DataLogicAdmin dlPeople, PeopleInfo people) {
+    public static PeopleInfo show(Component parent, PeopleService dlPeople, PeopleInfo people) {
         return JPeopleFinderPanel.show(parent, dlPeople, people);
+    }
+
+    @Deprecated
+    public static PeopleInfo show(Component parent, DataLogicAdmin dlPeople) {
+        return JPeopleFinderPanel.show(parent, (PeopleService) dlPeople);
+    }
+
+    @Deprecated
+    public static PeopleInfo show(Component parent, DataLogicAdmin dlPeople, PeopleInfo people) {
+        return JPeopleFinderPanel.show(parent, (PeopleService) dlPeople, people);
     }
 
     public void search(PeopleInfo people) {

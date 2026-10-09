@@ -15,6 +15,7 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package com.openbravo.data.loader;
 
+import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.basic.BasicException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -146,14 +147,14 @@ public abstract class BaseSentence<T> implements SentenceList<T>, SentenceFind<T
 
     private void requireNonNull(DataResultSet<T> resultSet) throws BasicException {
         if (resultSet == null) {
-            throw new BasicException(LocalRes.getIntString("exception.nodataset"),
+            throw new BasicException(AppLocal.getIntString("exception.nodataset"),
                     new Exception("DataResultSet should not be null"));
         }
     }
 
     private void requirePositive(int value) throws BasicException {
         if (value < 0) {
-            throw new BasicException(LocalRes.getIntString("exception.nonegativelimits"),
+            throw new BasicException(AppLocal.getIntString("exception.nonegativelimits"),
                     new Exception(String.format("Excpected positive value, but %s", value)));
         }
     }

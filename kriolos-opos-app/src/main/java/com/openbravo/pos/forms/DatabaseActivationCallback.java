@@ -37,8 +37,20 @@ public interface DatabaseActivationCallback {
      * Invoked on the Event Dispatch Thread (EDT) when database initialization and migrations succeed.
      *
      * @param activatedConfig The database configuration that was activated.
-     * @param dlSystem The newly initialized DataLogicSystem.
+     * @param systemService The newly initialized SystemService.
      */
+    default void onSuccess(DatabaseConfig activatedConfig, SystemService systemService) {
+        onSuccess(activatedConfig, systemService instanceof DataLogicSystem ? (DataLogicSystem) systemService : null);
+    }
+
+    /**
+     * Invoked on the Event Dispatch Thread (EDT) when database initialization and migrations succeed.
+     *
+     * @param activatedConfig The database configuration that was activated.
+     * @param dlSystem The newly initialized DataLogicSystem.
+     * @deprecated Use {@link #onSuccess(DatabaseConfig, SystemService)} instead.
+     */
+    @Deprecated
     void onSuccess(DatabaseConfig activatedConfig, DataLogicSystem dlSystem);
 
     /**

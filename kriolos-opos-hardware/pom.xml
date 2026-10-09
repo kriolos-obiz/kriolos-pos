@@ -47,6 +47,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         
         <dependency>
             <groupId>${project.groupId}</groupId>
+            <artifactId>kriolos-opos-spi</artifactId>
+        </dependency>
+        
+        <dependency>
+            <groupId>com.google.auto.service</groupId>
+            <artifactId>auto-service</artifactId>
+        </dependency>
+        
+        <dependency>
+            <groupId>${project.groupId}</groupId>
             <artifactId>kriolos-opos-assets-image</artifactId>
             <scope>test</scope>
         </dependency>
@@ -124,6 +134,28 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             <artifactId>javase</artifactId>
             <version>3.5.3</version>
             <type>jar</type>
+        </dependency>
+
+        <!-- Testing Dependencies -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>

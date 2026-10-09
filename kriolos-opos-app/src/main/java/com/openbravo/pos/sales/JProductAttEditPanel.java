@@ -20,7 +20,9 @@ import com.openbravo.basic.BasicException;
 import com.openbravo.data.gui.modal.PosUIModal;
 import com.openbravo.data.loader.Session;
 import com.openbravo.pos.forms.AppLocal;
+import com.openbravo.pos.inventory.AttributeInstEntry;
 import com.openbravo.pos.inventory.AttributeInstInfo;
+import com.openbravo.pos.inventory.AttributeService;
 import com.openbravo.pos.inventory.AttributeSetInfo;
 import com.openbravo.pos.inventory.DataLogicAttribute;
 import java.awt.BorderLayout;
@@ -47,12 +49,22 @@ public class JProductAttEditPanel extends JPanel {
     private String attInstanceDescription;
     private String title;
     private boolean ok;
+    private AttributeService attributeService;
     private DataLogicAttribute dlProdAttribute;
     private PosUIModal modalContext;
 
     public JProductAttEditPanel() {
         initComponents();
         initDomainAdapters();
+    }
+
+    public JProductAttEditPanel(AttributeService attributeService) {
+        initComponents();
+        initDomainAdapters();
+        this.attributeService = attributeService;
+        if (attributeService instanceof DataLogicAttribute) {
+            this.dlProdAttribute = (DataLogicAttribute) attributeService;
+        }
     }
 
     public JProductAttEditPanel(Session s) {
@@ -74,6 +86,7 @@ public class JProductAttEditPanel extends JPanel {
     public void init(Session s) {
         dlProdAttribute = new DataLogicAttribute();
         dlProdAttribute.init(s);
+        this.attributeService = dlProdAttribute;
 
         if (getRootPane() != null) {
             getRootPane().setDefaultButton(m_jButtonOK);
@@ -93,23 +106,25 @@ public class JProductAttEditPanel extends JPanel {
             this.attInstanceDescription = null;
             this.ok = false;
 
-            AttributeSetInfo asi = (AttributeSetInfo) dlProdAttribute.attsetSent.find(new Object[]{attsetid});
+            AttributeSetInfo asi = attributeService != null ? attributeService.findAttributeSet(attsetid) : null;
             if (asi == null) {
                 throw new BasicException(AppLocal.getIntString("message.cannotfindattributes"));
             }
 
             this.title = asi.getName();
 
-            List<AttributeInstInfo> attinstinfo = attsetinstid == null
-                    ? dlProdAttribute.attinstSent.list(new Object[]{attsetid})
-                    : dlProdAttribute.attinstSent2.list(new Object[]{attsetid, attsetinstid});
+            List<AttributeInstInfo> attinstinfo = attributeService != null
+                    ? attributeService.getAttributeInstList(attsetid, attsetinstid)
+                    : new ArrayList<>();
 
             jPanel2.removeAll();
             itemslist = new ArrayList<>();
 
             for (AttributeInstInfo aii : attinstinfo) {
                 JProductAttEditI item;
-                List<String> values = dlProdAttribute.attvaluesSent.list(new Object[]{aii.getAttid()});
+                List<String> values = attributeService != null
+                        ? attributeService.getAttributeValues(aii.getAttid())
+                        : new ArrayList<>();
                 if (values.isEmpty()) {
                     item = new JProductAttEditItem(aii.getAttid(), aii.getAttname(), aii.getValue(), m_jKeys);
                 } else {
@@ -140,8 +155,8 @@ public class JProductAttEditPanel extends JPanel {
         return attInstanceDescription;
     }
 
-    public static boolean show(Component parent, Session s, String attsetid, String attsetinstid, String[] outResult) throws BasicException {
-        JProductAttEditPanel panel = new JProductAttEditPanel(s);
+    public static boolean show(Component parent, AttributeService attributeService, String attsetid, String attsetinstid, String[] outResult) throws BasicException {
+        JProductAttEditPanel panel = new JProductAttEditPanel(attributeService);
         panel.editAttributes(attsetid, attsetinstid);
         PosUIModal modal = PosUIModal.create(parent, panel)
                 .setTitle(panel.getTitle())
@@ -162,6 +177,12 @@ public class JProductAttEditPanel extends JPanel {
             return true;
         }
         return false;
+    }
+
+    public static boolean show(Component parent, Session s, String attsetid, String attsetinstid, String[] outResult) throws BasicException {
+        DataLogicAttribute dlAttribute = new DataLogicAttribute();
+        dlAttribute.init(s);
+        return show(parent, dlAttribute, attsetid, attsetinstid, outResult);
     }
 
     @SuppressWarnings("unchecked")
@@ -247,23 +268,14 @@ public class JProductAttEditPanel extends JPanel {
 
         String id = null;
 
-        if (description.length() == 0) {
-            id = null;
-        } else {
-            try {
-                id = (String) dlProdAttribute.attsetinstExistsSent.find(new Object[]{attsetid, description.toString()});
-            } catch (BasicException ex) {
+        if (description.length() > 0 && attributeService != null) {
+            List<AttributeInstEntry> entries = new ArrayList<>();
+            for (JProductAttEditI item : itemslist) {
+                entries.add(new AttributeInstEntry(item.getAttribute(), item.getValue()));
             }
-
-            if (id == null) {
-                id = UUID.randomUUID().toString();
-                try {
-                    dlProdAttribute.attsetSave.exec(new Object[]{id, attsetid, description.toString()});
-                    for (JProductAttEditI item : itemslist) {
-                        dlProdAttribute.attinstSave.exec(new Object[]{UUID.randomUUID().toString(), id, item.getAttribute(), item.getValue()});
-                    }
-                } catch (Exception ex) {
-                }
+            try {
+                id = attributeService.findOrCreateAttributeSetInstance(attsetid, description.toString(), entries);
+            } catch (BasicException ex) {
             }
         }
 

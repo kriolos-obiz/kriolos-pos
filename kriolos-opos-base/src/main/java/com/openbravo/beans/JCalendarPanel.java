@@ -16,6 +16,7 @@
 
 package com.openbravo.beans;
 
+import com.openbravo.pos.forms.AppLocal;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -29,8 +30,7 @@ import javax.swing.border.LineBorder;
  * @author JG uniCenta
  */
 public class JCalendarPanel extends javax.swing.JPanel {
-    
-    private final LocaleResources m_resources;
+
 
 
     private Date m_date;    
@@ -56,9 +56,6 @@ public class JCalendarPanel extends javax.swing.JPanel {
      */
     public JCalendarPanel(Date dDate) {
         super();
-    
-        m_resources = new LocaleResources();
-        m_resources.addBundleName("beans_messages");
         
         initComponents();
         initComponents2();
@@ -254,7 +251,7 @@ public class JCalendarPanel extends javax.swing.JPanel {
         
         m_jBtnYearDec = new JButtonDate(new ImageIcon(getClass().getResource("/com/openbravo/images/2leftarrow.png")), dateclick);
         m_jBtnMonthDec = new JButtonDate(new ImageIcon(getClass().getResource("/com/openbravo/images/1leftarrow.png")), dateclick);
-        m_jBtnToday = new JButtonDate(m_resources.getString("button.Today"), dateclick);
+        m_jBtnToday = new JButtonDate(AppLocal.getIntString("button.Today"), dateclick);
         m_jBtnMonthInc = new JButtonDate(new ImageIcon(getClass().getResource("/com/openbravo/images/1rightarrow.png")), dateclick);
         m_jBtnYearInc = new JButtonDate(new ImageIcon(getClass().getResource("/com/openbravo/images/2rightarrow.png")), dateclick);
                

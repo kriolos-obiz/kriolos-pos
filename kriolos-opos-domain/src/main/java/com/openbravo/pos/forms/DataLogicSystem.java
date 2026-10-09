@@ -36,7 +36,7 @@ import javax.swing.ImageIcon;
  *
  * @author JG uniCenta
  */
-public class DataLogicSystem extends BeanFactoryDataSingle {
+public class DataLogicSystem extends BeanFactoryDataSingle implements SystemService {
 
     private final static Logger LOGGER = Logger.getLogger(DataLogicSystem.class.getName());
 
@@ -49,7 +49,7 @@ public class DataLogicSystem extends BeanFactoryDataSingle {
     @Override
     public void init(Session session) {
         this.session = session;
-        this.m_dbVersion = this.session.DB.getName();
+        this.m_dbVersion = (this.session != null && this.session.DB != null) ? this.session.DB.getName() : null;
 
         m_tresources = new TableDefinition(session,
                 "resources",
@@ -364,14 +364,21 @@ public class DataLogicSystem extends BeanFactoryDataSingle {
 
 // <editor-fold defaultstate="collapsed" desc="START OF LOCATION AND PLACES">
 
-    
     /**
-     *
-     * @param iLocation
-     * @return
-     * @throws BasicException
+     * @deprecated Use {@link com.openbravo.pos.inventory.InventoryService#findLocationName(String)} instead.
      */
+    @Deprecated
     public final String findLocationName(String iLocation) throws BasicException {
+        if (app != null) {
+            try {
+                com.openbravo.pos.inventory.InventoryService inv =
+                        app.getBean(com.openbravo.pos.inventory.InventoryService.class);
+                if (inv != null) {
+                    return inv.findLocationName(iLocation);
+                }
+            } catch (BeanFactoryException ignored) {
+            }
+        }
         final SentenceFind m_locationfind = new StaticSentence(this.session,
                 "SELECT NAME FROM locations WHERE ID = ?",
                 SerializerWriteString.INSTANCE,
@@ -379,135 +386,56 @@ public class DataLogicSystem extends BeanFactoryDataSingle {
         return (String) m_locationfind.find(iLocation);
     }
 
-
+    /**
+     * @deprecated Use {@link com.openbravo.pos.sales.restaurant.PlaceService#updatePlaces(int, int, String)}
+     *             or {@link com.openbravo.pos.sales.restaurant.RestaurantService#updatePlaces(int, int, String)} instead.
+     */
+    @Deprecated
     public final void updatePlaces(int x, int y, String id) throws BasicException {
+        if (app != null) {
+            try {
+                com.openbravo.pos.sales.restaurant.RestaurantService restService =
+                        app.getBean(com.openbravo.pos.sales.restaurant.RestaurantService.class);
+                if (restService != null) {
+                    restService.updatePlaces(x, y, id);
+                    return;
+                }
+            } catch (BeanFactoryException ignored) {
+            }
+            try {
+                com.openbravo.pos.sales.restaurant.DataLogicRestaurant dlRest =
+                        app.getBean(com.openbravo.pos.sales.restaurant.DataLogicRestaurant.class);
+                if (dlRest != null) {
+                    dlRest.updatePlaces(x, y, id);
+                    return;
+                }
+            } catch (BeanFactoryException ignored) {
+            }
+        }
         final SentenceExec m_updatePlaces = new StaticSentence(this.session,
                 "UPDATE PLACES SET X = ?, Y = ? WHERE ID = ?",
                 new SerializerWriteBasic(new Datas[]{Datas.INT, Datas.INT, Datas.STRING}));
         m_updatePlaces.exec(new Object[]{x, y, id});
     }
 
-    
 //// </editor-fold>
     
+    /**
+     * @deprecated Use {@link com.openbravo.pos.voucher.VoucherService#getVoucherList()} instead.
+     */
+    @Deprecated
     public final List<VoucherInfo> getVouchersActiveList() throws BasicException {
-        final SentenceList<VoucherInfo> m_voucherlist = new StaticSentence(this.session,
-                "SELECT id, voucher_number, customer, amount, status FROM vouchers WHERE status LIKE 'A'",
-                SerializerWriteString.INSTANCE,
-                VoucherInfo.getSerializerRead());
-
-        return m_voucherlist.list();
-    }
-
-//// <editor-fold defaultstate="collapsed" desc="START OF ORDER">   
-    
-    /**
-     * 
-     * @param orderId
-     * @param qty
-     * @param details
-     * @param attributes
-     * @param notes
-     * @param ticketId
-     * @param ordertime
-     * @param displayId
-     * @param auxiliary
-     * @param completetime
-     * @throws BasicException 
-     */
-    public final void addOrder(String orderId, Integer qty,
-            String details, String attributes, String notes, String ticketId,
-            String ordertime, Integer displayId, String auxiliary, String completetime
-    ) throws BasicException {
-
-        if (ordertime == null) {
-            ordertime = Long.toString(new Date().getTime());
+        if (app != null) {
+            try {
+                return app.getBean(com.openbravo.pos.voucher.VoucherService.class).getVoucherList();
+            } catch (BeanFactoryException ignored) {
+            }
         }
-
-        final SentenceExec m_addOrder = new StaticSentence(this.session,
-                "INSERT INTO orders (ORDERID, QTY, DETAILS, ATTRIBUTES, "
-                + "NOTES, TICKETID, ORDERTIME, DISPLAYID, AUXILIARY, "
-                + "COMPLETETIME) "
-                + "VALUES (?, ?, ?, ?, ?, "
-                + "?, ?, ?, ?, ? ) ",
-                new SerializerWriteBasic(new Datas[]{
-            Datas.STRING, // OrderId
-            Datas.INT, // Qty
-            Datas.STRING, // Details
-            Datas.STRING, // Attributes
-            Datas.STRING, // Notes
-            Datas.STRING, // TicketId
-            Datas.TIMESTAMP, // OrderTime
-            Datas.INT, // DisplayId
-            Datas.INT, // Auxiliary
-            Datas.TIMESTAMP // CompleteTime
-        }));
-        m_addOrder.exec(new Object[]{orderId, qty, details, attributes, notes, ticketId,
-            ordertime, displayId, auxiliary, completetime});
+        com.openbravo.pos.voucher.DataLogicVouchers fallback = new com.openbravo.pos.voucher.DataLogicVouchers();
+        fallback.init(this.session);
+        return fallback.getVoucherList();
     }
 
-    /**
-     *
-     * @param orderId
-     * @param qty
-     * @param details
-     * @param attributes
-     * @param notes
-     * @param ticketId
-     * @param ordertime
-     * @param displayId
-     * @param auxiliary
-     * @param completetime
-     * @throws BasicException
-     */
-    public final void updateOrder(String orderId, Integer qty,
-            String details, String attributes, String notes, String ticketId,
-            String ordertime, Integer displayId, String auxiliary, String completetime
-    ) throws BasicException {
-
-        final SentenceExec m_updateOrder = new StaticSentence(this.session,
-                "UPDATE orders SET "
-                + "ORDERID = ?, "
-                + "QTY = ?, "
-                + "DETAILS = ?, "
-                + "ATTRIBUTES = ?, "
-                + "NOTES = ?, "
-                + "TICKETID = ?, "
-                + "ORDERTIME = ?, "
-                + "DISPLAYID = ?, "
-                + "AUXILIARY = ?, "
-                + "COMPLETETIME = ? "
-                + "WHERE ORDERID = ? ",
-                new SerializerWriteBasic(new Datas[]{
-            Datas.STRING, // OrderId
-            Datas.INT, // Qty
-            Datas.STRING, // Details
-            Datas.STRING, // Attributes
-            Datas.STRING, // Notes
-            Datas.STRING, // TicketId
-            Datas.STRING, // OrderTime
-            Datas.INT, // DisplayId
-            Datas.INT, // Auxiliary
-            Datas.STRING // CompleteTime
-        }));
-        m_updateOrder.exec(new Object[]{orderId, qty, details, attributes, notes, ticketId,
-            ordertime, displayId, auxiliary, completetime});
-    }
-
-    /**
-     * Delete Order
-     *
-     * @param orderId
-     * @throws BasicException
-     */
-    public void deleteOrder(String orderId) throws BasicException {
-        final SentenceExec m_deleteOrder = new StaticSentence(this.session,
-                "DELETE FROM orders WHERE ORDERID = ?",
-                SerializerWriteString.INSTANCE);
-        m_deleteOrder.exec(orderId);
-    }
-
-    //// </editor-fold> 
     
     private final static class AppuserReader implements SerializerRead<AppUser> {
 

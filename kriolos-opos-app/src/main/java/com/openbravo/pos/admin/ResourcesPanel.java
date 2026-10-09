@@ -25,7 +25,7 @@ import com.openbravo.data.user.ListProvider;
 import com.openbravo.data.user.ListProviderCreator;
 import com.openbravo.data.user.DefaultSaveProvider;
 import com.openbravo.pos.forms.AppLocal;
-import com.openbravo.pos.forms.DataLogicSystem;
+import com.openbravo.pos.forms.ResourceService;
 import com.openbravo.pos.panels.JPanelTable;
 import javax.swing.ListCellRenderer;
 
@@ -44,9 +44,8 @@ public class ResourcesPanel extends JPanelTable {
 
     @Override
     protected void init() {
-        DataLogicAdmin dlAdmin = (DataLogicAdmin) app.getBean("com.openbravo.pos.admin.DataLogicAdmin"); 
-        DataLogicSystem dlSystem = (DataLogicSystem) app.getBean("com.openbravo.pos.forms.DataLogicSystem");
-        tresources = dlSystem.getTableResources();         
+        ResourceService resourceService = app.getBean(ResourceService.class);
+        tresources = resourceService.getTableResources();         
         jeditor = new ResourcesView(dirty);           
     }
 

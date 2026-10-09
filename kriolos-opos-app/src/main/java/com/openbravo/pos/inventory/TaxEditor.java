@@ -25,7 +25,7 @@ import com.openbravo.data.user.EditorRecord;
 import com.openbravo.format.Formats;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
-import com.openbravo.pos.forms.DataLogicSales;
+import com.openbravo.pos.sales.TaxService;
 import java.awt.Component;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
@@ -57,18 +57,19 @@ public class TaxEditor extends JPanel implements EditorRecord {
      * @param app
      * @param dirty */
     public TaxEditor(AppView app, DirtyManager dirty) {
-        
-        DataLogicSales dlSales = (DataLogicSales) app.getBean("com.openbravo.pos.forms.DataLogicSales");
-        
+        this(app, dirty, app.getBean(TaxService.class));
+    }
+
+    public TaxEditor(AppView app, DirtyManager dirty, TaxService taxService) {
         initComponents();
         
-        taxcatsent = dlSales.getTaxCategoriesList();
+        taxcatsent = taxService.getTaxCategoriesList();
         taxcatmodel = new ComboBoxValModel();        
         
-        taxcustcatsent = dlSales.getTaxCustCategoriesList();
+        taxcustcatsent = taxService.getTaxCustCategoriesList();
         taxcustcatmodel = new ComboBoxValModel();    
         
-        taxparentsent = dlSales.getTaxList();
+        taxparentsent = taxService.getTaxList();
         taxparentmodel = new ComboBoxValModel();    
 
         m_jName.getDocument().addDocumentListener(dirty);

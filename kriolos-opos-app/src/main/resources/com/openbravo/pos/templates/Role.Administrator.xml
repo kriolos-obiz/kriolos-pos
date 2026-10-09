@@ -57,9 +57,10 @@
     <class name="refund.voucher"/>
     <class name="refund.magcard"/>
     <class name="sales.PrintRemote"/>
+    <class name="sales.ReprintTicket"/>           
     <class name="sales.ShowList"/>
     <class name="sales.DeleteTicket"/> 
-    <class name="sales.Layout"/>               
+    <class name="sales.Layout"/>          
 
 
     <!-- Standard button scripts -->

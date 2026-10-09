@@ -31,6 +31,8 @@ import java.awt.Insets;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.AbstractListModel;
 import javax.swing.BorderFactory;
 import javax.swing.GroupLayout;
@@ -46,6 +48,7 @@ import javax.swing.LayoutStyle;
 public class JSupplierFinderPanel extends JPanel implements EditorCreator {
 
     private static final long serialVersionUID = 1L;
+    private static final Logger LOGGER = Logger.getLogger(JSupplierFinderPanel.class.getName());
 
     private SupplierInfo m_ReturnSupplier;
     private ListProvider lpr;
@@ -57,9 +60,17 @@ public class JSupplierFinderPanel extends JPanel implements EditorCreator {
         initDomainAdapters();
     }
 
-    public JSupplierFinderPanel(DataLogicSuppliers dlSuppliers) {
-        init(dlSuppliers);
+    public JSupplierFinderPanel(SupplierService supplierService) {
+        init(supplierService);
         initDomainAdapters();
+    }
+
+    /**
+     * @deprecated Use {@link #JSupplierFinderPanel(SupplierService)} instead.
+     */
+    @Deprecated
+    public JSupplierFinderPanel(DataLogicSuppliers dlSuppliers) {
+        this((SupplierService) dlSuppliers);
     }
 
     private void initDomainAdapters() {
@@ -75,12 +86,12 @@ public class JSupplierFinderPanel extends JPanel implements EditorCreator {
         this.modalContext = modalContext;
     }
 
-    public static SupplierInfo show(Component parent, DataLogicSuppliers dlSuppliers) {
-        return show(parent, dlSuppliers, null);
+    public static SupplierInfo show(Component parent, SupplierService supplierService) {
+        return show(parent, supplierService, null);
     }
 
-    public static SupplierInfo show(Component parent, DataLogicSuppliers dlSuppliers, SupplierInfo initialSupplier) {
-        JSupplierFinderPanel panel = new JSupplierFinderPanel(dlSuppliers);
+    public static SupplierInfo show(Component parent, SupplierService supplierService, SupplierInfo initialSupplier) {
+        JSupplierFinderPanel panel = new JSupplierFinderPanel(supplierService);
         if (initialSupplier != null) {
             panel.search(initialSupplier);
         }
@@ -91,6 +102,22 @@ public class JSupplierFinderPanel extends JPanel implements EditorCreator {
         panel.setModalContext(modal);
         modal.show();
         return panel.getSelectedSupplier();
+    }
+
+    /**
+     * @deprecated Use {@link #show(Component, SupplierService)} instead.
+     */
+    @Deprecated
+    public static SupplierInfo show(Component parent, DataLogicSuppliers dlSuppliers) {
+        return show(parent, (SupplierService) dlSuppliers, null);
+    }
+
+    /**
+     * @deprecated Use {@link #show(Component, SupplierService, SupplierInfo)} instead.
+     */
+    @Deprecated
+    public static SupplierInfo show(Component parent, DataLogicSuppliers dlSuppliers, SupplierInfo initialSupplier) {
+        return show(parent, (SupplierService) dlSuppliers, initialSupplier);
     }
 
     public void searchKey() {
@@ -120,7 +147,7 @@ public class JSupplierFinderPanel extends JPanel implements EditorCreator {
         return m_ReturnSupplier;
     }
 
-    private void init(DataLogicSuppliers dlSuppliers) {
+    private void init(SupplierService dlSuppliers) {
         initComponents();
 
         jImageViewerSupplier.setVisible(false);
@@ -210,14 +237,17 @@ public class JSupplierFinderPanel extends JPanel implements EditorCreator {
                         }
                         if (appView != null && appView.getAppUserView() != null) {
                             appView.getAppUserView().showTask("com.openbravo.pos.suppliers.SuppliersPanel");
+                        } else {
+                            JOptionPane.showMessageDialog(this,
+                                    "You must complete Account to add to Ticket",
+                                    "Create Supplier", JOptionPane.OK_OPTION);
                         }
-                        JOptionPane.showMessageDialog(this,
-                                "You must complete Account and Search Key Then Save to add to Ticket",
-                                "Create Supplier", JOptionPane.OK_OPTION);
                     }
                 }
             }
-        } catch (BasicException e) {
+        }
+        catch (BasicException ex) {
+            LOGGER.log(Level.WARNING, "Exception search: ", ex);
         }
     }
 
@@ -283,6 +313,7 @@ public class JSupplierFinderPanel extends JPanel implements EditorCreator {
     }
 
     private static class MyListData extends AbstractListModel {
+
         private final List m_data;
 
         public MyListData(List data) {

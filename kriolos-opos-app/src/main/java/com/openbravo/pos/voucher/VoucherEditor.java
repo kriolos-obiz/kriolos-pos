@@ -21,12 +21,15 @@ import com.openbravo.data.user.DirtyManager;
 import com.openbravo.data.user.EditorRecord;
 import com.openbravo.format.Formats;
 import com.openbravo.pos.customers.CustomerInfo;
+import com.openbravo.pos.customers.CustomerService;
 import com.openbravo.pos.customers.DataLogicCustomers;
 import com.openbravo.pos.customers.JCustomerFinder;
+import com.openbravo.pos.customers.JCustomerFinderPanel;
 import com.openbravo.pos.customers.JDialogNewCustomer;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.forms.DataLogicSystem;
+import com.openbravo.pos.forms.ResourceService;
 import com.openbravo.pos.util.ValidateBuilder;
 import java.awt.Component;
 import java.awt.image.BufferedImage;
@@ -44,20 +47,34 @@ public final class VoucherEditor extends javax.swing.JPanel implements EditorRec
 
     private static final long serialVersionUID = 1L;
     private String voucherId;
+    private final CustomerService customerService;
+    @Deprecated
     private final DataLogicCustomers dlCustomers;
+    private final ResourceService resourceService;
+    @Deprecated
     private final DataLogicSystem dlSystem;
-    private final DataLogicVouchers dlVouchers;
+    private final VoucherService voucherService;
     private CustomerInfo customerInfo;
     private final AppView m_app;
 
     public VoucherEditor(DirtyManager dirty, AppView app) {
+        this(dirty, app, null, null);
+    }
+
+    public VoucherEditor(DirtyManager dirty, AppView app, VoucherService voucherService) {
+        this(dirty, app, voucherService, null);
+    }
+
+    public VoucherEditor(DirtyManager dirty, AppView app, VoucherService voucherService, CustomerService customerService) {
         m_app = app;
 
         initComponents();
 
-        dlCustomers = (DataLogicCustomers) app.getBean("com.openbravo.pos.customers.DataLogicCustomers");
-        dlSystem = (DataLogicSystem) app.getBean("com.openbravo.pos.forms.DataLogicSystem");
-        dlVouchers = (DataLogicVouchers) app.getBean("com.openbravo.pos.voucher.DataLogicVouchers");
+        this.customerService = customerService != null ? customerService : app.getBean(CustomerService.class);
+        this.dlCustomers = (this.customerService instanceof DataLogicCustomers) ? (DataLogicCustomers) this.customerService : app.getBean(DataLogicCustomers.class);
+        this.resourceService = app.getBean(ResourceService.class);
+        this.dlSystem = (this.resourceService instanceof DataLogicSystem) ? (DataLogicSystem) this.resourceService : null;
+        this.voucherService = voucherService != null ? voucherService : app.getBean(VoucherService.class);
         voucherNumberTField.getDocument().addDocumentListener(dirty);
         voucherCustomerTField.getDocument().addDocumentListener(dirty);
         voucherAmountTField.getDocument().addDocumentListener(dirty);
@@ -68,6 +85,11 @@ public final class VoucherEditor extends javax.swing.JPanel implements EditorRec
         jLblStatus.setIcon(null);
 
         writeValueEOF();
+    }
+
+    @Deprecated
+    public DataLogicVouchers getDataLogicVouchers() {
+        return voucherService instanceof DataLogicVouchers dl ? dl : null;
     }
 
     @Override
@@ -108,7 +130,7 @@ public final class VoucherEditor extends javax.swing.JPanel implements EditorRec
                 voucherId = (String) attr[0];
                 voucherNumberTField.setText(Formats.STRING.formatValue((String) attr[1]));
                 voucherNumberTField.setEnabled(false);
-                customerInfo = dlCustomers.getCustomerInfo(attr[2].toString());
+                customerInfo = customerService.getCustomerInfo(attr[2].toString());
                 voucherCustomerTField.setText(customerInfo.getName());
                 voucherCustomerTField.setEnabled(false);
                 voucherAmountTField.setText(Formats.DOUBLE.formatValue((Double) attr[3]));
@@ -136,7 +158,7 @@ public final class VoucherEditor extends javax.swing.JPanel implements EditorRec
             voucherId = (String) attr[0];
             voucherNumberTField.setText(Formats.STRING.formatValue((String) attr[1]));
             voucherNumberTField.setEnabled(true);
-            customerInfo = dlCustomers.getCustomerInfo(attr[2].toString());
+            customerInfo = customerService.getCustomerInfo(attr[2].toString());
             voucherCustomerTField.setText(customerInfo.getName());
             voucherCustomerTField.setEnabled(true);
             voucherAmountTField.setText(Formats.DOUBLE.formatValue((Double) attr[3]));
@@ -358,8 +380,8 @@ public final class VoucherEditor extends javax.swing.JPanel implements EditorRec
 private void printBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_printBtnActionPerformed
 
     try {
-        VoucherInfo voucherInfo = dlVouchers.getVoucherInfoAll(voucherId);
-        BufferedImage image = dlSystem.getResourceAsImage("Window.Logo");
+        VoucherInfo voucherInfo = voucherService.getVoucherAll(voucherId);
+        BufferedImage image = (resourceService != null) ? resourceService.getResourceAsImage("Window.Logo") : null;
         if (voucherInfo != null) {
             JDialogReportPanel dialog = JDialogReportPanel
                     .getDialog(this, m_app, voucherInfo, image);
@@ -373,12 +395,10 @@ private void printBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRS
 
     private void customerSelectorBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_customerSelectorBtnActionPerformed
 
-        JCustomerFinder finder = JCustomerFinder.getCustomerFinder(this, dlCustomers);
-        finder.search(null);
-        finder.setVisible(true);
+        CustomerInfo selected = JCustomerFinderPanel.show(this, customerService);
 
-        if (finder.getSelectedCustomer() != null) {
-            customerInfo = finder.getSelectedCustomer();
+        if (selected != null) {
+            customerInfo = selected;
             voucherCustomerTField.setText(customerInfo.getName());
         }
 
@@ -425,28 +445,15 @@ private void printBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRS
     /** 
      * Voucher Number generator
      * 
-     * @return voucher number ("VO-{yy-MM}-{SEQ} {"VO-25-10-00001"}"
+     * @return voucher number ("VO-{MM-yy}-{SEQ}" e.g. "VO-10-26-00001")
      */
     public String generateVoucherNumber() {
-        String result = "";
-
-        final DateFormat m_simpledate = new SimpleDateFormat("MM-yy");
         try {
-            result = "VO-" + m_simpledate.format(new Date());
-            String lastNumber = (String) dlVouchers.getVoucherNumber().find(result);
-            int newNumber = 1;
-
-            if (lastNumber != null) {
-                newNumber = Integer.parseInt(lastNumber) + 1;
-            }
-            result = result + "-" + String.format("%05d",newNumber);
-
-            return result;
-
+            return voucherService.generateNextVoucherNumber();
         } catch (BasicException ex) {
             LOGGER.log(Level.WARNING, "Exception generate voucher number", ex);
+            return "";
         }
-        return result;
     }
 
 }

@@ -145,4 +145,10 @@ public class ScaleAvery extends AbstractSerialScale implements Scale, SerialPort
                 SerialPort.STOPBITS_1,
                 SerialPort.PARITY_EVEN);
     }
+
+    @Override
+    public com.openbravo.pos.spi.hardware.scale.ScaleProtocol getProtocol() {
+        return com.openbravo.pos.spi.hardware.scale.ScaleProtocol.AVERY_BERKEL_6720;
+    }
 }
+

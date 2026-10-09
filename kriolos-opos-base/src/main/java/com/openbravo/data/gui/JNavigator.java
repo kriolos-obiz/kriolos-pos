@@ -19,7 +19,7 @@ package com.openbravo.data.gui;
 import java.util.*;
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.loader.ComparatorCreator;
-import com.openbravo.data.loader.LocalRes;
+import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.data.loader.Vectorer;
 import com.openbravo.data.user.BrowseListener;
 import com.openbravo.data.user.BrowsableEditableData;
@@ -242,7 +242,7 @@ public class JNavigator extends javax.swing.JPanel implements BrowseListener, St
                 m_bd.sort(c);
             }
         } catch (BasicException eD) {
-            MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE, LocalRes.getIntString("message.nolistdata"), eD);
+            MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE, AppLocal.getIntString("message.nolistdata"), eD);
             msg.show(this);
         }  
     }
@@ -256,14 +256,14 @@ public class JNavigator extends javax.swing.JPanel implements BrowseListener, St
                 
                 int index = m_bd.findNext(newFindInfo);
                 if (index < 0) {
-                    MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE, LocalRes.getIntString("message.norecord"));
+                    MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE, AppLocal.getIntString("message.norecord"));
                     msg.show(this);
                 } else {
                     m_bd.moveTo(index);
                 }
             }
         } catch (BasicException eD) {
-            MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE, LocalRes.getIntString("message.nolistdata"), eD);
+            MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE, AppLocal.getIntString("message.nolistdata"), eD);
             msg.show(this);
         }           
     }                                        
@@ -278,7 +278,7 @@ public class JNavigator extends javax.swing.JPanel implements BrowseListener, St
         try {
             m_bd.actionLoad();
         } catch (BasicException eD) {
-            MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE, LocalRes.getIntString("message.noreload"), eD);
+            MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE, AppLocal.getIntString("message.noreload"), eD);
             msg.show(this);
         }
     }                                          
@@ -288,7 +288,7 @@ public class JNavigator extends javax.swing.JPanel implements BrowseListener, St
         try {
             m_bd.moveLast();
         } catch (BasicException eD) {
-            MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE, LocalRes.getIntString("message.nomove"), eD);
+            MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE, AppLocal.getIntString("message.nomove"), eD);
             msg.show(this);
         }
     }                                        
@@ -298,7 +298,7 @@ public class JNavigator extends javax.swing.JPanel implements BrowseListener, St
         try{
             m_bd.moveFirst();
         } catch (BasicException eD) {
-            MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE, LocalRes.getIntString("message.nomove"), eD);
+            MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE, AppLocal.getIntString("message.nomove"), eD);
             msg.show(this);
         }
     }                                         
@@ -307,7 +307,7 @@ public class JNavigator extends javax.swing.JPanel implements BrowseListener, St
         try {
             m_bd.movePrev();
         } catch (BasicException eD) {
-            MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE, LocalRes.getIntString("message.nomove"), eD);
+            MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE, AppLocal.getIntString("message.nomove"), eD);
             msg.show(this);
         }       
     }                                        
@@ -316,7 +316,7 @@ public class JNavigator extends javax.swing.JPanel implements BrowseListener, St
         try {
             m_bd.moveNext();
         } catch (BasicException eD) {
-            MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE, LocalRes.getIntString("message.nomove"), eD);
+            MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE, AppLocal.getIntString("message.nomove"), eD);
             msg.show(this);
         }     
     }                                        

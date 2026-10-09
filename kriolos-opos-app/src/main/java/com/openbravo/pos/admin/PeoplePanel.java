@@ -35,7 +35,7 @@ import javax.swing.ListCellRenderer;
  */
 public class PeoplePanel extends JPanelTable {
     
-    private DataLogicAdmin dlAdmin;
+    private PeopleService peopleService;
     private TableDefinition tpeople;
     private PeopleView jeditor;
     
@@ -48,9 +48,9 @@ public class PeoplePanel extends JPanelTable {
      */
     @Override
     protected void init() {      
-        dlAdmin = (DataLogicAdmin) app.getBean("com.openbravo.pos.admin.DataLogicAdmin");        
-        tpeople = dlAdmin.getTablePeople();           
-        jeditor = new PeopleView(dlAdmin, dirty);    
+        peopleService = app.getBean(PeopleService.class);        
+        tpeople = peopleService.getTablePeople();           
+        jeditor = new PeopleView(peopleService, dirty);    
     }
     
     /**
@@ -68,7 +68,7 @@ public class PeoplePanel extends JPanelTable {
      */
     @Override
     public SaveProvider getSaveProvider() {
-        return dlAdmin.getPeopleSaveProvider();
+        return peopleService.getPeopleSaveProvider();
         //return new DefaultSaveProvider(tpeople);        
     }
     

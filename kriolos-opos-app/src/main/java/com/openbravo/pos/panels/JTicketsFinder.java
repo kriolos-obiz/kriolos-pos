@@ -17,16 +17,19 @@
 package com.openbravo.pos.panels;
 
 import com.openbravo.data.gui.modal.PosUIModal;
+import com.openbravo.pos.customers.CustomerService;
 import com.openbravo.pos.customers.DataLogicCustomers;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.DataLogicSales;
+import com.openbravo.pos.sales.TaxService;
+import com.openbravo.pos.sales.TicketLifecycleService;
 import com.openbravo.pos.ticket.FindTicketsInfo;
 import java.awt.Component;
 
 /**
  * Backward-compatible adapter delegating to {@link JTicketsFinderPanel}.
  *
- * @deprecated Use {@link JTicketsFinderPanel#show(Component, DataLogicSales, DataLogicCustomers)} instead.
+ * @deprecated Use {@link JTicketsFinderPanel#show(Component, TicketLifecycleService, TaxService, CustomerService)} instead.
  */
 @Deprecated
 public class JTicketsFinder {
@@ -34,17 +37,47 @@ public class JTicketsFinder {
     private final Component parent;
     private final JTicketsFinderPanel panel;
 
-    private JTicketsFinder(Component parent, DataLogicSales dlSales, DataLogicCustomers dlCustomers) {
+    public JTicketsFinder(Component parent, TicketLifecycleService ticketLifecycleService, TaxService taxService, CustomerService customerService) {
         this.parent = parent;
-        this.panel = new JTicketsFinderPanel(dlSales, dlCustomers);
+        this.panel = new JTicketsFinderPanel(ticketLifecycleService, taxService, customerService);
     }
 
+    @Deprecated
+    public JTicketsFinder(Component parent, TicketLifecycleService ticketLifecycleService, TaxService taxService, DataLogicCustomers dlCustomers) {
+        this(parent, ticketLifecycleService, taxService, (CustomerService) dlCustomers);
+    }
+
+    @Deprecated
+    private JTicketsFinder(Component parent, DataLogicSales dlSales, DataLogicCustomers dlCustomers) {
+        this(parent, (TicketLifecycleService) dlSales, (TaxService) dlSales, (CustomerService) dlCustomers);
+    }
+
+    public static JTicketsFinder getReceiptFinder(Component parent, TicketLifecycleService ticketLifecycleService, TaxService taxService, CustomerService customerService) {
+        return new JTicketsFinder(parent, ticketLifecycleService, taxService, customerService);
+    }
+
+    @Deprecated
+    public static JTicketsFinder getReceiptFinder(Component parent, TicketLifecycleService ticketLifecycleService, TaxService taxService, DataLogicCustomers dlCustomers) {
+        return new JTicketsFinder(parent, ticketLifecycleService, taxService, (CustomerService) dlCustomers);
+    }
+
+    @Deprecated
     public static JTicketsFinder getReceiptFinder(Component parent, DataLogicSales dlSales, DataLogicCustomers dlCustomers) {
-        return new JTicketsFinder(parent, dlSales, dlCustomers);
+        return new JTicketsFinder(parent, (TicketLifecycleService) dlSales, (TaxService) dlSales, (CustomerService) dlCustomers);
     }
 
+    public static FindTicketsInfo show(Component parent, TicketLifecycleService ticketLifecycleService, TaxService taxService, CustomerService customerService) {
+        return JTicketsFinderPanel.show(parent, ticketLifecycleService, taxService, customerService);
+    }
+
+    @Deprecated
+    public static FindTicketsInfo show(Component parent, TicketLifecycleService ticketLifecycleService, TaxService taxService, DataLogicCustomers dlCustomers) {
+        return JTicketsFinderPanel.show(parent, ticketLifecycleService, taxService, (CustomerService) dlCustomers);
+    }
+
+    @Deprecated
     public static FindTicketsInfo show(Component parent, DataLogicSales dlSales, DataLogicCustomers dlCustomers) {
-        return JTicketsFinderPanel.show(parent, dlSales, dlCustomers);
+        return JTicketsFinderPanel.show(parent, (TicketLifecycleService) dlSales, (TaxService) dlSales, (CustomerService) dlCustomers);
     }
 
     public FindTicketsInfo getSelectedCustomer() {

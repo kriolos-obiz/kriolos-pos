@@ -1,61 +1,22 @@
 package com.openbravo.pos.inventory;
 
-import com.openbravo.basic.BasicException;
-import com.openbravo.data.loader.DataRead;
-import com.openbravo.data.loader.IKeyed;
-import com.openbravo.data.loader.SerializerRead;
+/**
+ * Legacy Unit of Measure wrapper preserving backward compatibility.
+ *
+ * @deprecated Use {@link com.openbravo.pos.pim.UomInfo} instead.
+ */
+@Deprecated(since = "10.0.0")
+public class UomInfo extends com.openbravo.pos.pim.UomInfo {
 
-public class UomInfo implements IKeyed {
+    private static final long serialVersionUID = 1L;
 
-    private String m_sID;
-    private String m_sName;
-    
-    
-    
-    /** Creates new CategoryInfo
-     * @param id
-     * @param name */
+    /**
+     * Constructs a legacy UomInfo proxying the PIM UomInfo model.
+     *
+     * @param id   the UOM identifier
+     * @param name the UOM name
+     */
     public UomInfo(String id, String name) {
-        m_sID = id;
-        m_sName = name;
+        super(id, name);
     }
-    
-    
-    public void setID(String sID) {
-        m_sID = sID;
-    }
-
-    public String getID() {
-        return m_sID;
-    }
-
-    public String getName() {
-        return m_sName;
-    }
-
-    public void setName(String sName) {
-        m_sName = sName;
-    }
-
-    
-    @Override
-    public Object getKey() {
-        return m_sID;
-    }
-    
-    @Override
-    public String toString() {
-        return m_sName;
-    }
-
-    public static SerializerRead<UomInfo> getSerializerRead() {
-        return new SerializerRead<UomInfo>() {
-            @Override
-            public UomInfo readValues(DataRead dr) throws BasicException {
-                return new UomInfo(dr.getString(1), dr.getString(2));
-            }
-        };
-    }
-    
-    
 }

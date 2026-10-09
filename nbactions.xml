@@ -15,22 +15,15 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 --><actions>
+
     <action>
-        <actionName>CUSTOM-license:check</actionName>
-        <displayName>license:check</displayName>
+        <actionName>CUSTOM-Qdocs</actionName>
+        <displayName>Generate docs</displayName>
         <goals>
-            <goal>license:check</goal>
-        </goals>
-    </action>
-    <action>
-        <actionName>CUSTOM-QA</actionName>
-        <displayName>QA</displayName>
-        <goals>
-            <goal>test</goal>
+            <goal>verify</goal>
         </goals>
         <activatedProfiles>
-            <activatedProfile>qa</activatedProfile>
-            <activatedProfile>reporting</activatedProfile>
+            <activatedProfile>gen-doc</activatedProfile>
         </activatedProfiles>
     </action>
     <action>
@@ -74,7 +67,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             <goal>package</goal>
         </goals>
         <activatedProfiles>
-            <activatedProfile>docs-gen</activatedProfile>
+            <activatedProfile>gen-doc</activatedProfile>
             <activatedProfile>release</activatedProfile>
         </activatedProfiles>
     </action>

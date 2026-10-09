@@ -1,0 +1,3 @@
+* Legacy Architecture
+** xref:index.adoc[Overview]
+** xref:legacy-datalogic-architecture.adoc[DataLogic Scope & Monolith Analysis]

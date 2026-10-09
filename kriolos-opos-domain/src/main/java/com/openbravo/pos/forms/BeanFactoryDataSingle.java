@@ -29,6 +29,8 @@ public abstract class BeanFactoryDataSingle implements BeanFactoryApp {
     public BeanFactoryDataSingle() {
     }
     
+    protected AppView app;
+
     /**
      *
      * @param s
@@ -42,7 +44,12 @@ public abstract class BeanFactoryDataSingle implements BeanFactoryApp {
      */
     @Override
     public void init(AppView app) throws BeanFactoryException {        
+        this.app = app;
         init(app.getSession());                     
+    }
+
+    public AppView getApp() {
+        return app;
     }
 
     /**

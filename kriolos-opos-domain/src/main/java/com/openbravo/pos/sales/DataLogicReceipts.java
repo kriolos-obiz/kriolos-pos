@@ -43,7 +43,7 @@ import java.util.List;
  *
  * @author adrianromero
  */
-public class DataLogicReceipts extends BeanFactoryDataSingle {
+public class DataLogicReceipts extends BeanFactoryDataSingle implements SharedTicketService {
 
     private final static System.Logger LOGGER = System.getLogger(DataLogicReceipts.class.getName());
 

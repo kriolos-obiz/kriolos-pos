@@ -32,21 +32,41 @@ public class JCustomerFinder {
     private final Component parent;
     private final JCustomerFinderPanel panel;
 
-    private JCustomerFinder(Component parent, DataLogicCustomers dlCustomers) {
+    private JCustomerFinder(Component parent, CustomerService customerService) {
         this.parent = parent;
-        this.panel = new JCustomerFinderPanel(dlCustomers);
+        this.panel = new JCustomerFinderPanel(customerService);
     }
 
+    @Deprecated
+    private JCustomerFinder(Component parent, DataLogicCustomers dlCustomers) {
+        this(parent, (CustomerService) dlCustomers);
+    }
+
+    public static JCustomerFinder getCustomerFinder(Component parent, CustomerService customerService) {
+        return new JCustomerFinder(parent, customerService);
+    }
+
+    @Deprecated
     public static JCustomerFinder getCustomerFinder(Component parent, DataLogicCustomers dlCustomers) {
-        return new JCustomerFinder(parent, dlCustomers);
+        return new JCustomerFinder(parent, (CustomerService) dlCustomers);
     }
 
+    public static CustomerInfo show(Component parent, CustomerService customerService) {
+        return JCustomerFinderPanel.show(parent, customerService);
+    }
+
+    public static CustomerInfo show(Component parent, CustomerService customerService, CustomerInfo customer) {
+        return JCustomerFinderPanel.show(parent, customerService, customer);
+    }
+
+    @Deprecated
     public static CustomerInfo show(Component parent, DataLogicCustomers dlCustomers) {
-        return JCustomerFinderPanel.show(parent, dlCustomers);
+        return JCustomerFinderPanel.show(parent, (CustomerService) dlCustomers);
     }
 
+    @Deprecated
     public static CustomerInfo show(Component parent, DataLogicCustomers dlCustomers, CustomerInfo customer) {
-        return JCustomerFinderPanel.show(parent, dlCustomers, customer);
+        return JCustomerFinderPanel.show(parent, (CustomerService) dlCustomers, customer);
     }
 
     public void setAppView(AppView appView) {

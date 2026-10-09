@@ -135,4 +135,9 @@ public class ScaleAcomPC100 extends AbstractSerialScale implements Scale, Serial
                 SerialPort.STOPBITS_1,
                 SerialPort.PARITY_EVEN);
     }
+
+    @Override
+    public com.openbravo.pos.spi.hardware.scale.ScaleProtocol getProtocol() {
+        return com.openbravo.pos.spi.hardware.scale.ScaleProtocol.ACOM_PC100;
+    }
 }

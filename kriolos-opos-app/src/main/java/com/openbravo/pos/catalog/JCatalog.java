@@ -17,9 +17,9 @@ package com.openbravo.pos.catalog;
 
 import com.openbravo.basic.BasicException;
 import com.openbravo.pos.forms.AppView;
-import com.openbravo.pos.forms.DataLogicSales;
 import com.openbravo.pos.pim.CategoryInfo;
 import com.openbravo.pos.pim.DataLogicPIM;
+import com.openbravo.pos.sales.TaxService;
 import com.openbravo.pos.ticket.ProductInfoExt;
 import com.openbravo.pos.ticket.TaxInfo;
 import java.awt.CardLayout;
@@ -80,10 +80,10 @@ public class JCatalog extends JPanel implements ListSelectionListener, CatalogSe
         categoriesScrollPane.getVerticalScrollBar().setPreferredSize(new Dimension(35, 35));
         
         
-        DataLogicSales dataLogicSales = app.getBean(DataLogicSales.class);
-        DataLogicPIM dataLogicPIM = app.getBean(DataLogicPIM.class);
+        TaxService taxService = app.getBean(TaxService.class);
+        CatalogService catalogService = app.getBean(CatalogService.class);
 
-        controller = new CatalogController(dataLogicSales, dataLogicPIM);
+        controller = new CatalogController(taxService, catalogService);
     }
 
     @Override

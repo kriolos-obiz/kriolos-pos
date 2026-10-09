@@ -8,4 +8,5 @@ nav:
   - modules/guide-user/nav.adoc
   - modules/guide-comercial/nav.adoc
   - modules/guide-migration/nav.adoc
+  - modules/legacy/nav.adoc
   - modules/notes/nav.adoc

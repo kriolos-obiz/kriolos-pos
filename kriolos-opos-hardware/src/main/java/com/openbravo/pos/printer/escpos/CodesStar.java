@@ -16,8 +16,9 @@
  */
 package com.openbravo.pos.printer.escpos;
 
+
 import com.openbravo.pos.printer.DevicePrinter;
-import com.openbravo.pos.printer.DeviceTicket;
+import com.openbravo.pos.printer.PrinterTextUtils;
 import java.awt.image.BufferedImage;
 
 /**
@@ -245,7 +246,7 @@ public class CodesStar extends Codes {
             }
             out.write(new byte[]{0x02}); // dots
             out.write(new byte[]{0x50}); // height
-            out.write(DeviceTicket.transNumber(DeviceTicket.alignBarcode(code,13).substring(0,12)));
+            out.write(PrinterTextUtils.transNumber(PrinterTextUtils.alignBarcode(code,13).substring(0,12)));
             out.write(new byte[] { 0x1E }); // end char
 
             out.write(new byte[] {0x1B, 0x1D, 0x61, 0x00}); // Align left

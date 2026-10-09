@@ -31,21 +31,36 @@ public class JEmployeeFinder {
     private final Component parent;
     private final JEmployeeFinderPanel panel;
 
-    private JEmployeeFinder(Component parent, DataLogicPresenceManagement dlPresenceManagement) {
+    private JEmployeeFinder(Component parent, ShiftService shiftService) {
         this.parent = parent;
-        this.panel = new JEmployeeFinderPanel(dlPresenceManagement);
+        this.panel = new JEmployeeFinderPanel(shiftService);
     }
 
+    public static JEmployeeFinder getEmployeeFinder(Component parent, ShiftService shiftService) {
+        return new JEmployeeFinder(parent, shiftService);
+    }
+
+    @Deprecated
     public static JEmployeeFinder getEmployeeFinder(Component parent, DataLogicPresenceManagement dlPresenceManagement) {
-        return new JEmployeeFinder(parent, dlPresenceManagement);
+        return new JEmployeeFinder(parent, (ShiftService) dlPresenceManagement);
     }
 
+    public static EmployeeInfo show(Component parent, ShiftService shiftService) {
+        return JEmployeeFinderPanel.show(parent, shiftService);
+    }
+
+    public static EmployeeInfo show(Component parent, ShiftService shiftService, EmployeeInfo employee) {
+        return JEmployeeFinderPanel.show(parent, shiftService, employee);
+    }
+
+    @Deprecated
     public static EmployeeInfo show(Component parent, DataLogicPresenceManagement dlPresenceManagement) {
-        return JEmployeeFinderPanel.show(parent, dlPresenceManagement);
+        return JEmployeeFinderPanel.show(parent, (ShiftService) dlPresenceManagement);
     }
 
+    @Deprecated
     public static EmployeeInfo show(Component parent, DataLogicPresenceManagement dlPresenceManagement, EmployeeInfo employee) {
-        return JEmployeeFinderPanel.show(parent, dlPresenceManagement, employee);
+        return JEmployeeFinderPanel.show(parent, (ShiftService) dlPresenceManagement, employee);
     }
 
     public void search(EmployeeInfo employee) {

@@ -17,7 +17,7 @@ package com.openbravo.data.gui;
 
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.gui.modal.PosUIModal;
-import com.openbravo.data.loader.LocalRes;
+import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.data.loader.Vectorer;
 import java.awt.Component;
 import javax.swing.JButton;
@@ -84,10 +84,10 @@ public class JFindPanel<T> extends JPanel {
             }
 
             m_jMatch.removeAllItems();
-            m_jMatch.addItem(LocalRes.getIntString("list.startfield"));
-            m_jMatch.addItem(LocalRes.getIntString("list.wholefield"));
-            m_jMatch.addItem(LocalRes.getIntString("list.anypart"));
-            m_jMatch.addItem(LocalRes.getIntString("list.re"));
+            m_jMatch.addItem(AppLocal.getIntString("list.startfield"));
+            m_jMatch.addItem(AppLocal.getIntString("list.wholefield"));
+            m_jMatch.addItem(AppLocal.getIntString("list.anypart"));
+            m_jMatch.addItem(AppLocal.getIntString("list.re"));
             m_jMatch.setSelectedIndex(lastFindInfo.getMatch());
 
             m_jMatchCase.setSelected(lastFindInfo.isMatchCase());
@@ -116,7 +116,7 @@ public class JFindPanel<T> extends JPanel {
     }
 
     public String getTitle() {
-        return LocalRes.getIntString("title.find");
+        return AppLocal.getIntString("title.find");
     }
 
     public JButton getOkButton() {
@@ -204,28 +204,28 @@ public class JFindPanel<T> extends JPanel {
         setLayout(new java.awt.BorderLayout());
 
         jLabel1.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
-        jLabel1.setText(LocalRes.getIntString("label.findwhat")); // NOI18N
+        jLabel1.setText(AppLocal.getIntString("label.findwhat")); // NOI18N
         jLabel1.setPreferredSize(new java.awt.Dimension(150, 30));
 
         m_jFind.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
         m_jFind.setPreferredSize(new java.awt.Dimension(250, 30));
 
         jLabel2.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
-        jLabel2.setText(LocalRes.getIntString("label.where")); // NOI18N
+        jLabel2.setText(AppLocal.getIntString("label.where")); // NOI18N
         jLabel2.setPreferredSize(new java.awt.Dimension(150, 30));
 
         m_jWhere.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
         m_jWhere.setPreferredSize(new java.awt.Dimension(250, 30));
 
         jLabel3.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
-        jLabel3.setText(LocalRes.getIntString("label.match")); // NOI18N
+        jLabel3.setText(AppLocal.getIntString("label.match")); // NOI18N
         jLabel3.setPreferredSize(new java.awt.Dimension(150, 30));
 
         m_jMatch.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
         m_jMatch.setPreferredSize(new java.awt.Dimension(250, 30));
 
         m_jMatchCase.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
-        m_jMatchCase.setText(LocalRes.getIntString("label.casesensitive")); // NOI18N
+        m_jMatchCase.setText(AppLocal.getIntString("label.casesensitive")); // NOI18N
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
@@ -276,7 +276,7 @@ public class JFindPanel<T> extends JPanel {
 
         jcmdCancel.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
         jcmdCancel.setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/openbravo/images/cancel.png"))); // NOI18N
-        jcmdCancel.setText(LocalRes.getIntString("button.cancel")); // NOI18N
+        jcmdCancel.setText(AppLocal.getIntString("button.cancel")); // NOI18N
         jcmdCancel.setPreferredSize(new java.awt.Dimension(110, 45));
         jcmdCancel.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -287,7 +287,7 @@ public class JFindPanel<T> extends JPanel {
 
         jcmdOK.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
         jcmdOK.setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/openbravo/images/ok.png"))); // NOI18N
-        jcmdOK.setText(LocalRes.getIntString("button.ok")); // NOI18N
+        jcmdOK.setText(AppLocal.getIntString("button.ok")); // NOI18N
         jcmdOK.setMaximumSize(new java.awt.Dimension(65, 33));
         jcmdOK.setMinimumSize(new java.awt.Dimension(65, 33));
         jcmdOK.setPreferredSize(new java.awt.Dimension(110, 45));

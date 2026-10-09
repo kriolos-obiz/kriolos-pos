@@ -1,24 +1,24 @@
-//    KriolOS POS
-//    Copyright (c) 2019-2023 KriolOS
-//
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
-//
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//    GNU General Public License for more details.
-//
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+/*
+ * Copyright (C) 2026 KriolOS
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package com.openbravo.pos.printer;
 
 import com.openbravo.basic.BasicException;
 import com.openbravo.pos.forms.DataLogicSystem;
-import com.openbravo.pos.printer.custom.DeviceDisplayPDLED8;
-import com.openbravo.pos.printer.escpos.DeviceDisplayLED8;
+import com.openbravo.pos.forms.SystemService;
 import com.openbravo.pos.ticket.TicketInfo;
 import com.openbravo.pos.util.AudioUtils;
 import com.openbravo.pos.util.SAXParserUtils;
@@ -46,6 +46,8 @@ public class TicketParser extends DefaultHandler {
     private static final Logger LOGGER = Logger.getLogger(TicketParser.class.getName());
 
     private final DeviceTicket deviceTicket;
+    private final SystemService systemService;
+    @Deprecated
     private final DataLogicSystem dataLogicSystem;
 
     private StringBuilder currentText;
@@ -79,9 +81,15 @@ public class TicketParser extends DefaultHandler {
     int qrcodeSize = DevicePrinter.QRCODE_DEFAULT_SIZE;
     char qrcodeErrorCode =  DevicePrinter.QRCODE_DEFAULT_ERROR_CODE;
 
-    public TicketParser(DeviceTicket deviceTicket, DataLogicSystem dataLogicSystem) {
+    public TicketParser(DeviceTicket deviceTicket, SystemService systemService) {
         this.deviceTicket = deviceTicket;
-        this.dataLogicSystem = dataLogicSystem;
+        this.systemService = systemService;
+        this.dataLogicSystem = (systemService instanceof DataLogicSystem) ? (DataLogicSystem) systemService : null;
+    }
+
+    @Deprecated
+    public TicketParser(DeviceTicket deviceTicket, DataLogicSystem dataLogicSystem) {
+        this(deviceTicket, (SystemService) dataLogicSystem);
     }
 
     public void printTicket(String xmlInput, TicketInfo ticket) throws TicketPrinterException {
@@ -130,7 +138,7 @@ public class TicketParser extends DefaultHandler {
         barcodeType = null;
         barcodePosition = null;
         visorLineBuilder = null;
-        visorAnimation = DeviceDisplayEngine.ANIMATION_NULL;
+        visorAnimation = DeviceDisplay.ANIMATION_NULL;
         visorLine1 = null;
         visorLine2 = null;
         outputType = OUTPUT_NONE;
@@ -194,7 +202,9 @@ public class TicketParser extends DefaultHandler {
                 deviceTicket.getDevicePrinter(readString(attributes.getValue("printer"), "1")).openDrawer();
                 // Cashdrawer has been activated record the data in the table
                 try {
-                    dataLogicSystem.execDrawerOpened(currentUser, ticketId, new Date());
+                    if (systemService != null) {
+                        systemService.execDrawerOpened(currentUser, ticketId, new Date());
+                    }
                 } catch (BasicException ex) {
                     LOGGER.log(Level.SEVERE, "Failed to log drawer opened event.", ex);
                 }
@@ -283,7 +293,7 @@ public class TicketParser extends DefaultHandler {
                 break;
             case "image":
                 try {
-                    BufferedImage image = dataLogicSystem.getResourceAsImage(currentText.toString());
+                    BufferedImage image = (systemService != null) ? systemService.getResourceAsImage(currentText.toString()) : null;
                     if (image != null) {
                         outputPrinter.printImage(image);
                     }
@@ -300,7 +310,7 @@ public class TicketParser extends DefaultHandler {
                 break;
             case "text":
                 if (textLength > 0) {
-                    outputPrinter.printText(textStyle, DeviceTicket.alignText(textAlignment, currentText.toString(), textLength));
+                    outputPrinter.printText(textStyle, currentText.toString(), textLength, textAlignment);
                 } else {
                     outputPrinter.printText(textStyle, currentText.toString());
                 }
@@ -365,25 +375,19 @@ public class TicketParser extends DefaultHandler {
                 break;
             case "text":
                 if (textLength > 0) {
-                    visorLineBuilder.append(DeviceTicket.alignText(textAlignment, currentText.toString(), textLength));
+                    visorLineBuilder.append(PrinterTextUtils.alignText(textAlignment, currentText.toString(), textLength));
                 } else {
                     visorLineBuilder.append(currentText);
                 }
                 
-                //Apply Display 'Light style' has 5 style (1...5)
-                if(this.deviceTicket.getDeviceDisplay() instanceof DeviceDisplayLED8 deviceDisplay){
-                    deviceDisplay.displayLight(this.textStyle);
-                }
-
-                //Apply Display 'Status line' has 5 status (0...4)
-                if(this.deviceTicket.getDeviceDisplay() instanceof DeviceDisplayPDLED8 deviceDisplay){
-                    deviceDisplay.changeStatus(this.textStyle);
-                }
+                // Apply optional customer display light style and status line
+                this.deviceTicket.getDeviceDisplay().displayLight(this.textStyle);
+                this.deviceTicket.getDeviceDisplay().changeStatus(this.textStyle);
                 currentText = null;
                 break;
             case "display":
                 deviceTicket.getDeviceDisplay().writeVisor(visorAnimation, visorLine1, visorLine2);
-                visorAnimation = DeviceDisplayEngine.ANIMATION_NULL;
+                visorAnimation = DeviceDisplay.ANIMATION_NULL;
                 visorLine1 = null;
                 visorLine2 = null;
                 outputType = OUTPUT_NONE;
@@ -461,15 +465,15 @@ public class TicketParser extends DefaultHandler {
     private int parseAnimation(String animationString) {
         return switch (readString(animationString, "none")) {
             case "scroll" ->
-                DeviceDisplayEngine.ANIMATION_SCROLL;
+                DeviceDisplay.ANIMATION_SCROLL;
             case "flyer" ->
-                DeviceDisplayEngine.ANIMATION_FLYER;
+                DeviceDisplay.ANIMATION_FLYER;
             case "blink" ->
-                DeviceDisplayEngine.ANIMATION_BLINK;
+                DeviceDisplay.ANIMATION_BLINK;
             case "curtain" ->
-                DeviceDisplayEngine.ANIMATION_CURTAIN;
+                DeviceDisplay.ANIMATION_CURTAIN;
             default ->
-                DeviceDisplayEngine.ANIMATION_NULL;
+                DeviceDisplay.ANIMATION_NULL;
         };
     }
 

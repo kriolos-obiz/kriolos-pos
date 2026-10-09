@@ -28,9 +28,9 @@ import com.openbravo.data.loader.SentenceList;
 import com.openbravo.data.loader.SerializerWrite;
 import com.openbravo.data.loader.SerializerWriteBasic;
 import com.openbravo.format.Formats;
+import com.openbravo.pos.catalog.CatalogService;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
-import com.openbravo.pos.forms.DataLogicSales;
 import com.openbravo.pos.pim.DataLogicPIM;
 import com.openbravo.pos.reports.ReportEditorCreator;
 import java.awt.Component;
@@ -42,6 +42,7 @@ import java.util.List;
  */
 public class ProductFilter2 extends javax.swing.JPanel implements ReportEditorCreator {
     
+    private CatalogService catalogService;
     private DataLogicPIM dataLogicPIM;
     private ComboBoxValModel m_CategoryModel;
 
@@ -57,7 +58,8 @@ public class ProductFilter2 extends javax.swing.JPanel implements ReportEditorCr
      */
     public void init(AppView app) {
          
-        dataLogicPIM = (DataLogicPIM) app.getBean("com.openbravo.pos.pim.DataLogicPIM");
+        catalogService = app.getBean(CatalogService.class);
+        dataLogicPIM = (catalogService instanceof DataLogicPIM) ? (DataLogicPIM) catalogService : null;
 
         m_CategoryModel = new ComboBoxValModel();          
          
@@ -72,7 +74,7 @@ public class ProductFilter2 extends javax.swing.JPanel implements ReportEditorCr
      */
     public void activate() throws BasicException {
 
-        List catlist = dataLogicPIM.getCategoriesListAll();
+        List catlist = catalogService.getCategoriesListAll();
         catlist.add(0, null);
         m_CategoryModel = new ComboBoxValModel(catlist);
         m_jCategory.setModel(m_CategoryModel);
@@ -312,6 +314,15 @@ public class ProductFilter2 extends javax.swing.JPanel implements ReportEditorCr
    
     
     
+    public CatalogService getCatalogService() {
+        return catalogService;
+    }
+
+    @Deprecated
+    public DataLogicPIM getDataLogicPIM() {
+        return dataLogicPIM;
+    }
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jBtnReset;
     private javax.swing.JLabel jLabel1;

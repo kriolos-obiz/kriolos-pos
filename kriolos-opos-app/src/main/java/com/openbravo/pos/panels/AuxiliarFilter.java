@@ -20,9 +20,9 @@ import com.openbravo.basic.BasicException;
 import com.openbravo.data.gui.MessageInf;
 import com.openbravo.data.loader.SerializerWrite;
 import com.openbravo.data.loader.SerializerWriteString;
+import com.openbravo.pos.catalog.CatalogService;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
-import com.openbravo.pos.forms.DataLogicSales;
 import com.openbravo.pos.pim.DataLogicPIM;
 import com.openbravo.pos.reports.ReportEditorCreator;
 import com.openbravo.pos.ticket.ProductInfoExt;
@@ -41,6 +41,7 @@ import javax.swing.event.EventListenerList;
 public class AuxiliarFilter extends javax.swing.JPanel implements ReportEditorCreator {
 
     private ProductInfoExt product;
+    private CatalogService catalogService;
     private DataLogicPIM dataLogicPIM;
     private AppView appView;
     
@@ -61,7 +62,8 @@ public class AuxiliarFilter extends javax.swing.JPanel implements ReportEditorCr
     @Override
     public void init(AppView app) {   
         this.appView = app;
-        this.dataLogicPIM = (DataLogicPIM) app.getBean("com.openbravo.pos.pim.DataLogicPIM");
+        this.catalogService = app.getBean(CatalogService.class);
+        this.dataLogicPIM = (catalogService instanceof DataLogicPIM) ? (DataLogicPIM) catalogService : null;
     }
 
     /**
@@ -160,9 +162,9 @@ public class AuxiliarFilter extends javax.swing.JPanel implements ReportEditorCr
 
     private void assignProductByCode() {
         try {
-            ProductInfoExt prod = dataLogicPIM.getProductInfoByCode(m_jBarcode1.getText());
+            ProductInfoExt prod = catalogService.getProductInfoByCode(m_jBarcode1.getText());
             if (prod == null) {
-                Toolkit.getDefaultToolkit().beep();
+                com.openbravo.pos.util.NotifyUtils.beep();
             }
             assignProduct(prod);
         } catch (BasicException eData) {
@@ -174,9 +176,9 @@ public class AuxiliarFilter extends javax.swing.JPanel implements ReportEditorCr
 
     private void assignProductByReference() {
         try {
-            ProductInfoExt prod = dataLogicPIM.getProductInfoByReference(m_jReference1.getText());
+            ProductInfoExt prod = catalogService.getProductInfoByReference(m_jReference1.getText());
             if (prod == null) {
-                Toolkit.getDefaultToolkit().beep();
+                com.openbravo.pos.util.NotifyUtils.beep();
             }
             assignProduct(prod);
         } catch (BasicException eData) {
@@ -328,7 +330,7 @@ public class AuxiliarFilter extends javax.swing.JPanel implements ReportEditorCr
 
     private void searchActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_searchActionPerformed
         
-        assignProduct(JProductFinder.showMessage(this, this.appView, JProductFinder.PRODUCT_NORMAL));       
+        assignProduct(JProductFinderPanel.showMessage(this, this.appView, JProductFinderPanel.PRODUCT_NORMAL));       
         
 }//GEN-LAST:event_searchActionPerformed
 
@@ -347,6 +349,15 @@ public class AuxiliarFilter extends javax.swing.JPanel implements ReportEditorCr
     private void m_jSearchActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_m_jSearchActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_m_jSearchActionPerformed
+
+    public CatalogService getCatalogService() {
+        return catalogService;
+    }
+
+    @Deprecated
+    public DataLogicPIM getDataLogicPIM() {
+        return dataLogicPIM;
+    }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton Enter1;

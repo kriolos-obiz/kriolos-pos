@@ -58,8 +58,8 @@ public class CustomerCSVImport extends JPanel implements JPanelView {
     private String last_folder;
     private File config_file;
 
-    private DataLogicSales m_dlSales;
     private DataLogicSystem m_dlSystem;
+    private ImportService m_importService;
     private DataLogicImport m_dlImport;
     private DataLogicCustomers m_dlCustomer;
 
@@ -109,19 +109,26 @@ public class CustomerCSVImport extends JPanel implements JPanelView {
         m_dlCustomer = new DataLogicCustomers();
         m_dlCustomer.init(dbSession);
 
-        m_dlSales = new DataLogicSales();
-        m_dlSales.init(dbSession);
-
         m_dlSystem = new DataLogicSystem();
         m_dlSystem.init(dbSession);
 
-        m_dlImport = new DataLogicImport();
-        m_dlImport.init(dbSession);
+        ImportService resolvedImport = null;
+        try {
+            resolvedImport = oApp.getBean(ImportService.class);
+        } catch (BeanFactoryException ignored) {
+        }
+        if (resolvedImport == null) {
+            DataLogicImport fallback = new DataLogicImport();
+            fallback.init(dbSession);
+            resolvedImport = fallback;
+        }
+        m_importService = resolvedImport;
+        m_dlImport = (m_importService instanceof DataLogicImport) ? (DataLogicImport) m_importService : null;
 
         spr = new DefaultSaveProvider(
-                m_dlSales.getCustomerUpdate(),
-                m_dlSales.getCustomerInsert(),
-                m_dlSales.getCustomerDelete());
+                m_dlCustomer.getCustomerUpdate(),
+                m_dlCustomer.getCustomerInsert(),
+                m_dlCustomer.getCustomerDelete());
 
         last_folder = props.getProperty("CSV.last_folder");
         config_file = props.getConfigFile();
@@ -632,7 +639,7 @@ public class CustomerCSVImport extends JPanel implements JPanelView {
         mycust[4] = customerName;                                               // Name string
 
         try {
-            m_dlImport.execCustomerAddCSVEntry(mycust);
+            m_importService.execCustomerAddCSVEntry(mycust);
         } catch (BasicException ex) {
             LOGGER.log(Level.WARNING, null, ex);
         }
@@ -642,17 +649,25 @@ public class CustomerCSVImport extends JPanel implements JPanelView {
      * @return
      */
     public String getRecord() {
-        // Get record type using using DataLogicSystem
-        Object[] mycust = new Object[2];
-        mycust[0] = customerSearchKey;
-        mycust[1] = customerName;
-
+        // Get record type using ImportService
         try {
-            return (m_dlImport.getCustomerRecordType(mycust));
+            return m_importService.getCustomerRecordType(customerSearchKey, customerName);
         } catch (BasicException ex) {
             LOGGER.log(Level.WARNING, null, ex);
         }
         return "Exception";
+    }
+
+    public ImportService getImportService() {
+        return m_importService;
+    }
+
+    @Deprecated
+    public DataLogicImport getDataLogicImport() {
+        if (m_dlImport == null && m_importService instanceof DataLogicImport) {
+            return (DataLogicImport) m_importService;
+        }
+        return m_dlImport;
     }
 
     /**

@@ -17,13 +17,17 @@ package com.openbravo.pos.inventory;
 
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.gui.ComboBoxValModel;
-import com.openbravo.data.loader.*;
+import com.openbravo.data.loader.SerializerWrite;
+import com.openbravo.data.loader.SerializerWriteString;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
+import com.openbravo.pos.inventory.AttributeService;
+import com.openbravo.pos.inventory.AttributeSetInfo;
 import com.openbravo.pos.inventory.DataLogicAttribute;
 import com.openbravo.pos.reports.ReportEditorCreator;
 import java.awt.Component;
 import java.awt.event.ActionListener;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -32,7 +36,7 @@ import java.util.List;
  */
 public class AttributeSetFilter extends javax.swing.JPanel implements ReportEditorCreator {
 
-    private SentenceList attusesent;
+    private AttributeService attributeService;
     private ComboBoxValModel attusemodel;
 
     /**
@@ -49,9 +53,10 @@ public class AttributeSetFilter extends javax.swing.JPanel implements ReportEdit
     @Override
     public void init(AppView app) {
 
-        DataLogicAttribute dlAttribute = (DataLogicAttribute) app
-                .getBean("com.openbravo.pos.inventory.DataLogicAttribute");
-        attusesent = dlAttribute.attributeSetListSent;
+        attributeService = app.getBean(AttributeService.class);
+        if (attributeService == null) {
+            attributeService = app.getBean(DataLogicAttribute.class);
+        }
         attusemodel = new ComboBoxValModel();
     }
 
@@ -61,7 +66,7 @@ public class AttributeSetFilter extends javax.swing.JPanel implements ReportEdit
      */
     @Override
     public void activate() throws BasicException {
-        List a = attusesent.list();
+        List<AttributeSetInfo> a = attributeService != null ? attributeService.getAttributeSetList() : Collections.emptyList();
         attusemodel = new ComboBoxValModel(a);
         attusemodel.setSelectedFirst();
         jAttrSet.setModel(attusemodel);

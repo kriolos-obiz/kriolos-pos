@@ -1,30 +1,32 @@
-//    KriolOS POS
-//    Copyright (c) 2019-2026 KriolOS
-//
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
-//
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//    GNU General Public License for more details.
-//
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+/*
+ * Copyright (C) 2026 KriolOS
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package com.openbravo.pos.sales.modern.one;
 
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.gui.modal.PosUIModal;
 import com.openbravo.pos.customers.CustomerInfoExt;
+import com.openbravo.pos.customers.CustomerService;
 import com.openbravo.pos.customers.DataLogicCustomers;
 import com.openbravo.pos.customers.JCustomerFinderPanel;
 import com.openbravo.pos.forms.AppLocal;
+import com.openbravo.pos.catalog.CatalogService;
 import com.openbravo.pos.forms.AppView;
-import com.openbravo.pos.forms.DataLogicSales;
 import com.openbravo.pos.forms.DataLogicSystem;
+import com.openbravo.pos.forms.ResourceService;
 import com.openbravo.pos.forms.JPanelView;
 import com.openbravo.pos.payment.JPaymentSelect;
 import com.openbravo.pos.payment.JPaymentSelectReceipt;
@@ -33,11 +35,13 @@ import com.openbravo.pos.payment.PaymentServiceImpl;
 import com.openbravo.pos.pim.CategoryInfo;
 import com.openbravo.pos.pim.DataLogicPIM;
 import com.openbravo.pos.printer.TicketParser;
-import com.openbravo.pos.sales.DataLogicReceipts;
 import com.openbravo.pos.sales.JProductLineEditPanel;
 import com.openbravo.pos.sales.SalesService;
 import com.openbravo.pos.sales.SalesServiceImpl;
+import com.openbravo.pos.sales.SharedTicketService;
+import com.openbravo.pos.sales.TaxService;
 import com.openbravo.pos.sales.TaxesLogic;
+import com.openbravo.pos.sales.TicketLifecycleService;
 import com.openbravo.pos.sales.TicketsEditor;
 import com.openbravo.pos.ticket.ProductInfoExt;
 import com.openbravo.pos.ticket.TaxInfo;
@@ -74,10 +78,16 @@ public class ModernOne extends JPanel implements JPanelView, TicketsEditor {
     private static final Logger LOGGER = Logger.getLogger(ModernOne.class.getName());
 
     private final AppView app;
-    private DataLogicSales dlSales;
+    private TicketLifecycleService ticketLifecycleService;
+    private TaxService taxService;
+    private CatalogService catalogService;
     private DataLogicPIM dlPim;
+    private ResourceService resourceService;
+    @Deprecated
     private DataLogicSystem dlSystem;
-    private DataLogicReceipts dlReceipts;
+    private SharedTicketService dlReceipts;
+    private CustomerService customerService;
+    @Deprecated
     private DataLogicCustomers dlCustomers;
 
     private TaxesLogic taxeslogic;
@@ -87,8 +97,8 @@ public class ModernOne extends JPanel implements JPanelView, TicketsEditor {
     private JPaymentSelect paymentDialog;
 
     // Dual-pane UI components
-    private ModernTicketPane ticketPane;
-    private ModernCatalogPane catalogPane;
+    private ModernOneTicketPane ticketPane;
+    private ModernOneCatalogPane catalogPane;
     private JSplitPane splitPane;
 
     // Active state
@@ -112,14 +122,18 @@ public class ModernOne extends JPanel implements JPanelView, TicketsEditor {
     }
 
     private void initDomainServices() {
-        dlSales = app.getBean(DataLogicSales.class);
-        dlPim = app.getBean(DataLogicPIM.class);
-        dlSystem = app.getBean(DataLogicSystem.class);
-        dlReceipts = app.getBean(DataLogicReceipts.class);
-        dlCustomers = app.getBean(DataLogicCustomers.class);
+        ticketLifecycleService = app.getBean(TicketLifecycleService.class);
+        taxService = app.getBean(TaxService.class);
+        catalogService = app.getBean(CatalogService.class);
+        dlPim = (catalogService instanceof DataLogicPIM) ? (DataLogicPIM) catalogService : null;
+        resourceService = app.getBean(ResourceService.class);
+        dlSystem = (resourceService instanceof DataLogicSystem) ? (DataLogicSystem) resourceService : null;
+        dlReceipts = app.getBean(SharedTicketService.class);
+        customerService = app.getBean(CustomerService.class);
+        dlCustomers = (customerService instanceof DataLogicCustomers) ? (DataLogicCustomers) customerService : app.getBean(DataLogicCustomers.class);
 
         paymentService = new PaymentServiceImpl();
-        ticketParser = new TicketParser(app.getDeviceTicket(), dlSystem);
+        ticketParser = app.createTicketParser();
     }
 
     private void initUI() {
@@ -128,10 +142,10 @@ public class ModernOne extends JPanel implements JPanelView, TicketsEditor {
         setBackground(UIManager.getColor("Panel.background"));
 
         // Left / Leading Pane: Ticket Line Items
-        ticketPane = new ModernTicketPane();
+        ticketPane = new ModernOneTicketPane();
 
         // Right / Center Pane: Responsive Catalog Grid
-        catalogPane = new ModernCatalogPane(this::addProductToTicket);
+        catalogPane = new ModernOneCatalogPane(this::addProductToTicket);
 
         // Connect Ticket Pane Callbacks
         ticketPane.setOnPayClicked(this::processPayment);
@@ -201,7 +215,7 @@ public class ModernOne extends JPanel implements JPanelView, TicketsEditor {
         LOGGER.log(Level.INFO, "Activating ModernOne sales layout");
 
         // 1. Initialize Taxes and Sales Services
-        List<TaxInfo> taxlist = dlSales.getTaxListAll();
+        List<TaxInfo> taxlist = taxService.getTaxListAll();
         taxeslogic = new TaxesLogic(taxlist);
         salesService = new SalesServiceImpl(taxeslogic);
 
@@ -235,9 +249,7 @@ public class ModernOne extends JPanel implements JPanelView, TicketsEditor {
         this.activeTicketExt = oTicketExt;
         if (activeTicket != null) {
             ensureTicketUser(activeTicket);
-            if (activeTicket.getCustomer() != null) {
-                this.activeCustomer = activeTicket.getCustomer();
-            }
+            this.activeCustomer = activeTicket.getCustomer();
         }
         refreshTicket();
     }
@@ -286,12 +298,12 @@ public class ModernOne extends JPanel implements JPanelView, TicketsEditor {
 
     private void loadCatalogData() {
         try {
-            List<CategoryInfo> categories = dlPim.getRootCategories();
+            List<CategoryInfo> categories = catalogService.getRootCategories();
             catalogPane.setCategories(categories);
 
             List<ProductInfoExt> allProducts = new java.util.ArrayList<>();
             for (CategoryInfo cat : categories) {
-                List<ProductInfoExt> prods = dlPim.getProductCatalog(cat.getID());
+                List<ProductInfoExt> prods = catalogService.getProductCatalog(cat.getID());
                 if (prods != null) {
                     allProducts.addAll(prods);
                 }
@@ -373,18 +385,10 @@ public class ModernOne extends JPanel implements JPanelView, TicketsEditor {
     }
 
     private void selectCustomer() {
-        JCustomerFinderPanel customerFinder = new JCustomerFinderPanel(dlCustomers);
-        PosUIModal modal = PosUIModal.create(this, customerFinder)
-                .setTitle(AppLocal.getIntString("title.customer"))
-                .setModal(true)
-                .setResizable(true);
-        customerFinder.setModalContext(modal);
-        modal.show();
-
-        com.openbravo.pos.customers.CustomerInfo selected = customerFinder.getSelectedCustomer();
+        com.openbravo.pos.customers.CustomerInfo selected = JCustomerFinderPanel.show(this, customerService);
         if (selected != null) {
             try {
-                activeCustomer = dlCustomers.findCustomerInfoExtById(selected.getId());
+                activeCustomer = customerService.findCustomerInfoExtById(selected.getId());
                 if (activeTicket != null) {
                     activeTicket.setCustomer(activeCustomer);
                 }
@@ -425,7 +429,7 @@ public class ModernOne extends JPanel implements JPanelView, TicketsEditor {
 
             try {
                 // Persist ticket into database
-                dlSales.saveTicket(activeTicket, app.getInventoryLocation());
+                ticketLifecycleService.saveTicket(activeTicket, app.getInventoryLocation());
 
                 // Print receipt
                 printReceipt(activeTicket);
@@ -448,7 +452,7 @@ public class ModernOne extends JPanel implements JPanelView, TicketsEditor {
         if (ticket == null || ticketParser == null)
             return;
         try {
-            String template = dlSystem.getResourceAsXML("Printer.Ticket");
+            String template = (resourceService != null) ? resourceService.getResourceAsXML("Printer.Ticket") : null;
             if (template != null && !template.isBlank()) {
                 ticketParser.printTicket(template, ticket);
             }
@@ -465,25 +469,25 @@ public class ModernOne extends JPanel implements JPanelView, TicketsEditor {
         }
     }
 
-    private void saveOrUpdateSharedTicket(TicketInfo ticket) {
-        if (ticket != null && ticket.getLinesCount() > 0 && dlReceipts != null) {
-            ensureTicketUser(ticket);
-            if (ticket.getUser() == null) {
+    private void saveOrUpdateSharedTicket(TicketInfo ticketInfo) {
+        if (ticketInfo != null && ticketInfo.getLinesCount() > 0 && dlReceipts != null) {
+            ensureTicketUser(ticketInfo);
+            if (ticketInfo.getUser() == null) {
                 LOGGER.log(Level.WARNING, "Cannot save shared ticket: authenticated user is not available.");
                 return;
             }
             try {
                 
-                String ticketUniqueId = ticket.getId();
-                int pickupId = ticket.getPickupId();
+                String ticketID = ticketInfo.getId();
+                int pickupId = ticketInfo.getPickupId();
                 
-                LOGGER.log(Level.INFO, "Save shared ticket: "+ticketUniqueId);
+                LOGGER.log(Level.INFO, "Save shared ticket: "+ticketID);
                 
-                TicketInfo foundTicket = dlReceipts.getSharedTicket(ticketUniqueId);
+                TicketInfo foundTicket = dlReceipts.getSharedTicket(ticketID);
                 if(foundTicket == null){
-                    dlReceipts.insertSharedTicket(ticketUniqueId, ticket, pickupId);
+                    dlReceipts.insertSharedTicket(ticketID, ticketInfo, pickupId);
                 }else {
-                    dlReceipts.updateSharedTicket(ticketUniqueId, ticket, pickupId);
+                    dlReceipts.updateSharedTicket(ticketID, ticketInfo, pickupId);
                 }
                 
             } catch (Exception e) {
@@ -538,5 +542,14 @@ public class ModernOne extends JPanel implements JPanelView, TicketsEditor {
         } catch (BasicException e) {
             LOGGER.log(Level.WARNING, "Failed to query parked tickets count", e);
         }
+    }
+
+    public CatalogService getCatalogService() {
+        return catalogService;
+    }
+
+    @Deprecated
+    public DataLogicPIM getDataLogicPIM() {
+        return dlPim;
     }
 }

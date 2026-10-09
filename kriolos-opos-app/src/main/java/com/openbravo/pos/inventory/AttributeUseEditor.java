@@ -24,8 +24,12 @@ import com.openbravo.data.user.EditorRecord;
 import com.openbravo.format.Formats;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
+import com.openbravo.pos.inventory.AttributeInfo;
+import com.openbravo.pos.inventory.AttributeService;
 import com.openbravo.pos.inventory.DataLogicAttribute;
 import java.awt.Component;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -34,7 +38,7 @@ import java.util.UUID;
  */
 public class AttributeUseEditor extends javax.swing.JPanel implements EditorRecord {
 
-    private SentenceList attributesent;
+    private AttributeService attributeService;
     private ComboBoxValModel attributemodel;
 
     private String id;
@@ -49,9 +53,10 @@ public class AttributeUseEditor extends javax.swing.JPanel implements EditorReco
      */
     public AttributeUseEditor(AppView app, DirtyManager dirty) {
 
-        DataLogicAttribute dlAttribute = (DataLogicAttribute) app
-                .getBean("com.openbravo.pos.inventory.DataLogicAttribute");
-        attributesent = dlAttribute.attributeListSent;
+        attributeService = app.getBean(AttributeService.class);
+        if (attributeService == null) {
+            attributeService = app.getBean(DataLogicAttribute.class);
+        }
         attributemodel = new ComboBoxValModel();
 
         initComponents();
@@ -75,7 +80,8 @@ public class AttributeUseEditor extends javax.swing.JPanel implements EditorReco
      */
     public void activate() throws BasicException {
 
-        attributemodel = new ComboBoxValModel(attributesent.list());
+        List<AttributeInfo> list = attributeService != null ? attributeService.getAttributeList() : Collections.emptyList();
+        attributemodel = new ComboBoxValModel(list);
         jAttribute.setModel(attributemodel);
     }
 

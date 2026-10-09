@@ -24,7 +24,8 @@ import com.openbravo.format.Formats;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.forms.BeanFactoryException;
-import com.openbravo.pos.forms.DataLogicSales;
+import com.openbravo.pos.sales.DataLogicTax;
+import com.openbravo.pos.sales.TaxService;
 import com.openbravo.pos.util.StringUtils;
 import java.awt.Component;
 import java.awt.Desktop;
@@ -39,7 +40,7 @@ import java.util.List;
 import java.util.UUID;
 import javax.swing.JOptionPane;
 import javax.swing.table.AbstractTableModel;
-import com.openbravo.beans.JCalendarDlgPanel;
+import com.openbravo.beans.JCalendarPanel2;
 import java.awt.Font;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
@@ -61,7 +62,12 @@ public final class CustomersView extends com.openbravo.pos.panels.ValidationPane
     private ComboBoxValModel m_CategoryModel;
 
     private DirtyManager m_Dirty;
-    private DataLogicSales dlSales;
+    private CustomerService customerService;
+    @Deprecated
+    private DataLogicCustomers dlCustomers;
+    private TaxService taxService;
+    @Deprecated
+    private DataLogicTax dlTax;
 
     //HS updates to get last added Customer 06.03.2014
     private AppView appView;
@@ -76,11 +82,14 @@ public final class CustomersView extends com.openbravo.pos.panels.ValidationPane
     public CustomersView(AppView app, DirtyManager dirty) {
         try {
             appView = app;
-            dlSales = (DataLogicSales) app.getBean("com.openbravo.pos.forms.DataLogicSales");
+            customerService = app.getBean(CustomerService.class);
+            dlCustomers = (customerService instanceof DataLogicCustomers) ? (DataLogicCustomers) customerService : app.getBean(DataLogicCustomers.class);
+            taxService = app.getBean(TaxService.class);
+            dlTax = (taxService instanceof DataLogicTax) ? (DataLogicTax) taxService : null;
 
             initComponents();
 
-            m_sentcat = dlSales.getTaxCustCategoriesList();
+            m_sentcat = taxService.getTaxCustCategoriesList();
             m_CategoryModel = new ComboBoxValModel();
 
             m_Dirty = dirty;
@@ -515,7 +524,7 @@ public final class CustomersView extends com.openbravo.pos.panels.ValidationPane
 
         List<CustomerTransaction> customerTransactionList = new ArrayList<>();
         try {
-            customerTransactionList = dlSales.getCustomersTransactionList(cId);
+            customerTransactionList = customerService.getCustomersTransactionList(cId);
             for (CustomerTransaction customerTransaction : customerTransactionList) {
                 String customerId = customerTransaction.getCustomerId();
                 if (!customerId.equals(cId)) {
@@ -1509,7 +1518,7 @@ public final class CustomersView extends com.openbravo.pos.panels.ValidationPane
             resetTranxTable();
         } else {
             LOGGER.log(System.Logger.Level.DEBUG, "Customer ID is null");
-            Toolkit.getDefaultToolkit().beep();
+            com.openbravo.pos.util.NotifyUtils.beep();
         }
     }//GEN-LAST:event_jBtnShowTransActionPerformed
 
@@ -1535,7 +1544,7 @@ public final class CustomersView extends com.openbravo.pos.panels.ValidationPane
         } catch (BasicException e) {
             date = null;
         }
-        date = JCalendarDlgPanel.showCalendarTime(this, date);
+        date = JCalendarPanel2.showCalendarTime(this, date);
         if (date != null) {
             m_jdate.setText(Formats.TIMESTAMP.formatValue(date));
         }

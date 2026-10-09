@@ -16,8 +16,9 @@
 package com.openbravo.pos.customers;
 
 import com.openbravo.pos.forms.JPanelView;
-import com.openbravo.pos.forms.DataLogicSales;
+import com.openbravo.pos.sales.TicketLifecycleService;
 import com.openbravo.pos.forms.DataLogicSystem;
+import com.openbravo.pos.forms.ResourceService;
 import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.forms.BeanFactoryApp;
 import com.openbravo.pos.forms.BeanFactoryException;
@@ -55,8 +56,12 @@ public class CustomersPayment extends javax.swing.JPanel implements JPanelView, 
     private static final long serialVersionUID = 1L;
 
     private AppView app;
+    private CustomerService customerService;
+    @Deprecated
     private DataLogicCustomers dlcustomers;
-    private DataLogicSales dlsales;
+    private TicketLifecycleService ticketLifecycleService;
+    private ResourceService resourceService;
+    @Deprecated
     private DataLogicSystem dlsystem;
     private TicketParser ttp;
     private JPaymentSelect paymentdialog;
@@ -82,10 +87,12 @@ public class CustomersPayment extends javax.swing.JPanel implements JPanelView, 
     public void init(AppView app) throws BeanFactoryException {
 
         this.app = app;
-        dlcustomers = (DataLogicCustomers) app.getBean("com.openbravo.pos.customers.DataLogicCustomers");
-        dlsales = (DataLogicSales) app.getBean("com.openbravo.pos.forms.DataLogicSales");
-        dlsystem = (DataLogicSystem) app.getBean("com.openbravo.pos.forms.DataLogicSystem");
-        ttp = new TicketParser(app.getDeviceTicket(), dlsystem);
+        customerService = app.getBean(CustomerService.class);
+        dlcustomers = (customerService instanceof DataLogicCustomers) ? (DataLogicCustomers) customerService : app.getBean(DataLogicCustomers.class);
+        ticketLifecycleService = app.getBean(TicketLifecycleService.class);
+        resourceService = app.getBean(ResourceService.class);
+        dlsystem = (resourceService instanceof DataLogicSystem) ? (DataLogicSystem) resourceService : null;
+        ttp = app.createTicketParser();
     }
 
     @Override
@@ -207,7 +214,7 @@ public class CustomersPayment extends javax.swing.JPanel implements JPanelView, 
     private void readCustomer() {
 
         try {
-            CustomerInfoExt customer = dlcustomers.findCustomerInfoExtByCard(editorcard.getText());
+            CustomerInfoExt customer = customerService.findCustomerInfoExtByCard(editorcard.getText());
             if (customer == null) {
                 MessageInf msg = new MessageInf(MessageInf.SGN_WARNING,
                         AppLocal.getIntString("message.cannotfindcustomer"));
@@ -232,7 +239,7 @@ public class CustomersPayment extends javax.swing.JPanel implements JPanelView, 
         customerext.setPrePay(txtPrePay.getText());
 
         try {
-            dlcustomers.updateCustomerExt(customerext);
+            customerService.updateCustomerExt(customerext);
             editCustomer(customerext);
         } catch (BasicException e) {
             MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE, AppLocal.getIntString("message.nosave"), e);
@@ -243,7 +250,7 @@ public class CustomersPayment extends javax.swing.JPanel implements JPanelView, 
 
     private void printTicket(String resname, TicketInfo ticket, CustomerInfoExt customer) {
 
-        String resource = dlsystem.getResourceAsXML(resname);
+        String resource = (resourceService != null) ? resourceService.getResourceAsXML(resname) : null;
         if (resource == null) {
             MessageInf msg = new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.cannotprintticket"));
             msg.show(this);
@@ -677,13 +684,10 @@ public class CustomersPayment extends javax.swing.JPanel implements JPanelView, 
 
     private void btnCustomerActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_btnCustomerActionPerformed
 
-        JCustomerFinder finder = JCustomerFinder.getCustomerFinder(this, dlcustomers);
-        finder.search(null);
-        finder.setVisible(true);
-        CustomerInfo customer = finder.getSelectedCustomer();
+        CustomerInfo customer = JCustomerFinderPanel.show(this, customerService);
         if (customer != null) {
             try {
-                CustomerInfoExt c = dlcustomers.findCustomerInfoExtById(customer.getId());
+                CustomerInfoExt c = customerService.findCustomerInfoExtById(customer.getId());
                 if (c == null) {
                     MessageInf msg = new MessageInf(MessageInf.SGN_WARNING,
                             AppLocal.getIntString("message.cannotfindcustomer"));
@@ -730,7 +734,7 @@ public class CustomersPayment extends javax.swing.JPanel implements JPanelView, 
             ticket.setCustomer(customerext);
 
             try {
-                dlsales.saveTicket(ticket, app.getInventoryLocation());
+                ticketLifecycleService.saveTicket(ticket, app.getInventoryLocation());
             } catch (BasicException eData) {
                 MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE, AppLocal.getIntString("message.nosaveticket"),
                         eData);
@@ -740,7 +744,7 @@ public class CustomersPayment extends javax.swing.JPanel implements JPanelView, 
             // reload customer
             CustomerInfoExt c;
             try {
-                c = dlcustomers.findCustomerInfoExtById(customerext.getId());
+                c = customerService.findCustomerInfoExtById(customerext.getId());
                 if (c == null) {
                     MessageInf msg = new MessageInf(MessageInf.SGN_WARNING,
                             AppLocal.getIntString("message.cannotfindcustomer"));
@@ -808,7 +812,7 @@ public class CustomersPayment extends javax.swing.JPanel implements JPanelView, 
                 ticket.setCustomer(customerext);
 
                 try {
-                    dlsales.saveTicket(ticket, app.getInventoryLocation());
+                    ticketLifecycleService.saveTicket(ticket, app.getInventoryLocation());
                 } catch (BasicException eData) {
                     MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE,
                             AppLocal.getIntString("message.nosaveticket"), eData);
@@ -818,7 +822,7 @@ public class CustomersPayment extends javax.swing.JPanel implements JPanelView, 
                 CustomerInfoExt c = null;
                 ;
                 try {
-                    c = dlcustomers.findCustomerInfoExtById(customerext.getId());
+                    c = customerService.findCustomerInfoExtById(customerext.getId());
                     if (c == null) {
                         MessageInf msg = new MessageInf(MessageInf.SGN_WARNING,
                                 AppLocal.getIntString("message.cannotfindcustomer"));

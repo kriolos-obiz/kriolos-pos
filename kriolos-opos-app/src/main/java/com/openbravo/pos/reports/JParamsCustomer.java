@@ -22,8 +22,10 @@ import com.openbravo.data.loader.QBFCompareEnum;
 import com.openbravo.data.loader.SerializerWrite;
 import com.openbravo.data.loader.SerializerWriteBasic;
 import com.openbravo.pos.customers.CustomerInfo;
+import com.openbravo.pos.customers.CustomerService;
 import com.openbravo.pos.customers.DataLogicCustomers;
 import com.openbravo.pos.customers.JCustomerFinder;
+import com.openbravo.pos.customers.JCustomerFinderPanel;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
 import java.awt.Component;
@@ -36,6 +38,8 @@ import javax.swing.event.DocumentListener;
  */
 public class JParamsCustomer extends javax.swing.JPanel implements ReportEditorCreator {
     
+    private CustomerService customerService;
+    @Deprecated
     private DataLogicCustomers dlCustomers;
     private CustomerInfo currentcustomer;
     
@@ -66,7 +70,8 @@ public class JParamsCustomer extends javax.swing.JPanel implements ReportEditorC
      */
     @Override
     public void init(AppView app) {
-        dlCustomers = (DataLogicCustomers) app.getBean("com.openbravo.pos.customers.DataLogicCustomers");
+        customerService = app.getBean(CustomerService.class);
+        dlCustomers = (customerService instanceof DataLogicCustomers) ? (DataLogicCustomers) customerService : app.getBean(DataLogicCustomers.class);
     }
     
     /**
@@ -187,10 +192,7 @@ public class JParamsCustomer extends javax.swing.JPanel implements ReportEditorC
 
     private void btnCustomerActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCustomerActionPerformed
 
-        JCustomerFinder finder = JCustomerFinder.getCustomerFinder(this, dlCustomers);
-        finder.search(currentcustomer);
-        finder.setVisible(true);
-        currentcustomer = finder.getSelectedCustomer();
+        currentcustomer = JCustomerFinderPanel.show(this, customerService, currentcustomer);
         if (currentcustomer == null) {
             jTextField1.setText(null);
         } else {

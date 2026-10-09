@@ -16,12 +16,12 @@
 
 package com.openbravo.pos.panels;
 
-import com.openbravo.basic.BasicException;
 import com.openbravo.data.user.EditorRecord;
 import com.openbravo.data.user.ListProvider;
-import com.openbravo.data.user.DefaultSaveProvider;
+import com.openbravo.data.user.SaveProvider;
 import com.openbravo.pos.forms.AppLocal;
-import com.openbravo.pos.forms.DataLogicSales;
+import com.openbravo.pos.payment.DataLogicPayments;
+import com.openbravo.pos.payment.TreasuryService;
 
 /**
  *
@@ -30,7 +30,7 @@ import com.openbravo.pos.forms.DataLogicSales;
 public class JPanelPayments extends JPanelTable {
     
     private PaymentsEditor jeditor;    
-    private DataLogicSales m_dlSales = null;
+    private TreasuryService treasuryService = null;
     
     /** Creates a new instance of JPanelPayments */
     public JPanelPayments() {
@@ -41,7 +41,10 @@ public class JPanelPayments extends JPanelTable {
      */
     @Override
     protected void init() {
-        m_dlSales = (DataLogicSales) app.getBean("com.openbravo.pos.forms.DataLogicSales");         
+        treasuryService = app.getBean(TreasuryService.class);
+        if (treasuryService == null) {
+            treasuryService = app.getBean(DataLogicPayments.class);
+        }
         jeditor = new PaymentsEditor(app, dirty);    
     }
     
@@ -59,10 +62,8 @@ public class JPanelPayments extends JPanelTable {
      * @return
      */
     @Override
-    public DefaultSaveProvider getSaveProvider() {
-        return  new DefaultSaveProvider(null
-                , m_dlSales.getPaymentMovementInsert()
-                , m_dlSales.getPaymentMovementDelete());
+    public SaveProvider getSaveProvider() {
+        return treasuryService != null ? treasuryService.getPaymentMovementSaveProvider() : null;
     }
     
     /**

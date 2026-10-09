@@ -21,8 +21,8 @@ import com.openbravo.data.gui.MessageInf;
 import com.openbravo.pos.catalog.JCatalogTab;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
-import com.openbravo.pos.sales.DataLogicReceipts;
 import com.openbravo.pos.sales.SharedTicketInfo;
+import com.openbravo.pos.sales.SharedTicketService;
 import com.openbravo.pos.sales.TicketsEditor;
 import com.openbravo.pos.ticket.TicketInfo;
 import com.openbravo.pos.util.ThumbNailBuilder;
@@ -52,17 +52,26 @@ public class OrderCustomerList extends JPanel implements TicketSelector {
     private String currentTicket;
     protected TicketsEditor panelticket;
     protected EventListenerList listeners = new EventListenerList();
-    private final DataLogicCustomers dataLogicCustomers;
-    private final DataLogicReceipts dataLogicReceipts;
+    private final CustomerService customerService;
+    private final SharedTicketService sharedTicketService;
     private final ThumbNailBuilder thumbNailBuilderWithDefault;
 
-    public OrderCustomerList(DataLogicCustomers dlCustomers, AppView app, TicketsEditor panelticket) {
+    public OrderCustomerList(CustomerService customerService, AppView app, TicketsEditor panelticket) {
+        this(customerService, app, panelticket, app != null ? app.getBean(SharedTicketService.class) : null);
+    }
+
+    public OrderCustomerList(CustomerService customerService, AppView app, TicketsEditor panelticket, SharedTicketService sharedTicketService) {
         this.application = app;
         this.panelticket = panelticket;
-        this.dataLogicCustomers = dlCustomers;
-        this.dataLogicReceipts = (DataLogicReceipts) application.getBean("com.openbravo.pos.sales.DataLogicReceipts");
+        this.customerService = customerService;
+        this.sharedTicketService = sharedTicketService != null ? sharedTicketService : (app != null ? app.getBean(SharedTicketService.class) : null);
         this.thumbNailBuilderWithDefault = new ThumbNailBuilder(90, 98, "/com/openbravo/images/no_image.png");
         initComponents();
+    }
+
+    @Deprecated
+    public OrderCustomerList(DataLogicCustomers dlCustomers, AppView app, TicketsEditor panelticket) {
+        this((CustomerService) dlCustomers, app, panelticket);
     }
 
     @Override
@@ -94,7 +103,7 @@ public class OrderCustomerList extends JPanel implements TicketSelector {
                     LOGGER.log(Level.INFO, "Time of getCustomersWithOutImage {0}", (System.currentTimeMillis() - currentTime));
                     currentTime = System.currentTimeMillis();
 
-                    ticketList = dataLogicReceipts.getSharedTicketList();
+                    ticketList = sharedTicketService.getSharedTicketList();
                     LOGGER.log(Level.INFO, "Time of getSharedTicketList {0}", (System.currentTimeMillis() - currentTime));
                     currentTime = System.currentTimeMillis();
 
@@ -123,7 +132,7 @@ public class OrderCustomerList extends JPanel implements TicketSelector {
                         String ticketName = ticket.getName();
                         Image thumbImage = thumbNailBuilderWithDefault.getThumbNail();
                         try {
-                            BufferedImage image = dataLogicCustomers.getCustomerInfo(customer.getId()).getImage();
+                            BufferedImage image = customerService.getCustomerInfo(customer.getId()).getImage();
                             if (image != null) {
                                 thumbImage = thumbNailBuilderWithDefault.getThumbNail(image);
                             }
@@ -217,12 +226,12 @@ public class OrderCustomerList extends JPanel implements TicketSelector {
         currentTicket = panelticket.getActiveTicket().getId();
 
         // BEGIN TRANSACTION
-        TicketInfo ticket = dataLogicReceipts.getSharedTicket(id);
+        TicketInfo ticket = sharedTicketService.getSharedTicket(id);
         if (ticket == null) {
             // Does not exists ???
             throw new BasicException(AppLocal.getIntString("message.noticket"));
         } else {
-            dataLogicReceipts.deleteSharedTicket(id);
+            sharedTicketService.deleteSharedTicket(id);
             currentTicket = id;
             panelticket.setActiveTicket(ticket, null);
             fireTicketSelectionChanged(ticket.getId());

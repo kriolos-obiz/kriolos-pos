@@ -27,7 +27,7 @@ import com.openbravo.data.loader.SerializableRead;
  * Created on 27 de febrero de 2007, 23:27
  *
  */
-public class PeopleInfo implements SerializableRead, IKeyed {
+public class PeopleInfo implements SerializableRead, IKeyed<String> {
     
     private static final long serialVersionUID = 9110127845966L;
     private String id;
@@ -39,7 +39,7 @@ public class PeopleInfo implements SerializableRead, IKeyed {
     }
 
     @Override
-    public Object getKey() {
+    public String getKey() {
         return id;
     }
 

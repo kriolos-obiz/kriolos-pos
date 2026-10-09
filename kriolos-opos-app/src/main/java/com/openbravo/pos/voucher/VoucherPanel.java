@@ -29,9 +29,12 @@ public class VoucherPanel extends JPanelTable2 {
 
     private TableDefinition tableDefinition;
     private VoucherEditor editor;    
+    private VoucherService voucherService;
 
     @Override
     protected void init() {  
+        voucherService = app.getBean(VoucherService.class);
+
         row = new Row(
                 new Field("ID", Datas.STRING, Formats.STRING),
                 new Field(AppLocal.getIntString("label.Number"), Datas.STRING, Formats.STRING, true, true, true),
@@ -50,17 +53,9 @@ public class VoucherPanel extends JPanelTable2 {
         lpr = row.getListProvider(app.getSession(), table);
         spr = row.getSaveProvider(app.getSession(), table);
         
+        tableDefinition = voucherService.getTableVouchers();
         
-        tableDefinition = new TableDefinition(app.getSession(),
-                "vouchers",
-                 new String[]{"ID", "VOUCHER_NUMBER", "CUSTOMER", "AMOUNT", "STATUS"},
-                 new String[]{"ID", AppLocal.getIntString("label.Number"), AppLocal.getIntString("label.customer"),AppLocal.getIntString("label.paymenttotal"), AppLocal.getIntString("label.status")},
-                 new Datas[]{Datas.STRING, Datas.STRING, Datas.STRING, Datas.DOUBLE, Datas.STRING},
-                 new Formats[]{Formats.STRING, Formats.STRING, Formats.STRING, Formats.CURRENCY, Formats.NULL},
-                 new int[]{0}
-        );
-        
-        editor = new VoucherEditor(dirty,app);
+        editor = new VoucherEditor(dirty, app, voucherService);
     }
 
    

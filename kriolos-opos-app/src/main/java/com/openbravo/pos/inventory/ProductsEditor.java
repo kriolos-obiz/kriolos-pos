@@ -22,15 +22,16 @@ import com.openbravo.data.user.EditorRecord;
 import com.openbravo.format.Formats;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
-import com.openbravo.pos.forms.DataLogicSales;
+import com.openbravo.pos.sales.DataLogicTax;
+import com.openbravo.pos.sales.TaxService;
 import com.openbravo.pos.sales.TaxesLogic;
-import com.openbravo.pos.suppliers.DataLogicSuppliers;
+import com.openbravo.pos.suppliers.SupplierService;
 import com.openbravo.pos.suppliers.JDialogNewSupplier;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
-import com.openbravo.beans.JCalendarDlgPanel;
+import com.openbravo.beans.JCalendarPanel2;
 import com.openbravo.pos.domain.utils.AmountCalculatorUtil;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
@@ -45,6 +46,7 @@ import javax.swing.JOptionPane;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.table.AbstractTableModel;
+import com.openbravo.pos.catalog.CatalogService;
 import com.openbravo.pos.forms.DataLogicSystem;
 import com.openbravo.pos.pim.DataLogicPIM;
 import java.awt.Color;
@@ -82,9 +84,14 @@ public final class ProductsEditor extends com.openbravo.pos.panels.ValidationPan
 
     private TaxesLogic taxeslogic;
     private DirtyManager m_Dirty;
-    private DataLogicSales dlSales;
-    private DataLogicSuppliers dlSuppliers;
+    private TaxService taxService;
+    @Deprecated
+    private DataLogicTax dlTax;
+    private StockService stockService;
+    private SupplierService dlSuppliers;
+    private CatalogService catalogService;
     private DataLogicPIM dataLogicPIM;
+    @Deprecated
     private DataLogicSystem dlSystem; 
 
 
@@ -97,10 +104,13 @@ public final class ProductsEditor extends com.openbravo.pos.panels.ValidationPan
     public ProductsEditor(AppView app, DirtyManager dirty) {
 
         setAppView(app);
-        dlSales = (DataLogicSales) app.getBean("com.openbravo.pos.forms.DataLogicSales");
-        dlSystem = (DataLogicSystem) app.getBean("com.openbravo.pos.forms.DataLogicSystem");
-        dlSuppliers = (DataLogicSuppliers) app.getBean("com.openbravo.pos.suppliers.DataLogicSuppliers");
-        dataLogicPIM = (DataLogicPIM) app.getBean("com.openbravo.pos.pim.DataLogicPIM");
+        taxService = app.getBean(TaxService.class);
+        dlTax = (taxService instanceof DataLogicTax) ? (DataLogicTax) taxService : null;
+        stockService = app.getBean(StockService.class);
+        dlSystem = null;
+        dlSuppliers = app.getBean(SupplierService.class);
+        catalogService = app.getBean(CatalogService.class);
+        dataLogicPIM = (catalogService instanceof DataLogicPIM) ? (DataLogicPIM) catalogService : null;
 
         initComponents();
         
@@ -186,22 +196,22 @@ public final class ProductsEditor extends com.openbravo.pos.panels.ValidationPan
     @SuppressWarnings("unchecked")
     public void activate() throws BasicException {
 
-        taxeslogic = new TaxesLogic(dlSales.getTaxListAll());
+        taxeslogic = new TaxesLogic(taxService.getTaxListAll());
 
-        m_CategoryModel = new ComboBoxValModel(dataLogicPIM.getCategoriesListAll());
+        m_CategoryModel = new ComboBoxValModel(catalogService.getCategoriesListAll());
         m_jCategory.setModel(m_CategoryModel);
   
-        taxcatmodel = new ComboBoxValModel(dlSales.getTaxCategoriesListAll());
+        taxcatmodel = new ComboBoxValModel(taxService.getTaxCategoriesListAll());
         m_jTax.setModel(taxcatmodel);
 
-        attmodel = new ComboBoxValModel( dlSales.getAttributeSetListAll());
+        attmodel = new ComboBoxValModel(catalogService.getAttributeSetListAll());
         attmodel.add(0, null);
         m_jAtt.setModel(attmodel);
 
         m_SuppliersModel = new ComboBoxValModel(dlSuppliers.getSupplierListAll());
         m_jSupplier.setModel(m_SuppliersModel);
 
-        m_UomModel = new ComboBoxValModel(dlSales.getUomListAll());
+        m_UomModel = new ComboBoxValModel(catalogService.getUomListAll());
         m_jUom.setModel(m_UomModel);
 
         String pId = null;
@@ -668,7 +678,7 @@ public final class ProductsEditor extends com.openbravo.pos.panels.ValidationPan
 
         List<ProductStock> productStockList = new ArrayList<>();
         try {
-            productStockList = dlSales.getProductStockList(pId);
+            productStockList = stockService.getProductStockList(pId);
         }
         catch (BasicException ex) {
             LOGGER.log(Level.SEVERE, "ProductStock for PID: " + pId, ex);
@@ -822,7 +832,7 @@ public final class ProductsEditor extends com.openbravo.pos.panels.ValidationPan
 
 
     private BufferedImage findImage(String id) {
-        return dlSales.getProductImage(id);
+        return catalogService.getProductImage(id);
     }
 
 
@@ -2149,7 +2159,7 @@ public final class ProductsEditor extends com.openbravo.pos.panels.ValidationPan
         catch (BasicException e) {
             date = null;
         }
-        date = JCalendarDlgPanel.showCalendarTime(this, date);
+        date = JCalendarPanel2.showCalendarTime(this, date);
         if (date != null) {
             m_jdate.setText(Formats.TIMESTAMP.formatValue(date));
         }
@@ -2322,6 +2332,15 @@ public final class ProductsEditor extends com.openbravo.pos.panels.ValidationPan
     private javax.swing.JPanel pricePanel;
     private javax.swing.JTextArea txtAttributes;
     private javax.swing.JLabel webLabel1;
+    public CatalogService getCatalogService() {
+        return catalogService;
+    }
+
+    @Deprecated
+    public DataLogicPIM getDataLogicPIM() {
+        return dataLogicPIM;
+    }
+
     // End of variables declaration//GEN-END:variables
 
 }

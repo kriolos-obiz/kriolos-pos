@@ -16,11 +16,39 @@
  */
 package com.openbravo.pos.scanpal2;
 
+import com.openbravo.pos.spi.hardware.scanner.ScannerDevice;
+import com.openbravo.pos.spi.hardware.scanner.ScannerProtocol;
+
 /**
  *
  * @author JG uniCenta
  */
-public interface DeviceScanner {
+public interface DeviceScanner extends ScannerDevice {
+
+    @Override
+    default ScannerProtocol getProtocol() {
+        return ScannerProtocol.SCANPAL2;
+    }
+
+    @Override
+    default boolean isConnected() {
+        return true;
+    }
+
+    @Override
+    default void start() {
+        try {
+            connectDevice();
+        } catch (DeviceScannerException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    default void stop() {
+        disconnectDevice();
+    }
+
 
     /**
      *

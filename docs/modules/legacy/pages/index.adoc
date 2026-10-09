@@ -1,0 +1,10 @@
+= Legacy Architecture Overview
+:description: Architectural documentation, domain boundaries, and code smell analysis of the inherited legacy Openbravo / uniCenta POS foundation.
+
+Welcome to the **Legacy Architecture** module of KriolOS POS.
+
+This module documents the architectural state, technical debt, and monolith structure inherited from Openbravo POS and uniCenta oPOS. It serves as the baseline record to guide the long-term extraction of clean, decoupled business modules.
+
+== Documentation Topics
+
+* xref:legacy-datalogic-architecture.adoc[DataLogic Scope & Monolith Analysis]: Comprehensive investigation of all 13 legacy `DataLogic*` classes in `kriolos-opos-domain`, their mixed domain scopes, cross-table couplings, and target bounded contexts.

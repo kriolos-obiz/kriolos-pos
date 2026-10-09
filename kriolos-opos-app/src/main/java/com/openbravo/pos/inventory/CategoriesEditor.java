@@ -24,7 +24,6 @@ import com.openbravo.data.user.EditorRecord;
 import com.openbravo.format.Formats;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
-import com.openbravo.pos.forms.DataLogicSales;
 import java.awt.Component;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
@@ -38,6 +37,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JOptionPane;
 import javax.swing.table.AbstractTableModel;
+import com.openbravo.pos.catalog.CatalogService;
 import com.openbravo.pos.catalog.CategoryStock;
 import com.openbravo.pos.pim.DataLogicPIM;
 import com.openbravo.pos.util.DataTypeUtils;
@@ -57,8 +57,7 @@ public final class CategoriesEditor extends JPanel implements EditorRecord {
     private ComboBoxValModel categoryParentModel;
     private List<CategoryStock> categoryStockList;
     private CategoriesEditor.StockTableModel stockModel;
-
-    private final DataLogicSales dlSales;
+    private final CatalogService catalogService;
     private final DataLogicPIM dataLogicPIM;
 
     /**
@@ -71,8 +70,8 @@ public final class CategoriesEditor extends JPanel implements EditorRecord {
 
         initComponents();
 
-        dataLogicPIM = (DataLogicPIM) app.getBean("com.openbravo.pos.pim.DataLogicPIM");
-        dlSales = (DataLogicSales) app.getBean("com.openbravo.pos.forms.DataLogicSales");
+        catalogService = app.getBean(CatalogService.class);
+        dataLogicPIM = (catalogService instanceof DataLogicPIM) ? (DataLogicPIM) catalogService : null;
         categoryParentModel = new ComboBoxValModel(); 
 
         categoryNameText.getDocument().addDocumentListener(dirty);
@@ -94,7 +93,7 @@ public final class CategoriesEditor extends JPanel implements EditorRecord {
     @Override
     public void refresh() {
 
-        List categories = dataLogicPIM.getCategoriesListAll();
+        List categories = catalogService.getCategoriesListAll();
         categories.add(0, null);
         categoryParentModel = new ComboBoxValModel(categories);
         categoryParentCombox.setModel(categoryParentModel);
@@ -267,7 +266,7 @@ public final class CategoriesEditor extends JPanel implements EditorRecord {
     private List<CategoryStock> getProductsByCategoryId(String categoryId) {
 
         try {
-            categoryStockList = dataLogicPIM.getCategorysProductList(categoryId);
+            categoryStockList = catalogService.getCategorysProductList(categoryId);
         }
         catch (BasicException ex) {
             LOGGER.log(Level.SEVERE, "Exception get products by category id: " + categoryId, ex);
@@ -594,13 +593,13 @@ public final class CategoriesEditor extends JPanel implements EditorRecord {
 
         try {
             if (categoryShowInCatalog.isSelected()) {
-                int del = dlSales.removeProductsFromCatalogWithCategoryId(categoryId);
-                int add = dlSales.addProductsToCatalogWithCategoryId(categoryId);
+                int del = catalogService.removeProductsFromCatalogWithCategoryId(categoryId);
+                int add = catalogService.addProductsToCatalogWithCategoryId(categoryId);
                 jLblInCatalog.setText(AppLocal.getIntString("label.CatalogueStatusYes"));
                 //Notify(AppLocal.getIntString("notify.added"));   
                 LOGGER.log(Level.INFO, "Number of products added: " + add + ", deleted: " + del + ", by categoryId: " + categoryId);
             } else {
-                int del = dlSales.removeProductsFromCatalogWithCategoryId(categoryId);
+                int del = catalogService.removeProductsFromCatalogWithCategoryId(categoryId);
                 jLblInCatalog.setText(AppLocal.getIntString("label.CatalogueStatusNo"));
                 //Notify(AppLocal.getIntString("notify.removed"));
                 LOGGER.log(Level.INFO, "Number of products deleted: " + del + ", by categoryId: " + categoryId);
@@ -675,6 +674,15 @@ public final class CategoriesEditor extends JPanel implements EditorRecord {
     private javax.swing.JLabel jLblProdCount;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JTable jTableCategoryStock;
+    public CatalogService getCatalogService() {
+        return catalogService;
+    }
+
+    @Deprecated
+    public DataLogicPIM getDataLogicPIM() {
+        return dataLogicPIM;
+    }
+
     // End of variables declaration//GEN-END:variables
 
 }

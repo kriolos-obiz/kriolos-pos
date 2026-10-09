@@ -9,7 +9,7 @@ import com.openbravo.data.user.ListProvider;
 import com.openbravo.data.user.ListProviderCreator;
 import com.openbravo.data.user.DefaultSaveProvider;
 import com.openbravo.pos.forms.AppLocal;
-import com.openbravo.pos.forms.DataLogicSales;
+import com.openbravo.pos.catalog.CatalogService;
 import com.openbravo.pos.panels.JPanelTable;
 import javax.swing.ListCellRenderer;
 
@@ -20,8 +20,8 @@ public class UomPanel extends JPanelTable {
      
     @Override
     protected void init() {
-        DataLogicSales dlSales = (DataLogicSales) app.getBean("com.openbravo.pos.forms.DataLogicSales");           
-        tuom = dlSales.getTableUom();
+        CatalogService catalogService = app.getBean(CatalogService.class);           
+        tuom = catalogService.getTableUom();
         jeditor = new UomEditor(app, dirty);   
     }
 

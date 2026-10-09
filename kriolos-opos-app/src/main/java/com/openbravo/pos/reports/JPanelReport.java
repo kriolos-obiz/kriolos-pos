@@ -16,7 +16,7 @@
 package com.openbravo.pos.reports;
 
 import com.openbravo.pos.forms.JPanelView;
-import com.openbravo.pos.forms.DataLogicSales;
+import com.openbravo.pos.sales.TaxService;
 import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.forms.BeanFactoryApp;
 import com.openbravo.pos.forms.BeanFactoryException;
@@ -72,8 +72,10 @@ public abstract class JPanelReport extends JPanel implements JPanelView, BeanFac
 
         m_App = app;
 
-        DataLogicSales dlSales = (DataLogicSales) app.getBean("com.openbravo.pos.forms.DataLogicSales");
-        taxsent = dlSales.getTaxList();
+        TaxService taxService = app.getBean(TaxService.class);
+        if (taxService != null) {
+            taxeslogic = new TaxesLogic(taxService.getTaxListAll());
+        }
 
         editor = getEditorCreator();
         if (editor instanceof ReportEditorCreator) {
@@ -143,7 +145,12 @@ public abstract class JPanelReport extends JPanel implements JPanelView, BeanFac
     public void activate() throws BasicException {
 
         setVisibleFilter(true);
-        taxeslogic = new TaxesLogic(taxsent.list());
+        if (taxeslogic == null && m_App != null) {
+            TaxService taxService = m_App.getBean(TaxService.class);
+            if (taxService != null) {
+                taxeslogic = new TaxesLogic(taxService.getTaxListAll());
+            }
+        }
     }
 
     /**

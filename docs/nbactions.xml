@@ -4,7 +4,7 @@
             <actionName>CUSTOM-package</actionName>
             <displayName>GenDoc</displayName>
             <goals>
-                <goal>package</goal>
+                <goal>verify</goal>
                 <!--
                 <goal>-U</goal>-->
                 <goal>-X</goal>

@@ -19,6 +19,7 @@ package com.openbravo.pos.panels;
 import com.openbravo.pos.reports.CashReprintModel;
 import com.openbravo.pos.forms.JPanelView;
 import com.openbravo.pos.forms.DataLogicSystem;
+import com.openbravo.pos.forms.ResourceService;
 import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.forms.BeanFactoryException;
 import com.openbravo.pos.forms.BeanFactoryApp;
@@ -51,6 +52,8 @@ public class JPanelCloseMoneyReprint extends JPanel implements JPanelView, BeanF
     private static final Logger LOGGER = Logger.getLogger(JPanelCloseMoneyReprint.class.getName());
 
     private AppView appView;
+    private ResourceService resourceService;
+    @Deprecated
     private DataLogicSystem dataLogicSystem;
     private CashManagementService cashManagementService;
 
@@ -74,8 +77,9 @@ public class JPanelCloseMoneyReprint extends JPanel implements JPanelView, BeanF
     public void init(AppView app) throws BeanFactoryException {
 
         appView = app;
-        dataLogicSystem = (DataLogicSystem) appView.getBean("com.openbravo.pos.forms.DataLogicSystem");
-        ticketParser = new TicketParser(appView.getDeviceTicket(), dataLogicSystem);
+        resourceService = appView.getBean(ResourceService.class);
+        dataLogicSystem = (resourceService instanceof DataLogicSystem) ? (DataLogicSystem) resourceService : null;
+        ticketParser = appView.createTicketParser();
         cashManagementService = new CashManagementServiceImpl(appView.getSession());
 
         m_jTicketTable.setDefaultRenderer(Object.class, new TableRendererBasic(
@@ -217,7 +221,7 @@ public class JPanelCloseMoneyReprint extends JPanel implements JPanelView, BeanF
 
     private void printPayments(String report) {
 
-        String sresource = dataLogicSystem.getResourceAsXML(report);
+        String sresource = (resourceService != null) ? resourceService.getResourceAsXML(report) : null;
         if (sresource == null) {
             MessageInf msg = new MessageInf(MessageInf.SGN_WARNING,
                     AppLocal.getIntString("message.cannotprintticket"));

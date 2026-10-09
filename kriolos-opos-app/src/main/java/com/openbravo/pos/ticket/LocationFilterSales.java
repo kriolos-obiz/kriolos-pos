@@ -28,9 +28,9 @@ import com.openbravo.data.loader.SentenceList;
 import com.openbravo.data.user.EditorCreator;
 import com.openbravo.editor.JEditorKeys;
 import com.openbravo.editor.JEditorString;
+import com.openbravo.pos.catalog.CatalogService;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
-import com.openbravo.pos.forms.DataLogicSales;
 import com.openbravo.pos.pim.CategoryInfo;
 import com.openbravo.pos.pim.DataLogicPIM;
 
@@ -40,6 +40,7 @@ import com.openbravo.pos.pim.DataLogicPIM;
  */
 public class LocationFilterSales extends javax.swing.JPanel implements EditorCreator {
     
+    private CatalogService catalogService;
     private DataLogicPIM dataLogicPIM;
     private ComboBoxValModel m_CategoryModel;
     
@@ -52,7 +53,8 @@ public class LocationFilterSales extends javax.swing.JPanel implements EditorCre
     public LocationFilterSales(AppView app, JEditorKeys jKeys) {
         initComponents();
         
-        dataLogicPIM = (DataLogicPIM) app.getBean("com.openbravo.pos.pim.DataLogicPIM");
+        catalogService = app.getBean(CatalogService.class);
+        dataLogicPIM = (catalogService instanceof DataLogicPIM) ? (DataLogicPIM) catalogService : null;
         m_CategoryModel = new ComboBoxValModel();           
         
 //        m_jCboPriceBuy.setModel(new ListQBFModelNumber());
@@ -80,7 +82,7 @@ public class LocationFilterSales extends javax.swing.JPanel implements EditorCre
         m_jPriceSell.reset();
         m_jtxtName.activate();
         
-        List<CategoryInfo> catlist = dataLogicPIM.getCategoriesListAll();
+        List<CategoryInfo> catlist = catalogService.getCategoriesListAll();
         catlist.add(0, null);
         m_CategoryModel = new ComboBoxValModel(catlist);
         m_jCategory.setModel(m_CategoryModel);
@@ -293,6 +295,15 @@ public class LocationFilterSales extends javax.swing.JPanel implements EditorCre
     }//GEN-LAST:event_m_jCboPriceBuyActionPerformed
     
     
+    public CatalogService getCatalogService() {
+        return catalogService;
+    }
+
+    @Deprecated
+    public DataLogicPIM getDataLogicPIM() {
+        return dataLogicPIM;
+    }
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;

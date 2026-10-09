@@ -36,6 +36,8 @@ public class CustomersPanel extends JPanelTable {
 
     private static final long serialVersionUID = 1L;
     
+    private CustomerService customerService;
+    @Deprecated
     private DataLogicCustomers dlCustomers;
     private CustomersView jeditor;
     
@@ -44,7 +46,8 @@ public class CustomersPanel extends JPanelTable {
     @Override
     protected void init() {
         this.jeditor = new CustomersView(app, dirty);
-        this.dlCustomers  = (DataLogicCustomers) app.getBean("com.openbravo.pos.customers.DataLogicCustomers");
+        this.customerService = app.getBean(CustomerService.class);
+        this.dlCustomers = (customerService instanceof DataLogicCustomers) ? (DataLogicCustomers) customerService : app.getBean(DataLogicCustomers.class);
     }
 
     @Override
@@ -55,13 +58,13 @@ public class CustomersPanel extends JPanelTable {
 
     @Override
     public ListProvider getListProvider() {
-        return new ListProviderCreator(dlCustomers.getTableCustomers());
+        return new ListProviderCreator(customerService.getTableCustomers());
     }
 
     @Override
     public SaveProvider getSaveProvider() {
-        return dlCustomers.getCustomerSaveProvider();
-        /*return new DefaultSaveProvider(dlCustomers.getTableCustomers(), new int[] {
+        return customerService.getCustomerSaveProvider();
+        /*return new DefaultSaveProvider(customerService.getTableCustomers(), new int[] {
             0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14,            
             15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26});  
        */
@@ -69,17 +72,17 @@ public class CustomersPanel extends JPanelTable {
 
     @Override
     public Vectorer getVectorer() {
-        return dlCustomers.getTableCustomers().getVectorerBasic(new int[]{1, 2, 3, 4});
+        return customerService.getTableCustomers().getVectorerBasic(new int[]{1, 2, 3, 4});
     }
 
     @Override
     public ComparatorCreator getComparatorCreator() {
-        return dlCustomers.getTableCustomers().getComparatorCreator(new int[] {1, 2, 3, 4});
+        return customerService.getTableCustomers().getComparatorCreator(new int[] {1, 2, 3, 4});
     }
 
     @Override
     public ListCellRenderer getListCellRenderer() {
-        return new ListCellRendererBasic(dlCustomers.getTableCustomers().getRenderStringBasic(new int[]{3}));
+        return new ListCellRendererBasic(customerService.getTableCustomers().getRenderStringBasic(new int[]{3}));
     }
 
     @Override

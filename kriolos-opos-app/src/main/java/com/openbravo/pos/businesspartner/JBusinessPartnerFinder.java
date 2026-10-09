@@ -16,13 +16,14 @@
 
 package com.openbravo.pos.businesspartner;
 
+import com.openbravo.pos.customers.CustomerService;
 import com.openbravo.pos.customers.DataLogicCustomers;
 import java.awt.Component;
 
 /**
  * Backward-compatible adapter delegating to {@link JBusinessPartnerFinderPanel}.
  *
- * @deprecated Use {@link JBusinessPartnerFinderPanel#show(Component, DataLogicCustomers)} instead.
+ * @deprecated Use {@link JBusinessPartnerFinderPanel#show(Component, CustomerService)} instead.
  */
 @Deprecated
 public class JBusinessPartnerFinder {
@@ -30,7 +31,13 @@ public class JBusinessPartnerFinder {
     private JBusinessPartnerFinder() {
     }
 
+    public static BusinessPartner show(Component parent, CustomerService customerService) {
+        return JBusinessPartnerFinderPanel.show(parent, customerService);
+    }
+
+    @Deprecated
     public static BusinessPartner show(Component parent, DataLogicCustomers dlCustomers) {
-        return JBusinessPartnerFinderPanel.show(parent, dlCustomers);
+        return JBusinessPartnerFinderPanel.show(parent, (CustomerService) dlCustomers);
     }
 }
+

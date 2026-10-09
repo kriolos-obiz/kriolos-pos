@@ -19,12 +19,11 @@ package com.openbravo.pos.customers;
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.gui.MessageInf;
 import com.openbravo.data.gui.modal.PosUIModal;
-import com.openbravo.data.loader.LocalRes;
+import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.data.user.DirtyManager;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.forms.BeanFactoryException;
-import com.openbravo.pos.forms.DataLogicSales;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -44,8 +43,9 @@ public class JNewCustomerPanel extends JPanel {
     private static final Logger LOGGER = Logger.getLogger(JNewCustomerPanel.class.getName());
     private static final long serialVersionUID = 1L;
 
+    private CustomerService customerService;
+    @Deprecated
     private DataLogicCustomers dlCustomer;
-    private DataLogicSales dlSales;
     private CustomerInfoExt selectedCustomer;
     private CustomersView customersView;
     private PosUIModal modalContext;
@@ -83,8 +83,8 @@ public class JNewCustomerPanel extends JPanel {
 
     private void init(AppView app) {
         try {
-            dlSales = (DataLogicSales) app.getBean("com.openbravo.pos.forms.DataLogicSales");
-            dlCustomer = (DataLogicCustomers) app.getBean("com.openbravo.pos.customers.DataLogicCustomers");
+            customerService = app.getBean(CustomerService.class);
+            dlCustomer = (customerService instanceof DataLogicCustomers) ? (DataLogicCustomers) customerService : app.getBean(DataLogicCustomers.class);
 
             initComponents();
 
@@ -179,24 +179,24 @@ public class JNewCustomerPanel extends JPanel {
             Object customer = createValue();
             String m_oId = ((Object[]) customer)[0].toString();
 
-            int status = dlCustomer.getTableCustomers().getInsertSentence().exec(customer);
+            int status = customerService.getTableCustomers().getInsertSentence().exec(customer);
 
             if (status > 0) {
-                selectedCustomer = dlCustomer.findCustomerInfoExtById(m_oId);
+                selectedCustomer = customerService.findCustomerInfoExtById(m_oId);
                 if (modalContext != null) {
                     modalContext.setResult(selectedCustomer);
                     modalContext.close();
                 }
             } else {
                 MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE,
-                        LocalRes.getIntString("message.nosave"), "Error save");
+                        AppLocal.getIntString("message.nosave"), "Error save");
                 msg.show(this);
             }
 
         } catch (BasicException ex) {
             LOGGER.log(Level.SEVERE, "Error ", ex);
             MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE,
-                    LocalRes.getIntString("message.nosave"), ex);
+                    AppLocal.getIntString("message.nosave"), ex);
             msg.show(this);
         }
     }//GEN-LAST:event_m_jBtnOKActionPerformed

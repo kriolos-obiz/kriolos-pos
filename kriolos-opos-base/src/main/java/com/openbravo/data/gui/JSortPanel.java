@@ -18,7 +18,7 @@ package com.openbravo.data.gui;
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.gui.modal.PosUIModal;
 import com.openbravo.data.loader.ComparatorCreator;
-import com.openbravo.data.loader.LocalRes;
+import com.openbravo.pos.forms.AppLocal;
 import java.awt.Component;
 import java.util.Comparator;
 import javax.swing.JButton;
@@ -120,7 +120,7 @@ public class JSortPanel<T> extends JPanel {
     }
 
     public String getTitle() {
-        return LocalRes.getIntString("caption.sort");
+        return AppLocal.getIntString("caption.sort");
     }
 
     public JButton getOkButton() {
@@ -206,21 +206,21 @@ public class JSortPanel<T> extends JPanel {
         setLayout(new java.awt.BorderLayout());
 
         jLabel2.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
-        jLabel2.setText(LocalRes.getIntString("label.sortby")); // NOI18N
+        jLabel2.setText(AppLocal.getIntString("label.sortby")); // NOI18N
         jLabel2.setPreferredSize(new java.awt.Dimension(150, 30));
 
         m_jSort1.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
         m_jSort1.setPreferredSize(new java.awt.Dimension(200, 30));
 
         jLabel3.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
-        jLabel3.setText(LocalRes.getIntString("label.andby")); // NOI18N
+        jLabel3.setText(AppLocal.getIntString("label.andby")); // NOI18N
         jLabel3.setPreferredSize(new java.awt.Dimension(150, 30));
 
         m_jSort2.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
         m_jSort2.setPreferredSize(new java.awt.Dimension(200, 30));
 
         jLabel4.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
-        jLabel4.setText(LocalRes.getIntString("label.andby")); // NOI18N
+        jLabel4.setText(AppLocal.getIntString("label.andby")); // NOI18N
         jLabel4.setPreferredSize(new java.awt.Dimension(150, 30));
 
         m_jSort3.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
@@ -271,7 +271,7 @@ public class JSortPanel<T> extends JPanel {
 
         jcmdCancel.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
         jcmdCancel.setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/openbravo/images/cancel.png"))); // NOI18N
-        jcmdCancel.setText(LocalRes.getIntString("button.cancel")); // NOI18N
+        jcmdCancel.setText(AppLocal.getIntString("button.cancel")); // NOI18N
         jcmdCancel.setPreferredSize(new java.awt.Dimension(110, 45));
         jcmdCancel.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -282,7 +282,7 @@ public class JSortPanel<T> extends JPanel {
 
         jcmdOK.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
         jcmdOK.setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/openbravo/images/ok.png"))); // NOI18N
-        jcmdOK.setText(LocalRes.getIntString("button.ok")); // NOI18N
+        jcmdOK.setText(AppLocal.getIntString("button.ok")); // NOI18N
         jcmdOK.setMaximumSize(new java.awt.Dimension(65, 33));
         jcmdOK.setMinimumSize(new java.awt.Dimension(65, 33));
         jcmdOK.setPreferredSize(new java.awt.Dimension(110, 45));

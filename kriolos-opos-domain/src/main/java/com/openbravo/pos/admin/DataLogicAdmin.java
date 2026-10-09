@@ -26,7 +26,7 @@ import com.openbravo.pos.forms.BeanFactoryDataSingle;
  *
  * @author adrianromero
  */
-public class DataLogicAdmin extends BeanFactoryDataSingle {
+public class DataLogicAdmin extends BeanFactoryDataSingle implements PeopleService {
 
     private Session s;
     private TableDefinition<PeopleInfo> m_tpeople;
