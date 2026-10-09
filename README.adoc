@@ -52,9 +52,9 @@ image:https://img.shields.io/github/commit-activity/m/kriolos-obiz/kriolos-pos["
 
 === Release and Download
 
-image:https://img.shields.io/github/release-date-pre/poolborges/unicenta-pos.svg["GitHub pre-release", link="https://github.com/poolborges/unicenta-pos/releases"]
-image:https://img.shields.io/github/release/poolborges/unicenta-pos.svg["GitHub release", link="https://github.com/poolborges/unicenta-pos/releases"]
-image:https://img.shields.io/github/downloads/poolborges/unicenta-pos/total["GitHub all releases", link="https://github.com/poolborges/unicenta-pos/releases"]
+image:https://img.shields.io/github/release-date-pre/kriolos-obiz/kriolos-pos.svg["GitHub pre-release", link="https://github.com/kriolos-obiz/kriolos-pos/releases"]
+image:https://img.shields.io/github/release/kriolos-obiz/kriolos-pos.svg["GitHub release", link="https://github.com/kriolos-obiz/kriolos-pos/releases"]
+image:https://img.shields.io/github/downloads/kriolos-obiz/kriolos-pos/total["GitHub all releases", link="https://github.com/kriolos-obiz/kriolos-pos/releases"]
 
 endif::[]
 
@@ -67,9 +67,10 @@ image::krpos-screenshot.gif[]
 === History of kriolosPOS
 
 * kriolosPOS is a fork of UnicentaOPOS 4.5 (2019-06-30) 
-* UnicentaOPOS was a fork of OpenBravoPOS
-* OpenbravoPOS was a fork of Librepos (previously named Tina POS) 
-** Adrian Romero was the founder and main developer for Tina POS
+* UnicentaOPOS was a fork of OpenBravoPOS (3.2)
+**  Jack. Gerard was mantainer
+* OpenbravoPOS was a rebrand of LibrePOS (previously named Tina POS) after aquisition in 2008
+** Adrian Romero(adrianromero) was the founder and main developer for TinaPOS, LibrePOS, OpenbravoPOS
 
 
 === Pass Developers and Contributors
@@ -179,6 +180,24 @@ java -Dawt.toolkit.name=WLToolkit -Dsun.java2d.vulkan=True -jar SwingSet2.jar
 -Dawt.toolkit.name=WLToolkit
 -Dsun.java2d.vulkan=true
 -Dsun.java2d.vulkan.accelsd=true
+----
+
+
+== Maven 
+
+
+----
+./mvnw wrapper:wrapper -Dmaven=3.10.0
+----
+
+
+----
+mvn site
+----
+
+----
+mvn javadoc:aggregate
+mvn javadoc:javadoc
 ----
 
 == Reference
