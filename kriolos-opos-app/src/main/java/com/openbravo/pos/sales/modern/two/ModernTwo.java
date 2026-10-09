@@ -180,8 +180,8 @@ public class ModernTwo extends JPanel implements JPanelView, TicketsEditor {
 
         String operator = (app != null && app.getAppUserView() != null && app.getAppUserView().getUser() != null)
                 ? app.getAppUserView().getUser().getName()
-                : "Operador 01";
-        JLabel lblHeaderTitle = new JLabel("Caixa Dispon\u00edvel: " + operator);
+                : AppLocal.getIntString("label.operator.default");
+        JLabel lblHeaderTitle = new JLabel(AppLocal.getIntString("label.cashdraweravailable", operator));
         lblHeaderTitle.setFont(lblHeaderTitle.getFont().deriveFont(Font.BOLD, 15f));
         headerRow.add(lblHeaderTitle, "grow: 1");
         add(headerRow, BorderLayout.PAGE_START);

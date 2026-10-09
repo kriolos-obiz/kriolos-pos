@@ -16,6 +16,7 @@
  */
 package com.openbravo.pos.sales.modern.one;
 
+import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.sales.modern.WrapLayout;
 import com.openbravo.pos.pim.CategoryInfo;
 import com.openbravo.pos.ticket.ProductInfoExt;
@@ -75,7 +76,7 @@ public class ModernOneCatalogPane extends JPanel {
         searchField.setName("kriolos:sales:modern:catalog-search");
 
         // Modern FlatLaf text field properties (gracefully degrades)
-        searchField.putClientProperty("JTextField.placeholderText", "Search products by name, barcode, or reference...");
+        searchField.putClientProperty("JTextField.placeholderText", AppLocal.getIntString("label.searchproductbarcode"));
         searchField.putClientProperty("JTextField.showClearButton", true);
         searchField.putClientProperty("JComponent.roundRect", true);
 

@@ -186,7 +186,7 @@ public class AuthenticationPanel extends javax.swing.JPanel {
         dbControlsPanel.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createTitledBorder(
                         BorderFactory.createEtchedBorder(),
-                        AppLocal.getIntString("label.database") != null ? AppLocal.getIntString("label.database") : "Base de Dados"),
+                        AppLocal.getIntString("label.database")),
                 BorderFactory.createEmptyBorder(4, 6, 6, 6)
         ));
 
@@ -204,14 +204,16 @@ public class AuthenticationPanel extends javax.swing.JPanel {
         btnSelectDatabase.setMaximumSize(new Dimension(Integer.MAX_VALUE, 48));
         btnSelectDatabase.setPreferredSize(new Dimension(270, 48));
         btnSelectDatabase.setIcon(new ImageIcon(getClass().getResource("/com/openbravo/images/database.png")));
+        btnSelectDatabase.setToolTipText(AppLocal.getIntString("button.activate.tooltip"));
         btnSelectDatabase.addActionListener(e -> activateSelectedDatabase());
 
-        btnConfigureDatabase = new JButton("Configurar");
+        btnConfigureDatabase = new JButton(AppLocal.getIntString("button.configure"));
         btnConfigureDatabase.setName("kriolos:auth:btn-configure-database"); // Rule 7.2 URN & robot test anchor
         btnConfigureDatabase.setAlignmentX(Component.CENTER_ALIGNMENT);
         btnConfigureDatabase.setMaximumSize(new Dimension(Integer.MAX_VALUE, 48));
         btnConfigureDatabase.setPreferredSize(new Dimension(270, 48));
         btnConfigureDatabase.setIcon(new ImageIcon(getClass().getResource("/com/openbravo/images/configuration.png")));
+        btnConfigureDatabase.setToolTipText(AppLocal.getIntString("button.configuration.tooltip"));
         btnConfigureDatabase.addActionListener(e -> openConfiguration());
 
         // 4. Progress Bar & Real-time Status Label
@@ -294,9 +296,10 @@ public class AuthenticationPanel extends javax.swing.JPanel {
         comboDatabases.setVisible(false);
         btnSelectDatabase.setVisible(false);
         btnConfigureDatabase.setVisible(true);
-        lblActiveDatabaseBadge.setText("⚠️ Nenhuma Base de Dados Configurada");
+        lblActiveDatabaseBadge.setText(AppLocal.getIntString("label.database.noneconfigured"));
         lblActiveDatabaseBadge.setForeground(new Color(180, 50, 50));
-        lblStatus.setText("Clique em Configurar para adicionar.");
+        lblStatus.setText(AppLocal.getIntString("label.database.clickconfigure"));
+        updateUserListState();
     }
 
     /**
@@ -313,31 +316,33 @@ public class AuthenticationPanel extends javax.swing.JPanel {
     private void updateBadgeAndButtons() {
         DatabaseConfig selected = getSelectedDatabase();
         if (selected == null) {
-            lblActiveDatabaseBadge.setText("⚠️ Nenhuma Base de Dados Selecionada");
+            lblActiveDatabaseBadge.setText(AppLocal.getIntString("label.database.noneselected"));
             lblActiveDatabaseBadge.setForeground(new Color(150, 150, 150));
             btnSelectDatabase.setEnabled(false);
+            updateUserListState();
             return;
         }
 
         if (activeDbConfig != null && activeDbConfig.equals(selected)) {
-            lblActiveDatabaseBadge.setText("🟢 Base de Dados Ativa: " + activeDbConfig.name());
+            lblActiveDatabaseBadge.setText(AppLocal.getIntString("label.database.active", activeDbConfig.name()));
             lblActiveDatabaseBadge.setForeground(new Color(25, 135, 48));
             lblActiveDatabaseBadge.setToolTipText(activeDbConfig.url());
-            btnSelectDatabase.setText("Reconectar");
+            btnSelectDatabase.setText(AppLocal.getIntString("button.reconnect"));
             btnSelectDatabase.setEnabled(true);
-            lblStatus.setText("● Base de dados selecionada com sucesso");
+            lblStatus.setText(AppLocal.getIntString("label.database.selectedsuccess"));
         } else {
             if (activeDbConfig != null) {
-                lblActiveDatabaseBadge.setText("🟡 Ativa: " + activeDbConfig.name());
+                lblActiveDatabaseBadge.setText(AppLocal.getIntString("label.database.active.prefix", activeDbConfig.name()));
                 lblActiveDatabaseBadge.setForeground(new Color(180, 120, 20));
             } else {
-                lblActiveDatabaseBadge.setText("⚪ Nenhuma Base de Dados Conectada");
+                lblActiveDatabaseBadge.setText(AppLocal.getIntString("label.database.notconnected"));
                 lblActiveDatabaseBadge.setForeground(new Color(100, 100, 100));
             }
-            btnSelectDatabase.setText("Ativar " + selected.name());
+            btnSelectDatabase.setText(AppLocal.getIntString("button.activate.named", selected.name()));
             btnSelectDatabase.setEnabled(true);
-            lblStatus.setText("⚠️ " + selected.name() + " selecionada (Não aplicada)");
+            lblStatus.setText(AppLocal.getIntString("label.database.selectednotapplied", selected.name()));
         }
+        updateUserListState();
     }
 
     /**
@@ -349,8 +354,8 @@ public class AuthenticationPanel extends javax.swing.JPanel {
             return;
         }
 
-        setBusy(true, "A verificar ligação...");
-        showLoadingUsersList("A carregar utilizadores de " + selected.name() + "...");
+        setBusy(true, AppLocal.getIntString("label.database.checkingconnection"));
+        showLoadingUsersList(AppLocal.getIntString("label.database.loadingusersfrom", selected.name()));
 
         if (appView instanceof ApplicationShell shell) {
             shell.activateDatabase(selected, new DatabaseActivationCallback() {
@@ -363,7 +368,7 @@ public class AuthenticationPanel extends javax.swing.JPanel {
                 public void onSuccess(DatabaseConfig activatedConfig, DataLogicSystem dlSystem) {
                     activeDbConfig = activatedConfig;
                     updateSecurityService(dlSystem);
-                    setBusy(false, "Ligado com sucesso a " + activatedConfig.name());
+                    setBusy(false, AppLocal.getIntString("label.database.connectedsuccess", activatedConfig.name()));
                     updateBadgeAndButtons();
                     m_txtKeys.requestFocus();
                 }
@@ -371,7 +376,7 @@ public class AuthenticationPanel extends javax.swing.JPanel {
                 @Override
                 public void onError(Throwable error) {
                     LOGGER.log(Level.WARNING, "Failed activating database: " + selected.name(), error);
-                    setBusy(false, "Erro ao conectar");
+                    setBusy(false, AppLocal.getIntString("label.database.connectionerror"));
                     updateBadgeAndButtons();
                     showEmptyUserList();
 
@@ -385,11 +390,11 @@ public class AuthenticationPanel extends javax.swing.JPanel {
                 appView.switchDatabase();
                 activeDbConfig = selected;
                 updateBadgeAndButtons();
-                setBusy(false, "Ligado a " + selected.name());
+                setBusy(false, AppLocal.getIntString("label.database.connectedto", selected.name()));
             }
             catch (BasicException ex) {
                 LOGGER.log(Level.WARNING, "Error activating database", ex);
-                setBusy(false, "Erro ao conectar");
+                setBusy(false, AppLocal.getIntString("label.database.connectionerror"));
                 updateBadgeAndButtons();
             }
         }
@@ -409,6 +414,11 @@ public class AuthenticationPanel extends javax.swing.JPanel {
         progressBar.setVisible(busy);
         if (message != null) {
             lblStatus.setText(message);
+        }
+        if (busy) {
+            setUserListEnabled(false);
+        } else {
+            updateUserListState();
         }
     }
 
@@ -452,6 +462,32 @@ public class AuthenticationPanel extends javax.swing.JPanel {
         return activeDbConfig;
     }
 
+    public void setActiveDatabase(DatabaseConfig dbConfig) {
+        this.activeDbConfig = dbConfig;
+        updateBadgeAndButtons();
+    }
+
+    /**
+     * Checks if the panel is currently in dirty mode.
+     * Dirty mode means the user has an active selected database, but changed
+     * the selection in the dropdown to another database that has not yet been applied.
+     *
+     * @return true if currently in dirty mode, false otherwise.
+     */
+    public boolean isDirtyMode() {
+        DatabaseConfig selected = getSelectedDatabase();
+        return activeDbConfig != null && selected != null && !activeDbConfig.equals(selected);
+    }
+
+    /**
+     * Alias for {@link #isDirtyMode()}.
+     *
+     * @return true if currently in dirty mode, false otherwise.
+     */
+    public boolean isDirty() {
+        return isDirtyMode();
+    }
+
     public JComboBox<DatabaseConfig> getComboDatabases() {
         return comboDatabases;
     }
@@ -462,6 +498,43 @@ public class AuthenticationPanel extends javax.swing.JPanel {
 
     public JButton getBtnConfigure() {
         return btnConfigureDatabase;
+    }
+
+    public javax.swing.JScrollPane getUsersListScrollPane() {
+        return usersLisScrollPane;
+    }
+
+    /**
+     * Updates the enabled state of the user list based on dirty mode and active database connection.
+     * If in dirty mode (selected database != active database) or no active database,
+     * the user list is disabled.
+     */
+    public void updateUserListState() {
+        boolean enabled = activeDbConfig != null && !isDirtyMode();
+        setUserListEnabled(enabled);
+    }
+
+    /**
+     * Enables or disables all components in the user list scroll pane and the barcode input.
+     *
+     * @param enabled True to enable the user list; false to disable.
+     */
+    public void setUserListEnabled(boolean enabled) {
+        usersLisScrollPane.setEnabled(enabled);
+        Component view = usersLisScrollPane.getViewport().getView();
+        if (view != null) {
+            setComponentTreeEnabled(view, enabled);
+        }
+        m_txtKeys.setEnabled(enabled);
+    }
+
+    private void setComponentTreeEnabled(Component component, boolean enabled) {
+        component.setEnabled(enabled);
+        if (component instanceof java.awt.Container container) {
+            for (Component child : container.getComponents()) {
+                setComponentTreeEnabled(child, enabled);
+            }
+        }
     }
 
     public void updateSecurityService(SecurityService securityService) {
@@ -505,6 +578,7 @@ public class AuthenticationPanel extends javax.swing.JPanel {
         // 1. Choose your baseline size variant
         ButtonSize variant = ButtonSize.EXTRA_LARGE;
 
+        boolean enabled = activeDbConfig != null && !isDirtyMode();
         JFlowPanel jPeople = new JFlowPanel();
         for (AppUser user : people) {
             // 2. Instantiate using the native Factory
@@ -513,16 +587,18 @@ public class AuthenticationPanel extends javax.swing.JPanel {
             
             // 3. Apply the specific layout width (280px) and get the dynamic height from the variant
             btn.setPreferredSize(new Dimension(280, variant.getHeight()));
+            btn.setEnabled(enabled);
 
             jPeople.add(btn);
         }
 
         usersLisScrollPane.setViewportView(jPeople);
+        setUserListEnabled(enabled);
     }
 
     private void showLoadingUsersList(String message) {
         JPanel loadingPanel = new JPanel(new GridBagLayout());
-        JLabel label = new JLabel(message != null ? message : "A carregar utilizadores...");
+        JLabel label = new JLabel(message != null ? message : AppLocal.getIntString("label.users.loading"));
         label.setHorizontalAlignment(SwingConstants.CENTER);
         loadingPanel.add(label);
         usersLisScrollPane.setViewportView(loadingPanel);
@@ -530,13 +606,19 @@ public class AuthenticationPanel extends javax.swing.JPanel {
 
     private void showEmptyUserList() {
         JPanel emptyPanel = new JPanel(new GridBagLayout());
-        JLabel emptyLabel = new JLabel("Nenhum utilizador disponível");
+        JLabel emptyLabel = new JLabel(AppLocal.getIntString("label.users.noneavailable"));
         emptyLabel.setHorizontalAlignment(SwingConstants.CENTER);
         emptyPanel.add(emptyLabel);
         usersLisScrollPane.setViewportView(emptyPanel);
     }
 
     private void processKey(char c) {
+        if (isDirtyMode() || activeDbConfig == null) {
+            LOGGER.log(Level.WARNING, "Ignored card input: database selection is dirty or no active database");
+            inputtext = new StringBuilder();
+            return;
+        }
+
         if (c == '\n') {
             AppUser user = null;
             try {
@@ -576,6 +658,11 @@ public class AuthenticationPanel extends javax.swing.JPanel {
 
         @Override
         public void actionPerformed(ActionEvent evt) {
+            if (isDirtyMode() || activeDbConfig == null) {
+                LOGGER.log(Level.WARNING, "Ignored login attempt: database selection is dirty or no active database");
+                return;
+            }
+
             LOGGER.log(Level.INFO, "User button clicked: {0}", m_actionuser.getName());
 
             try {

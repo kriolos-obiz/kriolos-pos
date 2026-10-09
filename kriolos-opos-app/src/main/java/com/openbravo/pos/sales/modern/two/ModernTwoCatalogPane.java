@@ -103,7 +103,7 @@ public class ModernTwoCatalogPane extends JPanel {
         searchField.setMargin(new Insets(4, 10, 4, 10));
         searchField.setName("kriolos:sales:modern-two:search");
         searchField.putClientProperty("JTextField.placeholderText",
-                "Pesquisar produto ou ler c\u00f3digo de barras...");
+                AppLocal.getIntString("label.searchproductbarcode"));
         searchField.putClientProperty("JTextField.showClearButton", true);
         searchField.putClientProperty("JComponent.roundRect", true);
 

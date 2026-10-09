@@ -435,10 +435,10 @@ public class ApplicationShell extends JPanel implements AppView {
         javax.swing.SwingWorker<SystemService, String> worker = new javax.swing.SwingWorker<>() {
             @Override
             protected SystemService doInBackground() throws Exception {
-                publish("A verificar parâmetros da base de dados...");
+                publish(AppLocal.getIntString("label.database.checkingparams"));
                 AppConfig.testConnection(dbConfig);
 
-                publish("A ligar à base de dados..."+dbConfig.name());
+                publish(AppLocal.getIntString("label.database.connectingto", dbConfig.name()));
                 if (session != null) {
                     try {
                         session.close();
@@ -449,10 +449,10 @@ public class ApplicationShell extends JPanel implements AppView {
                 }
                 session = new Session(dbConfig.url(), dbConfig.username(), dbConfig.password());
 
-                publish("A executar migrações de dados...");
+                publish(AppLocal.getIntString("label.database.runningmigrations"));
                 com.openbravo.pos.data.DBMigrator.execDBMigration(session);
 
-                publish("A inicializar serviços do sistema...");
+                publish(AppLocal.getIntString("label.database.initsystemservices"));
                 systemService = getBean(SystemService.class);
                 if (systemService instanceof BeanFactoryApp) {
                     ((BeanFactoryApp) systemService).init(ApplicationShell.this);
@@ -466,17 +466,17 @@ public class ApplicationShell extends JPanel implements AppView {
                 cashManagementService = new CashManagementServiceImpl(session);
                 hostSavedProperties = systemService.getResourceAsProperties(getHostPropertyId());
 
-                publish("A inicializar active Cash and Inventory..");
+                publish(AppLocal.getIntString("label.database.initcashinventory"));
                 setInventoryLocation();
                 if (checkActiveCash()) {
                     throw new BasicException("Falha ao verificar ActiveCash");
                 }
 
-                publish("A configurar interface e periféricos...");
+                publish(AppLocal.getIntString("label.database.configinterfaceperipherals"));
                 initPeripheral();
                 
                 
-                publish("A configurar status panel...");
+                publish(AppLocal.getIntString("label.database.configstatuspanel"));
                 setTitlePanel();
                 setStatusBarPanel();
                 logStartup();
@@ -547,7 +547,7 @@ public class ApplicationShell extends JPanel implements AppView {
         catch (SQLException e) {
             url = "";
         }
-        appInfoLabel.setText("<html>" + appProperties.getHost() + " ;<b>WareHouse<b>: " + sWareHouse + "<br>" + url + "</html>");
+        appInfoLabel.setText("<html>" + appProperties.getHost() + " ;<b>" + AppLocal.getIntString("label.warehouse") + "<b>: " + sWareHouse + "<br>" + url + "</html>");
     }
 
     /**
@@ -579,7 +579,7 @@ public class ApplicationShell extends JPanel implements AppView {
 
         appTitleLabel.setFont(new java.awt.Font("Arial", 1, 16)); // NOI18N
         appTitleLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        appTitleLabel.setText("Point of Sales (POS)");
+        appTitleLabel.setText(AppLocal.getIntString("label.apptitle"));
         appTitleLabel.setEnabled(false);
         topPanel.add(appTitleLabel, java.awt.BorderLayout.CENTER);
 
