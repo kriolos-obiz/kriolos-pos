@@ -31,6 +31,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding> <!-- Centralizes the target Java version for compliance -->
         <maven.compiler.release>17</maven.compiler.release>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
 
         <netbeans.version>RELEASE240</netbeans.version>
 
@@ -71,20 +73,20 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     <inceptionYear>2022</inceptionYear>
 
     <scm>
-        <connection>scm:git:https://github.com/poolborges/unicenta-pos.git</connection>
-        <developerConnection>scm:git:https://github.com/poolborges/unicenta-pos.git</developerConnection>
-        <url>https://github.com/poolborges/unicenta-pos</url>
+        <connection>scm:git:https://github.com/kriolos-obiz/kriolos-pos.git</connection>
+        <developerConnection>scm:git:https://github.com/kriolos-obiz/kriolos-pos.git</developerConnection>
+        <url>https://github.com/kriolos-obiz/kriolos-pos</url>
         <tag>HEAD</tag>
     </scm>
 
     <issueManagement>
         <system>Github</system>
-        <url>https://github.com/poolborges/unicenta-pos/issues</url>
+        <url>https://github.com/kriolos-obiz/kriolos-pos/issues</url>
     </issueManagement>
 
     <distributionManagement>
         <site>
-            <id>https://poolborges.github.io/unicenta-pos</id>
+            <id>https://kriolos-obiz.github.io/kriolos-pos</id>
         </site>
         <repository>
             <id>github</id>
@@ -95,7 +97,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
     <ciManagement>
         <system>GitHub Action</system>
-        <url>https://github.com/poolborges/unicenta-pos/actions</url>
+        <url>https://github.com/kriolos-obiz/kriolos-pos/actions</url>
     </ciManagement>
 
     <licenses>
@@ -371,6 +373,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                                         <version>[17,)</version>
                                         <message>Error: This project requires JDK 17 or higher to build!</message>
                                     </requireJavaVersion>
+                                    <requireMavenVersion>
+                                        <version>[3.8.1,)</version>
+                                        <message>Error: This project requires maven or higher to build!</message>
+                                    </requireMavenVersion>
                                 </rules>
                             </configuration>
                         </execution>
@@ -381,6 +387,20 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-checkstyle-plugin</artifactId>
                     <version>${checkstyle.plugin.version}</version>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                            <configuration>
+                                <encoding>UTF-8</encoding>
+                                <consoleOutput>false</consoleOutput>
+                                <failsOnError>false</failsOnError>
+                                <linkXRef>true</linkXRef>
+                                <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                            </configuration>
+                        </execution>
+                    </executions>
                     <dependencies>
                         <dependency>
                             <groupId>com.puppycrawl.tools</groupId>
@@ -388,6 +408,36 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                             <version>10.21.3</version>
                         </dependency>
                     </dependencies>
+                </plugin>
+                
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-pmd-plugin</artifactId>
+                    <version>3.28.0</version>
+                    <configuration>
+                        <sourceEncoding>UTF-8</sourceEncoding>
+                        <targetJdk>17</targetJdk>
+                        <failOnViolation>false</failOnViolation>
+                        <printFailingErrors>true</printFailingErrors>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <version>3.12.0</version>
+                    <configuration>
+                        <sourceEncoding>UTF-8</sourceEncoding>
+                        <detectJavaApiLink>true</detectJavaApiLink>
+                        <release>17</release>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -454,6 +504,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                 <artifactId>maven-enforcer-plugin</artifactId>
             </plugin>
 
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-pmd-plugin</artifactId>
+            </plugin>
 
         </plugins>
 
@@ -464,33 +518,54 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.12.0</version>
+                <reportSets>
+                    <reportSet>
+                        <id>aggregate</id>
+                        <reports>
+                            <report>aggregate</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-pmd-plugin</artifactId>
+                <version>3.28.0</version>
+                <configuration>
+                    <sourceEncoding>UTF-8</sourceEncoding>
+                    <targetJdk>17</targetJdk>
+                    <linkXRef>true</linkXRef>
+                </configuration>
+            </plugin>
         </plugins>
     </reporting>
     <profiles>
         <profile>
             <id>gen-doc</id>
-        </profile>
-        <profile>
-            <id>checkstyle</id>
             <build>
                 <plugins>
+                    <!-- 1. Executa o ciclo do Maven Site acoplado à fase de verificação -->
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-checkstyle-plugin</artifactId>
+                        <artifactId>maven-site-plugin</artifactId>
+                        <version>3.21.0</version> <!-- Use a versão estável mais recente -->
                         <executions>
                             <execution>
+                                <id>automated-site-generation</id>
+                                <phase>verify</phase>
                                 <goals>
-                                    <goal>check</goal>
+                                    <goal>site</goal>
                                 </goals>
-                                <configuration>
-                                    <configLocation>src/config/sun_checks.xml</configLocation>
-                                    <includeTestSourceDirectory>true</includeTestSourceDirectory>
-                                </configuration>
                             </execution>
                         </executions>
                     </plugin>
                 </plugins>
             </build>
         </profile>
+        
     </profiles>
 </project>
