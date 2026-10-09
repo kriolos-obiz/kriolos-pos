@@ -23,7 +23,7 @@ import com.openbravo.pos.sales.TaxService;
 import com.openbravo.pos.sales.DataLogicTax;
 import com.openbravo.pos.ticket.ProductInfoExt;
 import com.openbravo.pos.ticket.FindTicketsInfo;
-import com.openbravo.pos.inventory.UomInfo;
+import com.openbravo.pos.pim.UomInfo;
 import com.openbravo.pos.inventory.LocationInfo;
 import com.openbravo.pos.inventory.ProductsBundleInfo;
 import com.openbravo.pos.inventory.TaxCustCategoryInfo;
@@ -48,7 +48,7 @@ import com.openbravo.pos.payment.PaymentInfo;
 import com.openbravo.pos.payment.PaymentInfoTicket;
 import com.openbravo.pos.payment.TreasuryService;
 import com.openbravo.pos.catalog.CatalogService;
-import com.openbravo.pos.pim.DataLogicPIM;
+import com.openbravo.pos.catalog.CatalogServiceImpl;
 import com.openbravo.pos.sales.ReprintTicketInfo;
 import com.openbravo.pos.sales.TicketLifecycleService;
 import com.openbravo.pos.voucher.DataLogicVouchers;
@@ -232,28 +232,7 @@ public class DataLogicSales extends BeanFactoryDataSingle implements TicketLifec
             } catch (BeanFactoryException ignored) {
             }
         }
-        return getDataLogicPIM();
-    }
-
-    /**
-     * @deprecated Use {@link #getCatalogService()} instead.
-     */
-    @Deprecated
-    public DataLogicPIM getDataLogicPIM() {
-        if (app != null) {
-            try {
-                CatalogService svc = app.getBean(CatalogService.class);
-                if (svc instanceof DataLogicPIM) {
-                    return (DataLogicPIM) svc;
-                }
-            } catch (BeanFactoryException ignored) {
-            }
-            try {
-                return app.getBean(DataLogicPIM.class);
-            } catch (BeanFactoryException ignored) {
-            }
-        }
-        DataLogicPIM fallback = new DataLogicPIM();
+        CatalogServiceImpl fallback = new CatalogServiceImpl();
         fallback.init(sessionDB);
         return fallback;
     }
@@ -508,7 +487,8 @@ public class DataLogicSales extends BeanFactoryDataSingle implements TicketLifec
      */
     @Deprecated
     public final SentenceList<AttributeSetInfo> getAttributeSetList() {
-        return getDataLogicPIM().getAttributeSetList();
+        return new StaticSentence<>(sessionDB, "SELECT ID, NAME FROM attributeset ORDER BY NAME", null,
+                (DataRead dr) -> new AttributeSetInfo(dr.getString(1), dr.getString(2)));
     }
 
     /**
@@ -1029,19 +1009,22 @@ public class DataLogicSales extends BeanFactoryDataSingle implements TicketLifec
 
     // JG 3 Feb 16 - Product load speedup
     /**
-     * @deprecated Use {@link DataLogicPIM#getProductImage()} instead.
+     * @deprecated Use {@link CatalogService#getProductImage(String)} instead.
      */
     @Deprecated
     public final SentenceFind getProductImage() {
-        return getDataLogicPIM().getProductImage();
+        return new PreparedSentence(sessionDB,
+                "SELECT IMAGE FROM products WHERE ID = ?",
+                SerializerWriteString.INSTANCE,
+                (DataRead dr) -> ImageUtils.readImage(dr.getBytes(1)));
     }
 
     /**
-     * @deprecated Use {@link DataLogicPIM#getProductImage(String)} instead.
+     * @deprecated Use {@link CatalogService#getProductImage(String)} instead.
      */
     @Deprecated
     public final BufferedImage getProductImage(String imageId) {
-        return getDataLogicPIM().getProductImage(imageId);
+        return getCatalogService().getProductImage(imageId);
     }
 
     /**
@@ -1095,11 +1078,14 @@ public class DataLogicSales extends BeanFactoryDataSingle implements TicketLifec
      *
      */
     private List<ProductsBundleInfo> getProductsBundle(String productId) throws BasicException {
-        return DataLogicPIM.getProductsBundle(productId, sessionDB);
+        return new PreparedSentence(sessionDB,
+                "SELECT ID, PRODUCT, PRODUCT_BUNDLE, QUANTITY FROM products_bundle WHERE PRODUCT = ?",
+                SerializerWriteString.INSTANCE,
+                ProductsBundleInfo.getSerializerRead()).list(productId);
     }
 
     private ProductInfoExt getProductInfoExtById(String productId) throws BasicException {
-        return DataLogicPIM.getProductInfoExtById(productId, sessionDB);
+        return getCatalogService().getProductInfo(productId);
     }
 
     /**
@@ -1202,11 +1188,12 @@ public class DataLogicSales extends BeanFactoryDataSingle implements TicketLifec
     }
 
     /**
-     * @deprecated Use {@link DataLogicPIM#getUomList()} instead.
+     * @deprecated Use {@link CatalogService#getUomListAll()} instead.
      */
     @Deprecated
     public final SentenceList<UomInfo> getUomList() {
-        return getDataLogicPIM().getUomList();
+        return new StaticSentence<>(sessionDB, "SELECT ID, NAME FROM uom ORDER BY NAME", null,
+                UomInfo.getSerializerRead());
     }
 
     /**

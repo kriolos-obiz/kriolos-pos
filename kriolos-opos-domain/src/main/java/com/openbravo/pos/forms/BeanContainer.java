@@ -1,19 +1,3 @@
-/*
- * Copyright (C) 2022 KriolOS
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
 package com.openbravo.pos.forms;
 
 import java.lang.reflect.InvocationTargetException;
@@ -27,7 +11,7 @@ import java.util.logging.Logger;
  * Thread-safe IoC / Bean Container for static factory and service resolution.
  * Guarantees atomic initialization and type-safe casting operations.
  *
- * @author poolborges
+ * @author KriolOS
  */
 public final class BeanContainer {
 
@@ -56,7 +40,10 @@ public final class BeanContainer {
             Map.entry("com.openbravo.pos.sales.AuditService", "com.openbravo.pos.sales.DataLogicAudit"),
             Map.entry("com.openbravo.pos.sales.TaxService", "com.openbravo.pos.sales.DataLogicTax"),
             Map.entry("com.openbravo.pos.customers.CustomerService", "com.openbravo.pos.customers.DataLogicCustomers"),
-            Map.entry("com.openbravo.pos.catalog.CatalogService", "com.openbravo.pos.pim.DataLogicPIM"),
+            Map.entry("com.openbravo.pos.catalog.CatalogService", "com.openbravo.pos.catalog.CatalogServiceImpl"),
+            Map.entry("com.openbravo.pos.pim.DataLogicProducts", "com.openbravo.pos.pim.DataLogicProducts"),
+            Map.entry("com.openbravo.pos.pim.DataLogicCategories", "com.openbravo.pos.pim.DataLogicCategories"),
+            Map.entry("com.openbravo.pos.pim.DataLogicUom", "com.openbravo.pos.pim.DataLogicUom"),
             Map.entry("com.openbravo.pos.sales.SharedTicketService", "com.openbravo.pos.sales.DataLogicReceipts"),
             Map.entry("com.openbravo.pos.sales.TicketLifecycleService", "com.openbravo.pos.forms.DataLogicSales"),
             Map.entry("com.openbravo.pos.suppliers.SupplierService", "com.openbravo.pos.suppliers.DataLogicSuppliers"),

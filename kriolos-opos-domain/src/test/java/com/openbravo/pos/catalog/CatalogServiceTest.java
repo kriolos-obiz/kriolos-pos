@@ -1,26 +1,12 @@
-/*
- * Copyright (C) 2026 KriolOS
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
 package com.openbravo.pos.catalog;
 
 import com.openbravo.basic.BasicException;
 import com.openbravo.pos.forms.AppView;
 import com.openbravo.pos.forms.BeanContainer;
 import com.openbravo.pos.pim.CategoryInfo;
-import com.openbravo.pos.pim.DataLogicPIM;
+import com.openbravo.pos.pim.DataLogicCategories;
+import com.openbravo.pos.pim.DataLogicProducts;
+import com.openbravo.pos.pim.DataLogicUom;
 import com.openbravo.pos.ticket.ProductInfoExt;
 import java.lang.reflect.Proxy;
 import java.util.Collections;
@@ -30,11 +16,16 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Unit test suite for {@link CatalogService} port and BeanContainer resolution.
+ *
+ * @author KriolOS
+ */
 @DisplayName("CatalogService Port Test Suite")
 class CatalogServiceTest {
 
     @Test
-    @DisplayName("Should resolve CatalogService in BeanContainer to DataLogicPIM")
+    @DisplayName("Should resolve CatalogService in BeanContainer to DataLogicProducts")
     void shouldResolveCatalogServiceInBeanContainer() {
         AppView appViewProxy = (AppView) Proxy.newProxyInstance(
                 AppView.class.getClassLoader(),
@@ -44,8 +35,26 @@ class CatalogServiceTest {
 
         Object bean = BeanContainer.getBean("com.openbravo.pos.catalog.CatalogService", appViewProxy);
         assertNotNull(bean, "BeanContainer should resolve CatalogService");
-        assertInstanceOf(DataLogicPIM.class, bean, "CatalogService should resolve to DataLogicPIM");
-        assertInstanceOf(CatalogService.class, bean, "DataLogicPIM should implement CatalogService");
+        assertInstanceOf(CatalogServiceImpl.class, bean, "CatalogService should resolve to CatalogServiceImpl");
+        assertInstanceOf(CatalogService.class, bean, "CatalogServiceImpl should implement CatalogService");
+    }
+
+    @Test
+    @DisplayName("Should resolve specific PIM DataLogics in BeanContainer")
+    void shouldResolveSpecificPimDataLogics() {
+        AppView appViewProxy = (AppView) Proxy.newProxyInstance(
+                AppView.class.getClassLoader(),
+                new Class<?>[]{AppView.class},
+                (proxy, method, args) -> null
+        );
+
+        Object categoriesBean = BeanContainer.getBean("com.openbravo.pos.pim.DataLogicCategories", appViewProxy);
+        assertNotNull(categoriesBean, "BeanContainer should resolve DataLogicCategories");
+        assertInstanceOf(DataLogicCategories.class, categoriesBean);
+
+        Object uomBean = BeanContainer.getBean("com.openbravo.pos.pim.DataLogicUom", appViewProxy);
+        assertNotNull(uomBean, "BeanContainer should resolve DataLogicUom");
+        assertInstanceOf(DataLogicUom.class, uomBean);
     }
 
     @Test

@@ -14,7 +14,6 @@ import com.openbravo.data.loader.SerializerWriteBasicExt;
 import com.openbravo.data.loader.SerializerWriteString;
 import com.openbravo.data.loader.Session;
 import com.openbravo.pos.forms.BeanFactoryDataSingle;
-import com.openbravo.pos.pim.DataLogicPIM;
 import com.openbravo.format.Formats;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.data.loader.DataRead;
@@ -386,7 +385,10 @@ public class DataLogicInventory extends BeanFactoryDataSingle implements StockSe
     }
 
     private List<ProductsBundleInfo> getProductsBundle(String productId) throws BasicException {
-        return DataLogicPIM.getProductsBundle(productId, sessionDB);
+        return new PreparedSentence(sessionDB,
+                "SELECT ID, PRODUCT, PRODUCT_BUNDLE, QUANTITY FROM products_bundle WHERE PRODUCT = ?",
+                SerializerWriteString.INSTANCE,
+                ProductsBundleInfo.getSerializerRead()).list(productId);
     }
 
     public final double findProductStock(String warehouse, String id, String attsetinstid) throws BasicException {
