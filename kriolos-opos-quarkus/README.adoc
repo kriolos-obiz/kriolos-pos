@@ -1,0 +1,122 @@
+// Global settings
+:ascii-ids:
+:encoding: UTF-8
+:lang: en
+:icons: font
+:toc:
+:toclevels: 3
+:numbered:
+
+= KriolOS POS — Quarkus Desktop Swing (`kriolos-opos-quarkus`)
+:author: KriolOS
+:revdate: {docdatetime}
+
+== Overview
+
+`kriolos-opos-quarkus` is the Quarkus Desktop Swing launcher and GraalVM native-image packaging module for **KriolOS POS**.
+
+It wraps `kriolos-opos-app` as a clean dependency without polluting the core Swing application module with Quarkus build plugins or runtime dependencies, enabling:
+
+* **Quarkus Dev Mode (`quarkus:dev`)** with live reload and CDI (`quarkus-arc`).
+* **Quarkus Desktop Swing (`io.quarkiverse.desktop:quarkus-desktop-swing`)** lifecycle management and automatic EDT Look-and-Feel setup.
+* **GraalVM Native Image (`-Dnative`)** compilation for desktop AWT/Swing execution.
+
+== Bootstrap Lifecycle
+
+`QuarkusPosMain` coordinates the two-phase startup between Quarkus and the AWT Event Dispatch Thread (EDT):
+
+1. **`StartupEvent` (off-EDT)**: Loads `AppConfig` (`kriolos-opos.properties`) and prepares non-UI services before the Swing window opens.
+2. **Look-and-Feel initialization (on-EDT)**: `quarkus-desktop-swing` configures `com.formdev.flatlaf.FlatDarkLaf` on the EDT before firing `DesktopStartupEvent`.
+3. **`DesktopStartupEvent` (on-EDT)**: `QuarkusPosMain#onDesktopReady` applies system settings, constructs `WindowShell`, sets `WindowConstants.DISPOSE_ON_CLOSE`, and invokes `WindowShell#initFrame()`.
+4. **Clean Shutdown**: Closing the last window triggers `quarkus.desktop.awt.exit-on-last-window-closed=true`, cleanly shutting down the Quarkus container.
+
+== Prerequisites
+
+* **Java 21+** (or **GraalVM 25+** via SDKMAN for native builds)
+* **Maven Wrapper (`./mvnw`)**
+
+.Using SDKMAN
+[source,bash]
+----
+sdk use java 25.0.2-graalce
+----
+
+== Running in Dev Mode (JVM)
+
+From the repository root:
+
+[source,bash]
+----
+./mvnw -f kriolos-opos-quarkus/pom.xml quarkus:dev
+----
+
+Or from inside the `kriolos-opos-quarkus` directory:
+
+[source,bash]
+----
+cd kriolos-opos-quarkus
+../mvnw quarkus:dev
+----
+
+.Passing a custom POS configuration file
+[source,bash]
+----
+./mvnw -f kriolos-opos-quarkus/pom.xml quarkus:dev -Djvm.args="-Djava.awt.headless=false -Dpos.config.file=/path/to/kriolos-opos.properties"
+----
+
+== Building and Running the JVM Package
+
+[source,bash]
+----
+./mvnw -f kriolos-opos-quarkus/pom.xml package -DskipTests
+java -Djava.awt.headless=false -jar kriolos-opos-quarkus/target/quarkus-app/quarkus-run.jar
+----
+
+== Building and Running the GraalVM Native Executable
+
+Ensure `JAVA_HOME` and `GRAALVM_HOME` point to a GraalVM JDK (e.g., `25.0.2-graalce`):
+
+[source,bash]
+----
+export JAVA_HOME="$HOME/.sdkman/candidates/java/25.0.2-graalce"
+export GRAALVM_HOME="$JAVA_HOME"
+
+./mvnw -f kriolos-opos-quarkus/pom.xml package -Dnative -DskipTests
+----
+
+Run the generated native binary:
+
+[source,bash]
+----
+./kriolos-opos-quarkus/target/kriolos-pos-quarkus-runner
+----
+
+== Key Files
+
+[cols="1,3",options="header"]
+|===
+| File | Purpose
+
+| `pom.xml`
+| Quarkus module POM managing Quarkus BOM `3.40.1`, `quarkus-desktop-swing:0.2.1`, `quarkus-liquibase`, and Quarkus JDBC extensions (`quarkus-jdbc-h2`, `quarkus-jdbc-mariadb`, `quarkus-jdbc-postgresql`, `quarkus-jdbc-sqlite4j`) while excluding legacy raw drivers (`derby`, `h2`, `mariadb-java-client`, `postgresql`, `sqlite-jdbc`, `sqlite4j`) and legacy Liquibase/JAXB from `kriolos-opos-app`.
+
+| `src/main/resources/application.properties`
+| Desktop Swing Look-and-Feel configuration (`com.formdev.flatlaf.FlatDarkLaf`), window lifecycle rules, and DevServices/Liquibase disablement flags.
+
+| `src/main/java/.../QuarkusPosMain.java`
+| CDI ApplicationScoped orchestrator handling off-EDT service bootstrap and on-EDT `DesktopStartupEvent` frame display.
+
+| `src/main/java/.../NativeReflectionConfiguration.java`
+| Central code-first GraalVM Native Image `Feature`: dynamic FlatLaf/SwingX `ComponentUI` reflection discovery, hardware JNI registration (`gnu.io` / `org.usb4java`), and resource bundle/classpath packaging.
+|===
+
+== Architecture and Native Compatibility
+
+* **Code-First Native Configuration**: All reflection, resources, and initialization are declared in Java code (`NativeReflectionConfiguration.java`) rather than fragmented properties or JSON files.
+* **Quarkus Extensions**:
+  - `quarkus-jdbc-h2`, `quarkus-jdbc-mariadb`, `quarkus-jdbc-postgresql`, `quarkus-jdbc-sqlite4j`: Provide built-in GraalVM substitutions and driver initialization for relational backends (pure Java WebAssembly SQLite via Chicory).
+  - `hsqldb`: Bundled with full native resource globs (`org/hsqldb/**`) and reflection.
+  - `quarkus-liquibase`: Delivers native reflection for changelog XML parsing and database migration without running automatic startup migrations.
+* **Dynamic Look & Feel UI Registration**: Scans classpath entries during native build analysis to register all FlatLaf, FlatLaf-SwingX, and SwingX `ComponentUI` delegates, borders, and icons for reflective instantiation.
+* **Hardware Native Libraries**: Prepares JNI callbacks and defers native library loading (`System.load`) for `com.neuronrobotics:nrjavaserial` (`gnu.io`) and `org.usb4java` (`libusb`).
+
