@@ -16,8 +16,9 @@
     <description>KriolOS POS Quarkus Desktop Swing Launcher</description>
 
     <properties>
-        <!-- Limit GraalVM Native Image compiler heap to avoid system OOM killer -->
+        <!-- Limit GraalVM Native Image compiler heap and threads to avoid system OOM killer -->
         <quarkus.native.native-image-xmx>6g</quarkus.native.native-image-xmx>
+        <quarkus.native.additional-build-args>-H:NumberOfThreads=4</quarkus.native.additional-build-args>
     </properties>
 
     <dependencyManagement>

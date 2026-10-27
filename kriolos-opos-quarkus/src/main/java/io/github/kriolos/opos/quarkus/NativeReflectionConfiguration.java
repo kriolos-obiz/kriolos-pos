@@ -134,7 +134,15 @@ import org.graalvm.nativeimage.hosted.RuntimeReflection;
         com.openbravo.pos.panels.JPanelPrinter.class,
 
         // ── Data Loader & Persistence Entities ───────────────────────────────
-        com.openbravo.pos.cash.CashRegister.class
+        com.openbravo.pos.cash.CashRegister.class,
+
+        // ── Openbravo Custom Listener Arrays (EventListenerList.getListeners) ─
+        com.openbravo.data.user.StateListener.class,
+        com.openbravo.data.user.StateListener[].class,
+        com.openbravo.data.user.EditorListener.class,
+        com.openbravo.data.user.EditorListener[].class,
+        com.openbravo.data.user.BrowseListener.class,
+        com.openbravo.data.user.BrowseListener[].class
     },
     classNames = {
         // ── ServiceLoader SPI Providers & Runtime-scoped Implementations ─────
