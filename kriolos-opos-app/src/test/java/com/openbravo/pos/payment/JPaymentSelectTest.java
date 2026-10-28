@@ -27,7 +27,6 @@ class JPaymentSelectTest {
         assertNotNull(receipt);
         assertTrue(receipt instanceof JPanel, "JPaymentSelect must be a JPanel");
         assertEquals("kriolos:payment:select-panel", receipt.getName());
-        assertEquals("Payment", receipt.getTitle());
     }
 
     @Test

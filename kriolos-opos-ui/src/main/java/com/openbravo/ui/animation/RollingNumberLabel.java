@@ -1,11 +1,10 @@
 package com.openbravo.ui.animation;
 
 import javax.swing.*;
-import java.awt.*;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
+import java.text.NumberFormat;
+import java.util.Currency;
 import java.util.Locale;
 
 /**
@@ -28,68 +27,89 @@ public class RollingNumberLabel extends JLabel {
     /** Minimum supported animation duration in milliseconds. */
     public static final int MIN_ANIMATION_DURATION_MS = 50;
 
-    /** Default decimal places for currency representations. */
-    public static final int DEFAULT_DECIMAL_PLACES = 2;
-
-    /** Base integer number format pattern. */
-    public static final String BASE_NUMBER_PATTERN = "#,##0";
-
-    private static final String DECIMAL_SEPARATOR = ".";
-    private static final String ZERO_DIGIT = "0";
     private static final String EMPTY_STRING = "";
 
     private double currentValue = 0.0;
     private double targetValue = 0.0;
-    private int decimalPlaces = DEFAULT_DECIMAL_PLACES;
+    private int decimalPlaces;
     private String prefix = EMPTY_STRING;
     private String suffix = EMPTY_STRING;
     private int animationDurationMs = DEFAULT_ANIMATION_DURATION_MS;
     private NativeAnimator animator;
-    private DecimalFormat formatter;
+    
+    private NumberFormat formatter;
+    private final Locale locale;
 
     /**
-     * Constructs a rolling number label initialized at zero.
+     * Constructs a rolling number label initialized at zero using the default system Locale.
      */
     public RollingNumberLabel() {
         this(0.0);
     }
 
     /**
-     * Constructs a rolling number label with an initial numeric value.
+     * Constructs a rolling number label with an initial numeric value using the default system Locale.
      *
      * @param initialValue the starting number
      */
     public RollingNumberLabel(double initialValue) {
-        this.currentValue = initialValue;
-        this.targetValue = initialValue;
-        updateFormatter();
-        updateTextDisplay();
+        this(initialValue, EMPTY_STRING, EMPTY_STRING, Locale.getDefault());
     }
 
     /**
-     * Constructs a rolling number label with initial value, currency prefix, and suffix.
+     * Constructs a rolling number label with initial value, currency prefix, and suffix using the default system Locale.
      *
      * @param initialValue the starting number
      * @param prefix text placed before the number (e.g. "$", "CVE ")
      * @param suffix text placed after the number (e.g. " CVE", " pts")
      */
     public RollingNumberLabel(double initialValue, String prefix, String suffix) {
+        this(initialValue, prefix, suffix, Locale.getDefault());
+    }
+
+    /**
+     * Constructs a rolling number label with full localization control.
+     *
+     * @param initialValue the starting number
+     * @param prefix text placed before the number
+     * @param suffix text placed after the number
+     * @param locale the specific locale to drive number formatting and fraction precision
+     */
+    public RollingNumberLabel(double initialValue, String prefix, String suffix, Locale locale) {
         this.currentValue = initialValue;
         this.targetValue = initialValue;
         this.prefix = (prefix != null) ? prefix : EMPTY_STRING;
         this.suffix = (suffix != null) ? suffix : EMPTY_STRING;
+        this.locale = (locale != null) ? locale : Locale.getDefault();
+        
+        // Define as casas decimais de forma inteligente antes de inicializar o formatador
+        this.decimalPlaces = inferDefaultDecimalPlaces();
+        
         updateFormatter();
         updateTextDisplay();
     }
 
-    private void updateFormatter() {
-        StringBuilder pattern = new StringBuilder(BASE_NUMBER_PATTERN);
-        if (decimalPlaces > 0) {
-            pattern.append(DECIMAL_SEPARATOR);
-            pattern.append(ZERO_DIGIT.repeat(decimalPlaces));
+    private int inferDefaultDecimalPlaces() {
+        try {
+            // Tenta isolar um código ISO de 3 letras do prefixo ou sufixo (ex: "CVE", "USD")
+            String cleanCurrency = prefix.trim().length() == 3 ? prefix.trim() : suffix.trim();
+            return Currency.getInstance(cleanCurrency).getDefaultFractionDigits();
+        } catch (Exception e) {
+            try {
+                // Caso falhe, tenta herdar a precisão da moeda padrão do Locale atribuído
+                return Currency.getInstance(this.locale).getDefaultFractionDigits();
+            } catch (Exception ex) {
+                // Fallback seguro caso o locale não possua moeda padrão (ex: Locale.ROOT)
+                return 2;
+            }
         }
-        DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.getDefault());
-        this.formatter = new DecimalFormat(pattern.toString(), symbols);
+    }
+
+    private void updateFormatter() {
+        this.formatter = NumberFormat.getNumberInstance(this.locale);
+        this.formatter.setMinimumFractionDigits(decimalPlaces);
+        this.formatter.setMaximumFractionDigits(decimalPlaces);
+        this.formatter.setGroupingUsed(true); // Ativa separadores de milhares regionais automaticamente
     }
 
     private void updateTextDisplay() {
@@ -97,7 +117,7 @@ public class RollingNumberLabel extends JLabel {
     }
 
     /**
-     * Sets the number of decimal places to format and display.
+     * Overrides and sets the number of decimal places to format and display.
      *
      * @param decimalPlaces decimal precision (e.g. 2 for currency, 0 for integers)
      * @return this label instance for fluent configuration

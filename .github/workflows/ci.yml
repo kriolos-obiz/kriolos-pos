@@ -35,13 +35,14 @@ jobs:
         distribution: 'temurin'
         cache: 'maven'
 
-    # Install virtual framebuffer and X11 graphics libraries for Swing/AWT on Linux
+    # Install virtual framebuffer and X11 graphics libraries for Swing/AWT execution on Linux
     - name: Install GUI Dependencies (Linux)
       if: runner.os == 'Linux'
       run: |
         sudo apt-get update
         sudo apt-get install -y xvfb libxi6 libxtst6 libxrender1
 
+    # Grant execution permissions to the Maven Wrapper script based on the running OS
     - name: Make mvnw executable
       run: |
            if [ "$RUNNER_OS" == "Linux" ]; then
@@ -65,5 +66,14 @@ jobs:
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v5
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
 
-
+    # Collect and archive raw Allure report results for post-test analysis and auditing
+    - name: Upload Allure Results Artifact
+      if: always() # Ensures that test failure evidence is safely preserved even when builds fail
+      uses: actions/upload-artifact@v4
+      with:
+        name: allure-results-jdk${{ matrix.java }}
+        path: target/allure-results
+        retention-days: 5
