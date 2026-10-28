@@ -136,6 +136,38 @@ import org.graalvm.nativeimage.hosted.RuntimeReflection;
         // ── Data Loader & Persistence Entities ───────────────────────────────
         com.openbravo.pos.cash.CashRegister.class,
 
+        // ── Velocity Template Rendering Models ───────────────────────────────
+        com.openbravo.pos.ticket.TicketInfo.class,
+        com.openbravo.pos.ticket.TicketLineInfo.class,
+        com.openbravo.pos.ticket.TicketTaxInfo.class,
+        com.openbravo.pos.ticket.TaxInfo.class,
+        com.openbravo.pos.ticket.ProductInfoExt.class,
+        com.openbravo.pos.ticket.UserInfo.class,
+        com.openbravo.pos.ticket.FindTicketsInfo.class,
+        com.openbravo.pos.payment.PaymentInfo.class,
+        com.openbravo.pos.payment.PaymentInfoCash.class,
+        com.openbravo.pos.payment.PaymentInfoTicket.class,
+        com.openbravo.pos.payment.PaymentInfoMagcard.class,
+        com.openbravo.pos.payment.PaymentInfoFree.class,
+        com.openbravo.pos.customers.CustomerInfo.class,
+        com.openbravo.pos.customers.CustomerInfoExt.class,
+        com.openbravo.pos.pim.CategoryInfo.class,
+        com.openbravo.pos.pim.UomInfo.class,
+        com.openbravo.pos.reports.CashReport.class,
+        com.openbravo.pos.reports.PaymentsListLine.class,
+        com.openbravo.pos.reports.CategorySalesLine.class,
+        com.openbravo.pos.reports.ProductSalesLine.class,
+        com.openbravo.pos.reports.SalesLine.class,
+        com.openbravo.pos.reports.RemovedProductLines.class,
+        com.openbravo.pos.reports.DrawerOpenedLines.class,
+        com.openbravo.pos.reports.FinancialReport.class,
+        com.openbravo.pos.inventory.InventoryRecord.class,
+        com.openbravo.pos.inventory.InventoryLine.class,
+        com.openbravo.pos.inventory.LocationInfo.class,
+        com.openbravo.pos.inventory.MovementReason.class,
+        com.openbravo.pos.suppliers.SupplierInfo.class,
+        com.openbravo.pos.sales.TaxesLogic.class,
+
         // ── Openbravo Custom Listener Arrays (EventListenerList.getListeners) ─
         com.openbravo.data.user.StateListener.class,
         com.openbravo.data.user.StateListener[].class,
@@ -279,6 +311,9 @@ public final class NativeReflectionConfiguration implements Feature {
 
         // Defer FlatLaf native library loading to runtime
         RuntimeClassInitialization.initializeAtRunTime("com.formdev.flatlaf.util.NativeLibrary");
+
+        // Defer PDFBox encryption classes that optionally reference BouncyCastle
+        RuntimeClassInitialization.initializeAtRunTime("org.apache.pdfbox");
 
         // Defer InstanceManager and Java RMI to runtime (uses RMI / SecureRandom for single-instance check)
         RuntimeClassInitialization.initializeAtRunTime(
