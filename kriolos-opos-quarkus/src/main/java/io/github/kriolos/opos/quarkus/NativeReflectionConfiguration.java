@@ -13,6 +13,7 @@ import org.graalvm.nativeimage.hosted.Feature;
 import org.graalvm.nativeimage.hosted.RuntimeClassInitialization;
 import org.graalvm.nativeimage.hosted.RuntimeJNIAccess;
 import org.graalvm.nativeimage.hosted.RuntimeReflection;
+import org.graalvm.nativeimage.hosted.RuntimeResourceAccess;
 
 /**
  * Central code-first registry for GraalVM Native Image configuration (reflection,
@@ -33,6 +34,8 @@ import org.graalvm.nativeimage.hosted.RuntimeReflection;
 @RegisterResourceBundle(bundleName = "erp_messages")
 @RegisterResourceBundle(bundleName = "data_messages")
 @RegisterResourceBundle(bundleName = "beans_messages")
+@RegisterResourceBundle(bundleName = "net/sf/jasperreports/view/viewer")
+@RegisterResourceBundle(bundleName = "jasperreports_messages")
 @RegisterResources(globs = {
     "com/openbravo/images/**",
     "com/openbravo/svg/**",
@@ -42,6 +45,9 @@ import org.graalvm.nativeimage.hosted.RuntimeReflection;
     "com/openbravo/pos/util/**",
     "com/openbravo/pos/images/**",
     "com/openbravo/pos/printer/**",
+    "net/sf/jasperreports/**",
+    "default.jasperreports.properties",
+    "jasperreports*.properties",
     "pos_liquidbase/**",
     "db/changelog/**",
     "db/migrations/**",
@@ -341,6 +347,61 @@ public final class NativeReflectionConfiguration implements Feature {
     };
 
     /**
+     * Resource bundles dynamically accessed by JasperReports and POS report templates.
+     */
+    private static final String[] REPORT_MESSAGE_BUNDLES = {
+        "net/sf/jasperreports/view/viewer",
+        "jasperreports_messages",
+        "com/openbravo/reports/barcode_sheet_messages",
+        "com/openbravo/reports/customers_messages",
+        "com/openbravo/reports/epm_dailypresence_messages",
+        "com/openbravo/reports/epm_dailyschedule_messages",
+        "com/openbravo/reports/epm_performance_messages",
+        "com/openbravo/reports/inventoryb_messages",
+        "com/openbravo/reports/inventorydiffdetail_messages",
+        "com/openbravo/reports/inventorydiff_messages",
+        "com/openbravo/reports/inventorylistdetail_messages",
+        "com/openbravo/reports/inventory_messages",
+        "com/openbravo/reports/productlabels_messages",
+        "com/openbravo/reports/productscatalog_messages",
+        "com/openbravo/reports/products_messages",
+        "com/openbravo/reports/salecatalog_messages",
+        "com/openbravo/reports/sales_cashflow_messages",
+        "com/openbravo/reports/sales_cashregisterlog_messages",
+        "com/openbravo/reports/sales_categorysales_1_messages",
+        "com/openbravo/reports/sales_categorysales_messages",
+        "com/openbravo/reports/sales_chart_chartsales_messages",
+        "com/openbravo/reports/sales_chart_piesalescat_messages",
+        "com/openbravo/reports/sales_chart_productsales_messages",
+        "com/openbravo/reports/sales_chart_timeseriesproduct_messages",
+        "com/openbravo/reports/sales_chart_top10sales_messages",
+        "com/openbravo/reports/sales_closedpos_messages",
+        "com/openbravo/reports/sales_closedproducts_1_messages",
+        "com/openbravo/reports/sales_closedproducts_messages",
+        "com/openbravo/reports/sales_extendedcashregisterlog_messages",
+        "com/openbravo/reports/sales_extproducts_messages",
+        "com/openbravo/reports/sales_paymentreport_messages",
+        "com/openbravo/reports/sales_productsalesprofit_messages",
+        "com/openbravo/reports/sales_saletaxes_messages",
+        "com/openbravo/reports/sales_taxcatsales_messages",
+        "com/openbravo/reports/sales_taxes_messages",
+        "com/openbravo/reports/suppliers_messages",
+        "com/openbravo/reports/tools_badprice_messages",
+        "com/openbravo/reports/tools_invalidcategory_messages",
+        "com/openbravo/reports/tools_invaliddata_messages",
+        "com/openbravo/reports/tools_inventoryqtyupdate_messages",
+        "com/openbravo/reports/tools_missingdata_messages",
+        "com/openbravo/reports/tools_newproducts_messages",
+        "com/openbravo/reports/tools_updatedprices_messages",
+        "com/openbravo/reports/usernosales_messages",
+        "com/openbravo/reports/usersales_messages",
+        "com/openbravo/reports/users_messages",
+        "com/openbravo/reports/usertips_messages",
+        "com/openbravo/reports/uservoids_messages",
+        "com/openbravo/reports/vouchers_messages"
+    };
+
+    /**
      * Default constructor required by GraalVM Native Image {@link Feature} loader.
      */
     public NativeReflectionConfiguration() {
@@ -408,6 +469,15 @@ public final class NativeReflectionConfiguration implements Feature {
 
         // Register JDK and Swing classes dynamically accessed by BeanShell scripts
         registerBeanShellRuntimeTargets(access);
+
+        // Register JasperReports & report resource bundles for native runtime lookup
+        Module module = NativeReflectionConfiguration.class.getModule();
+        for (String bundleName : REPORT_MESSAGE_BUNDLES) {
+            try {
+                RuntimeResourceAccess.addResourceBundle(module, bundleName);
+            } catch (Throwable ignored) {
+            }
+        }
 
         // Auto-register any entity implementing SerializableRead for reflection (used by SerializerReadClass)
         access.registerSubtypeReachabilityHandler((duringAccess, subtype) -> {
