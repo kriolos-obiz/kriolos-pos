@@ -134,6 +134,8 @@ public final class BsVelocityScriptEngineProvider implements ScriptEngineProvide
             throws ScriptEngineException {
         try {
             Interpreter interpreter = new Interpreter();
+            interpreter.set("out", System.out);
+            interpreter.set("err", System.err);
             if (bindings != null) {
                 for (Map.Entry<String, Object> entry : bindings.entrySet()) {
                     interpreter.set(entry.getKey(), entry.getValue());

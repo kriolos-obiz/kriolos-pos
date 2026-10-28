@@ -174,7 +174,27 @@ import org.graalvm.nativeimage.hosted.RuntimeReflection;
         com.openbravo.data.user.EditorListener.class,
         com.openbravo.data.user.EditorListener[].class,
         com.openbravo.data.user.BrowseListener.class,
-        com.openbravo.data.user.BrowseListener[].class
+        com.openbravo.data.user.BrowseListener[].class,
+
+        // ── BeanShell & Script Runtime Targets ───────────────────────────────
+        java.lang.System.class,
+        java.io.PrintStream.class,
+        java.lang.Math.class,
+        javax.swing.JOptionPane.class,
+        javax.swing.UIManager.class,
+        javax.swing.JLabel.class,
+        javax.swing.JDialog.class,
+        javax.swing.plaf.FontUIResource.class,
+        java.awt.Font.class,
+        java.awt.Dimension.class,
+        java.awt.Window.class,
+        com.openbravo.pos.payment.JPaymentCashPos.class,
+        com.openbravo.pos.payment.JPaymentCashPos.ScriptPaymentCash.class,
+        com.openbravo.pos.payment.JPaymentSelect.class,
+        com.openbravo.pos.payment.JPaymentSelectReceipt.class,
+        com.openbravo.pos.payment.JPaymentSelectRefund.class,
+        com.openbravo.pos.payment.JPaymentSelectCustomer.class,
+        com.openbravo.format.Formats.class
     },
     classNames = {
         // ── ServiceLoader SPI Providers & Runtime-scoped Implementations ─────
@@ -211,9 +231,11 @@ public final class NativeReflectionConfiguration implements Feature {
         targets = {
             java.util.Date.class,
             java.util.Properties.class,
+            java.util.Hashtable.class,
             java.util.ArrayList.class,
             java.util.Vector.class,
             java.util.HashMap.class,
+            java.util.LinkedHashMap.class,
             java.lang.String.class,
             java.lang.Number.class,
             java.lang.Integer.class,
@@ -222,12 +244,14 @@ public final class NativeReflectionConfiguration implements Feature {
             java.lang.Boolean.class,
             com.openbravo.pos.ticket.TicketInfo.class,
             com.openbravo.pos.ticket.TicketLineInfo.class,
+            com.openbravo.pos.ticket.TicketTaxInfo.class,
             com.openbravo.pos.ticket.TaxInfo.class,
             com.openbravo.pos.ticket.ProductInfoExt.class,
             com.openbravo.pos.pim.CategoryInfo.class,
             com.openbravo.pos.ticket.UserInfo.class,
             com.openbravo.pos.customers.CustomerInfo.class,
-            com.openbravo.pos.customers.CustomerInfoExt.class
+            com.openbravo.pos.customers.CustomerInfoExt.class,
+            com.openbravo.pos.sales.SharedTicketInfo.class
         },
         serialization = true
     )
@@ -285,6 +309,11 @@ public final class NativeReflectionConfiguration implements Feature {
         "com/openbravo/pos/epm/",
         "com/openbravo/pos/voucher/",
         "com/openbravo/pos/config/",
+        "com/openbravo/pos/payment/",
+        "com/openbravo/pos/ticket/",
+        "com/openbravo/pos/catalog/",
+        "com/openbravo/format/",
+        "com/openbravo/data/",
         "io/github/kriolos/"
     };
 
@@ -353,6 +382,9 @@ public final class NativeReflectionConfiguration implements Feature {
 
         // Dynamically discover and register all FlatLaf, SwingX, and SPI service providers
         registerClasspathComponents(access);
+
+        // Register JDK and Swing classes dynamically accessed by BeanShell scripts
+        registerBeanShellRuntimeTargets(access);
 
         // Auto-register any entity implementing SerializableRead for reflection (used by SerializerReadClass)
         access.registerSubtypeReachabilityHandler((duringAccess, subtype) -> {
@@ -435,6 +467,43 @@ public final class NativeReflectionConfiguration implements Feature {
                 }
             }
         } catch (Throwable ignored) {
+        }
+    }
+
+    private void registerBeanShellRuntimeTargets(BeforeAnalysisAccess access) {
+        Class<?>[] beanShellJdkClasses = {
+            java.lang.System.class,
+            java.io.PrintStream.class,
+            java.lang.Math.class,
+            javax.swing.JOptionPane.class,
+            javax.swing.UIManager.class,
+            javax.swing.JLabel.class,
+            javax.swing.JDialog.class,
+            javax.swing.plaf.FontUIResource.class,
+            java.awt.Font.class,
+            java.awt.Dimension.class,
+            java.awt.Window.class,
+            com.openbravo.pos.payment.JPaymentCashPos.class,
+            com.openbravo.pos.payment.JPaymentCashPos.ScriptPaymentCash.class,
+            com.openbravo.format.Formats.class
+        };
+        for (Class<?> clazz : beanShellJdkClasses) {
+            RuntimeReflection.register(clazz);
+            try {
+                RuntimeReflection.register(clazz.getConstructors());
+                RuntimeReflection.register(clazz.getDeclaredConstructors());
+            } catch (Throwable ignored) {
+            }
+            try {
+                RuntimeReflection.register(clazz.getFields());
+                RuntimeReflection.register(clazz.getDeclaredFields());
+            } catch (Throwable ignored) {
+            }
+            try {
+                RuntimeReflection.register(clazz.getMethods());
+                RuntimeReflection.register(clazz.getDeclaredMethods());
+            } catch (Throwable ignored) {
+            }
         }
     }
 }
