@@ -5,7 +5,7 @@ import com.openbravo.data.gui.MessageInf;
 import com.openbravo.pos.config.AppConfig;
 import com.openbravo.basic.AppLocal;
 import com.openbravo.basic.AppProperties;
-import com.openbravo.basic.AppProperties.DatabaseConfig;
+import com.openbravo.pos.spi.config.BootstrapConfig.DatabaseConfig;
 import org.assertj.swing.core.BasicRobot;
 import org.assertj.swing.core.GenericTypeMatcher;
 import org.assertj.swing.core.Robot;
@@ -68,7 +68,7 @@ public class PosDatabaseLockIT {
 
         //DRIVER: "org.hsqldb.jdbcDriver"
         
-        DatabaseConfig dbconfig = new AppProperties.DatabaseConfig("TEDT DB", "jdbc:hsqldb:mem:silent_test_db", "sa", "");
+        DatabaseConfig dbconfig = new DatabaseConfig("TEDT DB", "jdbc:hsqldb:mem:silent_test_db", "sa", "");
 
         // Connection test must complete normally without throwing exception
         AppConfig.testConnection(dbconfig);
@@ -89,7 +89,7 @@ public class PosDatabaseLockIT {
     public void testConnectionFailureLogsExceptionAndShowsNonBlackDialog() throws Exception {
         LOGGER.log(Level.INFO, "Testing failed connection test: logs exception and shows JMessageDialog...");
 
-        DatabaseConfig dbconfig = new AppProperties.DatabaseConfig("TEDT DB", "jdbc:hsqldb:file:/nonexistent_protected_dir/pos_locked_db;ifexists=true", "sa", "");
+        DatabaseConfig dbconfig = new DatabaseConfig("TEDT DB", "jdbc:hsqldb:file:/nonexistent_protected_dir/pos_locked_db;ifexists=true", "sa", "");
 
         Thread dialogThread = new Thread(() -> {
             LOGGER.log(Level.INFO, "Executing connection test against unavailable database...");
@@ -242,10 +242,6 @@ public class PosDatabaseLockIT {
             properties.put(key, value);
         }
 
-        @Override
-        public File getConfigFile() {
-            return null;
-        }
 
         @Override
         public String getHost() {
@@ -260,16 +256,6 @@ public class PosDatabaseLockIT {
         @Override
         public String getProperty(String sKey, String defaultValue) {
             return properties.getOrDefault(sKey, defaultValue);
-        }
-
-        @Override
-        public List<DatabaseConfig> getAll() {
-             return null;
-        }
-
-        @Override
-        public DatabaseConfig getPrimary() {
-            return null;
         }
     }
 }

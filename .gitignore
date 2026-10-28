@@ -25,3 +25,4 @@
 *.code-workspace
 /modal-screenshots-baseline/
 /**/.asciidoctor/
+/.vscode/
