@@ -194,7 +194,30 @@ import org.graalvm.nativeimage.hosted.RuntimeReflection;
         com.openbravo.pos.payment.JPaymentSelectReceipt.class,
         com.openbravo.pos.payment.JPaymentSelectRefund.class,
         com.openbravo.pos.payment.JPaymentSelectCustomer.class,
-        com.openbravo.format.Formats.class
+        com.openbravo.format.Formats.class,
+
+        // ── Report UI Panels & Filter Components (instantiated in BeanShell report scripts) ──
+        com.openbravo.pos.reports.PanelReportBean.class,
+        com.openbravo.pos.reports.JPanelReport.class,
+        com.openbravo.pos.reports.InventoryReportBean.class,
+        com.openbravo.pos.reports.JParamsCustomer.class,
+        com.openbravo.pos.reports.JParamsDatesInterval.class,
+        com.openbravo.pos.reports.JParamsLocation.class,
+        com.openbravo.pos.reports.JParamsLocationWithFirst.class,
+        com.openbravo.pos.reports.JParamsReason.class,
+        com.openbravo.pos.reports.JParamsSuppliers.class,
+        com.openbravo.pos.reports.JParamsText.class,
+        com.openbravo.pos.reports.JParamsUser.class,
+        com.openbravo.pos.reports.JParamsComposed.class,
+        com.openbravo.pos.reports.ReportEditorCreator.class,
+        com.openbravo.pos.ticket.CategoryFilter.class,
+        com.openbravo.pos.ticket.ProductFilter.class,
+        com.openbravo.pos.ticket.ProductFilter1.class,
+        com.openbravo.pos.ticket.ProductFilter2.class,
+        com.openbravo.pos.ticket.ProductFilter3.class,
+        com.openbravo.pos.ticket.ProductFilter4.class,
+        com.openbravo.beans.DateUtils.class,
+        com.openbravo.data.loader.Datas.class
     },
     classNames = {
         // ── ServiceLoader SPI Providers & Runtime-scoped Implementations ─────
@@ -485,7 +508,28 @@ public final class NativeReflectionConfiguration implements Feature {
             java.awt.Window.class,
             com.openbravo.pos.payment.JPaymentCashPos.class,
             com.openbravo.pos.payment.JPaymentCashPos.ScriptPaymentCash.class,
-            com.openbravo.format.Formats.class
+            com.openbravo.format.Formats.class,
+            com.openbravo.pos.reports.PanelReportBean.class,
+            com.openbravo.pos.reports.JPanelReport.class,
+            com.openbravo.pos.reports.InventoryReportBean.class,
+            com.openbravo.pos.reports.JParamsCustomer.class,
+            com.openbravo.pos.reports.JParamsDatesInterval.class,
+            com.openbravo.pos.reports.JParamsLocation.class,
+            com.openbravo.pos.reports.JParamsLocationWithFirst.class,
+            com.openbravo.pos.reports.JParamsReason.class,
+            com.openbravo.pos.reports.JParamsSuppliers.class,
+            com.openbravo.pos.reports.JParamsText.class,
+            com.openbravo.pos.reports.JParamsUser.class,
+            com.openbravo.pos.reports.JParamsComposed.class,
+            com.openbravo.pos.reports.ReportEditorCreator.class,
+            com.openbravo.pos.ticket.CategoryFilter.class,
+            com.openbravo.pos.ticket.ProductFilter.class,
+            com.openbravo.pos.ticket.ProductFilter1.class,
+            com.openbravo.pos.ticket.ProductFilter2.class,
+            com.openbravo.pos.ticket.ProductFilter3.class,
+            com.openbravo.pos.ticket.ProductFilter4.class,
+            com.openbravo.beans.DateUtils.class,
+            com.openbravo.data.loader.Datas.class
         };
         for (Class<?> clazz : beanShellJdkClasses) {
             RuntimeReflection.register(clazz);
