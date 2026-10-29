@@ -16,21 +16,14 @@
 
 package com.openbravo.pos.reports;
 
-import com.lowagie.text.Document;
-import com.lowagie.text.pdf.PdfContentByte;
-import com.lowagie.text.pdf.PdfTemplate;
-import com.lowagie.text.pdf.PdfWriter;
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.loader.BaseSentence;
 import com.openbravo.util.ReportUtils;
-import java.awt.Graphics2D;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.util.Map;
 import javax.print.PrintService;
-import javax.swing.JPanel;
 import net.sf.jasperreports.engine.JRDataSource;
 import net.sf.jasperreports.engine.JREmptyDataSource;
 import net.sf.jasperreports.engine.JRException;
@@ -156,41 +149,6 @@ public class PrintReportUtils {
         } catch (JRException ex) {
             LOGGER.log(System.Logger.Level.ERROR, "Exception fill report: " + reportFilename, ex);
             throw new BasicException("Exception fill report: " + reportFilename, ex);
-        }
-    }
-
-    public static void exportToPdf(JPanel panel, String filePath) throws BasicException  {
-        // Ensure the layout is calculated before printing
-        if (panel.getWidth() == 0 || panel.getHeight() == 0) {
-            panel.setSize(panel.getPreferredSize());
-            panel.doLayout();
-        }
-
-        // Match the document canvas size with the JPanel size
-        Document document = new Document(new com.lowagie.text.Rectangle(panel.getWidth(), panel.getHeight()));
-
-        try (FileOutputStream fos = new FileOutputStream(filePath)) {
-            PdfWriter writer = PdfWriter.getInstance(document, fos);
-            document.open();
-
-            // Access the underlying direct PDF rendering layers
-            PdfContentByte cb = writer.getDirectContent();
-            PdfTemplate template = cb.createTemplate(panel.getWidth(), panel.getHeight());
-
-            // Bind a Java Graphics2D context onto the PDF template canvas
-            Graphics2D g2d = template.createGraphics(panel.getWidth(), panel.getHeight());
-
-            // Force the JPanel components to draw themselves into the PDF graphics context
-            panel.printAll(g2d);
-            g2d.dispose();
-
-            // Render the compiled template layer into the output file coordinates
-            cb.addTemplate(template, 0, 0);
-
-        } catch (Exception ex) {
-            throw new BasicException("Exception convert JPanel to PDF : " + panel.getName(), ex);
-        } finally {
-            document.close();
         }
     }
 }
