@@ -75,7 +75,9 @@ public final class AutomaticServiceLoaderFeature implements Feature {
         "sun.",
         "org.hsqldb.",
         "com.ctc.wstx.shaded.",
-        "com.ctc.wstx.msv."
+        "com.ctc.wstx.msv.",
+        "org.apache.batik.bridge.Rhino",
+        "org.apache.batik.script.rhino."
     );
 
     private final List<String> allowList = new ArrayList<>(DEFAULT_ALLOW_LIST);

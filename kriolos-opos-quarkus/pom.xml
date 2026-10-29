@@ -16,8 +16,8 @@
     <description>KriolOS POS Quarkus Desktop Swing Launcher</description>
 
     <properties>
-        <!-- Limit GraalVM Native Image compiler heap and threads to avoid system OOM killer -->
-        <quarkus.native.native-image-xmx>5g</quarkus.native.native-image-xmx>
+        <!-- Configure GraalVM Native Image compiler heap and threads for large desktop codebase -->
+        <quarkus.native.native-image-xmx>8g</quarkus.native.native-image-xmx>
         <quarkus.native.additional-build-args>-H:NumberOfThreads=3</quarkus.native.additional-build-args>
     </properties>
 
@@ -103,6 +103,20 @@
                     <artifactId>hsqldb</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <!-- JasperReports 7 optional third-party dependencies (declared <optional>true</optional> upstream).
+             Required for GraalVM Native Image AOT build-time type verification under -link-at-build-time:
+             - metadata-extractor: resolves catch(ImageProcessingException) in net.sf.jasperreports.engine.fill.JRFillImage.prepare()
+             - icu4j: resolves DecimalFormat/NumberFormat/UScript in JRFillTextField, JRAbstractExporter, CharScriptsSet -->
+        <dependency>
+            <groupId>com.drewnoakes</groupId>
+            <artifactId>metadata-extractor</artifactId>
+            <version>2.19.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.ibm.icu</groupId>
+            <artifactId>icu4j</artifactId>
+            <version>78.3</version>
         </dependency>
 
         <!-- ── Quarkus JDBC Driver Extensions (with built-in GraalVM Native support) ── -->

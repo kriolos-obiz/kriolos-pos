@@ -67,6 +67,10 @@ import org.graalvm.nativeimage.hosted.RuntimeResourceAccess;
     },
     classNames = {
         // ── JasperReports 7 Core Extension Factories & XML Loaders ───────────
+        "com.openbravo.pos.reports.JRViewer400",
+        "com.openbravo.pos.reports.PrintReportUtils",
+        "com.openbravo.pos.reports.JRDataSourceBasic",
+        "com.openbravo.pos.reports.ReportFieldsArray",
         "net.sf.jasperreports.extensions.DefaultExtensionsRegistryFactory",
         "net.sf.jasperreports.engine.xml.JacksonReportLoader",
         "net.sf.jasperreports.engine.xml.JacksonReportWriterFactory",
@@ -160,10 +164,6 @@ public final class JasperReportsFeature implements Feature {
         "net/sf/jasperreports/charts/",
         "net/sf/jasperreports/components/",
         "net/sf/jasperreports/crosstabs/",
-        "net/sf/jasperreports/engine/design/",
-        "net/sf/jasperreports/engine/base/",
-        "net/sf/jasperreports/engine/xml/",
-        "net/sf/jasperreports/engine/fill/",
         "net/sf/jasperreports/jackson/"
     };
 
@@ -178,8 +178,23 @@ public final class JasperReportsFeature implements Feature {
 
     @Override
     public void beforeAnalysis(BeforeAnalysisAccess access) {
-        // Defer ExifUtil class initialization to runtime (optional metadata-extractor dependency)
-        RuntimeClassInitialization.initializeAtRunTime("net.sf.jasperreports.engine.util.ExifUtil");
+        // Defer JasperReports engine to runtime (prevents ElementsBlock Random in image heap)
+        RuntimeClassInitialization.initializeAtRunTime("net.sf.jasperreports");
+
+        // Defer Log4jApiLogFactory to runtime (references optional log4j-api not on classpath);
+        // permit Slf4jLogFactory at build-time (cached by Commons BeanUtils in image heap)
+        RuntimeClassInitialization.initializeAtRunTime("org.apache.commons.logging.impl.Log4jApiLogFactory");
+        RuntimeClassInitialization.initializeAtBuildTime(
+            "org.apache.commons.logging.impl.Slf4jLogFactory",
+            "org.apache.commons.logging.impl.Slf4jLogFactory$Slf4jLocationAwareLog"
+        );
+
+        // Defer Batik Rhino interpreter to runtime, allow its factory at build time (cached in Batik Service.providerMap heap)
+        RuntimeClassInitialization.initializeAtRunTime(
+            "org.apache.batik.bridge.RhinoInterpreter",
+            "org.apache.batik.script.rhino"
+        );
+        RuntimeClassInitialization.initializeAtBuildTime("org.apache.batik.bridge.RhinoInterpreterFactory");
 
         Module module = JasperReportsFeature.class.getModule();
         int bundleCount = 0;
