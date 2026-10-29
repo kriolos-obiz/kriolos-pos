@@ -3,8 +3,13 @@
  *
  * <p>This package integrates {@code kriolos-opos-app} with {@code quarkus-desktop-swing}
  * and ArC CDI, providing the {@link io.github.kriolos.opos.quarkus.QuarkusPosMain}
- * application lifecycle observer and {@link io.github.kriolos.opos.quarkus.NativeReflectionConfiguration}
- * code-based reflection registry.
+ * application lifecycle observer and modular GraalVM native image features:
+ * {@link io.github.kriolos.opos.quarkus.KriolosPOSFeature},
+ * {@link io.github.kriolos.opos.quarkus.AutomaticServiceLoaderFeature},
+ * {@link io.github.kriolos.opos.quarkus.JasperReportsFeature},
+ * {@link io.github.kriolos.opos.quarkus.HardwareJNIFeature},
+ * {@link io.github.kriolos.opos.quarkus.ScriptingFeature}, and
+ * {@link io.github.kriolos.opos.quarkus.UIThemeFeature}.
  *
  * @author KriolOS
  */

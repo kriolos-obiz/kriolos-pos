@@ -17,8 +17,8 @@
 
     <properties>
         <!-- Limit GraalVM Native Image compiler heap and threads to avoid system OOM killer -->
-        <quarkus.native.native-image-xmx>6g</quarkus.native.native-image-xmx>
-        <quarkus.native.additional-build-args>-H:NumberOfThreads=4</quarkus.native.additional-build-args>
+        <quarkus.native.native-image-xmx>5g</quarkus.native.native-image-xmx>
+        <quarkus.native.additional-build-args>-H:NumberOfThreads=3</quarkus.native.additional-build-args>
     </properties>
 
     <dependencyManagement>
@@ -90,6 +90,22 @@
                     <groupId>io.roastedroot</groupId>
                     <artifactId>sqlite4j</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>net.sf.jasperreports</groupId>
+                    <artifactId>jasperreports-excel-poi</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.mpobjects.jasperreports.font</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.poi</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.hsqldb</groupId>
+                    <artifactId>hsqldb</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
 
@@ -108,8 +124,14 @@
         </dependency>
         <dependency>
             <groupId>io.quarkiverse.jdbc</groupId>
-            <artifactId>quarkus-jdbc-sqlite4j</artifactId>
-            <version>0.0.8</version>
+            <artifactId>quarkus-jdbc-sqlite</artifactId>
+            <version>3.0.11</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.hibernate.orm</groupId>
+                    <artifactId>hibernate-community-dialects</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- ── Quarkus Liquibase (Native Image reflection & changelog packaging) ── -->
