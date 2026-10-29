@@ -55,7 +55,10 @@ public final class AutomaticServiceLoaderFeature implements Feature {
         "org.usb4java.",
         "javax.usb.",
         "org.krysalis.barcode4j.",
-        "com.google.zxing."
+        "com.google.zxing.",
+        "com.ctc.wstx.stax.",
+        "org.codehaus.stax2.",
+        "com.fasterxml."
     );
 
     /**
@@ -70,7 +73,9 @@ public final class AutomaticServiceLoaderFeature implements Feature {
         "com.oracle.svm.",
         "jdk.internal.",
         "sun.",
-        "org.hsqldb."
+        "org.hsqldb.",
+        "com.ctc.wstx.shaded.",
+        "com.ctc.wstx.msv."
     );
 
     private final List<String> allowList = new ArrayList<>(DEFAULT_ALLOW_LIST);
@@ -199,19 +204,21 @@ public final class AutomaticServiceLoaderFeature implements Feature {
                         }
                     }
 
-                    // 2. Process JasperReports extension factories: jasperreports_extension.properties
+                    // 2. Process JasperReports extension properties: jasperreports_extension.properties
                     if ("jasperreports_extension.properties".equals(name)) {
                         try (InputStream in = jar.getInputStream(entry)) {
                             Properties props = new Properties();
                             props.load(in);
                             for (String key : props.stringPropertyNames()) {
-                                if (key.startsWith("net.sf.jasperreports.extension.registry.factory.")) {
-                                    String factoryClass = props.getProperty(key);
-                                    if (factoryClass != null && !factoryClass.trim().isEmpty()) {
-                                        String cls = factoryClass.trim();
-                                        if (isAllowed(cls)) {
-                                            if (registerClass(access, cls)) {
-                                                jasperFactoriesCount++;
+                                if (key.startsWith("net.sf.jasperreports.extension.")) {
+                                    String rawVal = props.getProperty(key);
+                                    if (rawVal != null && !rawVal.trim().isEmpty()) {
+                                        for (String item : rawVal.split(",")) {
+                                            String cls = item.trim();
+                                            if (!cls.isEmpty() && isAllowed(cls)) {
+                                                if (registerClass(access, cls)) {
+                                                    jasperFactoriesCount++;
+                                                }
                                             }
                                         }
                                     }

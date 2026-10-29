@@ -23,6 +23,7 @@
 /.dev/src/
 **/derby.log
 *.code-workspace
+**/logs/
 /modal-screenshots-baseline/
 /**/.asciidoctor/
 /.vscode/

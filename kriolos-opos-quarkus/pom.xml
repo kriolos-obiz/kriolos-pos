@@ -83,10 +83,6 @@
                     <artifactId>jaxb-impl</artifactId>
                 </exclusion>
                 <exclusion>
-                    <groupId>org.xerial</groupId>
-                    <artifactId>sqlite-jdbc</artifactId>
-                </exclusion>
-                <exclusion>
                     <groupId>io.roastedroot</groupId>
                     <artifactId>sqlite4j</artifactId>
                 </exclusion>
@@ -132,6 +128,12 @@
                     <artifactId>hibernate-community-dialects</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <!-- quarkus extension has its own sqlite-jdbc dependency (too old: 3.36.0.3, not have JDBC4 ) -->
+        <dependency>
+            <groupId>org.xerial</groupId>
+            <artifactId>sqlite-jdbc</artifactId>
+            <version>3.54.1.0</version>
         </dependency>
 
         <!-- ── Quarkus Liquibase (Native Image reflection & changelog packaging) ── -->
@@ -238,4 +240,3 @@
         </profile>
     </profiles>
 </project>
-

@@ -97,7 +97,7 @@ public class PrintReportUtils {
                     //JasperDesign jd = JRXmlLoader.load(in);
                     jasperReport = JasperCompileManager.compileReport(in);
                 }
-            } catch (IOException | JRException ex) {
+            } catch (Throwable ex) {
                 LOGGER.log(System.Logger.Level.WARNING, "Exception load/compile report file: : " + fullName, ex);
                 throw new BasicException("Exception load/compile report file: " + fullName, ex);
             }

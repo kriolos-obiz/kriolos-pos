@@ -3,7 +3,13 @@ package io.github.kriolos.opos.quarkus;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import io.quarkus.runtime.annotations.RegisterResourceBundle;
 import io.quarkus.runtime.annotations.RegisterResources;
+import java.io.File;
+import java.io.InputStream;
 import java.lang.reflect.Method;
+import java.nio.file.Path;
+import java.util.Enumeration;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import org.graalvm.nativeimage.hosted.Feature;
 import org.graalvm.nativeimage.hosted.RuntimeClassInitialization;
 import org.graalvm.nativeimage.hosted.RuntimeReflection;
@@ -74,7 +80,14 @@ import org.graalvm.nativeimage.hosted.RuntimeResourceAccess;
         "net.sf.jasperreports.engine.style.PropertyStyleProviderExtensionFactory",
         "net.sf.jasperreports.web.util.ContentTypeMappingExtensionsRegistryFactory",
         "net.sf.jasperreports.engine.fonts.SimpleFontExtensionsRegistryFactory",
-        "net.sf.jasperreports.engine.export.MatcherExportFilterMappingExtensionsRegistryFactory"
+        "net.sf.jasperreports.engine.export.MatcherExportFilterMappingExtensionsRegistryFactory",
+
+        // ── Woodstox StAX Provider Classes ──────────────────────────────────
+        "com.ctc.wstx.stax.WstxInputFactory",
+        "com.ctc.wstx.stax.WstxOutputFactory",
+        "com.ctc.wstx.stax.WstxEventFactory",
+        "org.codehaus.stax2.XMLInputFactory2",
+        "org.codehaus.stax2.XMLOutputFactory2"
     },
     methods = true,
     fields = true
@@ -133,6 +146,27 @@ public final class JasperReportsFeature implements Feature {
         "com/openbravo/reports/vouchers_messages"
     };
 
+    private static final String[] JASPER_PACKAGES = {
+        "com/ctc/wstx/stax/",
+        "com/ctc/wstx/api/",
+        "com/ctc/wstx/io/",
+        "com/ctc/wstx/sr/",
+        "com/ctc/wstx/sw/",
+        "com/ctc/wstx/cfg/",
+        "com/ctc/wstx/util/",
+        "com/ctc/wstx/ent/",
+        "com/ctc/wstx/dtd/",
+        "org/codehaus/stax2/",
+        "net/sf/jasperreports/charts/",
+        "net/sf/jasperreports/components/",
+        "net/sf/jasperreports/crosstabs/",
+        "net/sf/jasperreports/engine/design/",
+        "net/sf/jasperreports/engine/base/",
+        "net/sf/jasperreports/engine/xml/",
+        "net/sf/jasperreports/engine/fill/",
+        "net/sf/jasperreports/jackson/"
+    };
+
     public JasperReportsFeature() {
         // Required default constructor for GraalVM Feature SPI
     }
@@ -144,6 +178,9 @@ public final class JasperReportsFeature implements Feature {
 
     @Override
     public void beforeAnalysis(BeforeAnalysisAccess access) {
+        // Defer ExifUtil class initialization to runtime (optional metadata-extractor dependency)
+        RuntimeClassInitialization.initializeAtRunTime("net.sf.jasperreports.engine.util.ExifUtil");
+
         Module module = JasperReportsFeature.class.getModule();
         int bundleCount = 0;
         for (String bundleName : REPORT_MESSAGE_BUNDLES) {
@@ -153,6 +190,80 @@ public final class JasperReportsFeature implements Feature {
             } catch (Throwable ignored) {
             }
         }
-        System.out.printf("[JasperReportsFeature] Registered %d report message bundles and XML report loaders.%n", bundleCount);
+
+        // Dynamically discover and register Woodstox and JasperReports classes
+        int scannedCount = registerClasspathComponents(access);
+        System.out.printf("[JasperReportsFeature] Registered %d report message bundles, scanned %d Woodstox/JasperReports classes for reflection.%n",
+            bundleCount, scannedCount);
+    }
+
+    private int registerClasspathComponents(BeforeAnalysisAccess access) {
+        int count = 0;
+        for (Path path : access.getApplicationClassPath()) {
+            File file = path.toFile();
+            if (!file.isFile() || !file.getName().endsWith(".jar")) {
+                continue;
+            }
+            try (JarFile jar = new JarFile(file)) {
+                Enumeration<JarEntry> entries = jar.entries();
+                while (entries.hasMoreElements()) {
+                    JarEntry entry = entries.nextElement();
+                    String name = entry.getName();
+                    boolean isAnonymous = name.matches(".*\\$\\d+\\.class");
+                    if (name.endsWith(".class") && !isAnonymous && isMatch(name)) {
+                        String className = name.substring(0, name.length() - 6).replace('/', '.');
+                        if (registerClass(access, className)) {
+                            count++;
+                        }
+                    }
+                }
+            } catch (Throwable ignored) {
+            }
+        }
+        return count;
+    }
+
+    private boolean isMatch(String name) {
+        if (name.startsWith("com/ctc/wstx/shaded/") || name.startsWith("com/ctc/wstx/msv/")) {
+            return false;
+        }
+        for (String prefix : JASPER_PACKAGES) {
+            if (name.startsWith(prefix)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean registerClass(BeforeAnalysisAccess access, String className) {
+        try {
+            Class<?> clazz = access.findClassByName(className);
+            if (clazz == null) {
+                return false;
+            }
+            RuntimeReflection.register(clazz);
+            try {
+                RuntimeReflection.register(clazz.getConstructors());
+                RuntimeReflection.register(clazz.getDeclaredConstructors());
+            } catch (Throwable ignored) {
+            }
+            try {
+                RuntimeReflection.register(clazz.getFields());
+                RuntimeReflection.register(clazz.getDeclaredFields());
+            } catch (Throwable ignored) {
+            }
+            try {
+                for (Method method : clazz.getMethods()) {
+                    RuntimeReflection.register(method);
+                }
+                for (Method method : clazz.getDeclaredMethods()) {
+                    RuntimeReflection.register(method);
+                }
+            } catch (Throwable ignored) {
+            }
+            return true;
+        } catch (Throwable ignored) {
+            return false;
+        }
     }
 }
