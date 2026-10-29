@@ -18,7 +18,6 @@ package com.openbravo.pos.hardware;
 
 import com.openbravo.pos.spi.hardware.printer.TicketPrinterException;
 import com.google.auto.service.AutoService;
-import com.openbravo.pos.printer.*;
 import com.openbravo.pos.printer.escpos.*;
 import com.openbravo.pos.printer.javapos.DeviceDisplayJavaPOS;
 import com.openbravo.pos.printer.javapos.DeviceFiscalPrinterJavaPOS;
@@ -45,7 +44,6 @@ import com.openbravo.pos.spi.provider.ConfigurableProvider;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**

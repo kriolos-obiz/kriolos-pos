@@ -49,7 +49,7 @@ class PdfPrinterTest {
 
     public void printSaleTransaction() {
         File exportDir = new File(System.getProperty("user.home"), "kriolos/receipts");
-        DevicePrinter printer = new PdfPrinter80mm("Counter Receipt", exportDir);
+        DevicePrinter printer = new PdfPrinter58mm("Counter Receipt", exportDir);
 
         // 1. Begin transaction
         printer.beginReceipt();
@@ -68,9 +68,33 @@ class PdfPrinterTest {
         printer.printText(DevicePrinter.STYLE_PLAIN, "1x Pastel de Nata             150$00");
         printer.endLine();
 
+        printer.beginLine(0);
+        printer.printText(DevicePrinter.STYLE_PLAIN, "1x Coffee                     100$00");
+        printer.endLine();
+
+        printer.beginLine(0);
+        printer.printText(DevicePrinter.STYLE_PLAIN, "1x Pastel de Nata             150$00");
+        printer.endLine();
+
+        printer.beginLine(0);
+        printer.printText(DevicePrinter.STYLE_PLAIN, "1x Coffee                     100$00");
+        printer.endLine();
+
+        printer.beginLine(0);
+        printer.printText(DevicePrinter.STYLE_PLAIN, "1x Pastel de Nata             150$00");
+        printer.endLine();
+
+        printer.beginLine(0);
+        printer.printText(DevicePrinter.STYLE_PLAIN, "1x Coffee                     100$00");
+        printer.endLine();
+
+        printer.beginLine(0);
+        printer.printText(DevicePrinter.STYLE_PLAIN, "1x Pastel de Nata             150$00");
+        printer.endLine();
+
         // 4. Barcode / QR Code
         printer.printBarCode(DevicePrinter.BARCODE_CODE128, DevicePrinter.POSITION_BOTTOM, "TX-998877");
-        printer.printQRCode("https://kriolos.org/verify/998877", 4, 'M');
+        printer.printQRCode("https://kriolos.org/verify/998877", 50, 'M');
 
         // 5. Commit & compile PDF to disk
         printer.endReceipt();
