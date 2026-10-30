@@ -71,7 +71,9 @@ import org.graalvm.nativeimage.hosted.RuntimeResourceAccess;
         "com.openbravo.pos.reports.PrintReportUtils",
         "com.openbravo.pos.reports.JRDataSourceBasic",
         "com.openbravo.pos.reports.ReportFieldsArray",
+        "net.sf.jasperreports.extensions.DefaultExtensionsRegistry",
         "net.sf.jasperreports.extensions.DefaultExtensionsRegistryFactory",
+        "net.sf.jasperreports.extensions.ExtensionsEnvironment",
         "net.sf.jasperreports.engine.xml.JacksonReportLoader",
         "net.sf.jasperreports.engine.xml.JacksonReportWriterFactory",
         "net.sf.jasperreports.engine.design.JasperDesign",
@@ -164,6 +166,7 @@ public final class JasperReportsFeature implements Feature {
         "net/sf/jasperreports/charts/",
         "net/sf/jasperreports/components/",
         "net/sf/jasperreports/crosstabs/",
+        "net/sf/jasperreports/extensions/",
         "net/sf/jasperreports/jackson/"
     };
 
