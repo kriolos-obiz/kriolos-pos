@@ -54,6 +54,14 @@ public class QuarkusPosMain {
     void onStartup(@Observes StartupEvent event) {
         LOGGER.log(Level.INFO, "KriolOS POS — Quarkus startup (off EDT)");
 
+        // Avoid XRender/OpenGL buffer sync drops with Wayland / Xwayland compositors
+        if (System.getProperty("sun.java2d.xrender") == null) {
+            System.setProperty("sun.java2d.xrender", "false");
+        }
+        if (System.getProperty("sun.java2d.opengl") == null) {
+            System.setProperty("sun.java2d.opengl", "false");
+        }
+
         String sysPropConfig = System.getProperty("pos.config.file");
         if (sysPropConfig != null && !sysPropConfig.isBlank()) {
             config = AppConfig.getInstance(new File(sysPropConfig));
