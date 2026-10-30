@@ -37,7 +37,10 @@ import org.graalvm.nativeimage.hosted.RuntimeReflection;
         "io.github.kriolos.opos.ui.flatlaf.FlatPOSThemeFactory",
         "io.github.kriolos.opos.ui.flatlaf.FlatPOSThemeFactory$SpectrumDarkVariant",
         "io.github.kriolos.opos.ui.flatlaf.FlatPOSThemeFactory$SpectrumLightVariant",
-        "io.github.kriolos.opos.ui.nativefallback.NativeThemeFactory"
+        "io.github.kriolos.opos.ui.nativefallback.NativeThemeFactory",
+        "com.kitfox.svg.SVGRoot",
+        "com.kitfox.svg.SVGDiagram",
+        "com.kitfox.svg.SVGLoader"
     },
     methods = true,
     fields = true
@@ -46,7 +49,8 @@ public final class UIThemeFeature implements Feature {
 
     private static final String[] THEME_PACKAGES = {
         "com/formdev/flatlaf/",
-        "org/jdesktop/swingx/"
+        "org/jdesktop/swingx/",
+        "com/kitfox/svg/"
     };
 
     public UIThemeFeature() {
