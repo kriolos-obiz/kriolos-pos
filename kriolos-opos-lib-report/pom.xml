@@ -11,7 +11,7 @@
     <name>Kriolos.POS.Lib.Report</name> 
     <properties>
         <exec.mainClass>KriolosOposLibReport</exec.mainClass>
-        <jasperreports.version>7.0.7</jasperreports.version>
+        <jasperreports.version>7.1.0</jasperreports.version>
     </properties>
     
     <dependencies>
