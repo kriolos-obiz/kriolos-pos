@@ -47,12 +47,14 @@ public class JTicketCatalogLines extends javax.swing.JPanel {
         
         initComponents();
         
-        refoundLines = new JRefundLines(resourceService, jTicketEdit);        
-        add(refoundLines, "reflines");
-        
         catalogExplorer = (CatalogSelector) com.openbravo.pos.ui.api.catalog.CatalogManager.createDefaultCatalog(app);
         catalogExplorer.getComponent().setPreferredSize(new Dimension(0, 245));      
         add(catalogExplorer.getComponent(), "catalog");
+
+        refoundLines = new JRefundLines(resourceService, jTicketEdit);        
+        add(refoundLines, "reflines");
+
+        showCatalog();
     }
 
     public void showCatalog() {
@@ -61,6 +63,7 @@ public class JTicketCatalogLines extends javax.swing.JPanel {
 
     public void loadCatalog() throws BasicException {
         catalogExplorer.loadCatalog();
+        showCatalog();
     }
 
     public void addActionListener(ActionListener l) {

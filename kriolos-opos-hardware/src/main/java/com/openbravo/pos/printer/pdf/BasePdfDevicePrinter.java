@@ -8,9 +8,10 @@
  */
 package com.openbravo.pos.printer.pdf;
 
-
+import com.openbravo.pos.graphiccode.GraphicCode;
 import com.openbravo.pos.spi.hardware.PosImage;
 import com.openbravo.pos.spi.hardware.printer.DevicePrinter;
+import java.awt.image.BufferedImage;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
@@ -27,10 +28,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.pdfbox.pdmodel.graphics.image.LosslessFactory;
 
 /**
- * Abstract template for PDF-based printer devices in KriolOS POS.
- * Encapsulates receipt buffering, text-flow logic, and PDFBox rendering.
+ * Abstract template for PDF-based printer devices in KriolOS POS. Encapsulates
+ * receipt buffering, text-flow logic, and PDFBox rendering.
  *
  * @author KriolOS
  */
@@ -53,7 +55,6 @@ public abstract class BasePdfDevicePrinter implements DevicePrinter {
     // =========================================================================
     // PROFILE TEMPLATE METHODS (Subclasses implement these)
     // =========================================================================
-
     public abstract float getPageWidth();
 
     public abstract float getMarginHorizontal();
@@ -71,7 +72,6 @@ public abstract class BasePdfDevicePrinter implements DevicePrinter {
     // =========================================================================
     // DEVICE PRINTER CONTRACT IMPLEMENTATION
     // =========================================================================
-
     @Override
     public String getPrinterName() {
         return printerName;
@@ -123,12 +123,12 @@ public abstract class BasePdfDevicePrinter implements DevicePrinter {
 
     @Override
     public void printBarCode(String type, String position, String code) {
-        receiptBuffer.add(new TextItem("[" + type + ": " + code + "]"));
+        receiptBuffer.add(new BufferedImageItem(GraphicCode.getBarcode(code, type)));
     }
 
     @Override
     public void printQRCode(String code, int size, char errorCorrection) {
-        receiptBuffer.add(new TextItem("[QR: " + code + "]"));
+        receiptBuffer.add(new BufferedImageItem(GraphicCode.getCode(code, "QRCODE")));
     }
 
     @Override
@@ -138,9 +138,11 @@ public abstract class BasePdfDevicePrinter implements DevicePrinter {
             if (outputDirectory != null) {
                 savePdf(pdfBytes);
             }
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             throw new RuntimeException("Error rendering PDF receipt for " + printerName, e);
-        } finally {
+        }
+        finally {
             reset();
         }
     }
@@ -153,7 +155,6 @@ public abstract class BasePdfDevicePrinter implements DevicePrinter {
     // =========================================================================
     // PDF GENERATION ENGINE
     // =========================================================================
-
     public byte[] generatePdfDocument() throws IOException {
         try (PDDocument doc = new PDDocument()) {
             PDFont font = new PDType1Font(Standard14Fonts.FontName.COURIER);
@@ -174,7 +175,8 @@ public abstract class BasePdfDevicePrinter implements DevicePrinter {
     }
 
     /**
-     * Renders a single continuous roll ticket (used for 58mm and 80mm thermal receipts).
+     * Renders a single continuous roll ticket (used for 58mm and 80mm thermal
+     * receipts).
      */
     private void renderContinuousRoll(PDDocument doc, PDFont font) throws IOException {
         float dynamicHeight = (getMarginVertical() * 2);
@@ -183,6 +185,8 @@ public abstract class BasePdfDevicePrinter implements DevicePrinter {
                 dynamicHeight += getLineHeight();
             } else if (item instanceof ImageItem) {
                 dynamicHeight += 60.0f;
+            } else if (item instanceof BufferedImageItem imageItem) {
+                dynamicHeight += imageItem.getHeight();
             }
         }
         dynamicHeight = Math.max(dynamicHeight, 100.0f);
@@ -209,6 +213,14 @@ public abstract class BasePdfDevicePrinter implements DevicePrinter {
                     currentY -= imgHeight;
                     stream.drawImage(pdImage, getMarginHorizontal(), currentY, imgWidth, imgHeight);
                     currentY -= 6.0f;
+                } else if (item instanceof BufferedImageItem imgItem) {
+                    PDImageXObject pdImage = LosslessFactory.createFromImage(doc, imgItem.image);
+                    float usableWidth = getPageWidth() - (2 * getMarginHorizontal());
+                    float imgWidth = Math.min(pdImage.getWidth(), usableWidth);
+                    float imgHeight = (imgWidth / pdImage.getWidth()) * pdImage.getHeight();
+                    currentY -= imgHeight;
+                    stream.drawImage(pdImage, getMarginHorizontal(), currentY, imgWidth, imgHeight);
+                    currentY -= imgItem.getHeight();
                 }
             }
         }
@@ -242,13 +254,30 @@ public abstract class BasePdfDevicePrinter implements DevicePrinter {
                 stream.showText(sanitizeText(textItem.text));
                 stream.endText();
                 currentY -= getLineHeight();
+            } else if (item instanceof ImageItem imgItem) {
+                PDImageXObject pdImage = PDImageXObject.createFromByteArray(doc, imgItem.data, "img");
+                float usableWidth = getPageWidth() - (2 * getMarginHorizontal());
+                float imgWidth = Math.min(pdImage.getWidth(), usableWidth);
+                float imgHeight = (imgWidth / pdImage.getWidth()) * pdImage.getHeight();
+                currentY -= imgHeight;
+                stream.drawImage(pdImage, getMarginHorizontal(), currentY, imgWidth, imgHeight);
+                currentY -= 6.0f;
+            } else if (item instanceof BufferedImageItem imgItem) {
+                PDImageXObject pdImage = LosslessFactory.createFromImage(doc, imgItem.image);
+                float usableWidth = getPageWidth() - (2 * getMarginHorizontal());
+                float imgWidth = Math.min(pdImage.getWidth(), usableWidth);
+                float imgHeight = (imgWidth / pdImage.getWidth()) * pdImage.getHeight();
+                currentY -= imgHeight;
+                stream.drawImage(pdImage, getMarginHorizontal(), currentY, imgWidth, imgHeight);
+                currentY -= 6.0f;
             }
         }
         stream.close();
     }
 
     /**
-     * Optional hook for subclasses to inject document catalog metadata or PDF/A dictionaries.
+     * Optional hook for subclasses to inject document catalog metadata or PDF/A
+     * dictionaries.
      */
     protected void onDocumentCompiled(PDDocument doc) throws IOException {
         // Default: no-op
@@ -263,20 +292,44 @@ public abstract class BasePdfDevicePrinter implements DevicePrinter {
     }
 
     private String sanitizeText(String input) {
-        if (input == null) return "";
+        if (input == null) {
+            return "";
+        }
         return input.replace("\t", "    ");
     }
 
     // --- Buffer Elements ---
-    protected interface ReceiptItem {}
+    protected interface ReceiptItem {
+    }
 
     protected static class TextItem implements ReceiptItem {
+
         final String text;
-        TextItem(String text) { this.text = text; }
+
+        TextItem(String text) {
+            this.text = text;
+        }
     }
 
     protected static class ImageItem implements ReceiptItem {
+
         final byte[] data;
-        ImageItem(byte[] data) { this.data = data; }
+
+        ImageItem(byte[] data) {
+            this.data = data;
+        }
+    }
+
+    protected static class BufferedImageItem implements ReceiptItem {
+
+        final BufferedImage image;
+
+        BufferedImageItem(BufferedImage image) {
+            this.image = image;
+        }
+        
+        public int getHeight(){
+            return image.getHeight();
+        }
     }
 }

@@ -17,68 +17,24 @@
 package com.openbravo.pos.panels;
 
 import javax.swing.JPanel;
-import org.netbeans.validation.api.Problem;
-import org.netbeans.validation.api.ui.ValidationGroup;
-import org.netbeans.validation.api.ui.ValidationGroupProvider;
-import org.netbeans.validation.api.ui.ValidationUI;
-import org.netbeans.validation.api.ui.swing.SwingValidationGroup;
 
 /**
+ * Base panel for views with validation.
  *
  * @author poolborges
  */
-public abstract class ValidationPanel extends JPanel implements ValidationGroupProvider{
+public abstract class ValidationPanel extends JPanel {
 
     private static final long serialVersionUID = 1L;
-    private ValidationGroup group;
-    private Problem problem;
-    private VUI vui = new VUI();
-    
-    public ValidationPanel(){
-        group = SwingValidationGroup.create(vui);
+
+    public ValidationPanel() {
     }
 
-    /**
-     * Default Implementation do nothing
-     * @param problem 
-     */
-    protected void onShowProblem(Problem problem){}
-    
-    /**
-     * Default Implementation do nothing
-     */
-    protected void onClearProblem(){}
-
-    @Override
-    public ValidationGroup getValidationGroup() {
-        return group;
+    protected boolean isFatalProblem() {
+        return false;
     }
-    
-    
-    protected boolean isFatalProblem(){
-        return problem != null && problem.isFatal();
-    }
-    
-    protected Problem getProblem(){
-        return problem;
-    }
-            
-    private class VUI implements ValidationUI {
 
-        @Override
-        public void showProblem(Problem problem) {
-            Problem old = ValidationPanel.this.problem;
-            ValidationPanel.this.problem = problem;
-            if(old != null && !old.equals(problem)){
-                onShowProblem(problem);
-            }
-        }
-
-        @Override
-        public void clearProblem() {
-            ValidationPanel.this.problem = null;
-            onClearProblem();
-        }
-    
+    protected String getProblemMessage() {
+        return null;
     }
 }

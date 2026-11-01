@@ -8,7 +8,7 @@
     </parent>
     <artifactId>kriolos-opos-ui</artifactId>
     <packaging>jar</packaging>
-    <name>kriolos-opos-ui</name>
+    <name>Kriolos.POS.UI.Core</name>
     
     <dependencies>
 

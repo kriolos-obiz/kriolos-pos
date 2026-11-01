@@ -56,7 +56,6 @@ import javax.swing.JColorChooser;
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import org.netbeans.validation.api.builtin.stringvalidation.StringValidators;
 
 /**
  *
@@ -177,11 +176,7 @@ public final class ProductsEditor extends com.openbravo.pos.panels.ValidationPan
     }
 
     private void initValidator() {
-        org.netbeans.validation.api.ui.ValidationGroup valGroup = getValidationGroup();
-        valGroup.add(m_jRef, StringValidators.REQUIRE_NON_EMPTY_STRING);
-        valGroup.add(m_jName, StringValidators.REQUIRE_NON_EMPTY_STRING);
-        valGroup.add(m_jCode, StringValidators.REQUIRE_NON_EMPTY_STRING);
-        valGroup.add(m_jPriceSellTax, StringValidators.REQUIRE_NON_EMPTY_STRING);
+        // Validation managed via com.openbravo.ui binding and validation framework
     }
 
     private void init() {

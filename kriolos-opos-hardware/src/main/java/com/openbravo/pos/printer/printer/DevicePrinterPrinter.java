@@ -21,7 +21,6 @@ import com.openbravo.data.gui.MessageInf;
 import com.openbravo.basic.AppLocal;
 import com.openbravo.pos.spi.hardware.printer.DevicePrinter;
 import com.openbravo.pos.spi.hardware.PosImage;
-import com.openbravo.pos.printer.SwingPosImage;
 import com.openbravo.pos.printer.ticket.BasicTicket;
 import com.openbravo.pos.printer.ticket.BasicTicketForPrinter;
 import com.openbravo.util.ReportUtils;
@@ -38,7 +37,6 @@ import javax.print.attribute.standard.JobName;
 import javax.print.attribute.standard.Media;
 import javax.print.attribute.standard.MediaSizeName;
 import javax.print.attribute.standard.OrientationRequested;
-import javax.swing.JComponent;
 
 /**
  * DevicePrinterPrinter is responsible for printing tickets using system printers. 

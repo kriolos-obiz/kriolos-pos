@@ -232,11 +232,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             <scope>runtime</scope>
         </dependency>
 
-        <!-- Netbeans Module - Swing Validation: On NBM Need extra lib -->
-        <dependency>
-            <groupId>org.netbeans.modules</groupId>
-            <artifactId>org-netbeans-modules-swing-validation</artifactId>
-        </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>

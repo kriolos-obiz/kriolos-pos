@@ -173,7 +173,7 @@
     <class name="com.openbravo.pos.imports.StockQtyImport"/>    
     <class name="com.openbravo.pos.imports.CustomerCSVImport"/>    
     <class name="com.openbravo.pos.imports.JPanelCSVCleardb"/>
-    <class name="com.unicenta.pos.transfer.Transfer"/>    
+    <class name="com.openbravo.pos.transfer.Transfer"/>    
     <class name="/com/openbravo/reports/tools_newproducts.bs"/>
     <class name="/com/openbravo/reports/tools_updatedprices.bs"/>
     <class name="/com/openbravo/reports/tools_inventoryqtyupdate.bs"/>

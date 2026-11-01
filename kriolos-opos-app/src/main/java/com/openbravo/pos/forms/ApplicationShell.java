@@ -358,10 +358,17 @@ public class ApplicationShell extends JPanel implements AppView {
 
             statusBarSecondPanel.add(principalApp.getNotificator());
             statusBarSecondPanel.revalidate();
+            statusBarSecondPanel.repaint();
 
             String viewID = "_" + principalApp.getUser().getId();
             contentContainerPanel.add(principalApp, viewID);
             showView(viewID);
+            contentContainerPanel.revalidate();
+            contentContainerPanel.repaint();
+            java.awt.Window win = SwingUtilities.getWindowAncestor(this);
+            if (win != null) {
+                win.repaint();
+            }
 
             principalApp.activate();
         }
@@ -413,6 +420,13 @@ public class ApplicationShell extends JPanel implements AppView {
 
             contentContainerPanel.remove(principalApp);
             principalApp = null;
+            showLoginPanel();
+            contentContainerPanel.revalidate();
+            contentContainerPanel.repaint();
+            java.awt.Window win = SwingUtilities.getWindowAncestor(this);
+            if (win != null) {
+                win.repaint();
+            }
             return true;
         }
     }
@@ -432,8 +446,14 @@ public class ApplicationShell extends JPanel implements AppView {
             if (systemService == null && mAuthPanel.getSelectedDatabase() != null) {
                 SwingUtilities.invokeLater(() -> mAuthPanel.activateSelectedDatabase());
             }
+        } else {
+            mAuthPanel.updateUserListState();
+            mAuthPanel.revalidate();
+            mAuthPanel.repaint();
         }
         showView("login");
+        contentContainerPanel.revalidate();
+        contentContainerPanel.repaint();
     }
 
     /**

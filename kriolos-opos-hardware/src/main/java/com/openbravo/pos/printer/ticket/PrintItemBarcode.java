@@ -24,6 +24,9 @@ import org.krysalis.barcode4j.HumanReadablePlacement;
 import org.krysalis.barcode4j.impl.AbstractBarcodeBean;
 import org.krysalis.barcode4j.impl.code128.Code128Bean;
 import org.krysalis.barcode4j.impl.upcean.EAN13Bean;
+import org.krysalis.barcode4j.impl.upcean.EAN8Bean;
+import org.krysalis.barcode4j.impl.upcean.UPCABean;
+import org.krysalis.barcode4j.impl.upcean.UPCEBean;
 import org.krysalis.barcode4j.output.java2d.Java2DCanvasProvider;
 
 /**
@@ -34,9 +37,9 @@ import org.krysalis.barcode4j.output.java2d.Java2DCanvasProvider;
 public class PrintItemBarcode implements PrintItem {
 
     private AbstractBarcodeBean m_barcode;
-    private final String m_sType;
-    private final String m_sPosition;
-    private final String m_sCode;
+    private final String codeType;
+    private final String textPosition;
+    private final String code;
     private final double scale;
     private int m_iWidth;
     private int m_iHeight;
@@ -50,16 +53,29 @@ public class PrintItemBarcode implements PrintItem {
      * @param scale    The scaling factor used for rendering sizing
      */
     public PrintItemBarcode(String type, String position, String code, double scale) {
-        this.m_sType = type;
-        this.m_sPosition = position;
-        this.m_sCode = code;
+        this.codeType = type;
+        this.textPosition = position;
+        this.code = code;
         this.scale = scale;
 
         // Choose appropriate barcode implementation bean based on config type
-        if (DevicePrinter.BARCODE_CODE128.equals(m_sType)) {
-            m_barcode = new Code128Bean();
-        } else {
-            m_barcode = new EAN13Bean();
+        switch(codeType) {
+            case DevicePrinter.BARCODE_EAN8:
+                m_barcode = new EAN8Bean();
+            break;
+            case DevicePrinter.BARCODE_CODE128:
+                m_barcode = new Code128Bean();
+            break;
+            case DevicePrinter.BARCODE_UPCA:
+                m_barcode = new UPCABean();
+            break;
+            case DevicePrinter.BARCODE_UPCE:
+                m_barcode = new UPCEBean();
+            break;
+            
+            case DevicePrinter.BARCODE_EAN13:
+            default:
+                m_barcode = new EAN13Bean();
         }
 
         // Set baseline default metrics for barcode rendering layout
@@ -69,16 +85,16 @@ public class PrintItemBarcode implements PrintItem {
         m_barcode.setQuietZone(10.0);
 
         // Map textual position configuration to Barcode4J layout placement enums
-        if ("none".equals(m_sPosition)) {
+        if ("none".equals(textPosition)) {
             m_barcode.setMsgPosition(HumanReadablePlacement.HRP_NONE);
-        } else if ("top".equals(m_sPosition)) {
+        } else if ("top".equals(textPosition)) {
             m_barcode.setMsgPosition(HumanReadablePlacement.HRP_TOP);
         } else {
             m_barcode.setMsgPosition(HumanReadablePlacement.HRP_BOTTOM);
         }
 
         // Pre-calculate dimensional layout bounds factoring in scaling metrics
-        BarcodeDimension dim = m_barcode.calcDimensions(m_sCode);
+        BarcodeDimension dim = m_barcode.calcDimensions(this.code);
         m_iWidth = (int) (dim.getWidthPlusQuiet() * scale);
         m_iHeight = (int) (dim.getHeightPlusQuiet() * scale);
     }
@@ -94,7 +110,7 @@ public class PrintItemBarcode implements PrintItem {
 
         // Render graphical barcode element tracking directly onto device drawing canvas
         Java2DCanvasProvider provider = new Java2DCanvasProvider(g2d,0);
-        m_barcode.generateBarcode(provider, m_sCode);
+        m_barcode.generateBarcode(provider, code);
 
         // Revert contextual transformation properties back to prior origin state
         g2d.setTransform(oldTransform);

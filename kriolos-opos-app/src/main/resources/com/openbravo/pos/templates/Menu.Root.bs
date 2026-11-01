@@ -143,7 +143,7 @@ group = menu.addGroup("Menu.Backoffice");
         submenu.addPanel("/com/openbravo/images/import.png", "Menu.CSVStockQty", "com.openbravo.pos.imports.StockQtyImport");
         submenu.addPanel("/com/openbravo/images/import.png", "Menu.CustomerCSVImport", "com.openbravo.pos.imports.CustomerCSVImport");
         submenu.addPanel("/com/openbravo/images/database.png", "Menu.CSVReset", "com.openbravo.pos.imports.JPanelCSVCleardb");
-        submenu.addPanel("/com/openbravo/images/database.png", "Menu.Transfer", "com.unicenta.pos.transfer.Transfer");
+        submenu.addPanel("/com/openbravo/images/database.png", "Menu.Transfer", "com.openbravo.pos.transfer.Transfer");
     submenu.addTitle("Menu.Import.Reports");
         submenu.addPanel("/com/openbravo/images/reports.png", "Menu.Tools.NewProducts", "/com/openbravo/reports/tools_newproducts.bs");
         submenu.addPanel("/com/openbravo/images/reports.png", "Menu.Tools.UpdatedPrices", "/com/openbravo/reports/tools_updatedprices.bs");

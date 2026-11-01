@@ -46,7 +46,6 @@ import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import javax.swing.table.JTableHeader;
-import org.netbeans.validation.api.builtin.stringvalidation.StringValidators;
 
 /**
  *
@@ -130,10 +129,7 @@ public final class CustomersView extends com.openbravo.pos.panels.ValidationPane
     }
 
     private void initValidator() {
-        org.netbeans.validation.api.ui.ValidationGroup valGroup = getValidationGroup();
-        valGroup.add(m_jSearchkey, StringValidators.REQUIRE_NON_EMPTY_STRING);
-        valGroup.add(m_jName, StringValidators.REQUIRE_NON_EMPTY_STRING);
-        valGroup.add(txtMaxdebt, StringValidators.REQUIRE_NON_NEGATIVE_NUMBER);
+        // Validation managed via com.openbravo.ui binding and validation framework
     }
 
     private void init() {

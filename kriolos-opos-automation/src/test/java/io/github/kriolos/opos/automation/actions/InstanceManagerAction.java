@@ -2,6 +2,7 @@ package io.github.kriolos.opos.automation.actions;
 
 import com.openbravo.basic.AppLocal;
 import com.openbravo.basic.AppProperties;
+import com.openbravo.pos.config.AppConfig;
 import com.openbravo.pos.instance.AppMessage;
 import com.openbravo.pos.instance.InstanceManager;
 import io.github.kriolos.opos.automation.ScreenshotHelper;
@@ -141,7 +142,7 @@ public class InstanceManagerAction {
     /**
      * Direct query to verify if an active instance is registered and responsive on RMI.
      */
-    public boolean isRmiInstanceResponsive(AppProperties config) {
+    public boolean isRmiInstanceResponsive(AppConfig config) {
         try {
             AppMessage appMessage = InstanceManager.queryInstance(config);
             if (appMessage != null) {
