@@ -104,7 +104,7 @@ ORDER BY PRODUCTS.NAME]]></query>
 		</element>
 	</pageFooter>
 	<summary height="612">
-		<element kind="chart" chartType="bar3D" uuid="1147a875-b77d-40fd-9e64-75c6f54e3b89" key="element-1" x="0" y="0" width="535" height="612" legendColor="#000000" legendBackgroundColor="#FFFFFF">
+		<element kind="chart" chartType="bar3D" uuid="1147a875-b77d-40fd-9e64-75c6f54e3b89" key="element-1" x="0" y="0" width="535" height="612" customizerClass="com.openbravo.pos.reports.KriolosChartCustomizer" legendColor="#000000" legendBackgroundColor="#FFFFFF">
 			<titleFont fontName="SansSerif"/>
 			<subtitleFont fontName="SansSerif" fontSize="10.0"/>
 			<legendFont fontName="SansSerif" fontSize="8.0"/>
@@ -124,25 +124,6 @@ ORDER BY PRODUCTS.NAME]]></query>
 				<itemLabel color="#000000" backgroundColor="#FFFFFF">
 					<font fontSize="5.0"/>
 				</itemLabel>
-				<seriesColor order="0" color="#37A0F6"/>
-				<seriesColor order="1" color="#351479"/>
-				<seriesColor order="2" color="#78B3A7"/>
-				<seriesColor order="3" color="#2210BD"/>
-				<seriesColor order="4" color="#98F4EB"/>
-				<seriesColor order="5" color="#83C4D2"/>
-				<seriesColor order="6" color="#08E727"/>
-				<seriesColor order="7" color="#C5D357"/>
-				<seriesColor order="8" color="#BC69D3"/>
-				<seriesColor order="9" color="#B5433A"/>
-				<seriesColor order="10" color="#5496E3"/>
-				<seriesColor order="11" color="#978C7C"/>
-				<seriesColor order="12" color="#A0E383"/>
-				<seriesColor order="13" color="#AB963D"/>
-				<seriesColor order="14" color="#C263EE"/>
-				<seriesColor order="15" color="#3E071F"/>
-				<seriesColor order="16" color="#8F9C4A"/>
-				<seriesColor order="17" color="#D71331"/>
-				<seriesColor order="18" color="#27289E"/>
 			</plot>
 			<box>
 				<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>

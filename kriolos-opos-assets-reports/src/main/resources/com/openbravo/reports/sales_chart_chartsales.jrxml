@@ -101,7 +101,7 @@ GROUP BY categories.NAME]]></query>
 		</element>
 	</pageFooter>
 	<summary height="440">
-		<element kind="chart" chartType="stackedBar3D" uuid="ac7c9bc6-c0b9-44ae-972b-8dfcdc693127" mode="Transparent" x="0" y="33" width="782" height="407" theme="default" legendPosition="Bottom" titlePosition="Top">
+		<element kind="chart" chartType="stackedBar3D" uuid="ac7c9bc6-c0b9-44ae-972b-8dfcdc693127" mode="Transparent" x="0" y="33" width="782" height="407" customizerClass="com.openbravo.pos.reports.KriolosChartCustomizer" theme="default" legendPosition="Bottom" titlePosition="Top">
 			<subtitleFont fontSize="8.0"/>
 			<legendFont fontSize="8.0"/>
 			<dataset kind="category">
@@ -120,26 +120,6 @@ GROUP BY categories.NAME]]></query>
 				<itemLabel>
 					<font fontSize="5.0"/>
 				</itemLabel>
-				<seriesColor order="0" color="#1ABEF3"/>
-				<seriesColor order="1" color="#B6F90D"/>
-				<seriesColor order="2" color="#FFCC00"/>
-				<seriesColor order="3" color="#96B1B3"/>
-				<seriesColor order="4" color="#999900"/>
-				<seriesColor order="5" color="#251518"/>
-				<seriesColor order="6" color="#C5D1C9"/>
-				<seriesColor order="7" color="#3AE7F3"/>
-				<seriesColor order="8" color="#333353"/>
-				<seriesColor order="9" color="#45DE51"/>
-				<seriesColor order="10" color="#0F5B6A"/>
-				<seriesColor order="11" color="#9F86A1"/>
-				<seriesColor order="12" color="#7BBDEA"/>
-				<seriesColor order="13" color="#4B424F"/>
-				<seriesColor order="14" color="#C7A5BC"/>
-				<seriesColor order="15" color="#7FA826"/>
-				<seriesColor order="16" color="#CC6B9E"/>
-				<seriesColor order="17" color="#CFC486"/>
-				<seriesColor order="18" color="#2B4C9F"/>
-				<seriesColor order="19" color="#FE78CA"/>
 			</plot>
 		</element>
 	</summary>

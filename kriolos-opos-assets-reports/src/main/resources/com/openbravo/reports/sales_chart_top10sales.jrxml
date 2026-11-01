@@ -177,7 +177,7 @@
 	</pageFooter>
 	<summary height="467" splitType="Stretch">
 		<element kind="elementGroup"/>
-		<element kind="chart" chartType="stackedBar3D" uuid="41eb42d3-88da-41a8-9e2e-5c7e98407fd6" x="6" y="59" width="524" height="394">
+		<element kind="chart" chartType="stackedBar3D" uuid="41eb42d3-88da-41a8-9e2e-5c7e98407fd6" x="6" y="59" width="524" height="394" customizerClass="com.openbravo.pos.reports.KriolosChartCustomizer">
 			<dataset kind="category">
 				<series>
 					<seriesExpression><![CDATA[$R{label.units}]]></seriesExpression>
@@ -187,8 +187,6 @@
 			</dataset>
 			<plot orientation="Horizontal">
 				<itemLabel/>
-				<seriesColor order="0" color="#00CCFF"/>
-				<seriesColor order="1" color="#333333"/>
 			</plot>
 		</element>
 	</summary>
