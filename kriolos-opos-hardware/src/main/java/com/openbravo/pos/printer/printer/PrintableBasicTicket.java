@@ -14,8 +14,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.openbravo.pos.printer.ticket;
+package com.openbravo.pos.printer.printer;
 
+import com.openbravo.pos.printer.ticket.BasicTicket;
+import com.openbravo.pos.printer.ticket.PrintItem;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.print.PageFormat;

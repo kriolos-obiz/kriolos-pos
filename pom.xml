@@ -160,7 +160,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <module>kriolos-opos-ui-native</module>
         <module>kriolos-opos-ui-flatlaf</module>
         <module>kriolos-opos-app</module>
-        <module>kriolos-opos-quarkus</module>
         <module>kriolos-opos-jpackage</module>
         <module>docs</module>
         <module>kriolos-opos-l10n-pt-cv</module>
@@ -177,11 +176,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>kriolos-opos-app</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>${project.groupId}</groupId>
-                <artifactId>kriolos-opos-quarkus</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
