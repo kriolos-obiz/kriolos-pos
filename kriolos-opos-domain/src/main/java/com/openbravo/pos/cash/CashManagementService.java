@@ -25,4 +25,31 @@ public interface CashManagementService {
     int getNumOfRemovedLines(Date startDate) throws BasicException;
 
     int getNumOfVoidLines(Date startDate) throws BasicException;
+
+    /**
+     * Persists an immutable WORM financial snapshot for a closed cash session.
+     *
+     * @param snapshot the snapshot to persist
+     * @throws BasicException if a database error occurs
+     */
+    void saveSnapshot(com.openbravo.pos.domain.audit.ClosedCashSnapshot snapshot) throws BasicException;
+
+    /**
+     * Retrieves an immutable financial snapshot by closed cash session ID.
+     *
+     * @param closedCashId closed cash session identifier
+     * @return snapshot or null if not found
+     * @throws BasicException if a database error occurs
+     */
+    com.openbravo.pos.domain.audit.ClosedCashSnapshot getSnapshotByClosedCashId(String closedCashId) throws BasicException;
+
+    /**
+     * Retrieves an immutable financial snapshot by host and sequence.
+     *
+     * @param host terminal host name
+     * @param sequence closure sequence number
+     * @return snapshot or null if not found
+     * @throws BasicException if a database error occurs
+     */
+    com.openbravo.pos.domain.audit.ClosedCashSnapshot getSnapshotBySequence(String host, int sequence) throws BasicException;
 }

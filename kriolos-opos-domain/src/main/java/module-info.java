@@ -25,6 +25,11 @@ module kriolos.opos.domain {
     requires transitive kriolos.opos.config;
     requires transitive kriolos.opos.spi;
 
+    requires transitive com.fasterxml.jackson.databind;
+    requires transitive com.fasterxml.jackson.core;
+    requires transitive com.fasterxml.jackson.annotation;
+    requires com.fasterxml.jackson.datatype.jsr310;
+
     exports com.openbravo.pos.admin;
     exports com.openbravo.pos.businesspartner;
     exports com.openbravo.pos.cash;
@@ -32,6 +37,7 @@ module kriolos.opos.domain {
     exports com.openbravo.pos.config;
     exports com.openbravo.pos.container;
     exports com.openbravo.pos.customers;
+    exports com.openbravo.pos.domain.audit;
     exports com.openbravo.pos.domain.navigation;
     exports com.openbravo.pos.domain.utils;
     exports com.openbravo.pos.epm;
@@ -48,4 +54,6 @@ module kriolos.opos.domain {
     exports com.openbravo.pos.suppliers;
     exports com.openbravo.pos.ticket;
     exports com.openbravo.pos.voucher;
+
+    opens com.openbravo.pos.domain.audit to com.fasterxml.jackson.databind;
 }
