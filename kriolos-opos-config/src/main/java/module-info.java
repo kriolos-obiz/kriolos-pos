@@ -20,13 +20,9 @@ module kriolos.opos.config {
     requires java.logging;
     requires transitive kriolos.opos.base;
     requires transitive kriolos.opos.spi;
-    requires transitive org.eclipse.microprofile.config;
-    
 
     exports com.openbravo.app.config; 
 
     provides com.openbravo.pos.spi.config.BootstrapConfigProvider with 
-        com.openbravo.app.config.MicroProfileBootstrapConfigProvider, 
         com.openbravo.app.config.LegacyBootstrapConfigProvider;
-    provides org.eclipse.microprofile.config.spi.ConfigSource with com.openbravo.app.config.MicroProfileConfigSource;
 }
