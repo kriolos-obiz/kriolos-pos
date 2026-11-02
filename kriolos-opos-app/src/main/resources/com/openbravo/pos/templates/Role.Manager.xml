@@ -33,6 +33,7 @@
     <class name="com.openbravo.pos.panels.JPanelPayments"/>
     <class name="com.openbravo.pos.panels.JPanelCloseMoney"/>
     <class name="com.openbravo.pos.panels.JPanelCloseMoneyReprint"/>    
+    <class name="com.openbravo.pos.panels.JPanelCashReport"/>    
 
     <class name="sales.Override"/>
     <class name="sales.ViewSharedTicket"/>
