@@ -16,6 +16,7 @@
 ** Tickets & Sales
 *** xref:sales-layout-migration.adoc[Sales Layout Architecture Migration]
 *** xref:sales-ticket-lifecycle.adoc[Ticket Lifecycle & Taxes]
+*** xref:spec-sales-integrity-immutability.adoc[Specification: Sales Integrity, Pre-Calculated Immutability (WORM)]
 *** xref:sales-backoffice-tickets.adoc[Back Office Tickets]
 *** xref:sales-next-gen-architecture.adoc[Next-Generation Sales & Catalog Architecture]
 *** xref:spec-document-series.adoc[Specification: Document Number Series Architecture]

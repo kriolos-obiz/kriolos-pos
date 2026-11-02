@@ -1,0 +1,115 @@
+= RFC: Sales Document Integrity, Pre-Calculated Immutability (WORM) & Audit Trail
+:toc: left
+:toc-title: Table of Contents
+:toclevels: 3
+:icons: font
+:source-highlighter: rouge
+:rouge-style: github
+:sectnums:
+:sectnumlevels: 2
+
+[.lead]
+Architectural RFC & Roadmap Specification for Sales Document Integrity, Pre-Calculated Denormalization, Immutable Storage (WORM), and Regression Verification Protocol.
+
+'''
+
+== 1. Current State & Problem Statement
+
+Currently in legacy Openbravo POS / KriolOS POS:
+1. **Dynamic Recalculation on the Fly**:
+   - Finalized tickets/receipts do not persistently store all pre-calculated line amounts (e.g., price with tax inclusive, total taxes, breakdown per individual tax rate, discount subtotals).
+   - In multiple critical flows—such as analytical SQL queries, JasperReports execution, and receipt reprinting—totals and tax lines are recalculated dynamically from raw or current tax tables.
+2. **Historical Vulnerability & Audit Drift**:
+   - If an administrator changes a tax percentage, product tax category, or customer exemption rate later, running a historical sales report or reprinting an archived receipt can yield different financial totals than those originally charged to the consumer.
+3. **Missing Audit Snapshots**:
+   - The system lacks an immutable snapshot capturing the full state of related entities at the moment of checkout (e.g., `ticket`, `ticketline`, `tickettaxes`, `ticketcustomers`).
+
+'''
+
+== 2. Target Architecture: Write Once, Read Many (WORM)
+
+1. **Pre-Calculated Line & Header Persisted Values**:
+   - Every line item (`ticketline`) and ticket header (`ticket`) must persistently store exact pre-calculated monetary values using `DECIMAL(19,4)` / `BigDecimal`:
+     * Net Price, Tax Amount, Gross Price, Applied Discount, and Applied Tax Rate.
+2. **Immutable Document Snapshot & Hash Chaining**:
+   - Each completed sale transaction produces an immutable JSON snapshot payload.
+   - Computes a cryptographic checksum (SHA-256) over the canonical payload.
+   - Supports forward-integration with Document Series (`spec-document-series.adoc`) and Audit Journal (`spec-audit-journal.adoc`).
+3. **Zero Recalculation on Reporting & Reprinting**:
+   - Reports and receipt reprints query the pre-calculated persisted columns and snapshot payload directly, eliminating any dependence on dynamic tax master tables.
+
+'''
+
+== 3. Migration & Verification Protocol (MANDATORY REQUIREMENT)
+
+[CAUTION]
+====
+This is a **HIGH-IMPACT ARCHITECTURAL CHANGE** requiring strict regression validation before and after schema/code alterations.
+====
+
+The verification workflow must adhere to the following deterministic cycle:
+
+[plantuml, format=svg]
+....
+@startuml
+start
+:1. Initial Database State;
+:2. Execute Pre-Test Suite;
+:3. Capture Financial Totals & Report Outputs into JSON Artifacts;
+:4. Apply Database & Code Changes (WORM, Pre-Calculated Fields);
+:5. Execute Post-Test Suite;
+:6. Deterministic JSON Diff Comparison (Pre-Test vs Post-Test);
+if (Discrepancy Detected?) then (yes)
+  :Fail Validation & Rollback;
+  stop
+else (no)
+  :Approve Migration;
+  stop
+endif
+@enduml
+....
+
+=== Step 1: Initial Database Data Baseline
+* Establish a standardized regression dataset containing complex sales scenarios:
+  - Multi-tax orders (e.g., Standard VAT + Reduced VAT + Zero Rate).
+  - Mixed customer profiles (retail consumer, B2B tax-exempt, discounted).
+  - Split tenders (Cash, Card, Voucher) and partial returns/credit notes.
+
+=== Step 2: Pre-Test Execution & Snapshot Extraction
+* Run end-to-end sales reconciliation queries and JasperReports generation against the baseline.
+* Serialize and export all resulting numbers into a structured JSON file:
++
+[source,json]
+----
+{
+  "test_run_timestamp": "2026-11-02T02:00:00Z",
+  "ticket_id": "c8a41234-...",
+  "expected_totals": {
+    "gross_total": 125.5000,
+    "net_total": 105.4600,
+    "tax_total": 20.0400
+  },
+  "tax_breakdown": [
+    { "tax_id": "001", "rate": 0.19, "base": 105.4600, "amount": 20.0400 }
+  ]
+}
+----
+
+=== Step 3: Execute Schema & Engine Modifications
+* Implement the pre-calculated columns, entities, and migration changesets.
+* Introduce the WORM snapshot persistence engine.
+
+=== Step 4: Post-Test Execution & JSON Comparison
+* Execute the exact same scenarios on the updated engine.
+* Compare the resulting JSON output against the pre-test JSON baseline:
+  - Every net, tax, gross, and payment breakdown must match down to the exact decimal scale.
+  - Zero regression tolerance.
+
+'''
+
+== 4. Integration with Document Series and Audit Journal
+
+As specified in:
+* `spec-document-series.adoc`: Every finalized ticket binds to an official legal document number (e.g., `FT 2026/000142`).
+* `spec-audit-journal.adoc`: The immutable ticket creation event is logged into `pos_journal` with its canonical SHA-256 payload checksum.
+
