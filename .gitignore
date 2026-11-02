@@ -27,3 +27,5 @@
 /modal-screenshots-baseline/
 /**/.asciidoctor/
 /.vscode/
+**/__pycache__/
+*.pyc
