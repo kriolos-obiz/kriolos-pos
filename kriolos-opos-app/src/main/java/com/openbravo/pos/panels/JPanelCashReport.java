@@ -171,8 +171,8 @@ public class JPanelCashReport extends JPanel implements JPanelView, BeanFactoryA
         txtPayments.setText(activeCashReport.printPaymentsTotal());
         txtDrawerCash.setText(activeCashReport.printPaymentsTotal());
 
-        txtChecksum.setText("N/A (Active Unclosed Session)");
-        lblIntegrityBadge.setText("● Active Shift (X-Report - Live Non-Destructive)");
+        txtChecksum.setText("N/A");
+        lblIntegrityBadge.setText(AppLocal.getIntString("message.reportx.active"));
         lblIntegrityBadge.setForeground(new Color(0, 120, 215));
 
         tblPayments.setModel(activeCashReport.getPaymentsModel());
@@ -201,10 +201,10 @@ public class JPanelCashReport extends JPanel implements JPanelView, BeanFactoryA
 
             boolean valid = DocumentIntegrityService.verifyIntegrity(currentSnapshot.getPayload(), currentSnapshot.getPayloadChecksum());
             if (valid) {
-                lblIntegrityBadge.setText("✔ WORM Immutable Snapshot: Integrity VERIFIED (SHA-256)");
+                lblIntegrityBadge.setText(AppLocal.getIntString("message.worm.verified"));
                 lblIntegrityBadge.setForeground(new Color(34, 139, 34));
             } else {
-                lblIntegrityBadge.setText("✖ INTEGRITY ALERT: SHA-256 Checksum Mismatch! Data may be tampered.");
+                lblIntegrityBadge.setText(AppLocal.getIntString("message.worm.tampered"));
                 lblIntegrityBadge.setForeground(Color.RED);
             }
 
@@ -220,7 +220,7 @@ public class JPanelCashReport extends JPanel implements JPanelView, BeanFactoryA
             }
         } else {
             clearFields();
-            lblIntegrityBadge.setText("No snapshot found for Sequence #" + seq);
+            lblIntegrityBadge.setText(java.text.MessageFormat.format(AppLocal.getIntString("message.worm.notfound"), seq));
             lblIntegrityBadge.setForeground(Color.DARK_GRAY);
             txtJsonPayload.setText("");
         }
@@ -305,8 +305,8 @@ public class JPanelCashReport extends JPanel implements JPanelView, BeanFactoryA
 
         JPanel controlsLeft = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         ButtonGroup bgMode = new ButtonGroup();
-        rbModeCurrent = new JRadioButton("Relatório X (Sessão Atual)", true);
-        rbModeHistorical = new JRadioButton("Relatório Z (Histórico WORM)", false);
+        rbModeCurrent = new JRadioButton(AppLocal.getIntString("label.reportx"), true);
+        rbModeHistorical = new JRadioButton(AppLocal.getIntString("label.reportz"), false);
         bgMode.add(rbModeCurrent);
         bgMode.add(rbModeHistorical);
 
@@ -326,12 +326,12 @@ public class JPanelCashReport extends JPanel implements JPanelView, BeanFactoryA
             loadReportData();
         });
 
-        controlsLeft.add(new JLabel("Modo: "));
+        controlsLeft.add(new JLabel(AppLocal.getIntString("label.mode")));
         controlsLeft.add(rbModeCurrent);
         controlsLeft.add(rbModeHistorical);
 
         controlsLeft.add(new JSeparator(SwingConstants.VERTICAL));
-        controlsLeft.add(new JLabel("Sequência: "));
+        controlsLeft.add(new JLabel(AppLocal.getIntString("label.sequencez")));
         spSequence = new JSpinner(new SpinnerNumberModel(1, 1, 999999, 1));
         spSequence.setPreferredSize(new Dimension(80, 26));
         spSequence.setEnabled(false);
@@ -366,7 +366,7 @@ public class JPanelCashReport extends JPanel implements JPanelView, BeanFactoryA
 
         topPanel.add(controlsLeft, BorderLayout.WEST);
 
-        lblIntegrityBadge = new JLabel("● Estado da Auditoria", SwingConstants.RIGHT);
+        lblIntegrityBadge = new JLabel(AppLocal.getIntString("label.auditstatus"), SwingConstants.RIGHT);
         lblIntegrityBadge.setFont(lblIntegrityBadge.getFont().deriveFont(Font.BOLD));
         topPanel.add(lblIntegrityBadge, BorderLayout.EAST);
 
@@ -381,14 +381,14 @@ public class JPanelCashReport extends JPanel implements JPanelView, BeanFactoryA
         JPanel tablesPanel = new JPanel(new GridLayout(2, 1, 0, 10));
 
         JPanel pnlPayments = new JPanel(new BorderLayout());
-        pnlPayments.setBorder(BorderFactory.createTitledBorder("Formas de Pagamento (Tenders)"));
+        pnlPayments.setBorder(BorderFactory.createTitledBorder(AppLocal.getIntString("label.paymentforms")));
         tblPayments = new JTable();
         tblPayments.setRowHeight(24);
         pnlPayments.add(new JScrollPane(tblPayments), BorderLayout.CENTER);
         tablesPanel.add(pnlPayments);
 
         JPanel pnlTaxes = new JPanel(new BorderLayout());
-        pnlTaxes.setBorder(BorderFactory.createTitledBorder("Discriminação Fiscal de Impostos (Taxes)"));
+        pnlTaxes.setBorder(BorderFactory.createTitledBorder(AppLocal.getIntString("label.taxesbreakdown")));
         tblTaxes = new JTable();
         tblTaxes.setRowHeight(24);
         pnlTaxes.add(new JScrollPane(tblTaxes), BorderLayout.CENTER);
@@ -406,45 +406,45 @@ public class JPanelCashReport extends JPanel implements JPanelView, BeanFactoryA
         gbc.insets = new Insets(5, 5, 5, 5);
 
         int row = 0;
-        addFormField(formPanel, "Data Abertura:", txtStartDate = new JTextField(), gbc, row++);
-        addFormField(formPanel, "Data Fecho:", txtEndDate = new JTextField(), gbc, row++);
-        addFormField(formPanel, "Terminal (Host):", txtHost = new JTextField(), gbc, row++);
-        addFormField(formPanel, "Sequência Z:", txtSequence = new JTextField(), gbc, row++);
+        addFormField(formPanel, AppLocal.getIntString("label.StartDate"), txtStartDate = new JTextField(), gbc, row++);
+        addFormField(formPanel, AppLocal.getIntString("label.EndDate"), txtEndDate = new JTextField(), gbc, row++);
+        addFormField(formPanel, AppLocal.getIntString("label.host"), txtHost = new JTextField(), gbc, row++);
+        addFormField(formPanel, AppLocal.getIntString("label.sequencez"), txtSequence = new JTextField(), gbc, row++);
 
         gbc.gridx = 0; gbc.gridy = row++; gbc.gridwidth = 2;
         formPanel.add(new JSeparator(), gbc);
         gbc.gridwidth = 1;
 
-        addFormField(formPanel, "Vendas Líquidas (Net):", txtNetSales = new JTextField(), gbc, row++);
-        addFormField(formPanel, "Impostos Totais (Tax):", txtTaxes = new JTextField(), gbc, row++);
-        addFormField(formPanel, "Vendas Brutas (Gross):", txtGrossSales = new JTextField(), gbc, row++);
-        addFormField(formPanel, "Total Liquidado:", txtPayments = new JTextField(), gbc, row++);
-        addFormField(formPanel, "Dinheiro em Caixa:", txtDrawerCash = new JTextField(), gbc, row++);
+        addFormField(formPanel, AppLocal.getIntString("label.totalnet"), txtNetSales = new JTextField(), gbc, row++);
+        addFormField(formPanel, AppLocal.getIntString("label.taxes"), txtTaxes = new JTextField(), gbc, row++);
+        addFormField(formPanel, AppLocal.getIntString("label.total"), txtGrossSales = new JTextField(), gbc, row++);
+        addFormField(formPanel, AppLocal.getIntString("label.totalpayments"), txtPayments = new JTextField(), gbc, row++);
+        addFormField(formPanel, AppLocal.getIntString("label.cash"), txtDrawerCash = new JTextField(), gbc, row++);
 
         gbc.gridx = 0; gbc.gridy = row++; gbc.gridwidth = 2;
         formPanel.add(new JSeparator(), gbc);
         gbc.gridwidth = 1;
 
-        addFormField(formPanel, "SHA-256 Checksum:", txtChecksum = new JTextField(), gbc, row++);
+        addFormField(formPanel, AppLocal.getIntString("label.checksum"), txtChecksum = new JTextField(), gbc, row++);
 
         gbc.gridx = 0; gbc.gridy = row; gbc.weighty = 1.0; gbc.gridwidth = 2;
         formPanel.add(Box.createVerticalGlue(), gbc);
 
-        rightTabs.addTab("Resumo Financeiro", formPanel);
+        rightTabs.addTab(AppLocal.getIntString("label.financialsummary"), formPanel);
 
         txtJsonPayload = new JTextArea();
         txtJsonPayload.setEditable(false);
         txtJsonPayload.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
         txtJsonPayload.setLineWrap(true);
         txtJsonPayload.setWrapStyleWord(true);
-        rightTabs.addTab("WORM Payload (JSON)", new JScrollPane(txtJsonPayload));
+        rightTabs.addTab(AppLocal.getIntString("label.wormpayload"), new JScrollPane(txtJsonPayload));
 
         mainSplit.setRightComponent(rightTabs);
         add(mainSplit, BorderLayout.CENTER);
 
         // 3. BOTTOM PANEL: Actions
         JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
-        btnPrint = new JButton("Imprimir Relatório (X/Z)");
+        btnPrint = new JButton(AppLocal.getIntString("button.printcashreport"));
         btnPrint.setIcon(new ImageIcon(getClass().getResource("/com/openbravo/images/printer.png")));
         btnPrint.addActionListener(e -> printReport());
         bottomPanel.add(btnPrint);
