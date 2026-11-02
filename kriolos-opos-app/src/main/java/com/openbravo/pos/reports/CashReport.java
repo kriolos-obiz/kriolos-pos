@@ -174,6 +174,28 @@ public class CashReport {
     }
 
     /**
+     * Converts this UI report representation into an immutable domain {@link FinancialReport}.
+     *
+     * @return domain FinancialReport instance
+     */
+    public FinancialReport toFinancialReport() {
+        FinancialReport fr = new FinancialReport();
+        fr.setHost(machineName);
+        fr.setUser(username);
+        fr.setSequence(sequenceNumber);
+        fr.setDateStart(startDate);
+        fr.setDateEnd(endDate);
+        fr.setPaymentCount(paymentsCount != null ? paymentsCount : 0);
+        fr.setPaymentTotal(paymentsTotal != null ? paymentsTotal : 0.0);
+        fr.setPaymentLines(paymentLines);
+        fr.setSalesCount(salesCount != null ? salesCount : 0);
+        fr.setSalesBase(salesBaseValue != null ? salesBaseValue : 0.0);
+        fr.setSalesTaxes(salesTaxes != null ? salesTaxes : 0.0);
+        fr.setSalesLines(salesLines);
+        return fr;
+    }
+
+    /**
      *
      * @return
      */
