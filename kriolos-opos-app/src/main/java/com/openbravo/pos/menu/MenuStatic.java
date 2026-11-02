@@ -97,6 +97,7 @@ public class MenuStatic {
 // GROUP SALES 
         submenu = group.addSubmenu("/com/openbravo/images/sales.png", "Menu.SalesManagement", "com.openbravo.pos.forms.MenuSalesManagement");
         submenu.addTitle("Menu.Panel.Sales.Reports");
+        submenu.addPanel("/com/openbravo/images/reports.png", "Menu.CashReport", com.openbravo.pos.panels.JPanelCashReport.class.getName());
         submenu.addPanel("/com/openbravo/images/reports.png", "Menu.Closing", "/com/openbravo/reports/sales_closedpos.bs");
         submenu.addPanel("/com/openbravo/images/reports.png", "Menu.Closing1", "/com/openbravo/reports/sales_closedpos_1.bs");
         submenu.addPanel("/com/openbravo/images/reports.png", "Menu.CashRegisterLog", "/com/openbravo/reports/sales_cashregisterlog.bs");
