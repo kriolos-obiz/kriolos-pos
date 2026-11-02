@@ -23,7 +23,7 @@ import com.openbravo.data.gui.MessageInf;
 import com.openbravo.pos.config.JFrmConfig;
 import com.openbravo.pos.config.AppConfig;
 import com.openbravo.basic.AppLocal;
-import com.openbravo.basic.AppProperties;
+import com.openbravo.pos.spi.config.AppProperties;
 import com.openbravo.pos.admin.AppUser;
 import com.openbravo.pos.panels.AppView;
 import com.openbravo.pos.forms.ApplicationShell;

@@ -15,7 +15,7 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package com.openbravo.pos.imports;
 
-import com.openbravo.basic.AppProperties;
+import com.openbravo.pos.spi.config.AppProperties;
 import com.openbravo.basic.AppLocal;
 import com.openbravo.pos.admin.DataLogicSystem;
 import com.openbravo.pos.config.AppConfig;

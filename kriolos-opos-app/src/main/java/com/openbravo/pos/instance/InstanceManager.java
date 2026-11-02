@@ -1,6 +1,6 @@
 package com.openbravo.pos.instance;
 
-import com.openbravo.basic.AppProperties;
+import com.openbravo.pos.spi.config.AppProperties;
 import com.openbravo.pos.config.AppConfig;
 import com.openbravo.pos.spi.config.BootstrapConfig;
 

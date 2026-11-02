@@ -4,7 +4,7 @@ import com.openbravo.basic.BasicException;
 import com.openbravo.data.gui.MessageInf;
 import com.openbravo.pos.config.AppConfig;
 import com.openbravo.basic.AppLocal;
-import com.openbravo.basic.AppProperties;
+import com.openbravo.pos.spi.config.AppProperties;
 import com.openbravo.pos.spi.config.BootstrapConfig.DatabaseConfig;
 import org.assertj.swing.core.BasicRobot;
 import org.assertj.swing.core.GenericTypeMatcher;

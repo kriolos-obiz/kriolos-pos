@@ -16,7 +16,7 @@
 package com.openbravo.pos.forms;
 
 import com.openbravo.basic.AppLocal;
-import com.openbravo.basic.AppProperties;
+import com.openbravo.pos.spi.config.AppProperties;
 import com.openbravo.pos.admin.AppUser;
 import com.openbravo.pos.admin.AppUserView;
 import com.openbravo.pos.admin.DataLogicSystem;

@@ -16,7 +16,7 @@
  */
 package com.openbravo.pos.scanpal2;
 
-import com.openbravo.basic.AppProperties;
+import com.openbravo.pos.spi.config.AppProperties;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

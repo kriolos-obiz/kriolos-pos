@@ -29,7 +29,7 @@ import com.openbravo.data.gui.MessageInf;
 import com.openbravo.pos.cash.CashManagementService;
 import com.openbravo.pos.cash.CashManagementServiceImpl;
 import com.openbravo.basic.AppLocal;
-import com.openbravo.basic.AppProperties;
+import com.openbravo.pos.spi.config.AppProperties;
 import com.openbravo.pos.panels.AppView;
 import com.openbravo.pos.admin.DataLogicSystem;
 import com.openbravo.pos.resources.ResourceService;

@@ -15,7 +15,7 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package com.openbravo.pos.config;
 
-import com.openbravo.basic.AppProperties;
+import com.openbravo.pos.spi.config.AppProperties;
 import com.openbravo.pos.spi.config.BootstrapConfig;
 /**
  * Production implementation of {@link AppProperties} for the running application lifecycle.

@@ -15,7 +15,7 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package com.openbravo.pos.forms;
 
-import com.openbravo.basic.AppProperties;
+import com.openbravo.pos.spi.config.AppProperties;
 import com.openbravo.basic.AppLocal;
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.gui.JMessagePanel;

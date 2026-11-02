@@ -1,7 +1,7 @@
 package io.github.kriolos.opos.automation.actions;
 
 import com.openbravo.basic.AppLocal;
-import com.openbravo.basic.AppProperties;
+import com.openbravo.pos.spi.config.AppProperties;
 import com.openbravo.pos.config.AppConfig;
 import com.openbravo.pos.instance.AppMessage;
 import com.openbravo.pos.instance.InstanceManager;

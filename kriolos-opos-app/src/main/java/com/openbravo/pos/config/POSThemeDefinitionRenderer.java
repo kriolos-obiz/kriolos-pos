@@ -16,7 +16,7 @@
  */
 package com.openbravo.pos.config;
 
-import com.openbravo.basic.AppProperties;
+import com.openbravo.pos.spi.config.AppProperties;
 import com.openbravo.pos.ui.api.POSThemeDefinition;
 import java.awt.Component;
 import javax.swing.DefaultListCellRenderer;

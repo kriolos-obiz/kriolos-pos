@@ -17,7 +17,7 @@
 package com.openbravo.pos.forms.components;
 
 import com.openbravo.basic.BasicException;
-import com.openbravo.basic.AppProperties;
+import com.openbravo.pos.spi.config.AppProperties;
 import com.openbravo.pos.admin.AppUser;
 import com.openbravo.pos.admin.SecurityService;
 import com.openbravo.pos.panels.AppView;

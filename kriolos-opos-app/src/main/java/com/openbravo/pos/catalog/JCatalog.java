@@ -2,7 +2,7 @@ package com.openbravo.pos.catalog;
 
 import com.openbravo.basic.BasicException;
 import com.openbravo.basic.AppLocal;
-import com.openbravo.basic.AppProperties;
+import com.openbravo.pos.spi.config.AppProperties;
 import com.openbravo.pos.panels.AppView;
 import com.openbravo.pos.pim.CategoryInfo;
 import com.openbravo.pos.sales.TaxService;
