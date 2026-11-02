@@ -17,7 +17,7 @@
 package com.openbravo.pos.hardware;
 
 import com.openbravo.data.user.BrowsableEditableData;
-import com.openbravo.basic.AppProperties;
+import com.openbravo.pos.spi.config.AppProperties;
 import com.openbravo.pos.printer.DefaultDeviceTicket;
 import com.openbravo.pos.spi.hardware.display.DeviceDisplay;
 import com.openbravo.pos.spi.hardware.DeviceTicket;

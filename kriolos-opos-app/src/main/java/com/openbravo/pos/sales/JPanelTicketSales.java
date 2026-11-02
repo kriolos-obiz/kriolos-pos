@@ -17,7 +17,7 @@ package com.openbravo.pos.sales;
 
 import com.openbravo.basic.BasicException;
 import com.openbravo.basic.AppLocal;
-import com.openbravo.basic.AppProperties;
+import com.openbravo.pos.spi.config.AppProperties;
 import com.openbravo.pos.panels.AppView;
 import com.openbravo.pos.panels.JPanelView;
 import com.openbravo.pos.ui.api.sales.SaleLayoutManager;

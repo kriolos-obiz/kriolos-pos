@@ -16,7 +16,7 @@
  */
 package com.openbravo.pos.scanpal2;
 
-import com.openbravo.basic.AppProperties;
+import com.openbravo.pos.spi.config.AppProperties;
 import com.openbravo.pos.spi.hardware.PeripheralManager;
 import com.openbravo.pos.spi.hardware.scanner.ScannerConfig;
 import com.openbravo.pos.spi.hardware.scanner.ScannerDevice;
