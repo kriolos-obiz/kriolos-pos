@@ -62,14 +62,26 @@ public interface RestaurantService {
     TableDefinition getTablePlaces();
 
     /**
+     * Updates coordinates (x, y) for a dining place/table on the visual floor plan using a typed command.
+     *
+     * @param command the update place position command
+     * @throws BasicException on database error
+     */
+    void updatePlaces(UpdatePlacePositionCommand command) throws BasicException;
+
+    /**
      * Updates coordinates (x, y) for a dining place/table on the visual floor plan.
      *
      * @param x coordinate X
      * @param y coordinate Y
      * @param id place identifier
      * @throws BasicException on database error
+     * @deprecated Use {@link #updatePlaces(UpdatePlacePositionCommand)} instead.
      */
-    void updatePlaces(int x, int y, String id) throws BasicException;
+    @Deprecated
+    default void updatePlaces(int x, int y, String id) throws BasicException {
+        updatePlaces(new UpdatePlacePositionCommand(id, x, y));
+    }
 
     /**
      * Returns a ListProvider for reservations filtered by date range.

@@ -19,7 +19,9 @@ package com.openbravo.pos.forms.components;
 import com.openbravo.basic.BasicException;
 import com.openbravo.pos.spi.config.AppProperties;
 import com.openbravo.pos.admin.AppUser;
+import com.openbravo.pos.admin.ChangePasswordCommand;
 import com.openbravo.pos.admin.SecurityService;
+import com.openbravo.pos.admin.UpdateRolePermissionsCommand;
 import com.openbravo.pos.panels.AppView;
 import com.openbravo.pos.spi.config.BootstrapConfig;
 import com.openbravo.pos.spi.config.BootstrapConfig.DatabaseConfig;
@@ -231,7 +233,13 @@ class AuthenticationPanelTest {
         }
 
         @Override
+        public void execChangePassword(ChangePasswordCommand command) throws BasicException {}
+
+        @Override
         public void execChangePassword(Object[] userdata) throws BasicException {}
+
+        @Override
+        public void execUpdatePermissions(UpdateRolePermissionsCommand command) throws BasicException {}
 
         @Override
         public void execUpdatePermissions(Object[] permissions) throws BasicException {}

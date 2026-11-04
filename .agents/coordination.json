@@ -6,6 +6,12 @@
     "available": [],
     "completed": [
       {
+        "id": "TASK-011",
+        "agent": "antigravity",
+        "description": "KP-128: Implement UpdatePlacePositionCommand, modernize RestaurantService & PlaceService ports, and update callers",
+        "completed_at": "2026-11-04T22:46:00Z"
+      },
+      {
         "id": "TASK-010",
         "agent": "antigravity",
         "description": "KP-128: Implement ChangePasswordCommand and UpdateRolePermissionsCommand and modernize SecurityService port",

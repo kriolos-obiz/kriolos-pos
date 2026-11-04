@@ -38,6 +38,7 @@ import com.openbravo.format.Formats;
 import com.openbravo.basic.AppLocal;
 import com.openbravo.pos.container.BeanFactoryDataSingle;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Data access logic for Restaurant / Hospitality domain (Floors, Places, Reservations).
@@ -191,10 +192,18 @@ public class DataLogicRestaurant extends BeanFactoryDataSingle implements Restau
         };
     }
 
-    public void updatePlaces(int x, int y, String id) throws BasicException {
+    @Override
+    public void updatePlaces(UpdatePlacePositionCommand command) throws BasicException {
+        Objects.requireNonNull(command, "command must not be null");
         new StaticSentence(this.sessionDB,
                 "UPDATE PLACES SET X = ?, Y = ? WHERE ID = ?",
                 new SerializerWriteBasic(new Datas[]{Datas.INT, Datas.INT, Datas.STRING}))
-                .exec(new Object[]{x, y, id});
+                .exec(new Object[]{command.x(), command.y(), command.id()});
+    }
+
+    @Override
+    @Deprecated
+    public void updatePlaces(int x, int y, String id) throws BasicException {
+        updatePlaces(new UpdatePlacePositionCommand(id, x, y));
     }
 }

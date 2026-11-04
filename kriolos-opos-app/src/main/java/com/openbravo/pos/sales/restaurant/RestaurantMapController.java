@@ -486,10 +486,11 @@ public class RestaurantMapController {
     public void savePlacesLayout() {
         for (Place pl : placeList) {
             try {
+                UpdatePlacePositionCommand command = new UpdatePlacePositionCommand(pl.getId(), pl.getX(), pl.getY());
                 if (placeService != null) {
-                    placeService.updatePlaces(pl.getX(), pl.getY(), pl.getId());
+                    placeService.updatePlaces(command);
                 } else if (dlSystem != null) {
-                    dlSystem.updatePlaces(pl.getX(), pl.getY(), pl.getId());
+                    dlSystem.updatePlaces(command);
                 }
             }
             catch (BasicException ex) {

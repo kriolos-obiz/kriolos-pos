@@ -401,17 +401,18 @@ public class DataLogicSystem extends BeanFactoryDataSingle implements SystemServ
     }
 
     /**
-     * @deprecated Use {@link com.openbravo.pos.sales.restaurant.PlaceService#updatePlaces(int, int, String)}
-     *             or {@link com.openbravo.pos.sales.restaurant.RestaurantService#updatePlaces(int, int, String)} instead.
+     * @deprecated Use {@link com.openbravo.pos.sales.restaurant.PlaceService#updatePlaces(com.openbravo.pos.sales.restaurant.UpdatePlacePositionCommand)}
+     *             or {@link com.openbravo.pos.sales.restaurant.RestaurantService#updatePlaces(com.openbravo.pos.sales.restaurant.UpdatePlacePositionCommand)} instead.
      */
     @Deprecated
-    public final void updatePlaces(int x, int y, String id) throws BasicException {
+    public final void updatePlaces(com.openbravo.pos.sales.restaurant.UpdatePlacePositionCommand command) throws BasicException {
+        java.util.Objects.requireNonNull(command, "command must not be null");
         if (app != null) {
             try {
                 com.openbravo.pos.sales.restaurant.RestaurantService restService =
                         app.getBean(com.openbravo.pos.sales.restaurant.RestaurantService.class);
                 if (restService != null) {
-                    restService.updatePlaces(x, y, id);
+                    restService.updatePlaces(command);
                     return;
                 }
             } catch (BeanFactoryException ignored) {
@@ -420,7 +421,7 @@ public class DataLogicSystem extends BeanFactoryDataSingle implements SystemServ
                 com.openbravo.pos.sales.restaurant.DataLogicRestaurant dlRest =
                         app.getBean(com.openbravo.pos.sales.restaurant.DataLogicRestaurant.class);
                 if (dlRest != null) {
-                    dlRest.updatePlaces(x, y, id);
+                    dlRest.updatePlaces(command);
                     return;
                 }
             } catch (BeanFactoryException ignored) {
@@ -429,7 +430,15 @@ public class DataLogicSystem extends BeanFactoryDataSingle implements SystemServ
         final SentenceExec m_updatePlaces = new StaticSentence(this.session,
                 "UPDATE PLACES SET X = ?, Y = ? WHERE ID = ?",
                 new SerializerWriteBasic(new Datas[]{Datas.INT, Datas.INT, Datas.STRING}));
-        m_updatePlaces.exec(new Object[]{x, y, id});
+        m_updatePlaces.exec(new Object[]{command.x(), command.y(), command.id()});
+    }
+
+    /**
+     * @deprecated Use {@link #updatePlaces(com.openbravo.pos.sales.restaurant.UpdatePlacePositionCommand)} instead.
+     */
+    @Deprecated
+    public final void updatePlaces(int x, int y, String id) throws BasicException {
+        updatePlaces(new com.openbravo.pos.sales.restaurant.UpdatePlacePositionCommand(id, x, y));
     }
 
 //// </editor-fold>

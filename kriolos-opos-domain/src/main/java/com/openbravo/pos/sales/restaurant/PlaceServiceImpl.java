@@ -12,6 +12,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -506,10 +507,17 @@ public class PlaceServiceImpl implements PlaceService {
     }
 
     @Override
-    public void updatePlaces(int x, int y, String id) throws BasicException {
+    public void updatePlaces(UpdatePlacePositionCommand command) throws BasicException {
+        Objects.requireNonNull(command, "command must not be null");
         new StaticSentence(this.dbSession,
                 "UPDATE PLACES SET X = ?, Y = ? WHERE ID = ?",
                 new SerializerWriteBasic(new Datas[]{Datas.INT, Datas.INT, Datas.STRING}))
-                .exec(new Object[]{x, y, id});
+                .exec(new Object[]{command.x(), command.y(), command.id()});
+    }
+
+    @Override
+    @Deprecated
+    public void updatePlaces(int x, int y, String id) throws BasicException {
+        updatePlaces(new UpdatePlacePositionCommand(id, x, y));
     }
 }
