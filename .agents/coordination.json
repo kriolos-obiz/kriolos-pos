@@ -14,14 +14,15 @@
       "agent": "copilot",
       "target_paths": [
         "docs/modules/guide-devel/pages/type-safety-modernization-plan.adoc",
+        "kriolos-opos-app/pom.xml",
         "kriolos-opos-app/src/main/java/com/openbravo/pos/imports/CustomerCSVImport.java",
-        "kriolos-opos-app/src/test/java/com/openbravo/pos/imports/CustomerImportSQLiteTest.java",
+        "kriolos-opos-app/src/test/java/com/openbravo/pos/imports/ImportPersistenceDatabaseTest.java",
         "kriolos-opos-domain/src/main/java/com/openbravo/pos/imports/DataLogicImport.java",
         "kriolos-opos-domain/src/main/java/com/openbravo/pos/imports/ImportService.java",
         "kriolos-opos-domain/src/main/java/com/openbravo/pos/imports/CustomerCsvImportEntry.java",
         "kriolos-opos-domain/src/test/java/com/openbravo/pos/imports/ImportServiceTest.java"
       ],
-      "task_description": "KP-128 typed customer CSV import log migration with HSQLDB and SQLite verification",
+      "task_description": "KP-128 parameterized, database-agnostic import persistence tests for HSQLDB and SQLite",
       "claimed_at": "2026-11-04T18:54:00Z"
     }
   ],
@@ -35,11 +36,17 @@
       {
         "id": "TASK-006",
         "agent": "copilot",
-        "description": "KP-128 typed customer CSV import log command migration with HSQLDB and SQLite tests"
+        "description": "KP-128 parameterized, database-agnostic import persistence tests for HSQLDB and SQLite"
       }
     ],
     "available": [],
     "completed": [
+      {
+        "id": "TASK-009",
+        "agent": "antigravity",
+        "description": "KP-128: Implement CustomerDebtUpdateCommand, modernize CustomerService port and clean query methods",
+        "completed_at": "2026-11-04T20:19:00Z"
+      },
       {
         "id": "TASK-007",
         "agent": "antigravity",
@@ -69,6 +76,12 @@
         "agent": "copilot",
         "description": "KP-128 typed stock quantity import command migration",
         "completed_at": "2026-11-04T18:52:00Z"
+      },
+      {
+        "id": "TASK-008",
+        "agent": "copilot",
+        "description": "Document parameterized tests as a first-class repository practice",
+        "completed_at": "2026-11-04T19:32:00Z"
       }
     ]
   }

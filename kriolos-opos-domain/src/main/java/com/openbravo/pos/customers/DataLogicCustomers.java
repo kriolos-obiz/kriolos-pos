@@ -32,6 +32,7 @@ import com.openbravo.pos.sales.restaurant.DataLogicRestaurant;
 import com.openbravo.pos.sales.restaurant.RestaurantService;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author JG uniCenta
@@ -106,6 +107,11 @@ public class DataLogicCustomers extends BeanFactoryDataSingle implements Custome
                         new String[]{"TAXID", "SEARCHKEY", "NAME", "POSTAL", "PHONE", "EMAIL"}),
                 new SerializerWriteBasic(CUSTOMER_DATA),
                 new CustomerInfoRead());
+    }
+
+    @Override
+    public List<CustomerInfo> findAllCustomers() throws BasicException {
+        return getCustomerList().list();
     }
 
     @Override
@@ -684,17 +690,24 @@ public class DataLogicCustomers extends BeanFactoryDataSingle implements Custome
     }
 
     @Override
-    public final int updateCustomerDebt(String customerId, Double accDebt, Date date) throws BasicException {
+    public int updateCustomerDebt(CustomerDebtUpdateCommand command) throws BasicException {
+        Objects.requireNonNull(command, "command must not be null");
         return new PreparedSentence(s,
                 "UPDATE customers SET CURDEBT = ?, CURDATE = ? WHERE ID = ?",
                 SerializerWriteParams.INSTANCE).exec(new DataParams() {
             @Override
             public void writeValues() throws BasicException {
-                setDouble(1, accDebt);
-                setTimestamp(2, date);
-                setString(3, customerId);
+                setDouble(1, command.accumulatedDebt());
+                setTimestamp(2, command.date());
+                setString(3, command.customerId());
             }
         });
+    }
+
+    @Override
+    @Deprecated
+    public int updateCustomerDebt(String customerId, Double accDebt, Date date) throws BasicException {
+        return updateCustomerDebt(new CustomerDebtUpdateCommand(customerId, accDebt, date));
     }
 
     public final SentenceExec getCustomerInsert() {
