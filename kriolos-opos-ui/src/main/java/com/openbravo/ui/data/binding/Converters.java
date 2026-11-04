@@ -35,7 +35,33 @@ public final class Converters {
     }
 
     public static class StringToBigDecimal implements Converter<String, BigDecimal> {
-        @Override public BigDecimal toModel(String p) { return p.isEmpty() ? null : new BigDecimal(p); }
-        @Override public String toPresentation(BigDecimal m) { return m != null ? m.toPlainString() : ""; }
+        @Override
+        public BigDecimal toModel(String p) {
+            if (p == null) {
+                return null;
+            }
+            String cleaned = p.trim();
+            if (cleaned.isEmpty()) {
+                return null;
+            }
+            // Strip out currency symbols or spacing while retaining digits, separators and sign
+            cleaned = cleaned.replaceAll("[^0-9.,\\-]", "").trim();
+            if (cleaned.isEmpty() || "-".equals(cleaned)) {
+                return null;
+            }
+            // Support comma as decimal separator if there is no dot
+            if (cleaned.contains(",") && !cleaned.contains(".")) {
+                cleaned = cleaned.replace(',', '.');
+            } else if (cleaned.contains(",") && cleaned.contains(".")) {
+                // Standard grouping comma with dot decimal (e.g., 1,250.75)
+                cleaned = cleaned.replace(",", "");
+            }
+            return new BigDecimal(cleaned);
+        }
+
+        @Override
+        public String toPresentation(BigDecimal m) {
+            return m != null ? m.toPlainString() : "";
+        }
     }
 }
