@@ -34,6 +34,7 @@ public class JMessagePanel extends JPanel {
 
     private int optionChosed = Integer.MIN_VALUE;
     private PosUIModal modalContext;
+    private MessageInf currentInf;
 
     // Componentes de UI modernos e limpos
     private JPanel headerContainer;
@@ -80,6 +81,7 @@ public class JMessagePanel extends JPanel {
     }
 
     public void initContent(MessageInf inf, boolean showConfirm) {
+        this.currentInf = inf;
         jscrException.setVisible(false);
 
         if (inf != null) {
@@ -158,6 +160,9 @@ public class JMessagePanel extends JPanel {
     }
 
     public String getTitle() {
+        if (currentInf != null && currentInf.getTitle() != null && !currentInf.getTitle().trim().isEmpty()) {
+            return currentInf.getTitle();
+        }
         return AppLocal.getIntString("title.message");
     }
 

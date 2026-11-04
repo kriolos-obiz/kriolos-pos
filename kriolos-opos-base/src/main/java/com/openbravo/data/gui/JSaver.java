@@ -144,7 +144,15 @@ public class JSaver extends JPanel implements StateListener {
         try {
             m_bd.saveData();
         } catch (BasicException eD) {
-            JMessagePanel.showMessage(this.getParent(),new MessageInf(MessageInf.SGN_NOTICE, AppLocal.getIntString("message.nosave"), eD));
+            MessageInf msg;
+            if (eD.getCause() == null && eD.getMessage() != null && !eD.getMessage().isEmpty()) {
+                // User-facing business or validation message: display message cleanly without technical exception traces
+                msg = new MessageInf(MessageInf.SGN_WARNING, eD.getMessage(), null);
+                msg.setTitle(AppLocal.getIntString("validation.title"));
+            } else {
+                msg = new MessageInf(MessageInf.SGN_NOTICE, AppLocal.getIntString("message.nosave"), eD);
+            }
+            JMessagePanel.showMessage(this.getParent(), msg);
         }          
     }//GEN-LAST:event_jbtnSaveActionPerformed
 

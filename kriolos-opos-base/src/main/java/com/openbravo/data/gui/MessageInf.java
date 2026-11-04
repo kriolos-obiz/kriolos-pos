@@ -69,6 +69,7 @@ public class MessageInf {
 
     // CAUSE
     private Object m_eCause;
+    private String m_title;
 
     /**
      * Creates a new instance of MessageInf
@@ -168,7 +169,20 @@ public class MessageInf {
      *
      * @return
      */
+    public String getTitle() {
+        return m_title;
+    }
+
+    public void setTitle(String title) {
+        this.m_title = title;
+    }
+
     public String getErrorCodeMsg() {
+        // If there is no specific error class or error code (lower 24 bits are zero),
+        // omit technical placeholder code to prevent confusing end-users with codes like NOT_00_0000.
+        if ((m_infCode & 0x00FFFFFF) == 0) {
+            return null;
+        }
 
         StringBuilder sb = new StringBuilder();
         int iSignalWord = getSignalWord();
