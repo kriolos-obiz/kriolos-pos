@@ -31,7 +31,9 @@ import java.lang.reflect.Proxy;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -48,21 +50,58 @@ class SystemServiceTest {
                 (proxy, method, args) -> null
         );
 
-        Object resourceBean = BeanContainer.getBean("com.openbravo.pos.forms.ResourceService", appViewProxy);
+        Object resourceBean = BeanContainer.getBean("com.openbravo.pos.resources.ResourceService", appViewProxy);
         assertNotNull(resourceBean, "BeanContainer should resolve ResourceService");
         assertInstanceOf(DataLogicSystem.class, resourceBean, "ResourceService should resolve to DataLogicSystem");
         assertInstanceOf(ResourceService.class, resourceBean, "DataLogicSystem should implement ResourceService");
 
-        Object systemBean = BeanContainer.getBean("com.openbravo.pos.forms.SystemService", appViewProxy);
+        Object systemBean = BeanContainer.getBean("com.openbravo.pos.admin.SystemService", appViewProxy);
         assertNotNull(systemBean, "BeanContainer should resolve SystemService");
         assertInstanceOf(DataLogicSystem.class, systemBean, "SystemService should resolve to DataLogicSystem");
         assertInstanceOf(SystemService.class, systemBean, "DataLogicSystem should implement SystemService");
-        assertInstanceOf(SecurityService.class, systemBean, "SystemService should also implement SecurityService");
+        assertInstanceOf(SecurityService.class, systemBean, "SystemService should extend SecurityService");
+    }
+
+    @Nested
+    @DisplayName("Security Command Invariant Tests")
+    class SecurityCommandInvariantTests {
+
+        @Test
+        @DisplayName("ChangePasswordCommand should validate required invariants")
+        void shouldValidateChangePasswordCommandInvariants() {
+            ChangePasswordCommand cmd = ChangePasswordCommand.of("user-01", "hash123");
+            assertEquals("user-01", cmd.userId());
+            assertEquals("hash123", cmd.newPassword());
+
+            // Null password is permitted (clears password)
+            ChangePasswordCommand emptyCmd = new ChangePasswordCommand("user-02", null);
+            assertNull(emptyCmd.newPassword());
+
+            assertThrows(NullPointerException.class, () -> new ChangePasswordCommand(null, "hash"));
+            assertThrows(IllegalArgumentException.class, () -> new ChangePasswordCommand("", "hash"));
+            assertThrows(IllegalArgumentException.class, () -> new ChangePasswordCommand("   ", "hash"));
+        }
+
+        @Test
+        @DisplayName("UpdateRolePermissionsCommand should validate required invariants")
+        void shouldValidateUpdateRolePermissionsCommandInvariants() {
+            UpdateRolePermissionsCommand cmd = UpdateRolePermissionsCommand.of("role-admin", "<permissions/>");
+            assertEquals("role-admin", cmd.roleId());
+            assertEquals("<permissions/>", cmd.permissionsXml());
+
+            assertThrows(NullPointerException.class, () -> new UpdateRolePermissionsCommand(null, "<xml/>"));
+            assertThrows(IllegalArgumentException.class, () -> new UpdateRolePermissionsCommand("", "<xml/>"));
+            assertThrows(IllegalArgumentException.class, () -> new UpdateRolePermissionsCommand("   ", "<xml/>"));
+            assertThrows(NullPointerException.class, () -> new UpdateRolePermissionsCommand("role-admin", null));
+        }
     }
 
     @Test
-    @DisplayName("Mock SystemService should satisfy domain port contracts")
+    @DisplayName("SystemService mock implementation should satisfy domain contract")
     void testSystemServiceContract() throws BasicException {
+        AtomicReference<ChangePasswordCommand> lastPasswordCmd = new AtomicReference<>();
+        AtomicReference<UpdateRolePermissionsCommand> lastPermissionsCmd = new AtomicReference<>();
+
         SystemService service = new SystemService() {
             @Override
             public String getDBVersion() {
@@ -89,8 +128,8 @@ class SystemServiceTest {
             }
 
             @Override
-            public byte[] getResourceAsBinary(String sName) {
-                return "binary".getBytes();
+            public String getResourceAsXML(String sName) {
+                return "<xml/>";
             }
 
             @Override
@@ -99,8 +138,8 @@ class SystemServiceTest {
             }
 
             @Override
-            public String getResourceAsXML(String sName) {
-                return "<xml/>";
+            public byte[] getResourceAsBinary(String sName) {
+                return new byte[]{1, 2, 3};
             }
 
             @Override
@@ -114,7 +153,7 @@ class SystemServiceTest {
             }
 
             @Override
-            public void setResource(String name, int type, byte[] data) {
+            public void setResource(String sName, int iType, byte[] data) {
             }
 
             @Override
@@ -146,11 +185,13 @@ class SystemServiceTest {
             }
 
             @Override
-            public void execChangePassword(Object[] userdata) {
+            public void execChangePassword(ChangePasswordCommand command) throws BasicException {
+                lastPasswordCmd.set(command);
             }
 
             @Override
-            public void execUpdatePermissions(Object[] permissions) {
+            public void execUpdatePermissions(UpdateRolePermissionsCommand command) throws BasicException {
+                lastPermissionsCmd.set(command);
             }
         };
 
@@ -162,5 +203,25 @@ class SystemServiceTest {
         assertNotNull(service.getResourceAsBinary("test"));
         assertNotNull(service.getResourceAsProperties("test"));
         assertNotNull(service.listPeopleVisible());
+
+        // Test typed commands
+        service.execChangePassword(ChangePasswordCommand.of("u1", "pass1"));
+        assertNotNull(lastPasswordCmd.get());
+        assertEquals("u1", lastPasswordCmd.get().userId());
+        assertEquals("pass1", lastPasswordCmd.get().newPassword());
+
+        service.execUpdatePermissions(UpdateRolePermissionsCommand.of("r1", "<perm/>"));
+        assertNotNull(lastPermissionsCmd.get());
+        assertEquals("r1", lastPermissionsCmd.get().roleId());
+        assertEquals("<perm/>", lastPermissionsCmd.get().permissionsXml());
+
+        // Test legacy default delegation
+        service.execChangePassword(new Object[]{"pass2", "u2"});
+        assertEquals("u2", lastPasswordCmd.get().userId());
+        assertEquals("pass2", lastPasswordCmd.get().newPassword());
+
+        service.execUpdatePermissions(new Object[]{"r2", "<perm2/>"});
+        assertEquals("r2", lastPermissionsCmd.get().roleId());
+        assertEquals("<perm2/>", lastPermissionsCmd.get().permissionsXml());
     }
 }

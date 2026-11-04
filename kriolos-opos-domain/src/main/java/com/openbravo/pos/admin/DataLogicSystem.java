@@ -169,28 +169,38 @@ public class DataLogicSystem extends BeanFactoryDataSingle implements SystemServ
      * @param userdata
      * @throws BasicException
      */
-    public final void execChangePassword(Object[] userdata) throws BasicException {
-
+    @Override
+    public final void execChangePassword(ChangePasswordCommand command) throws BasicException {
+        Objects.requireNonNull(command, "command must not be null");
         final SentenceExec m_changepassword = new StaticSentence(this.session,
                 "UPDATE people SET APPPASSWORD = ? WHERE ID = ?",
                 new SerializerWriteBasic(new Datas[]{Datas.STRING, Datas.STRING}));
 
-        m_changepassword.exec(userdata);
+        m_changepassword.exec(new Object[]{command.newPassword(), command.userId()});
     }
 
-    /**
-     *
-     * @param permissions
-     * @throws BasicException
-     */
-    public final void execUpdatePermissions(Object[] permissions) throws BasicException {
+    @Override
+    @Deprecated
+    public final void execChangePassword(Object[] userdata) throws BasicException {
+        execChangePassword(new ChangePasswordCommand((String) userdata[1], (String) userdata[0]));
+    }
+
+    @Override
+    public final void execUpdatePermissions(UpdateRolePermissionsCommand command) throws BasicException {
+        Objects.requireNonNull(command, "command must not be null");
         final SentenceExec m_updatepermissions = new StaticSentence(this.session,
                 "INSERT INTO permissions (ID, PERMISSIONS) "
                 + "VALUES (?, ?)",
                 new SerializerWriteBasic(new Datas[]{
             Datas.STRING,
             Datas.STRING}));
-        m_updatepermissions.exec(permissions);
+        m_updatepermissions.exec(new Object[]{command.roleId(), command.permissionsXml()});
+    }
+
+    @Override
+    @Deprecated
+    public final void execUpdatePermissions(Object[] permissions) throws BasicException {
+        execUpdatePermissions(new UpdateRolePermissionsCommand((String) permissions[0], (String) permissions[1]));
     }
 
     //// </editor-fold> 

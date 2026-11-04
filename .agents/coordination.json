@@ -6,6 +6,12 @@
     "available": [],
     "completed": [
       {
+        "id": "TASK-010",
+        "agent": "antigravity",
+        "description": "KP-128: Implement ChangePasswordCommand and UpdateRolePermissionsCommand and modernize SecurityService port",
+        "completed_at": "2026-11-04T21:30:00Z"
+      },
+      {
         "id": "TASK-001",
         "agent": "antigravity",
         "description": "Typesafe migration for SalesPaymentCoordinator tests and CI matrix (finalized from Copilot)",

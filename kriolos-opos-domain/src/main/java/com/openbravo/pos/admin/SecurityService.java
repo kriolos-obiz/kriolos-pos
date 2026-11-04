@@ -65,18 +65,42 @@ public interface SecurityService {
     List<String> getPermissions(String role) throws BasicException;
 
     /**
-     * Executes a password update for a user.
+     * Executes a password update for a user using a typed command record.
+     *
+     * @param command password change details
+     * @throws BasicException if update fails
+     */
+    void execChangePassword(ChangePasswordCommand command) throws BasicException;
+
+    /**
+     * Executes a password update for a user using a legacy positional array.
      *
      * @param userdata Array containing [newPasswordHash, userId]
      * @throws BasicException if update fails
+     * @deprecated Use {@link #execChangePassword(ChangePasswordCommand)} instead.
      */
-    void execChangePassword(Object[] userdata) throws BasicException;
+    @Deprecated(since = "1.0.0")
+    default void execChangePassword(Object[] userdata) throws BasicException {
+        execChangePassword(new ChangePasswordCommand((String) userdata[1], (String) userdata[0]));
+    }
 
     /**
-     * Inserts or updates custom role permission entries.
+     * Inserts or updates custom role permission entries using a typed command record.
+     *
+     * @param command role permissions update details
+     * @throws BasicException if update fails
+     */
+    void execUpdatePermissions(UpdateRolePermissionsCommand command) throws BasicException;
+
+    /**
+     * Inserts or updates custom role permission entries using a legacy positional array.
      *
      * @param permissions Array containing [roleId, permissionsXml]
      * @throws BasicException if update fails
+     * @deprecated Use {@link #execUpdatePermissions(UpdateRolePermissionsCommand)} instead.
      */
-    void execUpdatePermissions(Object[] permissions) throws BasicException;
+    @Deprecated(since = "1.0.0")
+    default void execUpdatePermissions(Object[] permissions) throws BasicException {
+        execUpdatePermissions(new UpdateRolePermissionsCommand((String) permissions[0], (String) permissions[1]));
+    }
 }
