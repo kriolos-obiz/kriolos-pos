@@ -49,8 +49,12 @@ import javax.swing.table.AbstractTableModel;
 import com.openbravo.pos.catalog.CatalogService;
 import com.openbravo.pos.admin.DataLogicSystem;
 import com.openbravo.pos.pim.DataLogicPIM;
+import com.openbravo.pos.ticket.ProductInfoEdit;
+import com.openbravo.ui.data.binding.Converters;
+import com.openbravo.ui.data.binding.SwingBinder;
 import java.awt.Color;
 import java.io.File;
+import java.math.BigDecimal;
 import javax.imageio.ImageIO;
 import javax.swing.JColorChooser;
 import javax.swing.JFileChooser;
@@ -61,7 +65,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
  *
  * @author Jack Gerrard
  */
-public final class ProductsEditor extends com.openbravo.pos.panels.ValidationPanel implements EditorRecord {
+public final class ProductsEditor extends javax.swing.JPanel implements EditorRecord {
 
     private static final Logger LOGGER = Logger.getLogger(ProductsEditor.class.getName());
     private static final long serialVersionUID = 1L;
@@ -78,6 +82,9 @@ public final class ProductsEditor extends com.openbravo.pos.panels.ValidationPan
     private boolean prodFieldEditLock = false;
     private int customOptionMode;
     private Color bckgColor = null;
+    private final static Color TAB_ERROR_COLOR = new Color(220, 53, 69);
+
+    private SwingBinder<ProductInfoEdit> binder;
 
     private AppView appView; 
 
@@ -171,12 +178,96 @@ public final class ProductsEditor extends com.openbravo.pos.panels.ValidationPan
 
         m_jdate.getDocument().addDocumentListener(dirty);
 
-        init();
+        prodFieldEditLock = true;
         initValidator();
+        init();
+        prodFieldEditLock = false;
     }
 
     private void initValidator() {
-        // Validation managed via com.openbravo.ui binding and validation framework
+        // Two-way binding and real-time validation via kriolos-opos-ui SwingBinder
+        binder = new SwingBinder<>(new ProductInfoEdit());
+
+        // 1. Mandatory Product Reference
+        binder.forField(m_jRef)
+                .withValidator(v -> v != null && !v.trim().isEmpty(),
+                        AppLocal.getIntString("validation.required", AppLocal.getIntString("field.product.reference")))
+                .bind(ProductInfoEdit::getReference, ProductInfoEdit::setReference);
+
+        // 2. Mandatory Barcode / Code
+        binder.forField(m_jCode)
+                .withValidator(v -> v != null && !v.trim().isEmpty(),
+                        AppLocal.getIntString("validation.required", AppLocal.getIntString("field.product.barcode")))
+                .bind(ProductInfoEdit::getCode, ProductInfoEdit::setCode);
+
+        // 3. Mandatory Product Name
+        binder.forField(m_jName)
+                .withValidator(v -> v != null && !v.trim().isEmpty(),
+                        AppLocal.getIntString("validation.required", AppLocal.getIntString("field.product.name")))
+                .bind(ProductInfoEdit::getName, ProductInfoEdit::setName);
+
+        // 4. Buy Price with Converters.StringToBigDecimal (must be non-negative)
+        binder.forField(m_jPriceBuy)
+                .withConverter(new Converters.StringToBigDecimal())
+                .withValidator(bd -> bd != null && bd.compareTo(BigDecimal.ZERO) >= 0,
+                        AppLocal.getIntString("validation.number.positive", AppLocal.getIntString("field.product.pricebuy")))
+                .bind(p -> AmountCalculatorUtil.toBigDecimal(p.getPriceBuy()),
+                        (p, bd) -> p.setPriceBuy(bd != null ? bd.doubleValue() : 0.0));
+
+        // 5. Sell Price with Converters.StringToBigDecimal (must be non-negative)
+        binder.forField(m_jPriceSell)
+                .withConverter(new Converters.StringToBigDecimal())
+                .withValidator(bd -> bd != null && bd.compareTo(BigDecimal.ZERO) >= 0,
+                        AppLocal.getIntString("validation.number.positive", AppLocal.getIntString("field.product.pricesell")))
+                .bind(p -> AmountCalculatorUtil.toBigDecimal(p.getPriceSell()),
+                        (p, bd) -> p.setPriceSell(bd != null ? bd.doubleValue() : 0.0));
+
+        // Sync binder modifications with legacy DirtyManager and update tab validation highlights
+        binder.addStatusChangeListener(() -> {
+            if (m_Dirty != null) {
+                m_Dirty.setDirty(true);
+            }
+            updateTabValidationStatus();
+        });
+    }
+
+    /**
+     * Updates tab headers to visually reflect validation errors within child fields.
+     */
+    private void updateTabValidationStatus() {
+        if (jTabbedPane1 == null) {
+            return;
+        }
+
+        boolean generalError = isComponentInvalid(m_jRef)
+                || isComponentInvalid(m_jCode)
+                || isComponentInvalid(m_jName)
+                || (m_CategoryModel != null && m_CategoryModel.getSelectedKey() == null);
+
+        boolean priceError = isComponentInvalid(m_jPriceBuy)
+                || isComponentInvalid(m_jPriceSell)
+                || (taxcatmodel != null && taxcatmodel.getSelectedItem() == null);
+
+        setTabError(0, generalError);
+        setTabError(1, priceError);
+    }
+
+    private boolean isComponentInvalid(javax.swing.JComponent component) {
+        if (component != null && binder != null) {
+            Boolean status = binder.getValidationStatus(component);
+            return Boolean.FALSE.equals(status);
+        }
+        return false;
+    }
+
+    private void setTabError(int tabIndex, boolean hasError) {
+        if (jTabbedPane1 != null && tabIndex >= 0 && tabIndex < jTabbedPane1.getTabCount()) {
+            if (hasError) {
+                jTabbedPane1.setForegroundAt(tabIndex, TAB_ERROR_COLOR);
+            } else {
+                jTabbedPane1.setForegroundAt(tabIndex, null);
+            }
+        }
     }
 
     private void init() {
@@ -226,6 +317,12 @@ public final class ProductsEditor extends com.openbravo.pos.panels.ValidationPan
     public void writeValueEOF() {
 
         prodFieldEditLock = true;
+
+        if (binder != null) {
+            binder.clear();
+        }
+        setTabError(0, false);
+        setTabError(1, false);
 
         m_jTitle.setText(AppLocal.getIntString("label.recordeof"));
 
@@ -326,6 +423,12 @@ public final class ProductsEditor extends com.openbravo.pos.panels.ValidationPan
 
         prodFieldEditLock = true;
 
+        if (binder != null) {
+            binder.clear();
+        }
+        setTabError(0, false);
+        setTabError(1, false);
+
         m_jTitle.setText(AppLocal.getIntString("label.recordnew"));
 
 // Tab General        
@@ -417,12 +520,43 @@ public final class ProductsEditor extends com.openbravo.pos.panels.ValidationPan
     }
 
     /**
+     * Checks if the product form passes all validation rules.
+     *
+     * @return true if valid, false otherwise
+     */
+    public boolean isValid() {
+        return binder == null || binder.isValid();
+    }
+
+    /**
      *
      * @return myprod
      * @throws BasicException
      */
     @Override
     public Object createValue() throws BasicException {
+
+        if (binder != null && !binder.validate()) {
+            updateTabValidationStatus();
+            if (isComponentInvalid(m_jRef) || isComponentInvalid(m_jCode) || isComponentInvalid(m_jName) || (m_CategoryModel != null && m_CategoryModel.getSelectedKey() == null)) {
+                jTabbedPane1.setSelectedIndex(0);
+            } else if (isComponentInvalid(m_jPriceBuy) || isComponentInvalid(m_jPriceSell) || (taxcatmodel != null && taxcatmodel.getSelectedItem() == null)) {
+                jTabbedPane1.setSelectedIndex(1);
+            }
+            throw new BasicException(AppLocal.getIntString("validation.form.haserrors"));
+        }
+
+        if (m_CategoryModel.getSelectedKey() == null) {
+            updateTabValidationStatus();
+            jTabbedPane1.setSelectedIndex(0);
+            throw new BasicException(AppLocal.getIntString("validation.required", AppLocal.getIntString("field.product.category")));
+        }
+
+        if (taxcatmodel.getSelectedKey() == null) {
+            updateTabValidationStatus();
+            jTabbedPane1.setSelectedIndex(1);
+            throw new BasicException(AppLocal.getIntString("validation.required", AppLocal.getIntString("field.product.tax")));
+        }
 
         Object[] myprod = new Object[32];
 
@@ -531,9 +665,22 @@ public final class ProductsEditor extends com.openbravo.pos.panels.ValidationPan
     private void setValues(Object value) {
         Object[] myprod = (Object[]) value;
 
+        productId = (String) myprod[0];
+        if (binder != null) {
+            ProductInfoEdit p = new ProductInfoEdit();
+            p.setID(productId);
+            p.setReference((String) myprod[1]);
+            p.setCode((String) myprod[2]);
+            p.setName((String) myprod[4]);
+            p.setPriceBuy(myprod[5] != null ? (Double) myprod[5] : 0.0);
+            p.setPriceSell(myprod[6] != null ? (Double) myprod[6] : 0.0);
+            binder.readBean(p);
+        }
+        setTabError(0, false);
+        setTabError(1, false);
+
         m_jTitle.setText(Formats.STRING.formatValue((String) myprod[1])
                 + " - " + Formats.STRING.formatValue((String) myprod[4]));
-        productId = (String) myprod[0];
         m_jRef.setText(Formats.STRING.formatValue((String) myprod[1]));
         m_jCode.setText(Formats.STRING.formatValue((String) myprod[2]));
         m_jCodetype.setSelectedItem(myprod[3]);
@@ -854,7 +1001,7 @@ public final class ProductsEditor extends com.openbravo.pos.panels.ValidationPan
         if (!prodFieldEditLock) {
             prodFieldEditLock = true;
 
-            if (prodPricesell == null) {
+            if (prodPricesell == null || taxeslogic == null || taxcatmodel == null || taxcatmodel.getSelectedItem() == null) {
                 m_jPriceSellTax.setText(null);
             } else {
                 double dTaxRate = taxeslogic.getTaxRate((TaxCategoryInfo) taxcatmodel.getSelectedItem());
@@ -912,7 +1059,7 @@ public final class ProductsEditor extends com.openbravo.pos.panels.ValidationPan
 
             Double dPriceSellTax = readCurrency(m_jPriceSellTax.getText());
 
-            if (dPriceSellTax == null) {
+            if (dPriceSellTax == null || taxeslogic == null || taxcatmodel == null || taxcatmodel.getSelectedItem() == null) {
                 setPriceSell(null);
             } else {
                 double dTaxRate = taxeslogic.getTaxRate((TaxCategoryInfo) taxcatmodel.getSelectedItem());

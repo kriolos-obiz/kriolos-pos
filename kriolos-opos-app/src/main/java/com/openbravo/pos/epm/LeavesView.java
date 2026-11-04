@@ -31,7 +31,7 @@ import java.util.Calendar;
  *
  * @author Ali Safdar and Aneeqa Baber
  */
-public final class LeavesView extends com.openbravo.pos.panels.ValidationPanel implements EditorRecord {
+public final class LeavesView extends javax.swing.JPanel implements EditorRecord {
 
     private String leaveId;
     private String m_employeeid;

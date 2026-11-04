@@ -51,7 +51,7 @@ import javax.swing.table.JTableHeader;
  *
  * @author Jack Gerrard
  */
-public final class CustomersView extends com.openbravo.pos.panels.ValidationPanel implements EditorRecord {
+public final class CustomersView extends javax.swing.JPanel implements EditorRecord {
 
     private final static System.Logger LOGGER = System.getLogger(CustomersView.class.getName());
     private static final long serialVersionUID = 1L;

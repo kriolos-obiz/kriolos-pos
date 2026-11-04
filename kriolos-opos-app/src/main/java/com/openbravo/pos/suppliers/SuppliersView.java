@@ -48,7 +48,7 @@ import javax.swing.table.JTableHeader;
  *
  * @author Jack Gerrard
  */
-public final class SuppliersView extends com.openbravo.pos.panels.ValidationPanel implements EditorRecord {
+public final class SuppliersView extends javax.swing.JPanel implements EditorRecord {
 
     private static final Logger LOGGER = Logger.getLogger(SuppliersView.class.getName());
     private static final long serialVersionUID = 1L;
@@ -392,9 +392,6 @@ public final class SuppliersView extends com.openbravo.pos.panels.ValidationPane
     @Override
     public Object createValue() throws BasicException {
         
-        if (isFatalProblem()) {
-            throw new BasicException(getProblemMessage());
-        }
         
         Object[] supplier = new Object[23];
         supplier[0] = m_oId == null ? UUID.randomUUID().toString() : m_oId;
