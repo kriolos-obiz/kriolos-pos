@@ -62,6 +62,7 @@ All commit messages must strictly comply with **Conventional Commits** (v1.0.0):
 ## 7. Code Design & Professional Standards
 - Write clean, maintainable, and self-documenting code.
 - Target Java runtime: Java 17 LTS API baseline (`--release 17`).
+- **Command Pattern Mandate**: All service mutation operations (or operations with > 2 parameters) **MUST** use immutable Java 17 `record` commands (`<Action><Entity>Command`) with invariant validation. Service interfaces must expose single-parameter command signatures, avoiding loose parameter lists.
 - All code comments, docstrings, exception messages, and commit logs must be written in professional **English**.
 - **Internationalization (i18n)**: No hardcoded UI strings; use localized resource bundles (`AppLocal.getIntString`).
 - **Documentation as Code**: Architectural and technical documentation must use **AsciiDoc (.adoc)** syntax within the `docs-x` Antora module structure.

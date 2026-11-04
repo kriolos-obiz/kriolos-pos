@@ -8,8 +8,12 @@
 
 ---
 
-## 2. Parameter Objects & Records
-- **Parameter Records**: Any method with a large number of parameters (or receiving untyped `Object[]`) must define a strongly typed Java `record` (or domain class) to encapsulate the parameter data.
+## 2. Mandatory Command Pattern & Parameter Records
+- **Mandatory Command Pattern**: Any service method that executes a domain mutation (e.g., create, update, adjust, process, transfer, cancel) or requires multiple parameters (> 2) **MUST** use an immutable Java 17 `record` named `<Action><Entity>Command` (e.g., `StockAdjustmentCommand`, `SupplierCreateCommand`, `ChangePasswordCommand`).
+- **Constructor Invariant Validation**: The command record compact constructor must validate required fields (e.g., non-null, non-blank) at instantiation time, failing fast with `IllegalArgumentException`.
+- **Single Command Parameter**: The Service interface method signature must accept ONLY the command record: `void <action>(<Action><Entity>Command command) throws BasicException;`.
+- **No Parameter Bloat**: Never expose multi-parameter overloads (e.g. 4+ loose positional arguments) on public service ports.
+- **Legacy Adapters**: Legacy methods taking `Object[]` or loose parameters exist only as `@Deprecated(since = "1.0.0", forRemoval = true)` bridges that immediately instantiate the typed Command record and delegate to the primary command method.
 - **No Object Arrays**: Eliminate `Object[]` parameter arrays across services and modernized data logic APIs.
 
 ---

@@ -1,0 +1,145 @@
+= Type-Safety-First Modernization Plan
+:toc: left
+:toclevels: 3
+:sectnums:
+
+== Status and Scope
+
+[cols="1,3"]
+|===
+|Work item | KP-128: Type-safe service contracts and staged logic organization
+|Branch | `feature/KP-128-type-safety-modernization`
+|Status | In progress; typed category and supplier creation pilots implemented and verified on JDK 17
+|Java compatibility | Preserve Java 17 API baseline (`maven.compiler.release=17`); verify on Java 17, Java 25, and Java 27
+|===
+
+This plan addresses the highest-priority technical debt identified for modernization: weakly typed public service contracts that expose `Object[]`, raw persistence providers, and database query abstractions to callers. Business-logic extraction and broad code organization are later phases, after stable typed boundaries and behavioral tests exist.
+
+No framework rewrite, Java release-level increase, CI/CD change, database replacement, connection-pool change, or performance redesign is included.
+
+== User Story
+
+As a KriolOS POS maintainer, I want application-facing service contracts to use explicit domain types instead of positional arrays and persistence APIs, so that invalid field mappings are caught at compile time and later business-logic reorganization can proceed without changing user-visible behavior.
+
+== Acceptance Criteria
+
+. Given a caller creates a catalog category, when it crosses the application/service boundary, then the ID, name, and show-name flag are passed by named typed parameters and persisted without positional mapping.
+. Given a service API is migrated, when the full reactor compiles, then all current application and module callers compile against the typed API; any compatibility adapter is explicitly deprecated and has a removal condition.
+. Given a service API is migrated, then its public contract does not expose `Object[]`, raw collection types, `Row`, `TableDefinition`, `SentenceList`, `SentenceExec`, `SaveProvider`, or `ListProvider` unless a documented framework adapter requires it.
+. Given an unexpected unchecked exception occurs after a database transaction begins, when the transaction fails, then the database work is rolled back, the session reports no active transaction, auto-commit is restored, and a subsequent transaction can commit independently.
+. Given a ticket sale succeeds, then receipt, ticket, lines, taxes, payments, stock movements, voucher state, and customer debt remain in one atomic database transaction; printing remains a post-commit action with an explicit recovery path.
+. Given the migration is complete, the full test suite passes on JDK 17, JDK 25, and JDK 27 while production code remains compatible with `--release 17`.
+
+== Evidence and Priority
+
+=== Highest-Value Type-Safety Boundary
+
+`CatalogService` already exposes typed category creation (`createCategory(String, String, boolean)`) alongside a deprecated `createCategory(Object[])` overload. `JPanelCSVImport` was migrated to the typed call and an HSQLDB contract test verifies the persisted ID, name, and show-name flag.
+
+`SupplierService` previously exposed only `createSupplier(Object[])`, and `JPanelCSVImport` used a four-position array. The implementation now accepts `SupplierCreateCommand`; the old array overload remains a deprecated compatibility adapter. An HSQLDB contract test verifies the persisted ID, name, search key, and visibility flag through both the typed method and the legacy array adapter.
+
+`ImportService.execCSVStockUpdate(Object[])` accepted six positional fields from `StockQtyImport`. The caller now passes `StockQuantityImportEntry`; `DataLogicImport` owns the SQL-column mapping and retains the deprecated array overload. An HSQLDB test verifies the existing `csvimport` column mapping.
+
+`CatalogService` also exposes persistence-layer types such as `TableDefinition`, `Row`, `SentenceList`, `SentenceExec`, and `ListProvider`. Its active product save-provider API is now parameterized as `SaveProvider<Object[]>`; the array remains because the current Swing editor sends positional rows. Equivalent leakage appears in other `*Service` interfaces. The first inventory pass found these leaks in interfaces including catalog, customer, people, inventory/stock, payment/treasury, restaurant, tax, ticket lifecycle, supplier, reports, shifts, and resources.
+
+A broad text scan found 349 `Object[]` occurrences across 130 production files in the selected app/domain/base source trees. This is a discovery count, not a defect count: many occurrences are legitimate JDBC bind arrays, Swing table-model values, or legacy editor callbacks. Only public service/logic contracts and their caller mappings are migration targets.
+
+`StockService.adjustStock(Object[])` has an unsafe positional contract (`productId`, `locationId`, attribute-set instance ID, units), but the current source scan did not find an application caller and its test fake is a no-op. It is inventoried for a later decision, not selected as the first pilot.
+
+=== Transaction Reliability Gate
+
+`DataLogicSales.saveTicket()` coordinates receipt/ticket/line/payment/tax writes plus stock, voucher, and customer-debt changes under `Transaction.execute()`. The wrapper handles checked database/domain exceptions but does not roll back for unchecked exceptions. This must be characterized and corrected before moving checkout logic or persistence responsibilities. It is a blocking reliability gate, not a reason to begin with a checkout rewrite.
+
+== Migration Sequence
+
+=== Phase 0: Freeze Baseline and Inventory
+
+. Record the current Java 17, 25, and 27 test/build baseline on the feature branch.
+. Inventory public service signatures by module: `Object[]`, raw collections, persistence-library types, and caller count.
+. Classify each array/API as a public domain contract, a Swing callback, a JDBC binder, or a generated/compatibility adapter. Do not convert binder arrays or framework-required values mechanically.
+. Add category/supplier persistence contract tests, customer-import mapping tests on both HSQLDB and SQLite, and the transaction failure test plan before changing production contracts.
+. Record current legacy API callers and their owning modules; compilation is the migration gate for each removal.
+
+=== Phase 1: Type-Safe Catalog Pilot
+
+. Change CSV category and supplier import paths to call their typed service methods with named values/records.
+. Add in-memory HSQLDB contract tests proving typed calls persist exact fields and flags.
+. Parameterize the active product save-provider return contract as `SaveProvider<Object[]>`, retaining the documented Swing row boundary.
+. Keep deprecated array overloads temporarily for compatibility; remove them only after a repository-wide caller search is clean and external API compatibility is reviewed.
+. Completed: category and supplier typed-create pilots, including legacy adapter parity, pass focused JDK 17 tests; the app reactor `test-compile` passes on JDK 17.
+
+=== Phase 2: Transaction Exception Safety
+
+. Completed separately by Antigravity: `Transaction.execute()` now attempts rollback for checked exceptions, runtime exceptions, and errors, and preserves rollback failures as suppressed exceptions.
+. Completed separately by Antigravity: `TransactionTest` covers successful commit, checked failure, runtime failure, error, commit `SQLException`, rollback failure, and nested transaction behavior; focused JDK 17 test run passed.
+. Still required: add a real-session regression that injects `RuntimeException` after a write and verifies rollback, cleared transaction state, restored auto-commit, and successful reuse of the session.
+. Add HSQLDB integration coverage for ticket-save all-or-nothing behavior, including injected failures after receipt, stock, voucher, and debt mutations.
+. Verify all participating data services use the same transaction/session for mutations that must be atomic.
+. Keep receipt printing outside the database transaction; separately verify that a print failure leaves a committed ticket eligible for reprint/recovery.
+
+=== Phase 3: Typed Commands and Results
+
+. Introduce named records/value types for high-risk multi-field commands (for example, stock adjustment and import rows), with validation at construction or service entry.
+. **Command Pattern Architectural Standard**: Service mutations and operations requiring multiple fields must use an immutable Java 17 `record` named `<Action><Entity>Command` (for example, `StockAdjustmentCommand`, `SupplierCreateCommand`). Service interfaces declare a single command parameter (`void adjustStock(StockAdjustmentCommand command)`) and avoid multi-parameter overloads to prevent parameter bloat and positional confusion.
+. Replace `Object[]` service methods with typed commands/results and update callers in the same module slice.
+. Keep SQL parameter arrays private to data-access implementation methods.
+. Add parity tests for units, location, product, attribute instance, sign, nullability, and error behavior before deleting legacy adapters.
+. Completed pilot: `StockQuantityImportEntry` replaces the active stock-import caller's six-element array; JDK 17 HSQLDB mapping test and app reactor `test-compile` pass.
+. Completed by Antigravity: `StockAdjustmentCommand` replaces four-parameter and array-based stock adjustment; `StockService` and `DataLogicInventory` consume the command directly with full bundle decomposition support.
+. Completed customer-import gate: the same five-field typed `CustomerCsvImportEntry` mapping passes on HSQLDB in the domain contract and SQLite in the app test module on JDK 17. The SQLite driver was already on Surefire's classpath; the app test explicitly loads it because automatic registration did not occur in this test environment.
+
+=== Phase 4: Remove Persistence Leakage from Service Ports
+
+. Replace `SentenceList`, `SentenceExec`, `Row`, `TableDefinition`, raw `SaveProvider`, and raw `ListProvider` exposure with typed service operations and domain collections.
+. Implement adapters at the data/UI boundary so Swing tables/editors can migrate independently.
+. Migrate one bounded domain at a time (catalog, customer/people, inventory/stock, then sales/reporting), preserving module ownership and public behavior.
+. Keep compatibility adapters deprecated until all in-repository callers compile against typed ports and external-consumer compatibility is reviewed.
+
+=== Phase 5: Logic and Code Organization
+
+. Only after service contracts are typed, extract use-case orchestration from data-access classes into focused application services.
+. Keep SQL, row mapping, and transaction participation in persistence adapters; keep business rules in typed domain/application services.
+. Preserve one explicit transaction boundary for checkout and its ledger side effects; do not split commits or add asynchronous persistence in this phase.
+. Use the existing sales lifecycle and next-generation architecture documents as design inputs, but update them only when implementation decisions are confirmed.
+
+=== Phase 6: Delivery Verification
+
+. Run the focused module test after each change, then full `./mvnw clean test` on JDK 17, 25, and 27.
+. Run `./mvnw clean test-compile` and verify `maven.compiler.release` remains 17.
+. Audit public service interfaces for remaining untyped contracts and document each allowed exception with its boundary reason and removal condition.
+. Verify no user CI/CD or operating-system support changes were made as part of this type-safety task.
+. Merge through a reviewed pull request to `develop`; do not commit unrelated user worktree changes.
+
+== Pre-Migration Test Plan
+
+[cols="1,2,2,2", options="header"]
+|===
+|Test | Given / When | Required observable result | Gate
+|Catalog category contract | Given an in-memory category table, when the typed `CatalogService.createCategory` is invoked | Exactly one row contains the supplied ID, name, and show-name flag | Phase 0 baseline; must remain green through all phases
+|Category import mapping | Given an imported category name, when `JPanelCSVImport` resolves/creates it | The created category ID is returned and associated with the imported product | Add before migrating the importer call
+|Customer import mapping (HSQLDB + SQLite) | Given a `CustomerCsvImportEntry`, when the typed `ImportService` method persists it in each configured test engine | Exactly one `csvimport` row stores ID, row number, status, search key, and name in the same columns on both engines | Passed on JDK 17; retain as a regression test
+|Transaction commit | Given a valid transaction body, when it completes | Writes are committed and transaction state is cleared | Phase 2 baseline
+|Checked failure rollback | Given a transaction body throws `BasicException`, when executed | No writes remain; transaction state is cleared; auto-commit is restored | Phase 2 baseline
+|Unchecked failure rollback | Given a transaction body throws `RuntimeException` after a write, when executed | No writes remain; transaction state is cleared; auto-commit is restored; a new transaction succeeds | Phase 2 regression; expected red before the fix, required green before Phase 3
+|Ticket atomicity | Given a sale with lines, taxes, payments, stock, voucher, and customer debt mutations, when an injected write fails | No partial ticket/ledger mutation survives rollback | Required before checkout logic is reorganized
+|Ticket success | Given a valid paid ticket, when persisted successfully | Each receipt/ticket/line/tax/payment/stock/voucher/debt effect is committed exactly once | Must remain green after Phase 5
+|Post-commit print recovery | Given persistence succeeds but printing fails | Sale remains committed and is discoverable for reprint; no database rollback is attempted | Verify existing recovery contract or add one before changing print flow
+|===
+
+The `Unchecked failure rollback` regression is intentionally expected to fail on the current implementation until Phase 2 fixes transaction cleanup. All other baseline tests must pass before the relevant migration slice begins. Keep that known red isolated and clearly reported; do not disable or weaken it.
+
+== Risks and Controls
+
+* **Over-broad array conversion**: `Object[]` is also used by JDBC serializers and Swing models. **Control**: migrate only public service/domain contracts; preserve framework adapters until their replacement is proven.
+* **Compatibility break for plugins/scripts**: Service APIs may have external consumers. **Control**: deprecate adapters first, scan repository call sites, and obtain compatibility approval before removal.
+* **Transaction participant mismatch**: Separate service beans may not share the transaction session. **Control**: prove same-session participation with integration tests before moving writes.
+* **Test setup masks behavior**: Mock-only tests cannot prove database atomicity. **Control**: use isolated in-memory HSQLDB for persistence contracts and mocks only for unrelated external boundaries.
+* **JDK and OS support confusion**: JDK 25/27 are verification runtimes, not a new minimum. **Control**: keep `--release 17`; treat CI matrix/OS updates as a separately reviewed SDLC change.
+
+== Definition of Done
+
+* Typed service contracts replace the selected unsafe APIs; any remaining legacy API has a named owner, compatibility reason, and removal condition.
+* Baseline and regression tests pass at their designated gates, including the transaction rollback tests.
+* Full reactor tests pass on Java 17, 25, and 27 with the Java 17 API baseline unchanged.
+* Checkout side effects remain atomic, and post-commit printing/recovery semantics are verified.
+* Changes are reviewed and merged by PR; user-owned CI/worktree edits are not included implicitly.
