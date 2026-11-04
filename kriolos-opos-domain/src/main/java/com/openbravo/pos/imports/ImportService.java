@@ -25,11 +25,24 @@ import com.openbravo.basic.BasicException;
 public interface ImportService {
 
     /**
-     * Inserts an entry into the csvimport table for stock quantity update.
+     * Inserts a stock quantity import entry.
      *
-     * @param csv array containing [id, rowNumber, csvError, location, code, units]
+     * @param entry typed stock import row
      * @throws BasicException on database or execution error
      */
+    default void execCSVStockUpdate(StockQuantityImportEntry entry) throws BasicException {
+        execCSVStockUpdate(new Object[]{
+            entry.id(), entry.rowNumber(), entry.csvError(), entry.locationId(), entry.barcode(), entry.quantity()});
+    }
+
+    /**
+     * Inserts a stock quantity import entry from its legacy positional representation.
+     *
+     * @param csv values ordered as ID, row number, status, location, barcode, and quantity
+     * @throws BasicException on database or execution error
+     * @deprecated Use {@link #execCSVStockUpdate(StockQuantityImportEntry)}.
+     */
+    @Deprecated
     void execCSVStockUpdate(Object[] csv) throws BasicException;
 
     /**
@@ -41,11 +54,24 @@ public interface ImportService {
     void execAddCSVEntry(Object[] csv) throws BasicException;
 
     /**
-     * Inserts an entry into the csvimport table for customer creation or update.
+     * Inserts a customer CSV import entry.
      *
-     * @param csv array containing [id, rowNumber, csvError, searchKey, name]
+     * @param entry typed customer import row
      * @throws BasicException on database or execution error
      */
+    default void execCustomerAddCSVEntry(CustomerCsvImportEntry entry) throws BasicException {
+        execCustomerAddCSVEntry(new Object[]{
+            entry.id(), entry.rowNumber(), entry.csvError(), entry.searchKey(), entry.name()});
+    }
+
+    /**
+     * Inserts a customer CSV import entry from its legacy positional representation.
+     *
+     * @param csv values ordered as ID, row number, status, search key, and name
+     * @throws BasicException on database or execution error
+     * @deprecated Use {@link #execCustomerAddCSVEntry(CustomerCsvImportEntry)}.
+     */
+    @Deprecated
     void execCustomerAddCSVEntry(Object[] csv) throws BasicException;
 
     /**

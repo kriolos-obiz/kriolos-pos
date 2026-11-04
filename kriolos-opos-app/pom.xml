@@ -38,7 +38,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <artifact.build.scmrevision>${git.revision}</artifact.build.scmrevision>
         <artifact.build.scmbuildtime>${git.buildDate}</artifact.build.scmbuildtime>
 
-        
+        <hsqldb.version>2.7.4</hsqldb.version>
+        <sqlite.jdbc.version>3.53.4.0</sqlite.jdbc.version>
         <mysql.version>9.2.0</mysql.version>
     </properties>
 
@@ -146,7 +147,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <dependency>
             <groupId>org.hsqldb</groupId>
             <artifactId>hsqldb</artifactId>
-            <version>2.7.4</version>
+            <version>${hsqldb.version}</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>
@@ -184,7 +185,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <dependency>
             <groupId>org.xerial</groupId>
             <artifactId>sqlite-jdbc</artifactId>
-            <version>3.53.4.0</version>
+            <version>${sqlite.jdbc.version}</version>
             <scope>runtime</scope>
         </dependency>
 
@@ -264,6 +265,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     <build>
         <finalName>kriolos-pos</finalName> 
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <useModulePath>false</useModulePath>
+                    <useManifestOnlyJar>false</useManifestOnlyJar>
+                </configuration>
+            </plugin>
             <plugin> 
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>

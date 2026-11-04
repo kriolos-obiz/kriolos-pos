@@ -239,7 +239,7 @@ public interface CatalogService {
      *
      * @return {@link SaveProvider}
      */
-    SaveProvider getProductSaveProvider();
+    SaveProvider<Object[]> getProductSaveProvider();
 
     /**
      * Returns the unfiltered product list provider.

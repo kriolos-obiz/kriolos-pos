@@ -1,46 +1,22 @@
 {
   "protocol_version": "1.0",
-  "active_locks": [
-    {
-      "agent": "copilot",
-      "target_paths": [
-        "kriolos-opos-app/src/test/java/com/openbravo/pos/sales/SalesPaymentCoordinatorTest.java",
-        ".github/workflows/ci.yml"
-      ],
-      "task_description": "Typesafe test migration and CI matrix setup",
-      "claimed_at": "2026-11-04T18:20:00Z"
-    },
-    {
-      "agent": "copilot",
-      "target_paths": [
-        "docs/modules/guide-devel/pages/type-safety-modernization-plan.adoc",
-        "kriolos-opos-app/pom.xml",
-        "kriolos-opos-app/src/main/java/com/openbravo/pos/imports/CustomerCSVImport.java",
-        "kriolos-opos-app/src/test/java/com/openbravo/pos/imports/ImportPersistenceDatabaseTest.java",
-        "kriolos-opos-domain/src/main/java/com/openbravo/pos/imports/DataLogicImport.java",
-        "kriolos-opos-domain/src/main/java/com/openbravo/pos/imports/ImportService.java",
-        "kriolos-opos-domain/src/main/java/com/openbravo/pos/imports/CustomerCsvImportEntry.java",
-        "kriolos-opos-domain/src/test/java/com/openbravo/pos/imports/ImportServiceTest.java"
-      ],
-      "task_description": "KP-128 parameterized, database-agnostic import persistence tests for HSQLDB and SQLite",
-      "claimed_at": "2026-11-04T18:54:00Z"
-    }
-  ],
+  "active_locks": [],
   "task_queue": {
-    "in_progress": [
+    "in_progress": [],
+    "available": [],
+    "completed": [
       {
         "id": "TASK-001",
-        "agent": "copilot",
-        "description": "Typesafe migration for SalesPaymentCoordinator tests and CI matrix"
+        "agent": "antigravity",
+        "description": "Typesafe migration for SalesPaymentCoordinator tests and CI matrix (finalized from Copilot)",
+        "completed_at": "2026-11-04T20:28:00Z"
       },
       {
         "id": "TASK-006",
-        "agent": "copilot",
-        "description": "KP-128 parameterized, database-agnostic import persistence tests for HSQLDB and SQLite"
-      }
-    ],
-    "available": [],
-    "completed": [
+        "agent": "antigravity",
+        "description": "KP-128 parameterized, database-agnostic import persistence tests for HSQLDB and SQLite (finalized from Copilot)",
+        "completed_at": "2026-11-04T20:28:00Z"
+      },
       {
         "id": "TASK-009",
         "agent": "antigravity",

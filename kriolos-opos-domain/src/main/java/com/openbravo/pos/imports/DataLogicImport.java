@@ -26,7 +26,8 @@ public class DataLogicImport extends BeanFactoryDataSingle implements ImportServ
         return sessionDB;
     }
 
-    public final void execCSVStockUpdate(Object[] csv) throws BasicException {
+    @Override
+    public final void execCSVStockUpdate(StockQuantityImportEntry entry) throws BasicException {
         final SentenceExec m_insertStockUpdateCSVEntry = new StaticSentence(this.sessionDB,
                 "INSERT INTO csvimport ( "
                 + "ID, ROWNUMBER, CSVERROR, REFERENCE, CODE, PRICEBUY ) "
@@ -34,7 +35,20 @@ public class DataLogicImport extends BeanFactoryDataSingle implements ImportServ
                 new SerializerWriteBasic(new Datas[]{
             Datas.STRING, Datas.STRING, Datas.STRING, Datas.STRING, Datas.STRING, Datas.DOUBLE
         }));
-        m_insertStockUpdateCSVEntry.exec(csv);
+        m_insertStockUpdateCSVEntry.exec(new Object[]{
+            entry.id(), entry.rowNumber(), entry.csvError(), entry.locationId(), entry.barcode(), entry.quantity()});
+    }
+
+    @Override
+    @Deprecated
+    public final void execCSVStockUpdate(Object[] csv) throws BasicException {
+        execCSVStockUpdate(new StockQuantityImportEntry(
+                (String) csv[0],
+                (String) csv[1],
+                (String) csv[2],
+                (String) csv[3],
+                (String) csv[4],
+                ((Number) csv[5]).doubleValue()));
     }
 
     public final void execAddCSVEntry(Object[] csv) throws BasicException {
@@ -52,7 +66,8 @@ public class DataLogicImport extends BeanFactoryDataSingle implements ImportServ
         m_insertCSVEntry.exec(csv);
     }
 
-    public final void execCustomerAddCSVEntry(Object[] csv) throws BasicException {
+    @Override
+    public final void execCustomerAddCSVEntry(CustomerCsvImportEntry entry) throws BasicException {
         final SentenceExec m_insertCustomerCSVEntry = new StaticSentence(this.sessionDB,
                 "INSERT INTO csvimport ( "
                 + "ID, ROWNUMBER, CSVERROR, SEARCHKEY, NAME) "
@@ -60,7 +75,19 @@ public class DataLogicImport extends BeanFactoryDataSingle implements ImportServ
                 new SerializerWriteBasic(new Datas[]{
             Datas.STRING, Datas.STRING, Datas.STRING, Datas.STRING, Datas.STRING
         }));
-        m_insertCustomerCSVEntry.exec(csv);
+        m_insertCustomerCSVEntry.exec(new Object[]{
+            entry.id(), entry.rowNumber(), entry.csvError(), entry.searchKey(), entry.name()});
+    }
+
+    @Override
+    @Deprecated
+    public final void execCustomerAddCSVEntry(Object[] csv) throws BasicException {
+        execCustomerAddCSVEntry(new CustomerCsvImportEntry(
+                (String) csv[0],
+                (String) csv[1],
+                (String) csv[2],
+                (String) csv[3],
+                (String) csv[4]));
     }
 
     public final String getProductRecordType(Object[] myProduct) throws BasicException {

@@ -36,6 +36,7 @@ import com.openbravo.pos.sales.DataLogicTax;
 import com.openbravo.pos.sales.TaxService;
 import com.openbravo.pos.sales.TaxesLogic;
 import com.openbravo.pos.suppliers.SupplierService;
+import com.openbravo.pos.suppliers.SupplierCreateCommand;
 import com.openbravo.pos.ticket.ProductInfoExt;
 import org.apache.commons.lang3.StringUtils;
 
@@ -561,13 +562,10 @@ public class JPanelCSVImport extends JPanel implements JPanelView {
         }
 
         if (!Category.equals("")) {
-            Object[] newcat = new Object[3];
-            newcat[0] = UUID.randomUUID().toString();
-            newcat[1] = Category;
-            newcat[2] = true;
+            String newCategoryId = UUID.randomUUID().toString();
 
             try {
-                catalogService.createCategory(newcat);
+                catalogService.createCategory(newCategoryId, Category, true);
 
                 cat_list = new HashMap<>();
                 for (Object category : taxCategoryInfos) {
@@ -605,14 +603,11 @@ public class JPanelCSVImport extends JPanel implements JPanelView {
         }
 
         if (!Supplier.equals("")) {
-            Object[] newsupp = new Object[4];
-            newsupp[0] = UUID.randomUUID().toString();
-            newsupp[1] = Supplier;
-            newsupp[2] = Supplier;
-            newsupp[3] = true;
+            SupplierCreateCommand newSupplier = new SupplierCreateCommand(
+                    UUID.randomUUID().toString(), Supplier, Supplier, true);
 
             try {
-                supplierDataLogic.createSupplier(newsupp);
+                supplierDataLogic.createSupplier(newSupplier);
 
                 supp_list = new HashMap<>();
                 for (Object supplier : m_sentsupp.list()) {

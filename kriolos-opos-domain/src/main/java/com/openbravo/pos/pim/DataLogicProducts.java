@@ -127,7 +127,7 @@ public class DataLogicProducts extends BeanFactoryDataSingle {
      *
      * @return {@link SaveProvider} for products
      */
-    public SaveProvider getProductSaveProvider() {
+    public SaveProvider<Object[]> getProductSaveProvider() {
         return new DefaultSaveProvider(productUpdate(), productInsert(), getProductCatDelete());
     }
 

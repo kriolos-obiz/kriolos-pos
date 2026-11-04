@@ -466,16 +466,16 @@ public class StockQtyImport extends JPanel implements JPanelView {
    */
   public void CSVStockUpdate(String LocationID, String Code, Double Units) {
 
-    Object[] myprod = new Object[6];
-    myprod[0] = UUID.randomUUID().toString(); // ID string
-    myprod[1] = Integer.toString(currentRecord); // Record number
-    myprod[2] = "Qty update"; // Error description
-    myprod[3] = Location; // Location ID
-    myprod[4] = productBarcode; // Product Barcode
-    myprod[5] = newQty; // Product Quantity
+    StockQuantityImportEntry importEntry = new StockQuantityImportEntry(
+            UUID.randomUUID().toString(),
+            Integer.toString(currentRecord),
+            "Qty update",
+            Location,
+            productBarcode,
+            newQty);
 
     try {
-      m_importService.execCSVStockUpdate(myprod);
+      m_importService.execCSVStockUpdate(importEntry);
     } catch (BasicException ex) {
       LOGGER.log(Level.WARNING, null, ex);
     }
