@@ -17,12 +17,15 @@
 package com.openbravo.pos.imports;
 
 import com.openbravo.data.loader.Session;
+import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.ServiceLoader;
 import java.util.UUID;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -34,11 +37,22 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Import persistence database contract")
 public class ImportPersistenceDatabaseTest {
 
-    static {
-        try {
-            Class.forName("org.sqlite.JDBC");
-        } catch (ClassNotFoundException ignored) {
-        }
+    @Test
+    @DisplayName("Print all registered JDBC drivers and ServiceLoader providers")
+    void printAvailableJdbcDrivers() {
+        System.out.println("=== DRIVERS REGISTERED WITH DriverManager ===");
+        DriverManager.getDrivers().asIterator().forEachRemaining(driver -> {
+            System.out.printf("  -> %s (v%d.%d, jdbcCompliant=%b)%n",
+                    driver.getClass().getName(),
+                    driver.getMajorVersion(),
+                    driver.getMinorVersion(),
+                    driver.jdbcCompliant());
+        });
+
+        System.out.println("=== DRIVERS DISCOVERED VIA ServiceLoader ===");
+        ServiceLoader.load(java.sql.Driver.class).forEach(driver -> {
+            System.out.printf("  -> %s%n", driver.getClass().getName());
+        });
     }
 
     @ParameterizedTest(name = "customer import persists on {0}")
@@ -90,6 +104,7 @@ public class ImportPersistenceDatabaseTest {
                         "jdbc:hsqldb:mem:" + databaseName + ";sql.syntax_mys=true",
                         "SA",
                         ""),
+                Arguments.of("H2", "jdbc:h2:mem:" + databaseName + ";DB_CLOSE_DELAY=-1", "SA", ""),
                 Arguments.of("SQLite", "jdbc:sqlite::memory:", null, null));
     }
 }
