@@ -1,0 +1,39 @@
+{
+  "protocol_version": "1.0",
+  "active_locks": [
+    {
+      "agent": "copilot",
+      "target_paths": [
+        "kriolos-opos-app/src/test/java/com/openbravo/pos/sales/SalesPaymentCoordinatorTest.java",
+        ".github/workflows/ci.yml"
+      ],
+      "task_description": "Typesafe test migration and CI matrix setup",
+      "claimed_at": "2026-11-04T18:20:00Z"
+    }
+  ],
+  "task_queue": {
+    "in_progress": [
+      {
+        "id": "TASK-001",
+        "agent": "copilot",
+        "description": "Typesafe migration for SalesPaymentCoordinator tests and CI matrix"
+      }
+    ],
+    "available": [
+      {
+        "id": "TASK-002",
+        "agent": "gemini",
+        "description": "KP-128 read-only audit: inventory public service APIs exposing Object[], raw collections, or persistence-layer types; group by module, identify callers and behavioral risks, and recommend migration order. Do not edit source, tests, CI, or documentation."
+      }
+    ],
+    "completed": [
+      {
+        "id": "TASK-003",
+        "agent": "antigravity",
+        "description": "KP-128 Phase 2: Transaction exception safety and universal rollback on any Exception or Error",
+        "completed_at": "2026-11-04T18:34:00Z"
+      }
+    ]
+  }
+}
+
