@@ -152,7 +152,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <dependency>
             <groupId>org.mariadb.jdbc</groupId>
             <artifactId>mariadb-java-client</artifactId>
-            <version>3.5.10</version>
+            <version>3.5.11</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>
