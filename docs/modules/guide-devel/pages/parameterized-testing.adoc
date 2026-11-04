@@ -1,0 +1,26 @@
+= Parameterized Tests as a First-Class Practice
+:description: Repository conventions for parameterized behavior and database contract tests.
+:sectnums:
+
+Parameterized tests are the preferred way to prove that one behavior contract holds for multiple inputs or supported runtime configurations. Each parameter set is a distinct test invocation, so failures identify the exact case without duplicating test classes.
+
+== One Contract, Many Parameters
+
+Use JUnit Jupiter `@ParameterizedTest` with `@ValueSource` or `@CsvSource` for simple values and `@MethodSource` for named multi-field cases. A method source can supply a typed test-only record containing an engine label, connection URL, credentials, and any required setup values.
+
+Keep assertions shared across parameter values. Avoid loops inside an ordinary `@Test`, per-engine test classes with copied assertions, or conditional branches that weaken checks for one backend. Give each invocation an informative display name.
+
+== Database Behavior
+
+Database contract tests use one parameterized test class and pass each connection configuration as a test argument. The SQL, schema declaration, operations, and expected results remain common across engines wherever the SQL standard permits.
+
+[IMPORTANT]
+====
+Do not use driver-specific APIs or `Class.forName` in shared database tests. Runtime JDBC drivers must be discoverable through JDBC 4 service-provider loading and explicitly included in the Maven test plugin classpath when required by the test fork. Keep the driver's version aligned with its production runtime dependency; do not change production scope solely to satisfy tests.
+====
+
+If an engine requires a real semantic difference, isolate that difference in the connection/setup provider and preserve common assertions for the behavior under test. Do not silently skip a configured database when its test driver is unavailable.
+
+== Repository Rule
+
+See `.agents/rules/parameterized-testing.md` for the enforceable authoring and completion checklist.

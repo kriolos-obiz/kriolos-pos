@@ -17,6 +17,7 @@ package com.openbravo.data.gui.modal;
 
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.GraphicsEnvironment;
 import java.awt.Window;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -28,6 +29,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Assumptions;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -91,6 +93,8 @@ class PosUIModalTest {
         assertNull(modal.getParent());
         assertSame(content, modal.getContent());
 
+        Assumptions.assumeFalse(GraphicsEnvironment.isHeadless(),
+            "Fallback owner resolution requires a graphical environment");
         Window owner = PosUIModal.resolveWindowOwner(null);
         assertNotNull(owner, "resolveWindowOwner(null) must return a safe fallback window, never null");
     }
@@ -119,6 +123,8 @@ class PosUIModalTest {
     @Test
     @DisplayName("resolveWindowOwner correctly identifies ancestor Windows without throwing")
     void testResolveWindowOwnerHierarchy() {
+        Assumptions.assumeFalse(GraphicsEnvironment.isHeadless(),
+            "Window hierarchy resolution requires a graphical environment");
         JFrame frame = new JFrame();
         assertSame(frame, PosUIModal.resolveWindowOwner(frame));
 

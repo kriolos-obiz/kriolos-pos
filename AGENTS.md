@@ -76,6 +76,7 @@ Refer to detailed project-specific guidelines in `.agents/rules/`:
 - [`.agents/rules/architecture-layering.md`](.agents/rules/architecture-layering.md): Module boundaries and port/adapter decoupling.
 - [`.agents/rules/domain-driven-design.md`](.agents/rules/domain-driven-design.md): DDD entities, value objects, and domain services.
 - [`.agents/rules/modern-java-conventions.md`](.agents/rules/modern-java-conventions.md): Java 17 patterns, records, and idioms.
+- [`.agents/rules/parameterized-testing.md`](.agents/rules/parameterized-testing.md): Parameterized behavior and database contract testing standards.
 
 ---
 

@@ -35,6 +35,7 @@
 *** xref:spec-cash-reporting-standards.adoc[Specification: Standard Cash Reports (X/Z Reports & PosLog)]
 *** xref:resources-assets.adoc[Resources & Assets Overview]
 ** Testing & Automation
+*** xref:parameterized-testing.adoc[Parameterized Testing as a First-Class Practice]
 *** xref:automation-multilingual-audio-narration.adoc[Automated Video Showcase & Multi-Language Audio Narration]
 ** Troubleshooting
 *** xref:troubleshooting-known-issues.adoc[Known Issues]
