@@ -229,13 +229,13 @@ public class DataLogicInventory extends BeanFactoryDataSingle implements StockSe
         return new SentenceExecTransaction(sessionDB) {
             @Override
             public int execInTransaction(Object[] params) throws BasicException {
-                Object[] adjustParams = new Object[4];
                 Object[] paramsArray = (Object[]) params;
-                adjustParams[0] = paramsArray[4];
-                adjustParams[1] = paramsArray[3];
-                adjustParams[2] = paramsArray[5];
-                adjustParams[3] = paramsArray[6];
-                adjustStock(adjustParams);
+                adjustStock(new StockAdjustmentCommand(
+                        (String) paramsArray[4],
+                        (String) paramsArray[3],
+                        (String) paramsArray[5],
+                        paramsArray[6] instanceof Number n ? n.doubleValue() : 0.0
+                ));
 
                 return new PreparedSentence(sessionDB,
                         "INSERT INTO stockdiary (ID, DATENEW, REASON, LOCATION, "
@@ -343,20 +343,31 @@ public class DataLogicInventory extends BeanFactoryDataSingle implements StockSe
         };
     }
 
-    public void adjustStock(Object[] params) throws BasicException {
-        List<ProductsBundleInfo> bundle = getProductsBundle((String) params[0]);
+    @Override
+    public void adjustStock(StockAdjustmentCommand command) throws BasicException {
+        if (command == null) {
+            return;
+        }
 
-        if (bundle.size() > 0) {
+        List<ProductsBundleInfo> bundle = getProductsBundle(command.productId());
+
+        if (!bundle.isEmpty()) {
             for (ProductsBundleInfo component : bundle) {
-                Object[] adjustParams = new Object[4];
-                adjustParams[0] = component.getProductBundleId();
-                adjustParams[1] = ((Object[]) params)[1];
-                adjustParams[2] = ((Object[]) params)[2];
-                adjustParams[3] = ((Double) ((Object[]) params)[3]) * component.getQuantity();
-                adjustStock(adjustParams);
+                adjustStock(new StockAdjustmentCommand(
+                        component.getProductBundleId(),
+                        command.locationId(),
+                        command.attributeSetInstanceId(),
+                        command.units() * component.getQuantity()
+                ));
             }
         } else {
-            int updateresult = ((Object[]) params)[2] == null
+            Object[] params = new Object[]{
+                    command.productId(),
+                    command.locationId(),
+                    command.attributeSetInstanceId(),
+                    command.units()
+            };
+            int updateresult = command.attributeSetInstanceId() == null
                     ? new PreparedSentence(sessionDB,
                             "UPDATE stockcurrent SET UNITS = (UNITS + ?) "
                             + "WHERE LOCATION = ? AND PRODUCT = ? "
@@ -381,6 +392,18 @@ public class DataLogicInventory extends BeanFactoryDataSingle implements StockSe
                                 new int[]{1, 0, 2, 3}))
                         .exec(params);
             }
+        }
+    }
+
+    @Override
+    public void adjustStock(Object[] params) throws BasicException {
+        if (params != null && params.length >= 4) {
+            adjustStock(new StockAdjustmentCommand(
+                    (String) params[0],
+                    (String) params[1],
+                    (String) params[2],
+                    params[3] instanceof Number n ? n.doubleValue() : 0.0
+            ));
         }
     }
 

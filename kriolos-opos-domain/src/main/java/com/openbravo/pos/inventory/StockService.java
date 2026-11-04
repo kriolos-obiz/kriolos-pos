@@ -89,12 +89,32 @@ public interface StockService extends InventoryService {
     void saveStockDiary(ProductStockTransaction prodStock) throws BasicException;
 
     /**
+     * Adjusts product stock levels using a typed {@link StockAdjustmentCommand}, decomposing
+     * product bundles if applicable.
+     *
+     * @param command the stock adjustment command
+     * @throws BasicException on database operation error
+     */
+    void adjustStock(StockAdjustmentCommand command) throws BasicException;
+
+    /**
      * Adjusts product stock levels, decomposing product bundles if applicable.
      *
      * @param params parameters array: [productId, locationId, attributesetinstanceId, units]
      * @throws BasicException on database operation error
+     * @deprecated Use {@link #adjustStock(StockAdjustmentCommand)} instead.
      */
-    void adjustStock(Object[] params) throws BasicException;
+    @Deprecated(since = "1.0.0", forRemoval = true)
+    default void adjustStock(Object[] params) throws BasicException {
+        if (params != null && params.length >= 4) {
+            adjustStock(new StockAdjustmentCommand(
+                    (String) params[0],
+                    (String) params[1],
+                    (String) params[2],
+                    params[3] instanceof Number n ? n.doubleValue() : 0.0
+            ));
+        }
+    }
 
     /**
      * Returns the record save provider for stock diary movements (insert and delete).
