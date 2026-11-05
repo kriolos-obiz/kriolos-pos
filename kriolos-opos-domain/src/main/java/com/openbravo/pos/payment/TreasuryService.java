@@ -26,22 +26,24 @@ import java.util.Date;
 public interface TreasuryService {
 
     /**
+     * Records a cash drawer movement (cash in / cash out) using command record {@link RecordPaymentMovementCommand}.
+     *
+     * @param command the validated payment movement command
+     * @throws BasicException on persistence error
+     */
+    void recordPaymentMovement(RecordPaymentMovementCommand command) throws BasicException;
+
+    /**
      * Records a cash drawer movement (cash in / cash out) using domain record {@link PaymentMovement}.
      *
      * @param movement the payment movement domain record
      * @throws BasicException on persistence error
+     * @deprecated Use {@link #recordPaymentMovement(RecordPaymentMovementCommand)} instead.
      */
+    @Deprecated
     default void recordPaymentMovement(PaymentMovement movement) throws BasicException {
         if (movement != null) {
-            recordPaymentMovement(
-                    movement.receiptId(),
-                    movement.activeCashIndex(),
-                    movement.date(),
-                    movement.paymentId(),
-                    movement.reason(),
-                    movement.total(),
-                    movement.notes()
-            );
+            recordPaymentMovement(RecordPaymentMovementCommand.from(movement));
         }
     }
 
@@ -56,8 +58,10 @@ public interface TreasuryService {
      * @param total           amount moved (signed)
      * @param notes           optional notes
      * @throws BasicException on persistence error
+     * @deprecated Use {@link #recordPaymentMovement(RecordPaymentMovementCommand)} instead.
      */
-    void recordPaymentMovement(
+    @Deprecated
+    default void recordPaymentMovement(
             String receiptId,
             String activeCashIndex,
             Date date,
@@ -65,7 +69,18 @@ public interface TreasuryService {
             String reason,
             double total,
             String notes
-    ) throws BasicException;
+    ) throws BasicException {
+        recordPaymentMovement(RecordPaymentMovementCommand.of(
+                receiptId, activeCashIndex, date, paymentId, reason, total, notes));
+    }
+
+    /**
+     * Deletes or reverts a cash drawer movement by {@link DeletePaymentMovementCommand}.
+     *
+     * @param command validated delete payment movement command
+     * @throws BasicException on persistence error
+     */
+    void deletePaymentMovement(DeletePaymentMovementCommand command) throws BasicException;
 
     /**
      * Deletes or reverts a cash drawer movement by its receipt and payment identifiers.
@@ -73,15 +88,19 @@ public interface TreasuryService {
      * @param receiptId unique receipt identifier
      * @param paymentId unique payment identifier
      * @throws BasicException on persistence error
+     * @deprecated Use {@link #deletePaymentMovement(DeletePaymentMovementCommand)} instead.
      */
-    void deletePaymentMovement(String receiptId, String paymentId) throws BasicException;
+    @Deprecated
+    default void deletePaymentMovement(String receiptId, String paymentId) throws BasicException {
+        deletePaymentMovement(DeletePaymentMovementCommand.of(receiptId, paymentId));
+    }
 
     /**
      * Returns the SaveProvider for table/panel persistence in cash drawer movements.
      *
      * @return SaveProvider for cash drawer movements
      */
-    SaveProvider getPaymentMovementSaveProvider();
+    SaveProvider<Object[]> getPaymentMovementSaveProvider();
 
     /**
      * Generates and retrieves the next ticket payment index sequence number.

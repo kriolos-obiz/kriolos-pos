@@ -6,6 +6,12 @@
     "available": [],
     "completed": [
       {
+        "id": "TASK-021",
+        "agent": "antigravity",
+        "description": "KP-131: Modernize TreasuryService with RecordPaymentMovementCommand and DeletePaymentMovementCommand",
+        "completed_at": "2026-11-05T16:04:00Z"
+      },
+      {
         "id": "TASK-020",
         "agent": "antigravity",
         "description": "KP-130: Modernize InventoryService with CreateStockCommand and UpdateStockCommand",

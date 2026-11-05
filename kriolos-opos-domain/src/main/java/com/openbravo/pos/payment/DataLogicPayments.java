@@ -83,6 +83,23 @@ public class DataLogicPayments extends BeanFactoryDataSingle implements Treasury
     }
 
     @Override
+    public void recordPaymentMovement(RecordPaymentMovementCommand command) throws BasicException {
+        if (command == null) {
+            return;
+        }
+        getPaymentMovementInsert().exec(new Object[]{
+            command.receiptId(),
+            command.activeCashIndex(),
+            command.date(),
+            command.paymentId(),
+            command.reason(),
+            command.total(),
+            command.notes()
+        });
+    }
+
+    @Override
+    @Deprecated
     public void recordPaymentMovement(
             String receiptId,
             String activeCashIndex,
@@ -92,24 +109,20 @@ public class DataLogicPayments extends BeanFactoryDataSingle implements Treasury
             double total,
             String notes
     ) throws BasicException {
-        getPaymentMovementInsert().exec(new Object[]{
-            receiptId,
-            activeCashIndex,
-            date != null ? date : new Date(),
-            paymentId,
-            reason,
-            total,
-            notes != null ? notes : ""
-        });
+        recordPaymentMovement(RecordPaymentMovementCommand.of(
+                receiptId, activeCashIndex, date, paymentId, reason, total, notes));
     }
 
     @Override
-    public void deletePaymentMovement(String receiptId, String paymentId) throws BasicException {
+    public void deletePaymentMovement(DeletePaymentMovementCommand command) throws BasicException {
+        if (command == null) {
+            return;
+        }
         getPaymentMovementDelete().exec(new Object[]{
-            receiptId,
+            command.receiptId(),
             null,
             null,
-            paymentId,
+            command.paymentId(),
             null,
             null,
             null
@@ -117,7 +130,13 @@ public class DataLogicPayments extends BeanFactoryDataSingle implements Treasury
     }
 
     @Override
-    public SaveProvider getPaymentMovementSaveProvider() {
+    @Deprecated
+    public void deletePaymentMovement(String receiptId, String paymentId) throws BasicException {
+        deletePaymentMovement(DeletePaymentMovementCommand.of(receiptId, paymentId));
+    }
+
+    @Override
+    public SaveProvider<Object[]> getPaymentMovementSaveProvider() {
         return new DefaultSaveProvider(null, getPaymentMovementInsert(), getPaymentMovementDelete());
     }
 
