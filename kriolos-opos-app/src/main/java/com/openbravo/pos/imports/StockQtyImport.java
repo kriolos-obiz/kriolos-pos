@@ -31,8 +31,10 @@ import com.openbravo.pos.inventory.ProductStock;
 import com.openbravo.pos.ticket.ProductInfoExt;
 
 import com.openbravo.pos.catalog.CatalogService;
+import com.openbravo.pos.inventory.CreateStockCommand;
 import com.openbravo.pos.inventory.InventoryService;
 import com.openbravo.pos.inventory.InventoryServiceImpl;
+import com.openbravo.pos.inventory.UpdateStockCommand;
 import com.openbravo.pos.inventory.DataLogicInventory;
 import com.openbravo.pos.pim.DataLogicPIM;
 
@@ -429,7 +431,7 @@ public class StockQtyImport extends JPanel implements JPanelView {
    * @throws com.openbravo.basic.BasicException
    */
   public void addStockCurrent(String LocationID, String ProductID, Double Units) throws BasicException {
-    invService.createStock(LocationID, ProductID, Units);
+    invService.createStock(CreateStockCommand.of(LocationID, ProductID, Units != null ? Units : 0.0));
   }
 
   /**
@@ -441,7 +443,7 @@ public class StockQtyImport extends JPanel implements JPanelView {
    * @throws com.openbravo.basic.BasicException
    */
   public void updateStockCurrent(String LocationID, String ProductID, Double Units) throws BasicException {
-    invService.updateStock(LocationID, ProductID, Units);
+    invService.updateStock(UpdateStockCommand.of(LocationID, ProductID, Units != null ? Units : 0.0));
   }
 
   /**
@@ -455,7 +457,7 @@ public class StockQtyImport extends JPanel implements JPanelView {
   public void deleteStockCurrent(String LocationID, String ProductID, Double Units) throws BasicException {
     // Deleting stock really means updating it to 0 or new value (which is passed as
     // Units, usually 0)
-    invService.updateStock(LocationID, ProductID, Units);
+    invService.updateStock(UpdateStockCommand.of(LocationID, ProductID, Units != null ? Units : 0.0));
   }
 
   /**

@@ -42,12 +42,14 @@ class StockServiceTest {
         }
 
         @Override
-        public void createStock(String locationId, String productId, double units) {
-            addedEntries.add(new StockEntry(locationId, productId, units));
+        public void createStock(CreateStockCommand command) {
+            if (command != null) {
+                addedEntries.add(new StockEntry(command.locationId(), command.productId(), command.attributeSetInstanceId(), command.units()));
+            }
         }
 
         @Override
-        public void updateStock(String locationId, String productId, double units) {
+        public void updateStock(UpdateStockCommand command) {
         }
 
         @Override

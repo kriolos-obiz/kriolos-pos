@@ -83,52 +83,65 @@ public class InventoryServiceImpl implements InventoryService {
             dlInventory.addStockEntry(locationId, productId, attributeSetInstanceId, units);
             return;
         }
-        if (attributeSetInstanceId == null) {
-            createStock(locationId, productId, units);
+        createStock(CreateStockCommand.of(locationId, productId, attributeSetInstanceId, units));
+    }
+
+    @Override
+    public void createStock(CreateStockCommand command) throws BasicException {
+        if (command == null) {
+            return;
+        }
+        if (dlInventory != null) {
+            dlInventory.createStock(command);
+            return;
+        }
+        if (command.attributeSetInstanceId() == null) {
+            PreparedSentence sentence = new PreparedSentence(session,
+                    "INSERT INTO stockcurrent (LOCATION, PRODUCT, UNITS) VALUES (?, ?, ?)",
+                    new SerializerWriteBasicExt(new Datas[]{Datas.STRING, Datas.STRING, Datas.DOUBLE},
+                            new int[]{0, 1, 2}));
+            sentence.exec(new Object[]{command.locationId(), command.productId(), command.units()});
         } else {
             new PreparedSentence(session,
                     "INSERT INTO stockcurrent (LOCATION, PRODUCT, ATTRIBUTESETINSTANCE_ID, UNITS) VALUES (?, ?, ?, ?)",
                     new SerializerWriteBasic(new Datas[]{Datas.STRING, Datas.STRING, Datas.STRING, Datas.DOUBLE}))
-                    .exec(new Object[]{locationId, productId, attributeSetInstanceId, units});
+                    .exec(new Object[]{command.locationId(), command.productId(), command.attributeSetInstanceId(), command.units()});
         }
     }
 
     @Override
+    @Deprecated
     public void createStock(String locationId, String productId, double units) throws BasicException {
-        if (dlInventory != null) {
-            dlInventory.createStock(locationId, productId, units);
-            return;
-        }
-        Object[] values = new Object[3];
-        values[0] = locationId;
-        values[1] = productId;
-        values[2] = units;
-
-        PreparedSentence sentence = new PreparedSentence(session,
-                "INSERT INTO stockcurrent (LOCATION, PRODUCT, UNITS) VALUES (?, ?, ?)",
-                new SerializerWriteBasicExt(new Datas[] { Datas.STRING, Datas.STRING, Datas.DOUBLE },
-                        new int[] { 0, 1, 2 }));
-
-        sentence.exec(values);
+        createStock(CreateStockCommand.of(locationId, productId, units));
     }
 
     @Override
-    public void updateStock(String locationId, String productId, double units) throws BasicException {
-        if (dlInventory != null) {
-            dlInventory.updateStock(locationId, productId, units);
+    public void updateStock(UpdateStockCommand command) throws BasicException {
+        if (command == null) {
             return;
         }
-        Object[] newValues = new Object[3];
-        newValues[0] = units;
-        newValues[1] = locationId;
-        newValues[2] = productId;
+        if (dlInventory != null) {
+            dlInventory.updateStock(command);
+            return;
+        }
+        if (command.attributeSetInstanceId() == null) {
+            PreparedSentence sentence = new PreparedSentence(session,
+                    "UPDATE stockcurrent SET UNITS = ? WHERE LOCATION = ? AND PRODUCT = ?",
+                    new SerializerWriteBasicExt(new Datas[]{Datas.DOUBLE, Datas.STRING, Datas.STRING},
+                            new int[]{0, 1, 2}));
+            sentence.exec(new Object[]{command.units(), command.locationId(), command.productId()});
+        } else {
+            PreparedSentence sentence = new PreparedSentence(session,
+                    "UPDATE stockcurrent SET UNITS = ? WHERE LOCATION = ? AND PRODUCT = ? AND ATTRIBUTESETINSTANCE_ID = ?",
+                    new SerializerWriteBasic(new Datas[]{Datas.DOUBLE, Datas.STRING, Datas.STRING, Datas.STRING}));
+            sentence.exec(new Object[]{command.units(), command.locationId(), command.productId(), command.attributeSetInstanceId()});
+        }
+    }
 
-        PreparedSentence sentence = new PreparedSentence(session,
-                "UPDATE stockcurrent SET UNITS = ? WHERE LOCATION = ? AND PRODUCT = ?",
-                new SerializerWriteBasicExt(new Datas[] { Datas.DOUBLE, Datas.STRING, Datas.STRING },
-                        new int[] { 0, 1, 2 }));
-
-        sentence.exec(newValues);
+    @Override
+    @Deprecated
+    public void updateStock(String locationId, String productId, double units) throws BasicException {
+        updateStock(UpdateStockCommand.of(locationId, productId, units));
     }
 
     @Override

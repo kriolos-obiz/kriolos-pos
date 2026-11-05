@@ -468,17 +468,39 @@ public class DataLogicInventory extends BeanFactoryDataSingle implements StockSe
     }
 
     @Override
+    public void createStock(CreateStockCommand command) throws BasicException {
+        if (command != null) {
+            addStockEntry(command.locationId(), command.productId(), command.attributeSetInstanceId(), command.units());
+        }
+    }
+
+    @Override
     public void createStock(String locationId, String productId, double units) throws BasicException {
-        addStockEntry(locationId, productId, units);
+        createStock(CreateStockCommand.of(locationId, productId, units));
+    }
+
+    @Override
+    public void updateStock(UpdateStockCommand command) throws BasicException {
+        if (command == null) {
+            return;
+        }
+        if (command.attributeSetInstanceId() == null) {
+            PreparedSentence sentence = new PreparedSentence(sessionDB,
+                    "UPDATE stockcurrent SET UNITS = ? WHERE LOCATION = ? AND PRODUCT = ?",
+                    new SerializerWriteBasicExt(new Datas[]{Datas.DOUBLE, Datas.STRING, Datas.STRING},
+                            new int[]{0, 1, 2}));
+            sentence.exec(new Object[]{command.units(), command.locationId(), command.productId()});
+        } else {
+            PreparedSentence sentence = new PreparedSentence(sessionDB,
+                    "UPDATE stockcurrent SET UNITS = ? WHERE LOCATION = ? AND PRODUCT = ? AND ATTRIBUTESETINSTANCE_ID = ?",
+                    new SerializerWriteBasic(new Datas[]{Datas.DOUBLE, Datas.STRING, Datas.STRING, Datas.STRING}));
+            sentence.exec(new Object[]{command.units(), command.locationId(), command.productId(), command.attributeSetInstanceId()});
+        }
     }
 
     @Override
     public void updateStock(String locationId, String productId, double units) throws BasicException {
-        PreparedSentence sentence = new PreparedSentence(sessionDB,
-                "UPDATE stockcurrent SET UNITS = ? WHERE LOCATION = ? AND PRODUCT = ?",
-                new SerializerWriteBasicExt(new Datas[]{Datas.DOUBLE, Datas.STRING, Datas.STRING},
-                        new int[]{0, 1, 2}));
-        sentence.exec(new Object[]{units, locationId, productId});
+        updateStock(UpdateStockCommand.of(locationId, productId, units));
     }
 
     @Override

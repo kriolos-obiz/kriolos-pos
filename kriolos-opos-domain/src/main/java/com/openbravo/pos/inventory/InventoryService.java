@@ -75,12 +75,52 @@ public interface InventoryService {
      * @throws BasicException on database operation failure
      */
     default void addStockEntry(String locationId, String productId, String attributeSetInstanceId, double units) throws BasicException {
-        createStock(locationId, productId, units);
+        createStock(CreateStockCommand.of(locationId, productId, attributeSetInstanceId, units));
     }
 
-    void createStock(String locationId, String productId, double units) throws BasicException;
+    /**
+     * Creates a new stock entry in the warehouse using {@link CreateStockCommand}.
+     *
+     * @param command validated stock creation command
+     * @throws BasicException on database error
+     */
+    void createStock(CreateStockCommand command) throws BasicException;
 
-    void updateStock(String locationId, String productId, double units) throws BasicException;
+    /**
+     * Creates a new stock entry in the warehouse.
+     *
+     * @param locationId warehouse location ID
+     * @param productId  product ID
+     * @param units      stock units
+     * @throws BasicException on database error
+     * @deprecated Use {@link #createStock(CreateStockCommand)} instead.
+     */
+    @Deprecated
+    default void createStock(String locationId, String productId, double units) throws BasicException {
+        createStock(CreateStockCommand.of(locationId, productId, units));
+    }
+
+    /**
+     * Updates an existing stock entry in the warehouse using {@link UpdateStockCommand}.
+     *
+     * @param command validated stock update command
+     * @throws BasicException on database error
+     */
+    void updateStock(UpdateStockCommand command) throws BasicException;
+
+    /**
+     * Updates an existing stock entry in the warehouse.
+     *
+     * @param locationId warehouse location ID
+     * @param productId  product ID
+     * @param units      stock units
+     * @throws BasicException on database error
+     * @deprecated Use {@link #updateStock(UpdateStockCommand)} instead.
+     */
+    @Deprecated
+    default void updateStock(String locationId, String productId, double units) throws BasicException {
+        updateStock(UpdateStockCommand.of(locationId, productId, units));
+    }
 
     /**
      * Returns table definition for warehouse locations management.

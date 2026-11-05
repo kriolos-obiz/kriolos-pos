@@ -6,6 +6,12 @@
     "available": [],
     "completed": [
       {
+        "id": "TASK-020",
+        "agent": "antigravity",
+        "description": "KP-130: Modernize InventoryService with CreateStockCommand and UpdateStockCommand",
+        "completed_at": "2026-11-05T05:39:45Z"
+      },
+      {
         "id": "TASK-019",
         "agent": "antigravity",
         "description": "KP-129: Modernize PlaceService with MoveCustomerCommand and eliminate raw JDBC in PlaceServiceImpl",

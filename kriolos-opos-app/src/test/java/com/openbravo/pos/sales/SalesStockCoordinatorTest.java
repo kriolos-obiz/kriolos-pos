@@ -17,8 +17,10 @@
 package com.openbravo.pos.sales;
 
 import com.openbravo.basic.BasicException;
+import com.openbravo.pos.inventory.CreateStockCommand;
 import com.openbravo.pos.inventory.InventoryService;
 import com.openbravo.pos.inventory.ProductStock;
+import com.openbravo.pos.inventory.UpdateStockCommand;
 import com.openbravo.pos.ticket.TicketLineInfo;
 import java.util.Date;
 import java.util.Optional;
@@ -51,11 +53,11 @@ class SalesStockCoordinatorTest {
         }
 
         @Override
-        public void createStock(String locationId, String productId, double units) {
+        public void createStock(CreateStockCommand command) {
         }
 
         @Override
-        public void updateStock(String locationId, String productId, double units) {
+        public void updateStock(UpdateStockCommand command) {
         }
     }
 
