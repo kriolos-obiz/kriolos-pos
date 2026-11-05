@@ -24,12 +24,12 @@
 				<expression><![CDATA[$F{CODE}]]></expression>
 			</element>
 			<element kind="image" uuid="bdf0fb1f-66e5-4bb6-b49b-d5f95329cbc6" key="image-1" x="0" y="0" width="113" height="30" scaleImage="RetainShape" hImageAlign="Center" vImageAlign="Bottom">
-				<expression><![CDATA[($F{CODETYPE}.equals("EAN-13") ? com.openbravo.pos.util.BarcodeImage.getBarcodeEAN13($F{CODE}) :
-    ($F{CODETYPE}.equals("EAN-8") ? com.openbravo.pos.util.BarcodeImage.getBarcodeEAN8($F{CODE}) :
-        ($F{CODETYPE}.equals("UPC-A") ? com.openbravo.pos.util.BarcodeImage.getBarcodeUPCA($F{CODE}) :
-            ($F{CODETYPE}.equals("UPC-A") ? com.openbravo.pos.util.BarcodeImage.getBarcodeUPCE($F{CODE}) :
-                ($F{CODETYPE}.equals("CODE128") ? com.openbravo.pos.util.BarcodeImage.getBarcode128($F{CODE}) :
-                    com.openbravo.pos.util.BarcodeImage.getBarcodeUPCE($F{CODE})
+				<expression><![CDATA[($F{CODETYPE}.equals("EAN-13") ? com.openbravo.pos.graphiccode.BarcodeImage.getBarcodeEAN13($F{CODE}) :
+    ($F{CODETYPE}.equals("EAN-8") ? com.openbravo.pos.graphiccode.BarcodeImage.getBarcodeEAN8($F{CODE}) :
+        ($F{CODETYPE}.equals("UPC-A") ? com.openbravo.pos.graphiccode.BarcodeImage.getBarcodeUPCA($F{CODE}) :
+            ($F{CODETYPE}.equals("UPC-A") ? com.openbravo.pos.graphiccode.BarcodeImage.getBarcodeUPCE($F{CODE}) :
+                ($F{CODETYPE}.equals("CODE128") ? com.openbravo.pos.graphiccode.BarcodeImage.getBarcode128($F{CODE}) :
+                    com.openbravo.pos.graphiccode.BarcodeImage.getBarcodeUPCE($F{CODE})
                 )
             )
         )

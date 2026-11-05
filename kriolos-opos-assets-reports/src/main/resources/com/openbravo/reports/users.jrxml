@@ -71,7 +71,7 @@ FROM PEOPLE, ROLES WHERE PEOPLE.ROLE = ROLES.ID AND PEOPLE.VISIBLE = TRUE AND PE
 				</box>
 			</element>
 			<element kind="image" uuid="20da5902-d93e-4f05-b71e-98e39fd08ff1" key="barcode-1" x="18" y="100" width="195" height="46" scaleImage="RetainShape" hImageAlign="Center" vImageAlign="Middle">
-				<expression><![CDATA[com.openbravo.pos.util.BarcodeImage.getBarcode128($F{CARD})]]></expression>
+				<expression><![CDATA[com.openbravo.pos.graphiccode.BarcodeImage.getBarcode128($F{CARD})]]></expression>
 				<pen lineWidth="0.0" lineStyle="Solid"/>
 				<box>
 					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>

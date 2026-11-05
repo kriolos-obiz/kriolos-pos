@@ -69,7 +69,7 @@ WHERE VISIBLE = TRUE AND CARD IS NOT NULL AND CARD <> '']]></query>
 				</box>
 			</element>
 			<element kind="image" uuid="d2ed82db-a049-4c12-94f3-77a87b7a7ab3" key="barcode-1" x="27" y="107" width="195" height="34" scaleImage="RetainShape" hImageAlign="Center" vImageAlign="Middle">
-				<expression><![CDATA[com.openbravo.pos.util.BarcodeImage.getBarcode128($F{CARD})]]></expression>
+				<expression><![CDATA[com.openbravo.pos.graphiccode.BarcodeImage.getBarcode128($F{CARD})]]></expression>
 				<pen lineWidth="0.0" lineStyle="Solid"/>
 				<box>
 					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
