@@ -6,6 +6,12 @@
     "available": [],
     "completed": [
       {
+        "id": "TASK-012",
+        "agent": "antigravity",
+        "description": "KP-128: Modernize RestaurantService reservations with CreateReservationCommand and typed queries",
+        "completed_at": "2026-11-05T00:38:00Z"
+      },
+      {
         "id": "TASK-011",
         "agent": "antigravity",
         "description": "KP-128: Implement UpdatePlacePositionCommand, modernize RestaurantService & PlaceService ports, and update callers",

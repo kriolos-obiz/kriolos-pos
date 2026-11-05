@@ -179,7 +179,7 @@ public class DataLogicCustomers extends BeanFactoryDataSingle implements Custome
      * @deprecated Use {@link RestaurantService#getReservationsList()} instead.
      */
     @Deprecated
-    public final SentenceList getReservationsList() {
+    public final SentenceList<Object[]> getReservationsList() {
         return getRestaurantService().getReservationsList();
     }
 
