@@ -10,7 +10,29 @@ public interface CashManagementService {
 
     void addCloseCash(CashRegister cash) throws BasicException;
     
-    void closeCash(String host, int sequence, String money, Date dateEnd, int noSales) throws BasicException;
+    /**
+     * Closes an active cash session using a validated command record.
+     *
+     * @param command close cash command
+     * @throws BasicException on persistence error
+     */
+    void closeCash(CloseCashCommand command) throws BasicException;
+
+    /**
+     * Closes an active cash session.
+     *
+     * @param host terminal host identifier
+     * @param sequence cash sequence number
+     * @param money money token/ID
+     * @param dateEnd closing timestamp
+     * @param noSales count of no-sales
+     * @throws BasicException on persistence error
+     * @deprecated Use {@link #closeCash(CloseCashCommand)}
+     */
+    @Deprecated(since = "2.4.0", forRemoval = false)
+    default void closeCash(String host, int sequence, String money, Date dateEnd, int noSales) throws BasicException {
+        closeCash(CloseCashCommand.of(host, sequence, money, dateEnd, noSales));
+    }
     
     boolean isCashActive(String id) throws BasicException;
 

@@ -13,6 +13,7 @@ import com.openbravo.data.loader.SerializerWriteBasic;
 import com.openbravo.data.loader.SerializerWriteString;
 import com.openbravo.data.loader.StaticSentence;
 import java.util.Date;
+import java.util.Objects;
 
 /**
  * Implementation of CashManagementService.
@@ -37,8 +38,8 @@ public class CashManagementServiceImpl implements CashManagementService {
     }
 
     @Override
-    public void closeCash(String host, int sequence, String money, Date dateEnd, int noSales) throws BasicException {
-        // Update closedcash
+    public void closeCash(CloseCashCommand command) throws BasicException {
+        Objects.requireNonNull(command, "CloseCashCommand must not be null");
         new StaticSentence(session,
                 "UPDATE closedcash SET DATEEND = ?, NOSALES = ? WHERE HOST = ? AND MONEY = ?",
                 new SerializerWriteBasic(new Datas[]{
@@ -46,11 +47,13 @@ public class CashManagementServiceImpl implements CashManagementService {
             Datas.INT,
             Datas.STRING,
             Datas.STRING}))
-                .exec(new Object[]{dateEnd, noSales, host, money});
+                .exec(new Object[]{command.dateEnd(), command.noSales(), command.host(), command.money()});
+    }
 
-        // Note: The logic for creating the NEXT cash sequence is typically handled by the AppView
-        // after this method returns, or could be encapsulated here if we pass more context.
-        // For now, we replicate the specific UPDATE logic from JPanelCloseMoney.
+    @Override
+    @Deprecated(since = "2.4.0", forRemoval = false)
+    public void closeCash(String host, int sequence, String money, Date dateEnd, int noSales) throws BasicException {
+        closeCash(CloseCashCommand.of(host, sequence, money, dateEnd, noSales));
     }
 
     @Override

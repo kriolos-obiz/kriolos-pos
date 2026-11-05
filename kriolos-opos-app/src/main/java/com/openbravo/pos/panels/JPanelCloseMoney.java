@@ -41,6 +41,7 @@ import javax.swing.border.EmptyBorder;
 import com.openbravo.pos.cash.CashManagementService;
 import com.openbravo.pos.cash.CashManagementServiceImpl;
 import com.openbravo.pos.cash.CashRegister;
+import com.openbravo.pos.cash.CloseCashCommand;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumnModel;
 
@@ -387,11 +388,12 @@ public class JPanelCloseMoney extends JPanel implements JPanelView, BeanFactoryA
 
                 if (appView.getActiveCashDateEnd() == null) {
                     String closedCashId = appView.getActiveCashIndex();
-                    cashManagementService.closeCash(appView.getProperties().getHost(),
+                    cashManagementService.closeCash(CloseCashCommand.of(
+                            appView.getProperties().getHost(),
                             0, // sequence not used in update
                             closedCashId,
                             dNow,
-                            numOfNoSales);
+                            numOfNoSales));
 
                     // Persist immutable WORM financial snapshot for audit compliance (#117)
                     if (paymentsToClose != null) {

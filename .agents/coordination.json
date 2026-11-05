@@ -6,6 +6,12 @@
     "available": [],
     "completed": [
       {
+        "id": "TASK-017",
+        "agent": "antigravity",
+        "description": "KP-128: Modernize CashManagementService with CloseCashCommand",
+        "completed_at": "2026-11-05T02:30:00Z"
+      },
+      {
         "id": "TASK-015",
         "agent": "antigravity",
         "description": "KP-128: Modernize AttributeService with CreateAttributeSetInstanceCommand",
