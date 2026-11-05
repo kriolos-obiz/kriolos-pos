@@ -13,6 +13,7 @@ import com.openbravo.pos.container.BeanFactoryException;
 import com.openbravo.pos.container.BeanFactoryApp;
 import com.openbravo.basic.AppLocal;
 import com.openbravo.pos.admin.DataLogicSystem;
+import com.openbravo.pos.admin.RecordDrawerOpenedCommand;
 import com.openbravo.pos.admin.SystemService;
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.gui.MessageInf;
@@ -433,7 +434,7 @@ public class JPanelCloseMoney extends JPanel implements JPanelView, BeanFactoryA
                 cashManagementService.addCloseCash(cash);
                 
                 if (systemService != null) {
-                    systemService.execDrawerOpened(appView.getAppUserView().getUser().getName(), "Close Cash", dNow);
+                    systemService.execDrawerOpened(new RecordDrawerOpenedCommand(appView.getAppUserView().getUser().getName(), "Close Cash", dNow));
                 }
 
                 // ponemos la fecha de fin

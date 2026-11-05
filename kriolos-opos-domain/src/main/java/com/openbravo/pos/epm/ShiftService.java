@@ -55,13 +55,25 @@ public interface ShiftService {
     boolean isCheckedIn(String userId) throws BasicException;
 
     /**
+     * Starts a break for the employee's current active shift using an immutable command record.
+     *
+     * @param command break initiation command
+     * @throws BasicException if database operation fails
+     */
+    void startBreak(StartBreakCommand command) throws BasicException;
+
+    /**
      * Starts a break for the employee's current active shift.
      *
      * @param userId employee identifier
      * @param breakId break type identifier
      * @throws BasicException if database operation fails
+     * @deprecated Use {@link #startBreak(StartBreakCommand)} instead.
      */
-    void startBreak(String userId, String breakId) throws BasicException;
+    @Deprecated
+    default void startBreak(String userId, String breakId) throws BasicException {
+        startBreak(new StartBreakCommand(userId, breakId));
+    }
 
     /**
      * Ends the active break for the employee's current shift.
@@ -207,14 +219,14 @@ public interface ShiftService {
      *
      * @return breaks table definition
      */
-    TableDefinition getTableBreaks();
+    TableDefinition<BreaksInfo> getTableBreaks();
 
     /**
      * Returns the table definition for leaves.
      *
      * @return leaves table definition
      */
-    TableDefinition getTableLeaves();
+    TableDefinition<LeavesInfo> getTableLeaves();
 
     /**
      * Creates a list provider for employee lookup and filtering.
@@ -222,5 +234,5 @@ public interface ShiftService {
      * @param filter editor creator containing search parameters
      * @return list provider
      */
-    ListProvider getEmployeeListProvider(EditorCreator filter);
+    ListProvider<EmployeeInfoExt> getEmployeeListProvider(EditorCreator<?> filter);
 }

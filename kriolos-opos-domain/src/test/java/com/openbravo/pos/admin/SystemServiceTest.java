@@ -119,7 +119,7 @@ class SystemServiceTest {
             }
 
             @Override
-            public void execDrawerOpened(String name, String action, Date openDate) {
+            public void execDrawerOpened(RecordDrawerOpenedCommand command) {
             }
 
             @Override
@@ -223,5 +223,74 @@ class SystemServiceTest {
         service.execUpdatePermissions(new Object[]{"r2", "<perm2/>"});
         assertEquals("r2", lastPermissionsCmd.get().roleId());
         assertEquals("<perm2/>", lastPermissionsCmd.get().permissionsXml());
+    }
+
+    @Test
+    @DisplayName("RecordDrawerOpenedCommand should enforce invariants and immutability")
+    void shouldEnforceRecordDrawerOpenedCommandInvariants() {
+        assertThrows(NullPointerException.class,
+                () -> new RecordDrawerOpenedCommand(null, "No Sale", new Date()),
+                "Null name should throw NullPointerException");
+        assertThrows(IllegalArgumentException.class,
+                () -> new RecordDrawerOpenedCommand("", "No Sale", new Date()),
+                "Empty name should throw IllegalArgumentException");
+        assertThrows(IllegalArgumentException.class,
+                () -> new RecordDrawerOpenedCommand("   ", "No Sale", new Date()),
+                "Blank name should throw IllegalArgumentException");
+
+        Date now = new Date();
+        RecordDrawerOpenedCommand cmd = RecordDrawerOpenedCommand.of("Manager", "Refund", now);
+        assertEquals("Manager", cmd.name());
+        assertEquals("Refund", cmd.action());
+        assertEquals(now, cmd.openDate());
+
+        // Defensive copy test
+        long time = cmd.openDate().getTime();
+        cmd.openDate().setTime(time + 10000);
+        assertEquals(time, cmd.openDate().getTime(), "Mutation of returned Date should not affect record state");
+
+        // Null openDate defaults to non-null current date
+        RecordDrawerOpenedCommand cmd2 = RecordDrawerOpenedCommand.of("Cashier", "Cash Sale");
+        assertNotNull(cmd2.openDate());
+    }
+
+    @Test
+    @DisplayName("SystemService should dispatch RecordDrawerOpenedCommand and delegate legacy overload")
+    void shouldDispatchDrawerOpenedCommand() throws BasicException {
+        final RecordDrawerOpenedCommand[] captured = new RecordDrawerOpenedCommand[1];
+        SystemService service = new SystemService() {
+            @Override public String getDBVersion() { return "1.0"; }
+            @Override public String findVersion() { return "1.0"; }
+            @Override public String getUser() { return "admin"; }
+            @Override public void execDrawerOpened(RecordDrawerOpenedCommand command) { captured[0] = command; }
+            @Override public TableDefinition<ResourceInfo> getTableResources() { return null; }
+            @Override public String getResourceAsXML(String sName) { return null; }
+            @Override public String getResourceAsText(String sName) { return null; }
+            @Override public byte[] getResourceAsBinary(String sName) { return null; }
+            @Override public java.awt.image.BufferedImage getResourceAsImage(String sName) { return null; }
+            @Override public java.util.Properties getResourceAsProperties(String sName) { return null; }
+            @Override public void setResource(String name, int type, byte[] data) {}
+            @Override public void setResourceAsBinary(String sName, byte[] data) {}
+            @Override public void setResourceAsProperties(String sName, java.util.Properties p) {}
+            @Override public java.util.List<AppUser> listPeopleVisible() { return java.util.Collections.emptyList(); }
+            @Override public AppUser findPeopleByCard(String card) { return null; }
+            @Override public String findRolePermissions(String sRole) { return null; }
+            @Override public java.util.List<String> getPermissions(String role) { return java.util.Collections.emptyList(); }
+            @Override public void execChangePassword(ChangePasswordCommand command) {}
+            @Override public void execUpdatePermissions(UpdateRolePermissionsCommand command) {}
+        };
+
+        Date now = new Date();
+        RecordDrawerOpenedCommand command = RecordDrawerOpenedCommand.of("admin", "Open Drawer", now);
+        service.execDrawerOpened(command);
+        assertNotNull(captured[0]);
+        assertEquals("admin", captured[0].name());
+        assertEquals("Open Drawer", captured[0].action());
+
+        captured[0] = null;
+        service.execDrawerOpened("cashier1", "Close Cash", now);
+        assertNotNull(captured[0]);
+        assertEquals("cashier1", captured[0].name());
+        assertEquals("Close Cash", captured[0].action());
     }
 }

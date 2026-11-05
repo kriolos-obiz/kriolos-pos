@@ -6,6 +6,12 @@
     "available": [],
     "completed": [
       {
+        "id": "TASK-014",
+        "agent": "antigravity",
+        "description": "KP-128: Modernize ShiftService with StartBreakCommand and SystemService with RecordDrawerOpenedCommand",
+        "completed_at": "2026-11-05T01:39:00Z"
+      },
+      {
         "id": "TASK-013",
         "agent": "antigravity",
         "description": "KP-128: Modernize VoucherService with CreateVoucherCommand, DeactivateVoucherCommand, and generic TableDefinition",

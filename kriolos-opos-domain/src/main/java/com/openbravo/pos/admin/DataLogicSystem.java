@@ -364,12 +364,20 @@ public class DataLogicSystem extends BeanFactoryDataSingle implements SystemServ
      * @param drawer
      * @throws BasicException
      */
-    public final void execDrawerOpened(String name, String action, Date openDate) throws BasicException {
+    @Override
+    public final void execDrawerOpened(RecordDrawerOpenedCommand command) throws BasicException {
+        Objects.requireNonNull(command, "command must not be null");
         final SentenceExec m_draweropened = new PreparedSentence<>(this.session,
                 "INSERT INTO draweropened ( NAME, TICKETID, OPENDATE) "
                 + "VALUES (?, ?, ?)",
                 new SerializerWriteBasic(new Datas[]{Datas.STRING, Datas.STRING, Datas.TIMESTAMP}));
-        m_draweropened.exec(new Object[]{name, action, openDate});
+        m_draweropened.exec(new Object[]{command.name(), command.action(), command.openDate()});
+    }
+
+    @Override
+    @Deprecated
+    public final void execDrawerOpened(String name, String action, Date openDate) throws BasicException {
+        execDrawerOpened(new RecordDrawerOpenedCommand(name, action, openDate));
     }
 
 //// </editor-fold> 
