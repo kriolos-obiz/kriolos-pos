@@ -20,6 +20,7 @@ import com.openbravo.data.loader.DataRead;
 import com.openbravo.data.loader.Datas;
 import com.openbravo.data.loader.PreparedSentence;
 import com.openbravo.data.loader.SerializerRead;
+import com.openbravo.data.loader.SerializerWriteBasic;
 import com.openbravo.data.loader.SerializerWriteString;
 import com.openbravo.data.loader.Session;
 import com.openbravo.data.loader.StaticSentence;
@@ -28,6 +29,7 @@ import com.openbravo.format.Formats;
 import com.openbravo.basic.AppLocal;
 import com.openbravo.pos.container.BeanFactoryDataSingle;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Legacy DataLogic provider implementing {@link VoucherService}.
@@ -37,7 +39,7 @@ import java.util.List;
 public class DataLogicVouchers extends BeanFactoryDataSingle implements VoucherService {
 
     private Session sessionDB;
-    private TableDefinition tableVouchers;
+    private TableDefinition<VoucherInfo> tableVouchers;
 
     @Override
     public void init(Session sessionDB) {
@@ -71,14 +73,30 @@ public class DataLogicVouchers extends BeanFactoryDataSingle implements VoucherS
     }
 
     @Override
-    public int deactivateVoucher(String voucherNumber) throws BasicException {
-        return updateVoucherNonActive(voucherNumber, this.sessionDB);
+    public void createVoucher(CreateVoucherCommand command) throws BasicException {
+        Objects.requireNonNull(command, "command must not be null");
+        new PreparedSentence(sessionDB,
+                "INSERT INTO vouchers (ID, VOUCHER_NUMBER, CUSTOMER, AMOUNT, STATUS) VALUES (?, ?, ?, ?, ?)",
+                new SerializerWriteBasic(new Datas[]{Datas.STRING, Datas.STRING, Datas.STRING, Datas.DOUBLE, Datas.STRING}))
+                .exec(new Object[]{command.id(), command.voucherNumber(), command.customerId(), command.amount(), command.status()});
     }
 
     @Override
-    public TableDefinition getTableVouchers() {
+    public int deactivateVoucher(DeactivateVoucherCommand command) throws BasicException {
+        Objects.requireNonNull(command, "command must not be null");
+        return updateVoucherNonActive(command.voucherNumber(), this.sessionDB);
+    }
+
+    @Override
+    @Deprecated
+    public int deactivateVoucher(String voucherNumber) throws BasicException {
+        return deactivateVoucher(new DeactivateVoucherCommand(voucherNumber));
+    }
+
+    @Override
+    public TableDefinition<VoucherInfo> getTableVouchers() {
         if (tableVouchers == null) {
-            tableVouchers = new TableDefinition(sessionDB,
+            tableVouchers = new TableDefinition<>(sessionDB,
                     "vouchers",
                     new String[]{"ID", "VOUCHER_NUMBER", "CUSTOMER", "AMOUNT", "STATUS"},
                     new String[]{"ID", AppLocal.getIntString("label.Number"), AppLocal.getIntString("label.customer"), AppLocal.getIntString("label.paymenttotal"), AppLocal.getIntString("label.status")},

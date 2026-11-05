@@ -85,18 +85,39 @@ public interface VoucherService {
     }
 
     /**
+     * Issues and persists a new voucher using an immutable command record.
+     *
+     * @param command voucher creation details
+     * @throws BasicException if database access or constraint fails
+     */
+    void createVoucher(CreateVoucherCommand command) throws BasicException;
+
+    /**
+     * Deactivates (marks as redeemed / 'D') a voucher using an immutable command record.
+     *
+     * @param command voucher deactivation details
+     * @return number of records affected
+     * @throws BasicException if database access fails
+     */
+    int deactivateVoucher(DeactivateVoucherCommand command) throws BasicException;
+
+    /**
      * Deactivates (marks as redeemed / 'D') a voucher by its voucher number.
      *
      * @param voucherNumber the voucher number to deactivate
      * @return number of records affected
      * @throws BasicException if database access fails
+     * @deprecated Use {@link #deactivateVoucher(DeactivateVoucherCommand)} instead.
      */
-    int deactivateVoucher(String voucherNumber) throws BasicException;
+    @Deprecated
+    default int deactivateVoucher(String voucherNumber) throws BasicException {
+        return deactivateVoucher(new DeactivateVoucherCommand(voucherNumber));
+    }
 
     /**
      * Returns the table definition metadata for the vouchers entity.
      *
      * @return table definition for vouchers
      */
-    TableDefinition getTableVouchers();
+    TableDefinition<VoucherInfo> getTableVouchers();
 }
