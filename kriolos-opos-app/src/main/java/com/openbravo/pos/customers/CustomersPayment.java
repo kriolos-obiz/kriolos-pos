@@ -38,6 +38,7 @@ import com.openbravo.pos.spi.hardware.printer.TicketPrinterException;
 import com.openbravo.pos.scripting.ScriptEngine;
 import com.openbravo.pos.scripting.ScriptException;
 import com.openbravo.pos.scripting.ScriptFactory;
+import com.openbravo.pos.sales.SaveTicketCommand;
 import com.openbravo.pos.ticket.TicketInfo;
 import com.openbravo.util.RoundUtils;
 import java.awt.Dimension;
@@ -734,7 +735,7 @@ public class CustomersPayment extends javax.swing.JPanel implements JPanelView, 
             ticket.setCustomer(customerext);
 
             try {
-                ticketLifecycleService.saveTicket(ticket, app.getInventoryLocation());
+                ticketLifecycleService.saveTicket(SaveTicketCommand.of(ticket, app.getInventoryLocation()));
             } catch (BasicException eData) {
                 MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE, AppLocal.getIntString("message.nosaveticket"),
                         eData);
@@ -812,7 +813,7 @@ public class CustomersPayment extends javax.swing.JPanel implements JPanelView, 
                 ticket.setCustomer(customerext);
 
                 try {
-                    ticketLifecycleService.saveTicket(ticket, app.getInventoryLocation());
+                    ticketLifecycleService.saveTicket(SaveTicketCommand.of(ticket, app.getInventoryLocation()));
                 } catch (BasicException eData) {
                     MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE,
                             AppLocal.getIntString("message.nosaveticket"), eData);

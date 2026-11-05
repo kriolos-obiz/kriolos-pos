@@ -6,6 +6,12 @@
     "available": [],
     "completed": [
       {
+        "id": "TASK-018",
+        "agent": "antigravity",
+        "description": "KP-128: Modernize TicketLifecycleService with SaveTicketCommand and DeleteTicketCommand",
+        "completed_at": "2026-11-05T03:27:00Z"
+      },
+      {
         "id": "TASK-017",
         "agent": "antigravity",
         "description": "KP-128: Modernize CashManagementService with CloseCashCommand",

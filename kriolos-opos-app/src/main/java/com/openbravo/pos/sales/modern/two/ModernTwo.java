@@ -43,6 +43,7 @@ import com.openbravo.pos.sales.JProductLineEditPanel;
 import com.openbravo.pos.sales.SalesService;
 import com.openbravo.pos.sales.SalesServiceImpl;
 import com.openbravo.pos.sales.SaveSharedTicketCommand;
+import com.openbravo.pos.sales.SaveTicketCommand;
 import com.openbravo.pos.sales.SharedTicketInfo;
 import com.openbravo.pos.sales.SharedTicketService;
 import com.openbravo.pos.sales.TaxService;
@@ -557,7 +558,7 @@ public class ModernTwo extends JPanel implements JPanelView, TicketsEditor {
 
             try {
                 if (ticketLifecycleService != null) {
-                    ticketLifecycleService.saveTicket(activeTicket, app.getInventoryLocation());
+                    ticketLifecycleService.saveTicket(SaveTicketCommand.of(activeTicket, app.getInventoryLocation()));
                 }
 
                 if (paymentDialog.isPrintSelected()) {

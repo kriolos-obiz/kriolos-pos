@@ -39,6 +39,7 @@ import com.openbravo.pos.sales.JProductLineEditPanel;
 import com.openbravo.pos.sales.SalesService;
 import com.openbravo.pos.sales.SalesServiceImpl;
 import com.openbravo.pos.sales.SaveSharedTicketCommand;
+import com.openbravo.pos.sales.SaveTicketCommand;
 import com.openbravo.pos.sales.SharedTicketService;
 import com.openbravo.pos.sales.TaxService;
 import com.openbravo.pos.sales.TaxesException;
@@ -433,7 +434,7 @@ public class ModernOne extends JPanel implements JPanelView, TicketsEditor {
 
             try {
                 // Persist ticket into database
-                ticketLifecycleService.saveTicket(activeTicket, app.getInventoryLocation());
+                ticketLifecycleService.saveTicket(SaveTicketCommand.of(activeTicket, app.getInventoryLocation()));
 
                 // Print receipt
                 printReceipt(activeTicket);

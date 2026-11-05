@@ -142,7 +142,7 @@ public class SalesPaymentCoordinator {
             }
 
             try {
-                ticketLifecycleService.saveTicket(ticket, app.getInventoryLocation());
+                ticketLifecycleService.saveTicket(SaveTicketCommand.of(ticket, app.getInventoryLocation()));
             } catch (BasicException ex) {
                 LOGGER.log(Level.ERROR, "Exception on save ticket ", ex);
                 new MessageInf(MessageInf.SGN_NOTICE, AppLocal.getIntString("message.nosaveticket"), ex).show(parent);

@@ -61,6 +61,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -655,14 +656,16 @@ public class DataLogicSales extends BeanFactoryDataSingle implements TicketLifec
     }
 
     /**
-     * Save Ticket information (Receipt, Payments, Ticket, TaxLine, TicketLine,
-     * Customer debt, Voucher)
+     * Saves and commits a finalized ticket using an immutable command record.
      *
-     * @param ticket
-     * @param location
-     * @throws BasicException
+     * @param command save ticket command
+     * @throws BasicException on persistence error
      */
-    public final void saveTicket(final TicketInfo ticket, final String location) throws BasicException {
+    @Override
+    public final void saveTicket(final SaveTicketCommand command) throws BasicException {
+        Objects.requireNonNull(command, "command cannot be null");
+        final TicketInfo ticket = command.ticket();
+        final String location = command.location();
 
         Transaction t = new Transaction(sessionDB) {
             @Override
@@ -840,6 +843,11 @@ public class DataLogicSales extends BeanFactoryDataSingle implements TicketLifec
         t.execute();
     }
 
+    @Override
+    public final void saveTicket(final TicketInfo ticket, final String location) throws BasicException {
+        saveTicket(new SaveTicketCommand(ticket, location));
+    }
+
     private int insertTicketTaxLine(String ticketId, String taxId, Double taxableAmount, Double taxAmount) throws BasicException {
 
         // TAX Lines
@@ -868,12 +876,16 @@ public class DataLogicSales extends BeanFactoryDataSingle implements TicketLifec
     }
 
     /**
+     * Deletes a ticket and reverses stock/payment side-effects using an immutable command record.
      *
-     * @param ticket
-     * @param location
-     * @throws BasicException
+     * @param command delete ticket command
+     * @throws BasicException on persistence error
      */
-    public final void deleteTicket(final TicketInfo ticket, final String location) throws BasicException {
+    @Override
+    public final void deleteTicket(final DeleteTicketCommand command) throws BasicException {
+        Objects.requireNonNull(command, "command cannot be null");
+        final TicketInfo ticket = command.ticket();
+        final String location = command.location();
 
         Transaction t;
         t = new Transaction(sessionDB) {
@@ -965,6 +977,11 @@ public class DataLogicSales extends BeanFactoryDataSingle implements TicketLifec
             }
         };
         t.execute();
+    }
+
+    @Override
+    public final void deleteTicket(final TicketInfo ticket, final String location) throws BasicException {
+        deleteTicket(new DeleteTicketCommand(ticket, location));
     }
 
     /**
