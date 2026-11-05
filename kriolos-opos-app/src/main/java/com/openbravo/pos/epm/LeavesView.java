@@ -26,13 +26,12 @@ import java.awt.Component;
 import java.util.Date;
 import java.util.UUID;
 import java.util.Calendar;
-import org.netbeans.validation.api.builtin.stringvalidation.StringValidators;
 
 /**
  *
  * @author Ali Safdar and Aneeqa Baber
  */
-public final class LeavesView extends com.openbravo.pos.panels.ValidationPanel implements EditorRecord {
+public final class LeavesView extends javax.swing.JPanel implements EditorRecord {
 
     private String leaveId;
     private String m_employeeid;
@@ -71,10 +70,7 @@ public final class LeavesView extends com.openbravo.pos.panels.ValidationPanel i
     }
 
     private void initValidator() {
-        org.netbeans.validation.api.ui.ValidationGroup valGroup = getValidationGroup();
-        valGroup.add(m_jEmployeeName, StringValidators.REQUIRE_NON_EMPTY_STRING);
-        valGroup.add(m_jStartDate, StringValidators.REQUIRE_NON_EMPTY_STRING);
-        valGroup.add(m_jEndDate, StringValidators.REQUIRE_NON_EMPTY_STRING);
+        // Validation managed via com.openbravo.ui binding and validation framework
     }
     void activate() throws BasicException {
     }

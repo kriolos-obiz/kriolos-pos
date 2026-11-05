@@ -17,10 +17,15 @@
 package com.openbravo.pos.imports;
 
 import com.openbravo.basic.BasicException;
+import com.openbravo.data.loader.Session;
 import com.openbravo.pos.panels.AppView;
 import com.openbravo.pos.container.BeanContainer;
 import java.lang.reflect.Proxy;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -86,4 +91,46 @@ class ImportServiceTest {
         assertEquals("CUST001", customerRef.get()[0]);
         assertEquals("Customer A", customerRef.get()[1]);
     }
+
+    @Test
+    @DisplayName("Typed stock import entry persists the existing column mapping")
+    void testTypedStockImportEntryPersistsFields() throws Exception {
+        String databaseName = "stock_import_" + UUID.randomUUID().toString().replace("-", "");
+        Session session = new Session("jdbc:hsqldb:mem:" + databaseName + ";sql.syntax_mys=true", "SA", "");
+        try {
+            try (Statement statement = session.getConnection().createStatement()) {
+                statement.executeUpdate("CREATE TABLE csvimport ("
+                        + "ID VARCHAR(36) PRIMARY KEY, "
+                        + "ROWNUMBER VARCHAR(32), "
+                        + "CSVERROR VARCHAR(255), "
+                        + "REFERENCE VARCHAR(255), "
+                        + "CODE VARCHAR(255), "
+                        + "PRICEBUY DOUBLE)");
+            }
+
+            DataLogicImport service = new DataLogicImport();
+            service.init(session);
+            service.execCSVStockUpdate(new StockQuantityImportEntry(
+                    "row-1", "12", "Qty update", "location-1", "barcode-1", 4.5));
+
+            try (PreparedStatement query = session.getConnection().prepareStatement(
+                    "SELECT ID, ROWNUMBER, CSVERROR, REFERENCE, CODE, PRICEBUY FROM csvimport WHERE ID = ?")) {
+                query.setString(1, "row-1");
+                try (ResultSet result = query.executeQuery()) {
+                    assertTrue(result.next());
+                    assertEquals("row-1", result.getString("ID"));
+                    assertEquals("12", result.getString("ROWNUMBER"));
+                    assertEquals("Qty update", result.getString("CSVERROR"));
+                    assertEquals("location-1", result.getString("REFERENCE"));
+                    assertEquals("barcode-1", result.getString("CODE"));
+                    assertEquals(4.5, result.getDouble("PRICEBUY"));
+                    assertFalse(result.next());
+                }
+            }
+        } finally {
+            session.close();
+        }
+    }
+
 }
+

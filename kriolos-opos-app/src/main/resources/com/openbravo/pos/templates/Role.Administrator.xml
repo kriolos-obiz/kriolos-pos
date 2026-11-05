@@ -33,6 +33,7 @@
     <class name="com.openbravo.pos.panels.JPanelPayments"/>
     <class name="com.openbravo.pos.panels.JPanelCloseMoney"/>
     <class name="com.openbravo.pos.panels.JPanelCloseMoneyReprint"/>    
+    <class name="com.openbravo.pos.panels.JPanelCashReport"/>    
 
     <class name="sales.Override"/>
     <class name="sales.ViewSharedTicket"/>
@@ -173,7 +174,7 @@
     <class name="com.openbravo.pos.imports.StockQtyImport"/>    
     <class name="com.openbravo.pos.imports.CustomerCSVImport"/>    
     <class name="com.openbravo.pos.imports.JPanelCSVCleardb"/>
-    <class name="com.unicenta.pos.transfer.Transfer"/>    
+    <class name="com.openbravo.pos.transfer.Transfer"/>    
     <class name="/com/openbravo/reports/tools_newproducts.bs"/>
     <class name="/com/openbravo/reports/tools_updatedprices.bs"/>
     <class name="/com/openbravo/reports/tools_inventoryqtyupdate.bs"/>

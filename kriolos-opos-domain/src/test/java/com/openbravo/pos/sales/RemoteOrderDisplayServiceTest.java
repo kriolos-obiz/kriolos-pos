@@ -136,10 +136,10 @@ class RemoteOrderDisplayServiceTest {
         public TicketInfo loadLastTicket(int ticketType) { return null; }
 
         @Override
-        public void saveTicket(TicketInfo ticket, String location) {}
+        public void saveTicket(SaveTicketCommand command) {}
 
         @Override
-        public void deleteTicket(TicketInfo ticket, String location) {}
+        public void deleteTicket(DeleteTicketCommand command) {}
 
         @Override
         public com.openbravo.data.loader.SentenceList<com.openbravo.pos.ticket.FindTicketsInfo> getTicketsList() { return null; }

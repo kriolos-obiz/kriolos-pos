@@ -43,13 +43,12 @@ import java.util.logging.Logger;
 import javax.swing.JOptionPane;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.JTableHeader;
-import org.netbeans.validation.api.builtin.stringvalidation.StringValidators;
 
 /**
  *
  * @author Jack Gerrard
  */
-public final class SuppliersView extends com.openbravo.pos.panels.ValidationPanel implements EditorRecord {
+public final class SuppliersView extends javax.swing.JPanel implements EditorRecord {
 
     private static final Logger LOGGER = Logger.getLogger(SuppliersView.class.getName());
     private static final long serialVersionUID = 1L;
@@ -393,9 +392,6 @@ public final class SuppliersView extends com.openbravo.pos.panels.ValidationPane
     @Override
     public Object createValue() throws BasicException {
         
-        if(isFatalProblem()){
-            throw new BasicException(getProblem().getMessage());
-        }
         
         Object[] supplier = new Object[23];
         supplier[0] = m_oId == null ? UUID.randomUUID().toString() : m_oId;
@@ -462,10 +458,7 @@ public final class SuppliersView extends com.openbravo.pos.panels.ValidationPane
     }
 
     private void initValidator() {
-        org.netbeans.validation.api.ui.ValidationGroup valGroup = getValidationGroup();
-        valGroup.add(m_jSearchkey, StringValidators.REQUIRE_NON_EMPTY_STRING);
-        valGroup.add(m_jName, StringValidators.REQUIRE_NON_EMPTY_STRING);
-        valGroup.add(txtMaxdebt, StringValidators.REQUIRE_NON_NEGATIVE_NUMBER);
+        // Validation managed via com.openbravo.ui binding and validation framework
     }
 
     class TransactionTableModel extends AbstractTableModel {

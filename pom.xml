@@ -32,7 +32,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding> <!-- Centralizes the target Java version for compliance -->
         <maven.compiler.release>17</maven.compiler.release>
 
-        <netbeans.version>RELEASE240</netbeans.version>
 
         <project.github-url>http://kriolos.github.io/kriolos-opos</project.github-url>
 
@@ -66,9 +65,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <!-- flatlaf config -->
         <flatlaf.version>2.6</flatlaf.version>
 
-        <!-- MicroProfile Config & SmallRye Config -->
-        <microprofile-config.version>3.1.1</microprofile-config.version>
-        <smallrye-config.version>3.18.0</smallrye-config.version>
+        <!-- jackson config -->
+        <jackson.version>2.22.3</jackson.version>
 
     </properties>
 
@@ -305,29 +303,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             </dependency>
             
             <dependency>
-                <groupId>org.eclipse.microprofile.config</groupId>
-                <artifactId>microprofile-config-api</artifactId>
-                <version>${microprofile-config.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.smallrye.config</groupId>
-                <artifactId>smallrye-config</artifactId>
-                <version>${smallrye-config.version}</version>
-            </dependency>
-            
-            <dependency>
                 <groupId>org.jspecify</groupId>
                 <artifactId>jspecify</artifactId>
                 <version>1.0.0</version>
                 <scope>provided</scope>
             </dependency>
 
-            <!-- Netbeans Module - Swing Validation: On NBM Need extra lib -->
-            <dependency>
-                <groupId>org.netbeans.modules</groupId>
-                <artifactId>org-netbeans-modules-swing-validation</artifactId>
-                <version>${netbeans.version}</version>
-            </dependency>
 
             <!-- JAXB version:2.3.3 Provide javax. packages-->
             <dependency>
@@ -392,6 +373,23 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                 <groupId>com.formdev</groupId>
                 <artifactId>flatlaf-extras</artifactId>
                 <version>${flatlaf.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
+                <version>${jackson.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-jsr310</artifactId>
+                <version>${jackson.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

@@ -213,9 +213,9 @@ public abstract class JPanelReport extends JPanel implements JPanelView, BeanFac
                 setVisibleFilter(false);
             
 
-        } catch (MissingResourceException |BasicException ex) {
-            LOGGER.log(Level.SEVERE, "Exception lauch report file: "+reportFilename, ex);
-            MessageInf.showDialogWarn(this, "<html>"+AppLocal.getIntString("message.cannotloadreportdata") + "<br>"+reportFilename, ex);
+        } catch (Throwable ex) {
+            LOGGER.log(Level.SEVERE, "Exception launch report file: " + reportFilename, ex);
+            MessageInf.showDialogWarn(this, "<html>" + AppLocal.getIntString("message.cannotloadreportdata") + "<br>" + reportFilename, ex);
         } finally {
             m_App.waitCursorEnd();
         }

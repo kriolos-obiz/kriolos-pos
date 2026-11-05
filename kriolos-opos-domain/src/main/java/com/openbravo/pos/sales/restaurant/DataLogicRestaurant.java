@@ -37,7 +37,12 @@ import com.openbravo.data.user.SaveProvider;
 import com.openbravo.format.Formats;
 import com.openbravo.basic.AppLocal;
 import com.openbravo.pos.container.BeanFactoryDataSingle;
+import com.openbravo.pos.customers.ReservationInfo;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Data access logic for Restaurant / Hospitality domain (Floors, Places, Reservations).
@@ -79,16 +84,59 @@ public class DataLogicRestaurant extends BeanFactoryDataSingle implements Restau
     }
 
     @Override
-    public ListProvider getReservationsListProvider(EditorCreator filter) {
+    public List<ReservationInfo> getReservationsList(Date dateStart, Date dateEnd) throws BasicException {
+        List<Object[]> rows = getReservationsList().list(new Object[]{dateStart, dateEnd});
+        if (rows == null) {
+            return Collections.emptyList();
+        }
+        List<ReservationInfo> list = new ArrayList<>(rows.size());
+        for (Object[] row : rows) {
+            ReservationInfo info = new ReservationInfo((String) row[0]);
+            info.setCreatedDate((Date) row[1]);
+            info.setDateNew((Date) row[2]);
+            info.setTaxId((String) row[4]);
+            info.setCustomerSearchKey((String) row[5]);
+            info.setName((String) row[6]);
+            info.setNumChairs(row[7] instanceof Number ? ((Number) row[7]).intValue() : 1);
+            info.setDone(Boolean.TRUE.equals(row[8]));
+            info.setDescription((String) row[9]);
+            list.add(info);
+        }
+        return list;
+    }
+
+    @Override
+    public void createReservation(CreateReservationCommand command) throws BasicException {
+        Objects.requireNonNull(command, "command must not be null");
+        Object[] params = new Object[]{
+            command.id(),
+            command.createdDate(),
+            command.reservationDate(),
+            command.customerId(),
+            null,
+            null,
+            command.title(),
+            command.chairs(),
+            command.isDone(),
+            command.description()
+        };
+        getReservationsInsert().exec(params);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public ListProvider<Object[]> getReservationsListProvider(EditorCreator<?> filter) {
         return new ListProviderCreator(getReservationsList(), filter);
     }
 
     @Override
-    public SaveProvider getReservationsSaveProvider() {
+    @SuppressWarnings("unchecked")
+    public SaveProvider<Object[]> getReservationsSaveProvider() {
         return new DefaultSaveProvider(getReservationsUpdate(), getReservationsInsert(), getReservationsDelete());
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public SentenceList<FloorsInfo> getFloorsList() {
         return new StaticSentence(sessionDB,
                 "SELECT ID, NAME FROM floors ORDER BY NAME",
@@ -96,6 +144,8 @@ public class DataLogicRestaurant extends BeanFactoryDataSingle implements Restau
                 new SerializerReadClass(FloorsInfo.class));
     }
 
+    @Override
+    @SuppressWarnings("unchecked")
     public SentenceList<FloorsInfo> getFloorTablesList() {
         return new StaticSentence(sessionDB,
                 "SELECT ID, NAME, SEATS FROM places ORDER BY NAME",
@@ -103,8 +153,9 @@ public class DataLogicRestaurant extends BeanFactoryDataSingle implements Restau
                 new SerializerReadClass(FloorsInfo.class));
     }
 
-    public TableDefinition getTableFloors() {
-        return new TableDefinition(sessionDB,
+    @Override
+    public TableDefinition<FloorsInfo> getTableFloors() {
+        return new TableDefinition<>(sessionDB,
                 "floors",
                 new String[]{"ID", "NAME", "IMAGE"},
                 new String[]{"ID", AppLocal.getIntString("label.name"), "IMAGE"},
@@ -113,8 +164,9 @@ public class DataLogicRestaurant extends BeanFactoryDataSingle implements Restau
                 new int[]{0});
     }
 
-    public TableDefinition getTablePlaces() {
-        return new TableDefinition(sessionDB,
+    @Override
+    public TableDefinition<Place> getTablePlaces() {
+        return new TableDefinition<>(sessionDB,
                 "places",
                 new String[]{"ID", "NAME", "SEATS", "X", "Y", "FLOOR"},
                 new String[]{"ID", AppLocal.getIntString("label.name"),
@@ -126,8 +178,9 @@ public class DataLogicRestaurant extends BeanFactoryDataSingle implements Restau
                 new int[]{0});
     }
 
-    public SentenceList getReservationsList() {
-        return new PreparedSentence(sessionDB,
+    @Override
+    public SentenceList<Object[]> getReservationsList() {
+        return new PreparedSentence<>(sessionDB,
                 "SELECT "
                 + "R.ID, R.CREATED, R.DATENEW, C.CUSTOMER, customers.TAXID, customers.SEARCHKEY, "
                 + "COALESCE(customers.NAME, R.TITLE),  R.CHAIRS, R.ISDONE, R.DESCRIPTION "
@@ -191,10 +244,18 @@ public class DataLogicRestaurant extends BeanFactoryDataSingle implements Restau
         };
     }
 
-    public void updatePlaces(int x, int y, String id) throws BasicException {
+    @Override
+    public void updatePlaces(UpdatePlacePositionCommand command) throws BasicException {
+        Objects.requireNonNull(command, "command must not be null");
         new StaticSentence(this.sessionDB,
                 "UPDATE PLACES SET X = ?, Y = ? WHERE ID = ?",
                 new SerializerWriteBasic(new Datas[]{Datas.INT, Datas.INT, Datas.STRING}))
-                .exec(new Object[]{x, y, id});
+                .exec(new Object[]{command.x(), command.y(), command.id()});
+    }
+
+    @Override
+    @Deprecated
+    public void updatePlaces(int x, int y, String id) throws BasicException {
+        updatePlaces(new UpdatePlacePositionCommand(id, x, y));
     }
 }

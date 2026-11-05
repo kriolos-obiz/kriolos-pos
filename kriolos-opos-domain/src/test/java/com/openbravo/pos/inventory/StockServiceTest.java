@@ -34,6 +34,7 @@ class StockServiceTest {
     private static class MockStockService implements StockService {
         final List<StockEntry> addedEntries = new ArrayList<>();
         final List<String> movements = new ArrayList<>();
+        final List<StockAdjustmentCommand> adjustments = new ArrayList<>();
 
         @Override
         public ProductStock getStock(String productId, String locationId) {
@@ -72,7 +73,10 @@ class StockServiceTest {
         }
 
         @Override
-        public void adjustStock(Object[] params) {
+        public void adjustStock(StockAdjustmentCommand command) {
+            if (command != null) {
+                adjustments.add(command);
+            }
         }
 
         @Override
@@ -122,6 +126,53 @@ class StockServiceTest {
         assertEquals(2, service.movements.size());
         assertEquals("mov-1:p-1:-5.0", service.movements.get(0));
         assertEquals("revert:mov-1", service.movements.get(1));
+    }
+
+    @Test
+    @DisplayName("StockAdjustmentCommand validates non-null and non-blank invariants")
+    void testStockAdjustmentCommandInvariants() {
+        assertThrows(IllegalArgumentException.class, () -> new StockAdjustmentCommand(null, "loc-1", null, 10.0));
+        assertThrows(IllegalArgumentException.class, () -> new StockAdjustmentCommand("", "loc-1", null, 10.0));
+        assertThrows(IllegalArgumentException.class, () -> new StockAdjustmentCommand("p-1", null, null, 10.0));
+        assertThrows(IllegalArgumentException.class, () -> new StockAdjustmentCommand("p-1", "   ", null, 10.0));
+
+        StockAdjustmentCommand cmd = StockAdjustmentCommand.of("p-1", "loc-1", 15.5);
+        assertEquals("p-1", cmd.productId());
+        assertEquals("loc-1", cmd.locationId());
+        assertNull(cmd.attributeSetInstanceId());
+        assertEquals(15.5, cmd.units());
+    }
+
+    @Test
+    @DisplayName("StockService adjustStock with StockAdjustmentCommand dispatches correctly")
+    void testAdjustStockCommandDispatch() throws BasicException {
+        MockStockService service = new MockStockService();
+        StockAdjustmentCommand cmd = new StockAdjustmentCommand("p-100", "loc-warehouse", "attr-9", -3.0);
+
+        service.adjustStock(cmd);
+
+        assertEquals(1, service.adjustments.size());
+        StockAdjustmentCommand recorded = service.adjustments.get(0);
+        assertEquals("p-100", recorded.productId());
+        assertEquals("loc-warehouse", recorded.locationId());
+        assertEquals("attr-9", recorded.attributeSetInstanceId());
+        assertEquals(-3.0, recorded.units());
+    }
+
+    @Test
+    @DisplayName("StockService adjustStock legacy array adapter delegates to typed method")
+    void testAdjustStockLegacyAdapter() throws BasicException {
+        MockStockService service = new MockStockService();
+        Object[] legacyParams = new Object[]{"p-200", "loc-shelf", "attr-2", 8.0};
+
+        service.adjustStock(legacyParams);
+
+        assertEquals(1, service.adjustments.size());
+        StockAdjustmentCommand recorded = service.adjustments.get(0);
+        assertEquals("p-200", recorded.productId());
+        assertEquals("loc-shelf", recorded.locationId());
+        assertEquals("attr-2", recorded.attributeSetInstanceId());
+        assertEquals(8.0, recorded.units());
     }
 
     @Test

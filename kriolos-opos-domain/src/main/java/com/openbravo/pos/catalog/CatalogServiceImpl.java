@@ -144,7 +144,7 @@ public class CatalogServiceImpl extends BeanFactoryDataSingle implements Catalog
     }
 
     @Override
-    public SaveProvider getProductSaveProvider() {
+    public SaveProvider<Object[]> getProductSaveProvider() {
         return dataLogicProducts.getProductSaveProvider();
     }
 

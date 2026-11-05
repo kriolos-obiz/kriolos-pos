@@ -30,9 +30,31 @@ import java.math.RoundingMode;
 public abstract class AmountCalculatorUtil {
 
     // Define the scale (number of decimal places) for financial calculations
-    private static final int SCALE = 4;
+    public static final int SCALE = 4;
     // Define the rounding mode
-    private static final RoundingMode ROUNDING_MODE = RoundingMode.HALF_UP;
+    public static final RoundingMode ROUNDING_MODE = RoundingMode.HALF_UP;
+    
+    /**
+     * Converts a legacy double value safely to BigDecimal without IEEE 754 precision loss.
+     * Uses String.valueOf(value) representation.
+     *
+     * @param value double value to convert
+     * @return safe BigDecimal representation
+     */
+    public static BigDecimal toBigDecimal(double value) {
+        return new BigDecimal(String.valueOf(value));
+    }
+
+    /**
+     * Converts a legacy double value safely to BigDecimal with standard SCALE (4) and HALF_UP rounding.
+     *
+     * @param value double value to convert
+     * @param scale decimal scale
+     * @return safe BigDecimal representation rounded to specified scale
+     */
+    public static BigDecimal toBigDecimal(double value, int scale) {
+        return new BigDecimal(String.valueOf(value)).setScale(scale, ROUNDING_MODE);
+    }
     
 
     

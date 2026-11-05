@@ -27,7 +27,8 @@
                     #set ($vatinfo ="2")	
             #elseif (${ticketline.getTaxInfo().getRate()}==0.2)
                     #set ($vatinfo ="3")
-            #else #set ($vatinfo ="1")
+            #else 
+                    #set ($vatinfo ="1")
             #end
              #if ($ticketline.isProductCom()) 
                  <line price="${ticketline.getValue()}" units="${ticketline.getMultiply()}" tax="${vatinfo}">*${ticketline.printName()}</line>

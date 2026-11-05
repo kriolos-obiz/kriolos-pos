@@ -26,6 +26,7 @@ import com.openbravo.basic.AppLocal;
 import com.openbravo.pos.container.BeanFactoryDataSingle;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -56,8 +57,8 @@ public class DataLogicPresenceManagement extends BeanFactoryDataSingle implement
     private SentenceFind m_breakname;
     
     private SerializerRead breakread;
-    private TableDefinition tbreaks;
-    private TableDefinition tleaves;
+    private TableDefinition<BreaksInfo> tbreaks;
+    private TableDefinition<LeavesInfo> tleaves;
 
     public DataLogicPresenceManagement() {
     }
@@ -246,10 +247,17 @@ public class DataLogicPresenceManagement extends BeanFactoryDataSingle implement
     }
 
     @Override
-    public final void startBreak(String userId, String breakId) throws BasicException {
-        String shiftId = getShiftId(userId);
-        Object[] value = new Object[] {UUID.randomUUID().toString(), shiftId, breakId, new Date()};
+    public final void startBreak(StartBreakCommand command) throws BasicException {
+        Objects.requireNonNull(command, "command must not be null");
+        String shiftId = getShiftId(command.userId());
+        Object[] value = new Object[] {UUID.randomUUID().toString(), shiftId, command.breakId(), new Date()};
         m_startbreak.exec(value);
+    }
+
+    @Override
+    @Deprecated
+    public final void startBreak(String userId, String breakId) throws BasicException {
+        startBreak(new StartBreakCommand(userId, breakId));
     }
 
     @Deprecated
@@ -394,7 +402,8 @@ public class DataLogicPresenceManagement extends BeanFactoryDataSingle implement
     }
 
     @Override
-    public ListProvider getEmployeeListProvider(EditorCreator filter) {
+    @SuppressWarnings("unchecked")
+    public ListProvider<EmployeeInfoExt> getEmployeeListProvider(EditorCreator<?> filter) {
         return new ListProviderCreator(getEmployeeList(), filter);
     }
 
@@ -412,12 +421,12 @@ public class DataLogicPresenceManagement extends BeanFactoryDataSingle implement
     }
 
     @Override
-    public TableDefinition getTableBreaks() {
+    public TableDefinition<BreaksInfo> getTableBreaks() {
         return tbreaks;
     }
 
     @Override
-    public TableDefinition getTableLeaves() {
+    public TableDefinition<LeavesInfo> getTableLeaves() {
         return tleaves;
     }
 

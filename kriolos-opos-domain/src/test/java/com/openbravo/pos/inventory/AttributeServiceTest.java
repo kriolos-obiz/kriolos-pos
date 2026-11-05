@@ -73,16 +73,14 @@ class AttributeServiceTest {
         }
 
         @Override
-        public String findOrCreateAttributeSetInstance(String attributeSetId, String description, List<AttributeInstEntry> entries) throws BasicException {
-            if (description == null || description.trim().isEmpty()) {
+        public String findOrCreateAttributeSetInstance(CreateAttributeSetInstanceCommand command) throws BasicException {
+            if (command.description() == null || command.description().trim().isEmpty()) {
                 return null;
             }
-            if ("existing-desc".equals(description)) {
+            if ("existing-desc".equals(command.description())) {
                 return "inst-existing";
             }
-            if (entries != null) {
-                createdEntries.addAll(entries);
-            }
+            createdEntries.addAll(command.entries());
             return "inst-new-123";
         }
     }
@@ -133,5 +131,58 @@ class AttributeServiceTest {
         assertNotNull(bean, "BeanContainer should resolve AttributeService");
         assertInstanceOf(DataLogicAttribute.class, bean, "AttributeService should resolve to DataLogicAttribute");
         assertInstanceOf(AttributeService.class, bean, "DataLogicAttribute should implement AttributeService");
+    }
+
+    @Test
+    @DisplayName("CreateAttributeSetInstanceCommand should enforce invariants and immutability")
+    void shouldEnforceCreateAttributeSetInstanceCommandInvariants() {
+        assertThrows(NullPointerException.class,
+                () -> new CreateAttributeSetInstanceCommand(null, "desc", List.of()),
+                "Null attributeSetId should throw NullPointerException");
+        assertThrows(IllegalArgumentException.class,
+                () -> new CreateAttributeSetInstanceCommand("", "desc", List.of()),
+                "Empty attributeSetId should throw IllegalArgumentException");
+        assertThrows(IllegalArgumentException.class,
+                () -> new CreateAttributeSetInstanceCommand("   ", "desc", List.of()),
+                "Blank attributeSetId should throw IllegalArgumentException");
+
+        // Null description defaults to empty string
+        CreateAttributeSetInstanceCommand nullDescCmd = new CreateAttributeSetInstanceCommand("set-1", null, null);
+        assertEquals("", nullDescCmd.description());
+        assertNotNull(nullDescCmd.entries());
+        assertTrue(nullDescCmd.entries().isEmpty());
+
+        // Defensive copy test
+        java.util.ArrayList<AttributeInstEntry> mutableList = new java.util.ArrayList<>();
+        mutableList.add(new AttributeInstEntry("attr-1", "Red"));
+        CreateAttributeSetInstanceCommand cmd = CreateAttributeSetInstanceCommand.of("set-1", "Color: Red", mutableList);
+        assertEquals(1, cmd.entries().size());
+
+        mutableList.add(new AttributeInstEntry("attr-2", "Large"));
+        assertEquals(1, cmd.entries().size(), "Modifying original list should not affect command record entries");
+        assertThrows(UnsupportedOperationException.class,
+                () -> cmd.entries().add(new AttributeInstEntry("attr-3", "Silk")),
+                "Command entries list must be unmodifiable");
+    }
+
+    @Test
+    @DisplayName("Should dispatch CreateAttributeSetInstanceCommand via typed port method")
+    void shouldDispatchCreateAttributeSetInstanceCommand() throws BasicException {
+        MockAttributeService service = new MockAttributeService();
+        List<AttributeInstEntry> entries = List.of(new AttributeInstEntry("a1", "Green"));
+
+        CreateAttributeSetInstanceCommand cmd = CreateAttributeSetInstanceCommand.of("s1", "new-desc", entries);
+        String id = service.findOrCreateAttributeSetInstance(cmd);
+        assertEquals("inst-new-123", id);
+        assertEquals(1, service.createdEntries.size());
+        assertEquals("Green", service.createdEntries.get(0).value());
+
+        // Existing
+        CreateAttributeSetInstanceCommand existingCmd = CreateAttributeSetInstanceCommand.of("s1", "existing-desc", List.of());
+        assertEquals("inst-existing", service.findOrCreateAttributeSetInstance(existingCmd));
+
+        // Blank/null description returns null
+        CreateAttributeSetInstanceCommand blankCmd = CreateAttributeSetInstanceCommand.of("s1", "   ", List.of());
+        assertNull(service.findOrCreateAttributeSetInstance(blankCmd));
     }
 }

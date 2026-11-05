@@ -29,7 +29,9 @@ import com.openbravo.basic.BasicException;
 import com.openbravo.format.Formats;
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -197,6 +199,67 @@ public class GraphicCode {
         
         return  bitMatrix != null ? MatrixToImageWriter.toBufferedImage(bitMatrix) : null;
     }
+    
+    
+    public static BufferedImage generateQRCode(String text, int width, int height, CodePosition position) throws Exception {
+        QRCodeWriter qrCodeWriter = new QRCodeWriter();
+        BitMatrix bitMatrix = qrCodeWriter.encode(text, BarcodeFormat.QR_CODE, width, height);
+        BufferedImage qrImg = MatrixToImageWriter.toBufferedImage(bitMatrix);
+        return addHumanReadableText(qrImg, text, position);
+    }
+
+    public static BufferedImage generateBarcode(String text, int width, int height, CodePosition position) throws Exception {
+        Code128Writer barcodeWriter = new Code128Writer();
+        BitMatrix bitMatrix = barcodeWriter.encode(text, BarcodeFormat.CODE_128, width, height);
+        BufferedImage barcodeImg = MatrixToImageWriter.toBufferedImage(bitMatrix);
+        return addHumanReadableText(barcodeImg, text, position);
+    }
+    
+    // Adiciona o texto legível por humanos ao redor de qualquer BufferedImage (QR ou Barcode)
+    private static BufferedImage addHumanReadableText(BufferedImage codeImg, String text, CodePosition position) {
+        if (position == CodePosition.NONE || text == null || text.trim().isEmpty()) {
+            return codeImg;
+        }
+
+        int width = codeImg.getWidth();
+        int height = codeImg.getHeight();
+        int textSpace = 20; // Espaço vertical reservado para o texto
+
+        // Criar uma nova tela estendida verticalmente
+        BufferedImage combinedImg = new BufferedImage(width, height + textSpace, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = combinedImg.createGraphics();
+
+        // Preencher o fundo de branco
+        g.setColor(Color.WHITE);
+        g.fillRect(0, 0, width, height + textSpace);
+
+        // Configurar a fonte
+        g.setColor(Color.BLACK);
+        g.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+
+        FontMetrics metrics = g.getFontMetrics();
+        int textX = (width - metrics.stringWidth(text)) / 2; // Centralizar o texto horizontalmente
+        int textY;
+        int codeY;
+
+        if (position == CodePosition.TOP) {
+            // Texto em cima, código em baixo
+            textY = metrics.getAscent() + 2;
+            codeY = textSpace;
+        } else {
+            // Texto em baixo, código em cima (CodePosition.BOTTOM)
+            codeY = 0;
+            textY = height + metrics.getAscent() + 2;
+        }
+
+        // Desenhar os elementos na nova imagem combinada
+        g.drawImage(codeImg, 0, codeY, null);
+        g.drawString(text, textX, textY);
+        g.dispose();
+
+        return combinedImg;
+    }
 
 
     private static BufferedImage createBarcode(BitMatrix bitMatrix, String codeText) {
@@ -234,5 +297,9 @@ public class GraphicCode {
         }
 
         return image;
+    }
+    
+    public enum CodePosition {
+        TOP, BOTTOM, NONE
     }
 }

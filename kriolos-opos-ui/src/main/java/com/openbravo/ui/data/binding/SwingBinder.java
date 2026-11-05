@@ -145,6 +145,47 @@ public class SwingBinder<B> {
         return true;
     }
 
+    /**
+     * Returns the current validation status for a specific UI component.
+     *
+     * @param component the component to check
+     * @return true if valid, false if invalid, null if unvalidated
+     */
+    public Boolean getValidationStatus(JComponent component) {
+        return validationMap.get(component);
+    }
+
+    /**
+     * Returns a list of all currently invalid bound UI components.
+     *
+     * @return list of components currently failing validation
+     */
+    public List<JComponent> getInvalidFields() {
+        List<JComponent> invalid = new ArrayList<>();
+        for (Map.Entry<JComponent, Boolean> entry : validationMap.entrySet()) {
+            if (Boolean.FALSE.equals(entry.getValue())) {
+                invalid.add(entry.getKey());
+            }
+        }
+        return invalid;
+    }
+
+    /**
+     * Validates all registered bindings against their constraints and updates
+     * component visual indicators.
+     *
+     * @return true if all bindings pass validation, false otherwise
+     */
+    public boolean validate() {
+        boolean allValid = true;
+        for (BindingLifecycle<B> binding : bindings) {
+            if (!binding.validateCurrentValue()) {
+                allValid = false;
+            }
+        }
+        return allValid;
+    }
+
     public BindingBuilder<B, String> forField(JTextField component) {
         return new BindingBuilder<>(component, this);
     }
@@ -201,6 +242,8 @@ public class SwingBinder<B> {
      * framework validators.
      */
     public static class ValidationException extends Exception {
+
+        private static final long serialVersionUID = 1L;
 
         public ValidationException(String message) {
             super(message);

@@ -23,7 +23,7 @@ import com.openbravo.data.gui.MessageInf;
 import com.openbravo.pos.config.JFrmConfig;
 import com.openbravo.pos.config.AppConfig;
 import com.openbravo.basic.AppLocal;
-import com.openbravo.basic.AppProperties;
+import com.openbravo.pos.spi.config.AppProperties;
 import com.openbravo.pos.admin.AppUser;
 import com.openbravo.pos.panels.AppView;
 import com.openbravo.pos.forms.ApplicationShell;
@@ -732,7 +732,7 @@ public class AuthenticationPanel extends javax.swing.JPanel {
 
         vendorImageLabel.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
         vendorImageLabel.setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/openbravo/images/logo_100×100.png"))); // NOI18N
-        org.openide.awt.Mnemonics.setLocalizedText(vendorImageLabel, AppLocal.getIntString("JAuthPanel.m_vendorImageLabel.text")); // NOI18N
+        vendorImageLabel.setText(AppLocal.getIntString("JAuthPanel.m_vendorImageLabel.text")); // NOI18N
         vendorImageLabel.setToolTipText(AppLocal.getIntString("JAuthPanel.m_vendorImageLabel.toolTipText")); // NOI18N
         vendorImageLabel.setHorizontalTextPosition(javax.swing.SwingConstants.LEFT);
         vendorImageLabel.setName("vendorImageLabel"); // NOI18N
@@ -753,7 +753,7 @@ public class AuthenticationPanel extends javax.swing.JPanel {
         leftHeaderPanel.setLayout(new java.awt.BorderLayout());
 
         headerLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        org.openide.awt.Mnemonics.setLocalizedText(headerLabel, AppLocal.getIntString("JAuthPanel.m_LoginLabel.text")); // NOI18N
+        headerLabel.setText(AppLocal.getIntString("JAuthPanel.m_LoginLabel.text")); // NOI18N
         headerLabel.setName("m_LoginLabel"); // NOI18N
         leftHeaderPanel.add(headerLabel, java.awt.BorderLayout.CENTER);
         headerLabel.getAccessibleContext().setAccessibleName(AppLocal.getIntString("AuthenticationPanel.headerLabel.AccessibleContext.accessibleName")); // NOI18N

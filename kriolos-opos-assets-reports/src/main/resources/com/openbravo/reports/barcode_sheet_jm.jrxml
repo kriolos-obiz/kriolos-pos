@@ -30,13 +30,13 @@
 				<expression><![CDATA[$F{TOTALPRICE} == null ? "0.00" : com.openbravo.format.Formats.CURRENCY.formatValue($F{TOTALPRICE}) + ""]]></expression>
 			</element>
 			<element kind="image" uuid="c1481322-43a3-410a-8db9-b90433749a30" key="image-1" x="0" y="37" width="113" height="24" scaleImage="RetainShape" hImageAlign="Center" vImageAlign="Bottom">
-				<expression><![CDATA[$F{CODETYPE} == null ? com.openbravo.pos.util.BarcodeImage.getBarcode128($F{CODE}) : (
-                                    $F{CODETYPE}.equals("EAN-13") ? com.openbravo.pos.util.BarcodeImage.getBarcodeEAN13($F{CODE}) :
-                                    $F{CODETYPE}.equals("EAN-8")  ? com.openbravo.pos.util.BarcodeImage.getBarcodeEAN8($F{CODE}) :
-                                    $F{CODETYPE}.equals("UPC-A")  ? com.openbravo.pos.util.BarcodeImage.getBarcodeUPCA($F{CODE}) :
-                                    $F{CODETYPE}.equals("UPC-E")  ? com.openbravo.pos.util.BarcodeImage.getBarcodeUPCE($F{CODE}) :
-                                    $F{CODETYPE}.equals("CODE128")? com.openbravo.pos.util.BarcodeImage.getBarcode128($F{CODE}) :
-                                    com.openbravo.pos.util.BarcodeImage.getBarcode128($F{CODE})
+				<expression><![CDATA[$F{CODETYPE} == null ? com.openbravo.pos.graphiccode.BarcodeImage.getBarcode128($F{CODE}) : (
+                                    $F{CODETYPE}.equals("EAN-13") ? com.openbravo.pos.graphiccode.BarcodeImage.getBarcodeEAN13($F{CODE}) :
+                                    $F{CODETYPE}.equals("EAN-8")  ? com.openbravo.pos.graphiccode.BarcodeImage.getBarcodeEAN8($F{CODE}) :
+                                    $F{CODETYPE}.equals("UPC-A")  ? com.openbravo.pos.graphiccode.BarcodeImage.getBarcodeUPCA($F{CODE}) :
+                                    $F{CODETYPE}.equals("UPC-E")  ? com.openbravo.pos.graphiccode.BarcodeImage.getBarcodeUPCE($F{CODE}) :
+                                    $F{CODETYPE}.equals("CODE128")? com.openbravo.pos.graphiccode.BarcodeImage.getBarcode128($F{CODE}) :
+                                    com.openbravo.pos.graphiccode.BarcodeImage.getBarcode128($F{CODE})
                                 )]]></expression>
 			</element>
 		</band>

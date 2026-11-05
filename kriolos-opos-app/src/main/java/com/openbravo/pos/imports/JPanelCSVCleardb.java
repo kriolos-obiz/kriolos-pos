@@ -23,7 +23,7 @@ import com.openbravo.pos.panels.JPanelView;
 import com.openbravo.pos.config.AppConfig;
 import com.openbravo.pos.panels.AppView;
 import com.openbravo.basic.AppLocal;
-import com.openbravo.basic.AppProperties;
+import com.openbravo.pos.spi.config.AppProperties;
 import com.openbravo.basic.BasicException;
 import com.openbravo.util.AltEncrypter;
 import java.sql.Connection;

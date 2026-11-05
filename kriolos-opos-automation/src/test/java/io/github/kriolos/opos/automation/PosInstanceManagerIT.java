@@ -142,7 +142,7 @@ public class PosInstanceManagerIT {
             WindowShell rootFrame = new WindowShell(config);
             sanitizeFrame(rootFrame);
             try {
-                InstanceManager manager = new InstanceManager(rootFrame, (BootstrapConfig) config);
+                InstanceManager manager = new InstanceManager(rootFrame,config);
                 manager.registerInstance();
             } catch (Exception e) {
                 LOGGER.log(Level.WARNING, "Could not register test instance: " + e.getMessage());

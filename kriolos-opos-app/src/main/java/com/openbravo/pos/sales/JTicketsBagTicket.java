@@ -29,7 +29,7 @@ import com.openbravo.data.gui.MessageInf;
 import com.openbravo.pos.cash.CashManagementService;
 import com.openbravo.pos.cash.CashManagementServiceImpl;
 import com.openbravo.basic.AppLocal;
-import com.openbravo.basic.AppProperties;
+import com.openbravo.pos.spi.config.AppProperties;
 import com.openbravo.pos.panels.AppView;
 import com.openbravo.pos.admin.DataLogicSystem;
 import com.openbravo.pos.resources.ResourceService;
@@ -173,7 +173,7 @@ public class JTicketsBagTicket extends JTicketsBag {
         if (m_ticketCopy != null) {
             // Para editar borramos el ticket anterior
             try {
-                ticketLifecycleService.deleteTicket(m_ticketCopy, m_App.getInventoryLocation());
+                ticketLifecycleService.deleteTicket(DeleteTicketCommand.of(m_ticketCopy, m_App.getInventoryLocation()));
             } catch (BasicException eData) {
                 LOGGER.log(Level.WARNING, null, eData);
                 MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE, AppLocal.getIntString("message.nosaveticket"),

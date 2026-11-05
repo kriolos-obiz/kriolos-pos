@@ -30,6 +30,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -52,10 +53,65 @@ class CustomerServiceTest {
         assertInstanceOf(CustomerService.class, bean, "DataLogicCustomers should implement CustomerService");
     }
 
+    @Nested
+    @DisplayName("CustomerDebtUpdateCommand Invariant and Immutability Tests")
+    class CommandInvariantTests {
+
+        @Test
+        @DisplayName("Should create valid command with expected values")
+        void shouldCreateValidCommand() {
+            Date timestamp = new Date();
+            CustomerDebtUpdateCommand command = CustomerDebtUpdateCommand.of("cust-001", 125.50, timestamp);
+
+            assertEquals("cust-001", command.customerId());
+            assertEquals(125.50, command.accumulatedDebt());
+            assertEquals(timestamp.getTime(), command.date().getTime());
+        }
+
+        @Test
+        @DisplayName("Should reject null or blank customerId")
+        void shouldRejectInvalidCustomerId() {
+            Date now = new Date();
+            assertThrows(NullPointerException.class, () -> new CustomerDebtUpdateCommand(null, 50.0, now));
+            assertThrows(IllegalArgumentException.class, () -> new CustomerDebtUpdateCommand("", 50.0, now));
+            assertThrows(IllegalArgumentException.class, () -> new CustomerDebtUpdateCommand("   ", 50.0, now));
+        }
+
+        @Test
+        @DisplayName("Should reject null accumulatedDebt")
+        void shouldRejectNullDebt() {
+            Date now = new Date();
+            assertThrows(NullPointerException.class, () -> new CustomerDebtUpdateCommand("cust-001", null, now));
+        }
+
+        @Test
+        @DisplayName("Should reject null date")
+        void shouldRejectNullDate() {
+            assertThrows(NullPointerException.class, () -> new CustomerDebtUpdateCommand("cust-001", 10.0, null));
+        }
+
+        @Test
+        @DisplayName("Should maintain defensive date copies to preserve immutability")
+        void shouldMaintainDefensiveDateCopies() {
+            Date mutableDate = new Date(100_000_000L);
+            CustomerDebtUpdateCommand command = new CustomerDebtUpdateCommand("cust-001", 20.0, mutableDate);
+
+            // Mutate input date
+            mutableDate.setTime(200_000_000L);
+            assertEquals(100_000_000L, command.date().getTime(), "Command date should not be affected by external mutation");
+
+            // Mutate returned date
+            command.date().setTime(300_000_000L);
+            assertEquals(100_000_000L, command.date().getTime(), "Command date should not be affected by accessor mutation");
+        }
+    }
+
     @Test
     @DisplayName("CustomerService mock implementation should satisfy domain contract")
     void testCustomerServiceContract() throws BasicException {
         CustomerService service = new CustomerService() {
+            private CustomerDebtUpdateCommand lastCommand;
+
             @Override
             public CustomerInfo getCustomerInfo(String id) throws BasicException {
                 CustomerInfo info = new CustomerInfo(id);
@@ -96,8 +152,16 @@ class CustomerServiceTest {
             }
 
             @Override
-            public int updateCustomerDebt(String customerId, Double accDebt, Date date) throws BasicException {
+            public int updateCustomerDebt(CustomerDebtUpdateCommand command) throws BasicException {
+                this.lastCommand = command;
                 return 1;
+            }
+
+            @Override
+            public List<CustomerInfo> findAllCustomers() throws BasicException {
+                CustomerInfo info = new CustomerInfo("c1");
+                info.setName("Test Customer");
+                return List.of(info);
             }
 
             @Override
@@ -140,7 +204,20 @@ class CustomerServiceTest {
         assertNotNull(ext);
         assertEquals("c1", ext.getId());
         assertEquals(1, service.updateCustomerExt(ext));
+
+        // Test typed command update
+        CustomerDebtUpdateCommand command = CustomerDebtUpdateCommand.of("c1", 25.0, new Date());
+        assertEquals(1, service.updateCustomerDebt(command));
+
+        // Test default legacy delegating method
         assertEquals(1, service.updateCustomerDebt("c1", 10.0, new Date()));
+
+        // Test findAllCustomers domain query
+        List<CustomerInfo> allCustomers = service.findAllCustomers();
+        assertNotNull(allCustomers);
+        assertEquals(1, allCustomers.size());
+        assertEquals("c1", allCustomers.get(0).getId());
+
         assertTrue(service.getCustomersTransactionList("c1").isEmpty());
     }
 }

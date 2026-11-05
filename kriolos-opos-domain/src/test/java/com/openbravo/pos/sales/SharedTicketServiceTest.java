@@ -92,6 +92,64 @@ class SharedTicketServiceTest {
         assertNull(service.getSharedTicket("t1"), "Deleted ticket should return null");
     }
 
+    @Test
+    @DisplayName("SaveSharedTicketCommand should enforce invariants and immutability")
+    void shouldEnforceSaveSharedTicketCommandInvariants() {
+        TicketInfo ticket = new TicketInfo();
+
+        assertThrows(NullPointerException.class,
+                () -> new SaveSharedTicketCommand(null, ticket, 1),
+                "Null id should throw NullPointerException");
+        assertThrows(IllegalArgumentException.class,
+                () -> new SaveSharedTicketCommand("", ticket, 1),
+                "Empty id should throw IllegalArgumentException");
+        assertThrows(IllegalArgumentException.class,
+                () -> new SaveSharedTicketCommand("   ", ticket, 1),
+                "Blank id should throw IllegalArgumentException");
+
+        assertThrows(NullPointerException.class,
+                () -> new SaveSharedTicketCommand("ticket-1", null, 1),
+                "Null ticket should throw NullPointerException");
+
+        assertThrows(IllegalArgumentException.class,
+                () -> new SaveSharedTicketCommand("ticket-1", ticket, -1),
+                "Negative pickupId should throw IllegalArgumentException");
+
+        SaveSharedTicketCommand cmd = SaveSharedTicketCommand.of("ticket-42", ticket, 105);
+        assertEquals("ticket-42", cmd.id());
+        assertSame(ticket, cmd.ticket());
+        assertEquals(105, cmd.pickupId());
+    }
+
+    @Test
+    @DisplayName("SharedTicketService should dispatch SaveSharedTicketCommand and delegate legacy overloads")
+    void shouldDispatchSaveSharedTicketCommands() throws BasicException {
+        MockSharedTicketService service = new MockSharedTicketService();
+        TicketInfo ticket = new TicketInfo();
+
+        SaveSharedTicketCommand cmd = SaveSharedTicketCommand.of("place-1", ticket, 50);
+        service.insertSharedTicket(cmd);
+        assertSame(ticket, service.getSharedTicket("place-1"));
+        assertEquals(50, service.getPickupId("place-1"));
+
+        TicketInfo updated = new TicketInfo();
+        SaveSharedTicketCommand updateCmd = SaveSharedTicketCommand.of("place-1", updated, 51);
+        service.updateSharedTicket(updateCmd);
+        assertSame(updated, service.getSharedTicket("place-1"));
+        assertEquals(51, service.getPickupId("place-1"));
+
+        // Restaurant typed variants
+        TicketInfo rTicket = new TicketInfo();
+        SaveSharedTicketCommand rCmd = SaveSharedTicketCommand.of("r-place", rTicket, 70);
+        service.insertRSharedTicket(rCmd);
+        assertSame(rTicket, service.getSharedTicket("r-place"));
+
+        TicketInfo rUpdated = new TicketInfo();
+        SaveSharedTicketCommand rUpdCmd = SaveSharedTicketCommand.of("r-place", rUpdated, 71);
+        service.updateRSharedTicket(rUpdCmd);
+        assertSame(rUpdated, service.getSharedTicket("r-place"));
+    }
+
     private static class MockSharedTicketService implements SharedTicketService {
         private final Map<String, TicketInfo> tickets = new HashMap<>();
         private final Map<String, Integer> pickupIds = new HashMap<>();
@@ -131,21 +189,16 @@ class SharedTicketServiceTest {
         }
 
         @Override
-        public void insertSharedTicket(String id, TicketInfo ticket, int pickupid) throws BasicException {
-            tickets.put(id, ticket);
-            pickupIds.put(id, pickupid);
-            users.put(id, "admin");
+        public void insertSharedTicket(SaveSharedTicketCommand command) throws BasicException {
+            tickets.put(command.id(), command.ticket());
+            pickupIds.put(command.id(), command.pickupId());
+            users.put(command.id(), "admin");
         }
 
         @Override
-        public void updateSharedTicket(String id, TicketInfo ticket, int pickupid) throws BasicException {
-            tickets.put(id, ticket);
-            pickupIds.put(id, pickupid);
-        }
-
-        @Override
-        public void updateRSharedTicket(String id, TicketInfo ticket, int pickupid) throws BasicException {
-            updateSharedTicket(id, ticket, pickupid);
+        public void updateSharedTicket(SaveSharedTicketCommand command) throws BasicException {
+            tickets.put(command.id(), command.ticket());
+            pickupIds.put(command.id(), command.pickupId());
         }
 
         @Override

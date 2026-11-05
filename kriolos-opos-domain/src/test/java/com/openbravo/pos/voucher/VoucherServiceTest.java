@@ -34,6 +34,8 @@ class VoucherServiceTest {
 
     private static class MockVoucherService implements VoucherService {
         String lastSuffix = null;
+        CreateVoucherCommand capturedCreate = null;
+        DeactivateVoucherCommand capturedDeactivate = null;
 
         @Override
         public List<VoucherInfo> getVoucherList() throws BasicException {
@@ -56,12 +58,18 @@ class VoucherServiceTest {
         }
 
         @Override
-        public int deactivateVoucher(String voucherNumber) throws BasicException {
+        public void createVoucher(CreateVoucherCommand command) throws BasicException {
+            this.capturedCreate = command;
+        }
+
+        @Override
+        public int deactivateVoucher(DeactivateVoucherCommand command) throws BasicException {
+            this.capturedDeactivate = command;
             return 1;
         }
 
         @Override
-        public TableDefinition getTableVouchers() {
+        public TableDefinition<VoucherInfo> getTableVouchers() {
             return null;
         }
     }
@@ -101,5 +109,80 @@ class VoucherServiceTest {
         assertNotNull(bean, "BeanContainer should resolve VoucherService");
         assertInstanceOf(DataLogicVouchers.class, bean, "VoucherService should resolve to DataLogicVouchers");
         assertInstanceOf(VoucherService.class, bean, "DataLogicVouchers should implement VoucherService");
+    }
+
+    @Test
+    @DisplayName("CreateVoucherCommand should enforce invariants")
+    void shouldEnforceCreateVoucherCommandInvariants() {
+        assertThrows(NullPointerException.class,
+                () -> new CreateVoucherCommand(null, "VO-11-26-00001", "c1", 50.0, "A"),
+                "Null id should throw NullPointerException");
+        assertThrows(IllegalArgumentException.class,
+                () -> new CreateVoucherCommand("", "VO-11-26-00001", "c1", 50.0, "A"),
+                "Empty id should throw IllegalArgumentException");
+        assertThrows(NullPointerException.class,
+                () -> new CreateVoucherCommand("v1", null, "c1", 50.0, "A"),
+                "Null voucher number should throw NullPointerException");
+        assertThrows(IllegalArgumentException.class,
+                () -> new CreateVoucherCommand("v1", "   ", "c1", 50.0, "A"),
+                "Blank voucher number should throw IllegalArgumentException");
+        assertThrows(NullPointerException.class,
+                () -> new CreateVoucherCommand("v1", "VO-11-26-00001", null, 50.0, "A"),
+                "Null customer id should throw NullPointerException");
+        assertThrows(IllegalArgumentException.class,
+                () -> new CreateVoucherCommand("v1", "VO-11-26-00001", "  ", 50.0, "A"),
+                "Blank customer id should throw IllegalArgumentException");
+        assertThrows(IllegalArgumentException.class,
+                () -> new CreateVoucherCommand("v1", "VO-11-26-00001", "c1", 0.0, "A"),
+                "Zero amount should throw IllegalArgumentException");
+        assertThrows(IllegalArgumentException.class,
+                () -> new CreateVoucherCommand("v1", "VO-11-26-00001", "c1", -15.5, "A"),
+                "Negative amount should throw IllegalArgumentException");
+
+        CreateVoucherCommand cmd = CreateVoucherCommand.of("v1", "VO-11-26-00001", "c1", 75.0);
+        assertEquals("v1", cmd.id());
+        assertEquals("VO-11-26-00001", cmd.voucherNumber());
+        assertEquals("c1", cmd.customerId());
+        assertEquals(75.0, cmd.amount());
+        assertEquals("A", cmd.status());
+    }
+
+    @Test
+    @DisplayName("DeactivateVoucherCommand should enforce invariants")
+    void shouldEnforceDeactivateVoucherCommandInvariants() {
+        assertThrows(NullPointerException.class,
+                () -> new DeactivateVoucherCommand(null),
+                "Null voucher number should throw NullPointerException");
+        assertThrows(IllegalArgumentException.class,
+                () -> new DeactivateVoucherCommand("   "),
+                "Blank voucher number should throw IllegalArgumentException");
+
+        DeactivateVoucherCommand cmd = DeactivateVoucherCommand.of("VO-11-26-00002");
+        assertEquals("VO-11-26-00002", cmd.voucherNumber());
+    }
+
+    @Test
+    @DisplayName("Should dispatch voucher commands and delegate legacy deactivation")
+    void shouldDispatchVoucherCommands() throws BasicException {
+        MockVoucherService service = new MockVoucherService();
+
+        CreateVoucherCommand createCmd = CreateVoucherCommand.of("v-99", "VO-11-26-00099", "cust-9", 150.0);
+        service.createVoucher(createCmd);
+        assertNotNull(service.capturedCreate);
+        assertEquals("v-99", service.capturedCreate.id());
+        assertEquals(150.0, service.capturedCreate.amount());
+
+        DeactivateVoucherCommand deactCmd = DeactivateVoucherCommand.of("VO-11-26-00099");
+        int count = service.deactivateVoucher(deactCmd);
+        assertEquals(1, count);
+        assertNotNull(service.capturedDeactivate);
+        assertEquals("VO-11-26-00099", service.capturedDeactivate.voucherNumber());
+
+        // Test legacy overload delegation
+        service.capturedDeactivate = null;
+        int legacyCount = service.deactivateVoucher("VO-11-26-00042");
+        assertEquals(1, legacyCount);
+        assertNotNull(service.capturedDeactivate);
+        assertEquals("VO-11-26-00042", service.capturedDeactivate.voucherNumber());
     }
 }

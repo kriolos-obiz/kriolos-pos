@@ -263,7 +263,8 @@ public class DataLogicSuppliers extends BeanFactoryDataSingle implements Supplie
         ).list(sId);
     }
 
-    public final void createSupplier(Object[] supplier) throws BasicException {
+    @Override
+    public final void createSupplier(SupplierCreateCommand supplier) throws BasicException {
         SentenceExec m_createSupp = new StaticSentence(this.s,
                 "INSERT INTO suppliers ( ID, NAME, SEARCHKEY, VISIBLE ) "
                 + "VALUES (?, ?, ?, ?)",
@@ -272,7 +273,18 @@ public class DataLogicSuppliers extends BeanFactoryDataSingle implements Supplie
             Datas.STRING,
             Datas.STRING,
             Datas.BOOLEAN}));
-        m_createSupp.exec(supplier);
+        m_createSupp.exec(new Object[]{
+            supplier.id(), supplier.name(), supplier.searchKey(), supplier.visible()});
+    }
+
+    @Override
+    @Deprecated
+    public final void createSupplier(Object[] supplier) throws BasicException {
+        createSupplier(new SupplierCreateCommand(
+                (String) supplier[0],
+                (String) supplier[1],
+                (String) supplier[2],
+                (Boolean) supplier[3]));
     }
 
     /**

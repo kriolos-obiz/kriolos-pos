@@ -38,6 +38,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  *
@@ -207,6 +208,14 @@ public class DataLogicReceipts extends BeanFactoryDataSingle implements SharedTi
         return sTicketInfo;
     }
 
+    @Override
+    public final void insertSharedTicket(SaveSharedTicketCommand command) throws BasicException {
+        Objects.requireNonNull(command, "SaveSharedTicketCommand must not be null");
+        insertSharedTicket(command.id(), command.ticket(), command.pickupId());
+    }
+
+    @Override
+    @Deprecated(since = "2.4.0", forRemoval = false)
     public final void insertSharedTicket(final String id, final TicketInfo ticket, int pickupid) throws BasicException {
         int rowsAffected;
         String SQL = "INSERT INTO sharedtickets (ID, NAME, CONTENT, APPUSER, PICKUPID) VALUES (?, ?, ?, ?, ?) ";
@@ -254,6 +263,12 @@ public class DataLogicReceipts extends BeanFactoryDataSingle implements SharedTi
         }
     }
 
+    @Override
+    public final void updateSharedTicket(SaveSharedTicketCommand command) throws BasicException {
+        Objects.requireNonNull(command, "SaveSharedTicketCommand must not be null");
+        updateSharedTicket(command.id(), command.ticket(), command.pickupId());
+    }
+
     /**
      *
      * @param id
@@ -261,6 +276,8 @@ public class DataLogicReceipts extends BeanFactoryDataSingle implements SharedTi
      * @param pickupid
      * @throws BasicException
      */
+    @Override
+    @Deprecated(since = "2.4.0", forRemoval = false)
     public final void updateSharedTicket(final String id, final TicketInfo ticket, int pickupid) throws BasicException {
 
         String SQL = "UPDATE sharedtickets SET NAME = ?, CONTENT = ?, APPUSER = ?, PICKUPID = ? WHERE ID = ?";
@@ -285,6 +302,11 @@ public class DataLogicReceipts extends BeanFactoryDataSingle implements SharedTi
         }
     }
 
+    @Override
+    public final void updateRSharedTicket(SaveSharedTicketCommand command) throws BasicException {
+        updateSharedTicket(command);
+    }
+
     /**
      *
      * @param id
@@ -292,6 +314,8 @@ public class DataLogicReceipts extends BeanFactoryDataSingle implements SharedTi
      * @param pickupid
      * @throws BasicException
      */
+    @Override
+    @Deprecated(since = "2.4.0", forRemoval = false)
     public final void updateRSharedTicket(final String id, final TicketInfo ticket, int pickupid) throws BasicException {
         updateSharedTicket(id, ticket, pickupid);
     }
@@ -355,6 +379,11 @@ public class DataLogicReceipts extends BeanFactoryDataSingle implements SharedTi
         }
     }
 
+    @Override
+    public final void insertRSharedTicket(SaveSharedTicketCommand command) throws BasicException {
+        insertSharedTicket(command);
+    }
+
     /**
      * For Restaurant View
      *
@@ -363,6 +392,8 @@ public class DataLogicReceipts extends BeanFactoryDataSingle implements SharedTi
      * @param pickupid
      * @throws BasicException
      */
+    @Override
+    @Deprecated(since = "2.4.0", forRemoval = false)
     public final void insertRSharedTicket(final String id, final TicketInfo ticket, int pickupid) throws BasicException {
         insertSharedTicket(id, ticket, pickupid);
     }

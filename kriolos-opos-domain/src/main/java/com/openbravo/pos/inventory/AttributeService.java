@@ -86,6 +86,16 @@ public interface AttributeService {
     String findAttributeSetInstanceId(String attributeSetId, String description) throws BasicException;
 
     /**
+     * Finds an existing attribute set instance or creates a new one with its associated attribute value entries
+     * using a validated command record.
+     *
+     * @param command create attribute set instance command
+     * @return attribute set instance ID, or null if description is empty
+     * @throws BasicException on persistence error
+     */
+    String findOrCreateAttributeSetInstance(CreateAttributeSetInstanceCommand command) throws BasicException;
+
+    /**
      * Finds an existing attribute set instance or creates a new one with its associated attribute value entries.
      *
      * @param attributeSetId attribute set ID
@@ -93,6 +103,13 @@ public interface AttributeService {
      * @param entries        list of attribute values
      * @return attribute set instance ID, or null if description is empty
      * @throws BasicException on persistence error
+     * @deprecated Use {@link #findOrCreateAttributeSetInstance(CreateAttributeSetInstanceCommand)}
      */
-    String findOrCreateAttributeSetInstance(String attributeSetId, String description, List<AttributeInstEntry> entries) throws BasicException;
+    @Deprecated(since = "2.4.0", forRemoval = false)
+    default String findOrCreateAttributeSetInstance(String attributeSetId, String description, List<AttributeInstEntry> entries) throws BasicException {
+        if (description == null || description.trim().isEmpty()) {
+            return null;
+        }
+        return findOrCreateAttributeSetInstance(CreateAttributeSetInstanceCommand.of(attributeSetId, description, entries));
+    }
 }

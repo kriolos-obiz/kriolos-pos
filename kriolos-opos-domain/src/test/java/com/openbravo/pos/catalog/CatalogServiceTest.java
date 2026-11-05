@@ -8,9 +8,14 @@ import com.openbravo.pos.pim.DataLogicCategories;
 import com.openbravo.pos.pim.DataLogicProducts;
 import com.openbravo.pos.pim.DataLogicUom;
 import com.openbravo.pos.ticket.ProductInfoExt;
+import com.openbravo.data.loader.Session;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.lang.reflect.Proxy;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -85,5 +90,39 @@ class CatalogServiceTest {
         ProductInfoExt product = service.getProductInfo("P001");
         assertNotNull(product);
         assertEquals("P001", product.getReference());
+    }
+
+    @Test
+    @DisplayName("Typed category creation persists the supplied fields without positional mapping")
+    void testTypedCategoryCreationPersistsFields() throws Exception {
+        String databaseName = "catalog_category_" + UUID.randomUUID().toString().replace("-", "");
+        Session session = new Session("jdbc:hsqldb:mem:" + databaseName + ";sql.syntax_mys=true", "SA", "");
+        try {
+            try (Statement statement = session.getConnection().createStatement()) {
+                statement.executeUpdate("CREATE TABLE categories ("
+                        + "ID VARCHAR(36) PRIMARY KEY, "
+                        + "NAME VARCHAR(255) NOT NULL, "
+                        + "CATSHOWNAME BOOLEAN NOT NULL)");
+            }
+
+                CatalogServiceImpl service = new CatalogServiceImpl(
+                    new DataLogicProducts(), new DataLogicCategories(), new DataLogicUom());
+            service.init(session);
+            service.createCategory("category-1", "Beverages", true);
+
+            try (PreparedStatement query = session.getConnection().prepareStatement(
+                    "SELECT ID, NAME, CATSHOWNAME FROM categories WHERE ID = ?")) {
+                query.setString(1, "category-1");
+                try (ResultSet result = query.executeQuery()) {
+                    assertTrue(result.next());
+                    assertEquals("category-1", result.getString("ID"));
+                    assertEquals("Beverages", result.getString("NAME"));
+                    assertTrue(result.getBoolean("CATSHOWNAME"));
+                    assertFalse(result.next());
+                }
+            }
+        } finally {
+            session.close();
+        }
     }
 }

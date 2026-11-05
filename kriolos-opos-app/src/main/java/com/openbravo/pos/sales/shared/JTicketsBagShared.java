@@ -25,6 +25,7 @@ import com.openbravo.beans.JPasswordPanel;
 import com.openbravo.data.gui.MessageInf;
 import com.openbravo.pos.sales.AuditService;
 import com.openbravo.pos.sales.JTicketsBag;
+import com.openbravo.pos.sales.SaveSharedTicketCommand;
 import com.openbravo.pos.sales.SharedTicketInfo;
 import com.openbravo.pos.sales.SharedTicketService;
 import com.openbravo.pos.sales.TicketLifecycleService;
@@ -196,15 +197,15 @@ public class JTicketsBagShared extends JTicketsBag {
             try {
                 
                 String ticketID = ticketInfo.getId();
-                int pickupId = ticketInfo.getPickupId();
+                SaveSharedTicketCommand cmd = SaveSharedTicketCommand.of(ticketID, ticketInfo, ticketInfo.getPickupId());
                 
                 LOGGER.log(System.Logger.Level.INFO, "Save shared ticket: "+ticketID);
                 
                 TicketInfo foundTicket = dlReceipts.getSharedTicket(ticketID);
                 if(foundTicket == null){
-                    dlReceipts.insertSharedTicket(ticketID, ticketInfo, pickupId);
+                    dlReceipts.insertSharedTicket(cmd);
                 }else {
-                    dlReceipts.updateSharedTicket(ticketID, ticketInfo, pickupId);
+                    dlReceipts.updateSharedTicket(cmd);
                 }
                 
             } catch (Exception e) {

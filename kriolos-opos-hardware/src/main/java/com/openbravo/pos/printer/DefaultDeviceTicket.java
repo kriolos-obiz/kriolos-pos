@@ -21,7 +21,7 @@ import com.openbravo.pos.spi.hardware.printer.TicketPrinterException;
 import com.openbravo.pos.spi.hardware.printer.DeviceFiscalPrinter;
 import com.openbravo.pos.spi.hardware.DeviceTicket;
 import com.openbravo.pos.spi.hardware.display.DeviceDisplay;
-import com.openbravo.basic.AppProperties;
+import com.openbravo.pos.spi.config.AppProperties;
 import com.openbravo.pos.printer.escpos.*;
 import com.openbravo.pos.printer.javapos.DevicePrinterJavaPOS;
 import com.openbravo.pos.printer.printer.DevicePrinterPrinter;

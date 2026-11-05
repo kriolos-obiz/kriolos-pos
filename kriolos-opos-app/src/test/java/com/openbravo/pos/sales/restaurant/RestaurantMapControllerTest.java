@@ -17,7 +17,7 @@
 package com.openbravo.pos.sales.restaurant;
 
 import com.openbravo.pos.customers.CustomerInfoExt;
-import com.openbravo.basic.AppProperties;
+import com.openbravo.pos.spi.config.AppProperties;
 import com.openbravo.pos.admin.AppUser;
 import com.openbravo.pos.admin.AppUserView;
 import com.openbravo.pos.panels.AppView;

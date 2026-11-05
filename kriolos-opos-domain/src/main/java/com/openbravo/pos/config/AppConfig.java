@@ -17,7 +17,7 @@ package com.openbravo.pos.config;
 
 import com.openbravo.basic.BasicException;
 import com.openbravo.basic.AppLocal;
-import com.openbravo.basic.AppProperties;
+import com.openbravo.pos.spi.config.AppProperties;
 import com.openbravo.app.config.LegacyBootstrapConfiguration;
 import com.openbravo.pos.spi.config.BootstrapConfig;
 import java.awt.Component;

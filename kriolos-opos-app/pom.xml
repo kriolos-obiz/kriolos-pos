@@ -37,9 +37,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <artifact.build.scmnumber>${git.buildNumber}</artifact.build.scmnumber>
         <artifact.build.scmrevision>${git.revision}</artifact.build.scmrevision>
         <artifact.build.scmbuildtime>${git.buildDate}</artifact.build.scmbuildtime>
-
-        
-        <mysql.version>9.2.0</mysql.version>
     </properties>
 
     <dependencies>
@@ -158,13 +155,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
-            <version>2.5.250</version>
+            <version>2.5.252</version>
             <scope>runtime</scope>
         </dependency>
+        <!-- Apache Derby 10.16.1.1 is the target release for Java 17 LTS bytecode (class format 61.0).
+             Derby 10.17+ requires Java 21 (class format 63.0), which causes UnsupportedClassVersionError
+             during ServiceLoader.load(java.sql.Driver.class) discovery on Java 17 runtimes. -->
         <dependency>
             <groupId>org.apache.derby</groupId>
             <artifactId>derby</artifactId>
-            <version>10.17.1.0</version>
+            <version>10.16.1.1</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>
@@ -184,7 +184,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <dependency>
             <groupId>org.xerial</groupId>
             <artifactId>sqlite-jdbc</artifactId>
-            <version>3.53.4.0</version>
+            <version>3.54.1.0</version>
             <scope>runtime</scope>
         </dependency>
 
@@ -232,11 +232,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             <scope>runtime</scope>
         </dependency>
 
-        <!-- Netbeans Module - Swing Validation: On NBM Need extra lib -->
-        <dependency>
-            <groupId>org.netbeans.modules</groupId>
-            <artifactId>org-netbeans-modules-swing-validation</artifactId>
-        </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
@@ -269,6 +264,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     <build>
         <finalName>kriolos-pos</finalName> 
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <useModulePath>false</useModulePath>
+                    <useSystemClassLoader>true</useSystemClassLoader>
+                    <useManifestOnlyJar>false</useManifestOnlyJar>
+                </configuration>
+            </plugin>
             <plugin> 
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
@@ -281,6 +285,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                 </executions>
                 <configuration>
                     <mainClass>com.openbravo.pos.forms.BootstrapPOS</mainClass>
+                    <classpathScope>runtime</classpathScope>
                     <!--
                    ### awt.useSystemAAFontSettings
                        on: active antialiasing default.

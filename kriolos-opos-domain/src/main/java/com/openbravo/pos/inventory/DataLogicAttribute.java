@@ -32,6 +32,7 @@ import com.openbravo.pos.container.BeanFactoryDataSingle;
 import com.openbravo.pos.inventory.AttributeInstInfo;
 import com.openbravo.pos.inventory.AttributeSetInfo;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -169,26 +170,35 @@ public class DataLogicAttribute extends BeanFactoryDataSingle implements Attribu
         }
 
         @Override
+        public String findOrCreateAttributeSetInstance(CreateAttributeSetInstanceCommand command) throws BasicException {
+                Objects.requireNonNull(command, "command must not be null");
+                String description = command.description();
+                if (description == null || description.trim().isEmpty()) {
+                        return null;
+                }
+                String id = findAttributeSetInstanceId(command.attributeSetId(), description);
+                if (id == null) {
+                        id = UUID.randomUUID().toString();
+                        attsetSave.exec(new Object[]{id, command.attributeSetId(), description});
+                        for (AttributeInstEntry entry : command.entries()) {
+                                attinstSave.exec(new Object[]{
+                                        UUID.randomUUID().toString(),
+                                        id,
+                                        entry.attributeId(),
+                                        entry.value()
+                                });
+                        }
+                }
+                return id;
+        }
+
+        @Override
+        @Deprecated(since = "2.4.0", forRemoval = false)
         public String findOrCreateAttributeSetInstance(String attributeSetId, String description, List<AttributeInstEntry> entries) throws BasicException {
                 if (description == null || description.trim().isEmpty()) {
                         return null;
                 }
-                String id = findAttributeSetInstanceId(attributeSetId, description);
-                if (id == null) {
-                        id = UUID.randomUUID().toString();
-                        attsetSave.exec(new Object[]{id, attributeSetId, description});
-                        if (entries != null) {
-                                for (AttributeInstEntry entry : entries) {
-                                        attinstSave.exec(new Object[]{
-                                                UUID.randomUUID().toString(),
-                                                id,
-                                                entry.attributeId(),
-                                                entry.value()
-                                        });
-                                }
-                        }
-                }
-                return id;
+                return findOrCreateAttributeSetInstance(CreateAttributeSetInstanceCommand.of(attributeSetId, description, entries));
         }
 
 }

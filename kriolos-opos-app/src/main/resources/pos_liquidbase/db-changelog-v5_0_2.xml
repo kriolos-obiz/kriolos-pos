@@ -29,4 +29,101 @@
             </column>
         </createTable>
     </changeSet>
+    <changeSet id="20261102-01" author="pauloborges (KP-117)">
+        <createTable tableName="closedcash_snapshot">
+            <!-- PK Técnica (UUID) -->
+            <column name="id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="pk_closedcash_snapshot"/>
+            </column>
+            
+            <!-- FK Lógica 1:1 com a sessão de fecho (antigo money) -->
+            <column name="closedcash_id" type="VARCHAR(255)">
+                <constraints nullable="false" unique="true" uniqueConstraintName="uk_ccs_closedcash_id"/>
+            </column>
+            
+            <!-- Auditoria de Terminal e Sequência Contínua -->
+            <column name="host" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="hostsequence" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            
+            <!-- Janela Temporal Imutável -->
+            <column name="datestart" type="datetime">
+                <constraints nullable="false"/>
+            </column>
+            <column name="dateend" type="datetime">
+                <constraints nullable="false"/>
+            </column>
+            
+            <!-- Totais de Alta Precisão (DECIMAL 19,4 - Agnóstico) -->
+            <column name="total_gross_sales" type="DECIMAL(19,4)" defaultValueNumeric="0.0000">
+                <constraints nullable="false"/>
+            </column>
+            <column name="total_net_sales" type="DECIMAL(19,4)" defaultValueNumeric="0.0000">
+                <constraints nullable="false"/>
+            </column>
+            <column name="total_taxes" type="DECIMAL(19,4)" defaultValueNumeric="0.0000">
+                <constraints nullable="false"/>
+            </column>
+            <column name="total_payments" type="DECIMAL(19,4)" defaultValueNumeric="0.0000">
+                <constraints nullable="false"/>
+            </column>
+            <column name="cash_in_drawer" type="DECIMAL(19,4)" defaultValueNumeric="0.0000">
+                <constraints nullable="false"/>
+            </column>
+            <column name="cash_difference" type="DECIMAL(19,4)" defaultValueNumeric="0.0000">
+                <constraints nullable="false"/>
+            </column>
+            
+            <!-- Payload Serializado com Jackson Databind (WORM) -->
+            <column name="payload" type="CLOB">
+                <constraints nullable="false"/>
+            </column>
+            <column name="payload_format" type="VARCHAR(10)" defaultValue="JSON">
+                <constraints nullable="false"/>
+            </column>
+            <column name="payload_version" type="INT" defaultValueNumeric="1">
+                <constraints nullable="false"/>
+            </column>
+            <column name="payload_checksum" type="VARCHAR(64)">
+                <constraints nullable="false"/>
+            </column>
+            
+            <!-- Slots de Extensibilidade: Document Series (#87) e Journal (#86) -->
+            <column name="series_id" type="VARCHAR(36)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="document_no" type="VARCHAR(64)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="journal_event_id" type="VARCHAR(36)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="previous_checksum" type="VARCHAR(64)">
+                <constraints nullable="true"/>
+            </column>
+            
+            <!-- Metadados de Rastreabilidade e Auditoria -->
+            <column name="app_version" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="datetime">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <!-- Índices de Auditoria e Desempenho -->
+        <createIndex indexName="idx_ccs_host_seq" tableName="closedcash_snapshot">
+            <column name="host"/>
+            <column name="hostsequence"/>
+        </createIndex>
+        <createIndex indexName="idx_ccs_dateend" tableName="closedcash_snapshot">
+            <column name="dateend"/>
+        </createIndex>
+    </changeSet>
 </databaseChangeLog>

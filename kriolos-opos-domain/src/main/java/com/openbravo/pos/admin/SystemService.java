@@ -56,12 +56,24 @@ public interface SystemService extends ResourceService, SecurityService {
     String getUser() throws BasicException;
 
     /**
+     * Records a physical cash drawer open audit event in the database using an immutable command record.
+     *
+     * @param command drawer open details
+     * @throws BasicException if a database persistence error occurs
+     */
+    void execDrawerOpened(RecordDrawerOpenedCommand command) throws BasicException;
+
+    /**
      * Records a physical cash drawer open audit event in the database.
      *
      * @param name User or terminal identifier opening the drawer
      * @param action Event description or associated receipt ID
      * @param openDate Timestamp of drawer opening
      * @throws BasicException if a database persistence error occurs
+     * @deprecated Use {@link #execDrawerOpened(RecordDrawerOpenedCommand)} instead.
      */
-    void execDrawerOpened(String name, String action, Date openDate) throws BasicException;
+    @Deprecated
+    default void execDrawerOpened(String name, String action, Date openDate) throws BasicException {
+        execDrawerOpened(new RecordDrawerOpenedCommand(name, action, openDate));
+    }
 }

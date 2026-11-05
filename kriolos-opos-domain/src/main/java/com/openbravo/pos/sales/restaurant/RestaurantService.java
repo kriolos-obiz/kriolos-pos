@@ -23,6 +23,8 @@ import com.openbravo.data.loader.TableDefinition;
 import com.openbravo.data.user.EditorCreator;
 import com.openbravo.data.user.ListProvider;
 import com.openbravo.data.user.SaveProvider;
+import com.openbravo.pos.customers.ReservationInfo;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -52,14 +54,22 @@ public interface RestaurantService {
      *
      * @return table definition for floors
      */
-    TableDefinition getTableFloors();
+    TableDefinition<FloorsInfo> getTableFloors();
 
     /**
      * Table definition for places table editing.
      *
      * @return table definition for places
      */
-    TableDefinition getTablePlaces();
+    TableDefinition<Place> getTablePlaces();
+
+    /**
+     * Updates coordinates (x, y) for a dining place/table on the visual floor plan using a typed command.
+     *
+     * @param command the update place position command
+     * @throws BasicException on database error
+     */
+    void updatePlaces(UpdatePlacePositionCommand command) throws BasicException;
 
     /**
      * Updates coordinates (x, y) for a dining place/table on the visual floor plan.
@@ -68,8 +78,30 @@ public interface RestaurantService {
      * @param y coordinate Y
      * @param id place identifier
      * @throws BasicException on database error
+     * @deprecated Use {@link #updatePlaces(UpdatePlacePositionCommand)} instead.
      */
-    void updatePlaces(int x, int y, String id) throws BasicException;
+    @Deprecated
+    default void updatePlaces(int x, int y, String id) throws BasicException {
+        updatePlaces(new UpdatePlacePositionCommand(id, x, y));
+    }
+
+    /**
+     * Retrieves reservations between date range (inclusive start, exclusive end) as domain entities.
+     *
+     * @param dateStart start date
+     * @param dateEnd   end date
+     * @return list of reservation domain entities
+     * @throws BasicException on database access error
+     */
+    List<ReservationInfo> getReservationsList(Date dateStart, Date dateEnd) throws BasicException;
+
+    /**
+     * Creates a new table reservation using an immutable command record.
+     *
+     * @param command reservation creation command
+     * @throws BasicException on database access or transaction error
+     */
+    void createReservation(CreateReservationCommand command) throws BasicException;
 
     /**
      * Returns a ListProvider for reservations filtered by date range.
@@ -77,14 +109,14 @@ public interface RestaurantService {
      * @param filter editor creator containing date range filter params
      * @return high-level ListProvider
      */
-    ListProvider getReservationsListProvider(EditorCreator filter);
+    ListProvider<Object[]> getReservationsListProvider(EditorCreator<?> filter);
 
     /**
      * Returns a SaveProvider managing insert, update, and delete transactions for reservations.
      *
      * @return high-level SaveProvider
      */
-    SaveProvider getReservationsSaveProvider();
+    SaveProvider<Object[]> getReservationsSaveProvider();
 
     /**
      * @deprecated Low-level SentenceList query for floors. Use {@link #getFloorsListAll()} instead.
@@ -99,10 +131,10 @@ public interface RestaurantService {
     SentenceList<FloorsInfo> getFloorTablesList();
 
     /**
-     * @deprecated Low-level SentenceList query for reservations. Use {@link #getReservationsListProvider(EditorCreator)} instead.
+     * @deprecated Low-level SentenceList query for reservations. Use {@link #getReservationsList(Date, Date)} or {@link #getReservationsListProvider(EditorCreator)} instead.
      */
     @Deprecated
-    SentenceList getReservationsList();
+    SentenceList<Object[]> getReservationsList();
 
     /**
      * @deprecated Low-level SentenceExec for reservation update. Use {@link #getReservationsSaveProvider()} instead.

@@ -19,7 +19,7 @@ package com.openbravo.pos.panels;
 import com.openbravo.pos.admin.AppUserView;
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.loader.Session;
-import com.openbravo.basic.AppProperties;
+import com.openbravo.pos.spi.config.AppProperties;
 import com.openbravo.pos.container.BeanFactoryException;
 import com.openbravo.pos.admin.DataLogicSystem;
 import com.openbravo.pos.spi.config.BootstrapConfig;

@@ -47,13 +47,33 @@ public interface TicketLifecycleService {
     TicketInfo loadLastTicket(int ticketType) throws BasicException;
 
     /**
+     * Saves and commits a finalized ticket into database records using an immutable command.
+     *
+     * @param command save ticket command
+     * @throws BasicException on persistence error
+     */
+    void saveTicket(SaveTicketCommand command) throws BasicException;
+
+    /**
      * Saves and commits a finalized ticket into database records (receipts, tickets, lines, taxes, payments).
      *
      * @param ticket   Ticket to persist
      * @param location Inventory warehouse location
      * @throws BasicException on persistence error
+     * @deprecated Use {@link #saveTicket(SaveTicketCommand)} instead.
      */
-    void saveTicket(TicketInfo ticket, String location) throws BasicException;
+    @Deprecated
+    default void saveTicket(TicketInfo ticket, String location) throws BasicException {
+        saveTicket(new SaveTicketCommand(ticket, location));
+    }
+
+    /**
+     * Deletes a ticket and reverses stock/payment side-effects using an immutable command.
+     *
+     * @param command delete ticket command
+     * @throws BasicException on persistence error
+     */
+    void deleteTicket(DeleteTicketCommand command) throws BasicException;
 
     /**
      * Deletes a ticket and reverses stock/payment side-effects.
@@ -61,8 +81,12 @@ public interface TicketLifecycleService {
      * @param ticket   Ticket to delete
      * @param location Inventory warehouse location
      * @throws BasicException on persistence error
+     * @deprecated Use {@link #deleteTicket(DeleteTicketCommand)} instead.
      */
-    void deleteTicket(TicketInfo ticket, String location) throws BasicException;
+    @Deprecated
+    default void deleteTicket(TicketInfo ticket, String location) throws BasicException {
+        deleteTicket(new DeleteTicketCommand(ticket, location));
+    }
 
     /**
      * Returns sentence list for query-by-filter ticket search.

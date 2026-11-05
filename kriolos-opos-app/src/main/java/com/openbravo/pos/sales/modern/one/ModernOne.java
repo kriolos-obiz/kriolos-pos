@@ -38,9 +38,14 @@ import com.openbravo.pos.ticket.TicketParser;
 import com.openbravo.pos.sales.JProductLineEditPanel;
 import com.openbravo.pos.sales.SalesService;
 import com.openbravo.pos.sales.SalesServiceImpl;
+import com.openbravo.pos.sales.SaveSharedTicketCommand;
+import com.openbravo.pos.sales.SaveTicketCommand;
 import com.openbravo.pos.sales.SharedTicketService;
 import com.openbravo.pos.sales.TaxService;
+import com.openbravo.pos.sales.TaxesException;
 import com.openbravo.pos.sales.TaxesLogic;
+import com.openbravo.pos.scripting.ScriptEngine;
+import com.openbravo.pos.scripting.ScriptFactory;
 import com.openbravo.pos.sales.TicketLifecycleService;
 import com.openbravo.pos.sales.TicketsEditor;
 import com.openbravo.pos.ticket.ProductInfoExt;
@@ -429,7 +434,7 @@ public class ModernOne extends JPanel implements JPanelView, TicketsEditor {
 
             try {
                 // Persist ticket into database
-                ticketLifecycleService.saveTicket(activeTicket, app.getInventoryLocation());
+                ticketLifecycleService.saveTicket(SaveTicketCommand.of(activeTicket, app.getInventoryLocation()));
 
                 // Print receipt
                 printReceipt(activeTicket);
@@ -454,7 +459,23 @@ public class ModernOne extends JPanel implements JPanelView, TicketsEditor {
         try {
             String template = (resourceService != null) ? resourceService.getResourceAsXML("Printer.Ticket") : null;
             if (template != null && !template.isBlank()) {
-                ticketParser.printTicket(template, ticket);
+                if (taxeslogic != null && (ticket.getTaxLines() == null || ticket.getTaxLines().length == 0)) {
+                    try {
+                        taxeslogic.calculateTaxes(ticket);
+                    } catch (TaxesException ex) {
+                        LOGGER.log(Level.FINE, "Taxes already calculated or calculation skipped", ex);
+                    }
+                }
+                ScriptEngine script = ScriptFactory.getScriptEngine(ScriptFactory.VELOCITY);
+                script.put("taxes", ticket.getTaxLines());
+                script.put("taxeslogic", taxeslogic);
+                script.put("ticket", ticket);
+                script.put("place", "");
+                script.put("warranty", false);
+                script.put("pickupid", String.valueOf(ticket.getPickupId()));
+
+                String processed = script.eval(template).toString();
+                ticketParser.printTicket(processed, ticket);
             }
         } catch (Exception e) {
             LOGGER.log(Level.WARNING, "Receipt printing failed or printer unavailable", e);
@@ -479,15 +500,15 @@ public class ModernOne extends JPanel implements JPanelView, TicketsEditor {
             try {
                 
                 String ticketID = ticketInfo.getId();
-                int pickupId = ticketInfo.getPickupId();
+                SaveSharedTicketCommand cmd = SaveSharedTicketCommand.of(ticketID, ticketInfo, ticketInfo.getPickupId());
                 
                 LOGGER.log(Level.INFO, "Save shared ticket: "+ticketID);
                 
                 TicketInfo foundTicket = dlReceipts.getSharedTicket(ticketID);
                 if(foundTicket == null){
-                    dlReceipts.insertSharedTicket(ticketID, ticketInfo, pickupId);
+                    dlReceipts.insertSharedTicket(cmd);
                 }else {
-                    dlReceipts.updateSharedTicket(ticketID, ticketInfo, pickupId);
+                    dlReceipts.updateSharedTicket(cmd);
                 }
                 
             } catch (Exception e) {

@@ -15,7 +15,7 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package com.openbravo.pos.imports;
 
-import com.openbravo.basic.AppProperties;
+import com.openbravo.pos.spi.config.AppProperties;
 import com.openbravo.basic.AppLocal;
 import com.openbravo.pos.admin.DataLogicSystem;
 import com.openbravo.pos.config.AppConfig;
@@ -634,15 +634,15 @@ public class CustomerCSVImport extends JPanel implements JPanelView {
      */
     public void createCustomerCSVEntry(String csvError, String searchKey, String Name) {
 
-        Object[] mycust = new Object[5];
-        mycust[0] = UUID.randomUUID().toString();                               // ID string
-        mycust[1] = Integer.toString(currentRecord);                            // Record number
-        mycust[2] = csvError;                                                   // Error description
-        mycust[3] = customerSearchKey;                                          // SearchKey String
-        mycust[4] = customerName;                                               // Name string
+        CustomerCsvImportEntry importEntry = new CustomerCsvImportEntry(
+                UUID.randomUUID().toString(),
+                Integer.toString(currentRecord),
+                csvError,
+                customerSearchKey,
+                customerName);
 
         try {
-            m_importService.execCustomerAddCSVEntry(mycust);
+            m_importService.execCustomerAddCSVEntry(importEntry);
         } catch (BasicException ex) {
             LOGGER.log(Level.WARNING, null, ex);
         }

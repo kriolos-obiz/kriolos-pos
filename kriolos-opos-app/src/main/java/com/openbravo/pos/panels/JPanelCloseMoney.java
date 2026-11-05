@@ -13,6 +13,7 @@ import com.openbravo.pos.container.BeanFactoryException;
 import com.openbravo.pos.container.BeanFactoryApp;
 import com.openbravo.basic.AppLocal;
 import com.openbravo.pos.admin.DataLogicSystem;
+import com.openbravo.pos.admin.RecordDrawerOpenedCommand;
 import com.openbravo.pos.admin.SystemService;
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.gui.MessageInf;
@@ -40,6 +41,7 @@ import javax.swing.border.EmptyBorder;
 import com.openbravo.pos.cash.CashManagementService;
 import com.openbravo.pos.cash.CashManagementServiceImpl;
 import com.openbravo.pos.cash.CashRegister;
+import com.openbravo.pos.cash.CloseCashCommand;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumnModel;
 
@@ -385,11 +387,33 @@ public class JPanelCloseMoney extends JPanel implements JPanelView, BeanFactoryA
             try {
 
                 if (appView.getActiveCashDateEnd() == null) {
-                    cashManagementService.closeCash(appView.getProperties().getHost(),
+                    String closedCashId = appView.getActiveCashIndex();
+                    cashManagementService.closeCash(CloseCashCommand.of(
+                            appView.getProperties().getHost(),
                             0, // sequence not used in update
-                            appView.getActiveCashIndex(),
+                            closedCashId,
                             dNow,
-                            numOfNoSales);
+                            numOfNoSales));
+
+                    // Persist immutable WORM financial snapshot for audit compliance (#117)
+                    if (paymentsToClose != null) {
+                        try {
+                            paymentsToClose.setDateEnd(dNow);
+                            com.openbravo.pos.domain.audit.ClosedCashSnapshot snapshot =
+                                    com.openbravo.pos.domain.audit.ClosedCashSnapshotFactory.createFromFinancialReport(
+                                            closedCashId,
+                                            paymentsToClose.toFinancialReport(),
+                                            appView.getProperties().getHost(),
+                                            appView.getActiveCashSequence(),
+                                            appView.getAppUserView().getUser().getName(),
+                                            "5.0.2");
+                            cashManagementService.saveSnapshot(snapshot);
+                            LOGGER.log(Level.INFO, "Persisted WORM ClosedCashSnapshot: id={0}, checksum={1}",
+                                    new Object[]{snapshot.getId(), snapshot.getPayloadChecksum()});
+                        } catch (Exception ex) {
+                            LOGGER.log(Level.SEVERE, "Failed to persist ClosedCashSnapshot for cashId=" + closedCashId, ex);
+                        }
+                    }
                 }
             } catch (BasicException e) {
                 MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE,
@@ -412,7 +436,7 @@ public class JPanelCloseMoney extends JPanel implements JPanelView, BeanFactoryA
                 cashManagementService.addCloseCash(cash);
                 
                 if (systemService != null) {
-                    systemService.execDrawerOpened(appView.getAppUserView().getUser().getName(), "Close Cash", dNow);
+                    systemService.execDrawerOpened(new RecordDrawerOpenedCommand(appView.getAppUserView().getUser().getName(), "Close Cash", dNow));
                 }
 
                 // ponemos la fecha de fin

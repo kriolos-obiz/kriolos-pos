@@ -136,7 +136,7 @@ ORDER BY
 		</element>
 	</pageFooter>
 	<summary height="654">
-		<element kind="chart" chartType="pie3D" uuid="79176a7d-a484-4c5e-9f9c-2cc329321369" mode="Transparent" x="0" y="0" width="535" height="320" showLegend="true" renderType="svg" theme="default" legendPosition="Bottom" titlePosition="Top" printRepeatedValues="false">
+		<element kind="chart" chartType="pie3D" uuid="79176a7d-a484-4c5e-9f9c-2cc329321369" mode="Transparent" x="0" y="0" width="535" height="320" showLegend="true" renderType="svg" customizerClass="com.openbravo.pos.reports.KriolosChartCustomizer" theme="default" legendPosition="Bottom" titlePosition="Top" printRepeatedValues="false">
 			<titleFont fontName="SansSerif" fontSize="12.0" pdfFontName="Helvetica" pdfEncoding="Cp1252" bold="true" pdfEmbedded="false"/>
 			<subtitleFont fontName="SansSerif" fontSize="10.0" pdfFontName="Helvetica" pdfEncoding="Cp1252" pdfEmbedded="false"/>
 			<legendFont fontName="SansSerif" fontSize="8.0" pdfFontName="Helvetica" pdfEncoding="Cp1252" pdfEmbedded="false"/>
@@ -152,29 +152,9 @@ ORDER BY
 				<itemLabel>
 					<font fontSize="8.0"/>
 				</itemLabel>
-				<seriesColor order="0" color="#8ECE4C"/>
-				<seriesColor order="1" color="#79C8D9"/>
-				<seriesColor order="2" color="#2FDE29"/>
-				<seriesColor order="3" color="#BCC30B"/>
-				<seriesColor order="4" color="#699425"/>
-				<seriesColor order="5" color="#ED8D5D"/>
-				<seriesColor order="6" color="#9344C4"/>
-				<seriesColor order="7" color="#1430C5"/>
-				<seriesColor order="8" color="#8F0B77"/>
-				<seriesColor order="9" color="#C4B65F"/>
-				<seriesColor order="10" color="#74B550"/>
-				<seriesColor order="11" color="#440AB1"/>
-				<seriesColor order="12" color="#9C73E4"/>
-				<seriesColor order="13" color="#514D7B"/>
-				<seriesColor order="14" color="#276974"/>
-				<seriesColor order="15" color="#99F90B"/>
-				<seriesColor order="16" color="#3009F0"/>
-				<seriesColor order="17" color="#5972C9"/>
-				<seriesColor order="18" color="#051F2A"/>
-				<seriesColor order="19" color="#21E5AB"/>
 			</plot>
 		</element>
-		<element kind="chart" chartType="pie3D" uuid="c31f3e88-bbcc-4b33-b617-f0feb8f4423f" positionType="FixRelativeToBottom" mode="Transparent" x="0" y="334" width="535" height="320" showLegend="true" renderType="svg" theme="default" legendPosition="Bottom" titlePosition="Top">
+		<element kind="chart" chartType="pie3D" uuid="c31f3e88-bbcc-4b33-b617-f0feb8f4423f" positionType="FixRelativeToBottom" mode="Transparent" x="0" y="334" width="535" height="320" showLegend="true" renderType="svg" customizerClass="com.openbravo.pos.reports.KriolosChartCustomizer" theme="default" legendPosition="Bottom" titlePosition="Top">
 			<titleFont fontName="SansSerif" fontSize="12.0" pdfFontName="Helvetica" pdfEncoding="Cp1252" bold="true"/>
 			<subtitleFont fontName="SansSerif" fontSize="8.0" pdfFontName="Helvetica" pdfEncoding="Cp1252" pdfEmbedded="false"/>
 			<legendFont fontName="SansSerif" fontSize="8.0" pdfFontName="Helvetica" pdfEncoding="Cp1252" pdfEmbedded="false"/>
@@ -190,26 +170,6 @@ ORDER BY
 				<itemLabel>
 					<font fontSize="8.0"/>
 				</itemLabel>
-				<seriesColor order="0" color="#221E95"/>
-				<seriesColor order="1" color="#7CAC6A"/>
-				<seriesColor order="2" color="#705E66"/>
-				<seriesColor order="3" color="#1FE9BC"/>
-				<seriesColor order="4" color="#F438AC"/>
-				<seriesColor order="5" color="#5BFA7D"/>
-				<seriesColor order="6" color="#8102B2"/>
-				<seriesColor order="7" color="#28B7A5"/>
-				<seriesColor order="8" color="#F71423"/>
-				<seriesColor order="9" color="#A22F54"/>
-				<seriesColor order="10" color="#48C216"/>
-				<seriesColor order="11" color="#0FACB1"/>
-				<seriesColor order="12" color="#58C85C"/>
-				<seriesColor order="13" color="#511287"/>
-				<seriesColor order="14" color="#90599B"/>
-				<seriesColor order="15" color="#96527D"/>
-				<seriesColor order="16" color="#FCD118"/>
-				<seriesColor order="17" color="#A06F33"/>
-				<seriesColor order="18" color="#C49752"/>
-				<seriesColor order="19" color="#830930"/>
 			</plot>
 		</element>
 	</summary>

@@ -1,0 +1,118 @@
+{
+  "protocol_version": "1.0",
+  "active_locks": [],
+  "task_queue": {
+    "in_progress": [],
+    "available": [],
+    "completed": [
+      {
+        "id": "TASK-018",
+        "agent": "antigravity",
+        "description": "KP-128: Modernize TicketLifecycleService with SaveTicketCommand and DeleteTicketCommand",
+        "completed_at": "2026-11-05T03:27:00Z"
+      },
+      {
+        "id": "TASK-017",
+        "agent": "antigravity",
+        "description": "KP-128: Modernize CashManagementService with CloseCashCommand",
+        "completed_at": "2026-11-05T02:30:00Z"
+      },
+      {
+        "id": "TASK-015",
+        "agent": "antigravity",
+        "description": "KP-128: Modernize AttributeService with CreateAttributeSetInstanceCommand",
+        "completed_at": "2026-11-05T02:22:00Z"
+      },
+      {
+        "id": "TASK-016",
+        "agent": "antigravity",
+        "description": "KP-128: Modernize SharedTicketService with SaveSharedTicketCommand",
+        "completed_at": "2026-11-05T02:14:00Z"
+      },
+      {
+        "id": "TASK-014",
+        "agent": "antigravity",
+        "description": "KP-128: Modernize ShiftService with StartBreakCommand and SystemService with RecordDrawerOpenedCommand",
+        "completed_at": "2026-11-05T01:39:00Z"
+      },
+      {
+        "id": "TASK-013",
+        "agent": "antigravity",
+        "description": "KP-128: Modernize VoucherService with CreateVoucherCommand, DeactivateVoucherCommand, and generic TableDefinition",
+        "completed_at": "2026-11-05T01:22:00Z"
+      },
+      {
+        "id": "TASK-012",
+        "agent": "antigravity",
+        "description": "KP-128: Modernize RestaurantService reservations with CreateReservationCommand and typed queries",
+        "completed_at": "2026-11-05T00:38:00Z"
+      },
+      {
+        "id": "TASK-011",
+        "agent": "antigravity",
+        "description": "KP-128: Implement UpdatePlacePositionCommand, modernize RestaurantService & PlaceService ports, and update callers",
+        "completed_at": "2026-11-04T22:46:00Z"
+      },
+      {
+        "id": "TASK-010",
+        "agent": "antigravity",
+        "description": "KP-128: Implement ChangePasswordCommand and UpdateRolePermissionsCommand and modernize SecurityService port",
+        "completed_at": "2026-11-04T21:30:00Z"
+      },
+      {
+        "id": "TASK-001",
+        "agent": "antigravity",
+        "description": "Typesafe migration for SalesPaymentCoordinator tests and CI matrix (finalized from Copilot)",
+        "completed_at": "2026-11-04T20:28:00Z"
+      },
+      {
+        "id": "TASK-006",
+        "agent": "antigravity",
+        "description": "KP-128 parameterized, database-agnostic import persistence tests for HSQLDB and SQLite (finalized from Copilot)",
+        "completed_at": "2026-11-04T20:28:00Z"
+      },
+      {
+        "id": "TASK-009",
+        "agent": "antigravity",
+        "description": "KP-128: Implement CustomerDebtUpdateCommand, modernize CustomerService port and clean query methods",
+        "completed_at": "2026-11-04T20:19:00Z"
+      },
+      {
+        "id": "TASK-007",
+        "agent": "antigravity",
+        "description": "KP-128 Phase B: Typed StockAdjustmentCommand and typesafe adjustStock in StockService",
+        "completed_at": "2026-11-04T19:03:00Z"
+      },
+      {
+        "id": "TASK-002",
+        "agent": "gemini",
+        "description": "KP-128 read-only audit: inventory public service APIs exposing Object[], raw collections, or persistence-layer types; group by module, identify callers and behavioral risks, and recommend migration order. Do not edit source, tests, CI, or documentation.",
+        "completed_at": "2026-11-04T18:44:00Z"
+      },
+      {
+        "id": "TASK-003",
+        "agent": "antigravity",
+        "description": "KP-128 Phase 2: Transaction exception safety and universal rollback on any Exception or Error",
+        "completed_at": "2026-11-04T18:34:00Z"
+      },
+      {
+        "id": "TASK-004",
+        "agent": "copilot",
+        "description": "KP-128 typed catalog and supplier command migration",
+        "completed_at": "2026-11-04T18:52:00Z"
+      },
+      {
+        "id": "TASK-005",
+        "agent": "copilot",
+        "description": "KP-128 typed stock quantity import command migration",
+        "completed_at": "2026-11-04T18:52:00Z"
+      },
+      {
+        "id": "TASK-008",
+        "agent": "copilot",
+        "description": "Document parameterized tests as a first-class repository practice",
+        "completed_at": "2026-11-04T19:32:00Z"
+      }
+    ]
+  }
+}

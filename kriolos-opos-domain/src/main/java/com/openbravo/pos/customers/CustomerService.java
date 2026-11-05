@@ -45,17 +45,67 @@ public interface CustomerService {
 
     int updateCustomerExt(CustomerInfoExt customer) throws BasicException;
 
-    int updateCustomerDebt(String customerId, Double accDebt, Date date) throws BasicException;
+    /**
+     * Updates customer accumulated debt and timestamp using a typed command record.
+     *
+     * @param command customer debt update details
+     * @return number of affected rows
+     * @throws BasicException if a database access error occurs
+     */
+    int updateCustomerDebt(CustomerDebtUpdateCommand command) throws BasicException;
+
+    /**
+     * Updates customer debt using individual parameters.
+     *
+     * @param customerId unique identifier of the customer
+     * @param accDebt    new accumulated debt balance
+     * @param date       update timestamp
+     * @return number of affected rows
+     * @throws BasicException if a database access error occurs
+     * @deprecated Use {@link #updateCustomerDebt(CustomerDebtUpdateCommand)} instead.
+     */
+    @Deprecated(since = "1.0.0")
+    default int updateCustomerDebt(String customerId, Double accDebt, Date date) throws BasicException {
+        return updateCustomerDebt(new CustomerDebtUpdateCommand(customerId, accDebt, date));
+    }
+
+    /**
+     * Retrieves all active customers in the system.
+     *
+     * @return list of active customer profiles
+     * @throws BasicException if a database access error occurs
+     */
+    List<CustomerInfo> findAllCustomers() throws BasicException;
 
     List<CustomerTransaction> getCustomersTransactionList(String customerId) throws BasicException;
 
+    /**
+     * @deprecated Direct access to persistence TableDefinition leaks data loader internals into the domain.
+     */
+    @Deprecated(since = "1.0.0")
     TableDefinition getTableCustomers();
 
+    /**
+     * @deprecated Direct access to Row metadata leaks data loader internals into the domain.
+     */
+    @Deprecated(since = "1.0.0")
     Row getCustomersRow();
 
+    /**
+     * @deprecated Direct access to SaveProvider leaks data loader internals into the domain.
+     */
+    @Deprecated(since = "1.0.0")
     SaveProvider getCustomerSaveProvider();
 
+    /**
+     * @deprecated Use {@link #findAllCustomers()} or dedicated finder queries instead of raw SentenceList.
+     */
+    @Deprecated(since = "1.0.0")
     SentenceList<CustomerInfo> getCustomerList();
 
+    /**
+     * @deprecated ListProvider couples the UI and data layer directly. Use domain-level filtered queries.
+     */
+    @Deprecated(since = "1.0.0")
     ListProvider<CustomerInfo> getCustomerListProvider(EditorCreator filter);
 }

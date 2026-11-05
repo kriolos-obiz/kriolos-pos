@@ -85,7 +85,11 @@ public class SvgIcon implements Icon {
     @Override
     public void paintIcon(Component c, Graphics g, int x, int y) {
         if (delegate != null) {
-            delegate.paintIcon(c, g, x, y);
+            try {
+                delegate.paintIcon(c, g, x, y);
+            } catch (Throwable ignored) {
+                // Defensive guard: prevent icon rendering exceptions from aborting Swing EDT repaint pipeline
+            }
         }
     }
 

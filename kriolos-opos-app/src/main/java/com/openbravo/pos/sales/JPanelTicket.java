@@ -15,7 +15,7 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package com.openbravo.pos.sales;
 
-import com.openbravo.basic.AppProperties;
+import com.openbravo.pos.spi.config.AppProperties;
 import com.openbravo.pos.resources.ResourceService;
 import com.openbravo.pos.panels.JPanelView;
 import com.openbravo.pos.admin.DataLogicSystem;
@@ -250,7 +250,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         if (m_oTicket != null) {
             String currentTicket = m_oTicket.getId();
             try {
-                dlReceipts.updateSharedTicket(currentTicket, m_oTicket, m_oTicket.getPickupId());
+                dlReceipts.updateSharedTicket(SaveSharedTicketCommand.of(currentTicket, m_oTicket, m_oTicket.getPickupId()));
             }
             catch (BasicException ex) {
                 LOGGER.log(System.Logger.Level.ERROR, "Exception on save current ticket: " + currentTicket, ex);

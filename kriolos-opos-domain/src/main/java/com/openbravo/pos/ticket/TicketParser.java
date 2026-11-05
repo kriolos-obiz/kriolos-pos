@@ -19,6 +19,7 @@ package com.openbravo.pos.ticket;
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.loader.ImageUtils;
 import com.openbravo.pos.admin.DataLogicSystem;
+import com.openbravo.pos.admin.RecordDrawerOpenedCommand;
 import com.openbravo.pos.admin.SystemService;
 import com.openbravo.pos.spi.hardware.display.DeviceDisplay;
 import com.openbravo.pos.spi.hardware.printer.DevicePrinter;
@@ -209,7 +210,7 @@ public class TicketParser extends DefaultHandler {
                 // Cashdrawer has been activated record the data in the table
                 try {
                     if (systemService != null) {
-                        systemService.execDrawerOpened(currentUser, ticketId, new Date());
+                        systemService.execDrawerOpened(new RecordDrawerOpenedCommand(currentUser, ticketId, new Date()));
                     }
                 } catch (BasicException ex) {
                     LOGGER.log(Level.SEVERE, "Failed to log drawer opened event.", ex);

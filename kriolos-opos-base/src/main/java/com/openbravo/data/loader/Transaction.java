@@ -1,5 +1,5 @@
 //    KriolOS POS
-//    Copyright (c) 2019-2023 KriolOS
+//    Copyright (c) 2019-2026 KriolOS
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -19,55 +19,83 @@ import com.openbravo.basic.BasicException;
 import java.sql.SQLException;
 
 /**
+ * Executes a unit of work inside a managed database transaction.
+ *
+ * <p>Guarantees that any checked exception, runtime exception, or error
+ * triggers a session rollback, ensuring connection state and table locks
+ * are never leaked.</p>
  *
  * @author adrianromero Created on 26 de febrero de 2007, 21:50
- * @param <T>
- *
+ * @author KriolOS Team
+ * @param <T> Transaction return type
  */
 public abstract class Transaction<T> {
 
-    private Session session;
+    private final Session session;
 
     /**
-     * Creates a new instance of Transaction
+     * Creates a new instance of Transaction.
      *
-     * @param session
+     * @param session Database session to manage
      */
     public Transaction(Session session) {
         this.session = session;
     }
 
     /**
+     * Executes the transaction with automatic begin, commit, and rollback.
      *
-     * @return @throws BasicException
+     * @return Result of the transactional execution
+     * @throws BasicException If a business or database error occurs
      */
     public final T execute() throws BasicException {
-
         if (session.isTransaction()) {
             return transact();
-        } else {
-            try {
-                session.begin();
-                T result = transact();
-                session.commit();
-                return result;
+        }
 
-            } catch (BasicException ex) {
+        boolean committed = false;
+        try {
+            session.begin();
+            T result = transact();
+            session.commit();
+            committed = true;
+            return result;
+        } catch (Throwable t) {
+            try {
+                if (session.isTransaction()) {
+                    session.rollback();
+                }
+            } catch (SQLException rollbackEx) {
+                t.addSuppressed(rollbackEx);
+            }
+
+            if (t instanceof BasicException be) {
+                throw be;
+            } else if (t instanceof RuntimeException re) {
+                throw re;
+            } else if (t instanceof Error err) {
+                throw err;
+            } else if (t instanceof SQLException se) {
+                throw new BasicException("Exception on Transaction execute", se);
+            } else {
+                throw new BasicException("Exception on Transaction execute", t);
+            }
+        } finally {
+            if (!committed && session.isTransaction()) {
                 try {
                     session.rollback();
-                } catch (SQLException exSQL) {
-                     throw new BasicException("Exception on Transaction rollback", exSQL);
+                } catch (SQLException ignored) {
+                    // Fail-safe cleanup
                 }
-                throw ex;
-            } catch (SQLException eSQL) {
-                throw new BasicException("Exception on Transaction execute", eSQL);
             }
         }
     }
 
     /**
+     * Executes the transactional operations.
      *
-     * @return @throws BasicException
+     * @return Result of the execution
+     * @throws BasicException If a business or database error occurs
      */
     protected abstract T transact() throws BasicException;
 }
