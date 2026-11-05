@@ -6,6 +6,12 @@
     "available": [],
     "completed": [
       {
+        "id": "TASK-019",
+        "agent": "antigravity",
+        "description": "KP-129: Modernize PlaceService with MoveCustomerCommand and eliminate raw JDBC in PlaceServiceImpl",
+        "completed_at": "2026-11-05T05:05:49Z"
+      },
+      {
         "id": "TASK-018",
         "agent": "antigravity",
         "description": "KP-128: Modernize TicketLifecycleService with SaveTicketCommand and DeleteTicketCommand",

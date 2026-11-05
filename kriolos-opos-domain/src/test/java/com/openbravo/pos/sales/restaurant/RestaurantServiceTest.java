@@ -209,7 +209,7 @@ class RestaurantServiceTest {
             @Override
             public List<Place> getPlaces() { return Collections.emptyList(); }
             @Override
-            public void moveCustomer(String newTable, String ticketID) {}
+            public void moveCustomer(MoveCustomerCommand command) {}
             @Override
             public void setCustomerNameInTable(String custName, String tableName) {}
             @Override

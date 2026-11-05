@@ -1,21 +1,39 @@
+/*
+ * Copyright (C) 2026 KriolOS POS
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package com.openbravo.pos.sales.restaurant;
 
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.loader.Datas;
+import com.openbravo.data.loader.PreparedSentence;
 import com.openbravo.data.loader.SerializerReadClass;
+import com.openbravo.data.loader.SerializerReadInteger;
+import com.openbravo.data.loader.SerializerReadString;
 import com.openbravo.data.loader.SerializerWriteBasic;
+import com.openbravo.data.loader.SerializerWriteString;
 import com.openbravo.data.loader.Session;
 import com.openbravo.data.loader.StaticSentence;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.List;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * Implementation of PlaceService providing SQL-safe dining table floor plan management.
+ */
 public class PlaceServiceImpl implements PlaceService {
 
     private static final Logger LOGGER = Logger.getLogger(PlaceServiceImpl.class.getName());
@@ -27,31 +45,33 @@ public class PlaceServiceImpl implements PlaceService {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public List<Floor> getFloors() throws BasicException {
-        return new StaticSentence(
+        return (List<Floor>) (List<?>) new StaticSentence(
                 dbSession,
                 "SELECT ID, NAME, IMAGE FROM floors ORDER BY NAME",
                 null,
-                new SerializerReadClass(Floor.class))
+                new SerializerReadClass<>(Floor.class))
                 .list();
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public List<Place> getPlaces() throws BasicException {
-        return new StaticSentence(
+        return (List<Place>) (List<?>) new StaticSentence(
                 dbSession,
                 "SELECT ID, NAME, SEATS, X, Y, FLOOR, CUSTOMER, WAITER, TICKETID, TABLEMOVED FROM places ORDER BY FLOOR",
                 null,
-                new SerializerReadClass(Place.class))
+                new SerializerReadClass<>(Place.class))
                 .list();
     }
 
-    /**
-     *
-     * @param newTable
-     * @param ticketID
-     */
-    public void moveCustomer(String newTable, String ticketID) {
+    @Override
+    public void moveCustomer(MoveCustomerCommand command) {
+        Objects.requireNonNull(command, "command must not be null");
+        String newTable = command.newTable();
+        String ticketID = command.ticketId();
+
         String oldTable = getTableDetails(ticketID);
 
         if (countTicketIdInTable(ticketID) > 1) {
@@ -73,451 +93,314 @@ public class PlaceServiceImpl implements PlaceService {
         }
     }
 
-    /**
-     *
-     * @param custName
-     * @param tableName
-     */
+    @Override
     public void setCustomerNameInTable(String custName, String tableName) {
-
-        String sqlQuery = "UPDATE places SET CUSTOMER=? WHERE NAME=?";
-        try (Connection con = dbSession.getConnection(); PreparedStatement pstmt = con.prepareStatement(sqlQuery);) {
-
-            pstmt.setString(1, custName);
-            pstmt.setString(2, tableName);
-            pstmt.executeUpdate();
-        }
-        catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "", e);
+        try {
+            new PreparedSentence(dbSession,
+                    "UPDATE places SET CUSTOMER = ? WHERE NAME = ?",
+                    new SerializerWriteBasic(new Datas[]{Datas.STRING, Datas.STRING}))
+                    .exec(new Object[]{custName, tableName});
+        } catch (BasicException e) {
+            LOGGER.log(Level.SEVERE, "Exception setting customer name in table: " + tableName, e);
         }
     }
 
-    /**
-     *
-     * @param custName
-     * @param tableID
-     */
+    @Override
     public void setCustomerNameInTableById(String custName, String tableID) {
-        String sqlQuery = "UPDATE places SET CUSTOMER=? WHERE ID=?";
-        try (Connection con = dbSession.getConnection(); PreparedStatement pstmt = con.prepareStatement(sqlQuery);) {
-
-            pstmt.setString(1, custName);
-            pstmt.setString(2, tableID);
-            pstmt.executeUpdate();
-        }
-        catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "", e);
+        try {
+            new PreparedSentence(dbSession,
+                    "UPDATE places SET CUSTOMER = ? WHERE ID = ?",
+                    new SerializerWriteBasic(new Datas[]{Datas.STRING, Datas.STRING}))
+                    .exec(new Object[]{custName, tableID});
+        } catch (BasicException e) {
+            LOGGER.log(Level.SEVERE, "Exception setting customer name in table by ID: " + tableID, e);
         }
     }
 
-    /**
-     *
-     * @param custName
-     * @param ticketID
-     */
+    @Override
     public void setCustomerNameInTableByTicketId(String custName, String ticketID) {
-        String sqlQuery = "UPDATE places SET CUSTOMER=? WHERE TICKETID=?";
-        try (Connection con = dbSession.getConnection(); PreparedStatement pstmt = con.prepareStatement(sqlQuery);) {
-            pstmt.setString(1, custName);
-            pstmt.setString(2, ticketID);
-            pstmt.executeUpdate();
-        }
-        catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "", e);
+        try {
+            new PreparedSentence(dbSession,
+                    "UPDATE places SET CUSTOMER = ? WHERE TICKETID = ?",
+                    new SerializerWriteBasic(new Datas[]{Datas.STRING, Datas.STRING}))
+                    .exec(new Object[]{custName, ticketID});
+        } catch (BasicException e) {
+            LOGGER.log(Level.SEVERE, "Exception setting customer name in table by ticketId: " + ticketID, e);
         }
     }
 
-    /**
-     *
-     * @param tableName
-     * @return
-     */
+    @Override
     public String getCustomerNameInTable(String tableName) {
-        String customerName = "";
-        try (Connection con = dbSession.getConnection()) {
-            String sqlQuery = "SELECT customer FROM places WHERE NAME=?";
-            try (PreparedStatement pstmt = con.prepareStatement(sqlQuery)) {
-                pstmt.setString(1, tableName);
-
-                try (ResultSet resultSet = pstmt.executeQuery()) {
-                    if (resultSet.next()) {
-                        customerName = resultSet.getString("CUSTOMER");
-                    }
-                }
-            }
+        try {
+            String customerName = (String) new PreparedSentence(dbSession,
+                    "SELECT customer FROM places WHERE NAME = ?",
+                    SerializerWriteString.INSTANCE,
+                    SerializerReadString.INSTANCE)
+                    .find(tableName);
+            return customerName != null ? customerName : "";
+        } catch (BasicException e) {
+            LOGGER.log(Level.SEVERE, "Exception getting customer name in table: " + tableName, e);
+            return "";
         }
-        catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "Exception get customer name in table: " + tableName, e);
-        }
-
-        return customerName;
     }
 
-    /**
-     *
-     * @param tableId
-     * @return
-     */
+    @Override
     public String getCustomerNameInTableById(String tableId) {
-        String sqlQuery = "SELECT customer FROM places WHERE ID=?";
-        try (Connection con = dbSession.getConnection(); PreparedStatement pstmt = con.prepareStatement(sqlQuery);) {
-            pstmt.setString(1, tableId);
-            ResultSet rs = pstmt.executeQuery();
-            if (rs.next()) {
-                String customer = rs.getString("CUSTOMER");
-                return (customer);
-            }
+        try {
+            String customer = (String) new PreparedSentence(dbSession,
+                    "SELECT customer FROM places WHERE ID = ?",
+                    SerializerWriteString.INSTANCE,
+                    SerializerReadString.INSTANCE)
+                    .find(tableId);
+            return customer != null ? customer : "";
+        } catch (BasicException e) {
+            LOGGER.log(Level.SEVERE, "Exception getting customer name in table by id: " + tableId, e);
+            return "";
         }
-        catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "", e);
-        }
-
-        return "";
     }
 
-    /**
-     *
-     * @param tableName
-     */
+    @Override
     public void clearCustomerNameInTable(String tableName) {
-        String sqlQuery = "UPDATE places SET CUSTOMER=null WHERE NAME=?";
-        try (Connection con = dbSession.getConnection(); PreparedStatement pstmt = con.prepareStatement(sqlQuery);) {
-            pstmt.setString(1, tableName);
-            pstmt.executeUpdate();
-        }
-        catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "", e);
+        try {
+            new PreparedSentence(dbSession,
+                    "UPDATE places SET CUSTOMER = null WHERE NAME = ?",
+                    SerializerWriteString.INSTANCE)
+                    .exec(tableName);
+        } catch (BasicException e) {
+            LOGGER.log(Level.SEVERE, "Exception clearing customer name in table: " + tableName, e);
         }
     }
 
-    /**
-     *
-     * @param tableID
-     */
+    @Override
     public void clearCustomerNameInTableById(String tableID) {
-        String sqlQuery = "UPDATE places SET CUSTOMER=null WHERE ID=?";
-        try (Connection con = dbSession.getConnection(); PreparedStatement pstmt = con.prepareStatement(sqlQuery);) {
-            pstmt.setString(1, tableID);
-            pstmt.executeUpdate();
-        }
-        catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "", e);
+        try {
+            new PreparedSentence(dbSession,
+                    "UPDATE places SET CUSTOMER = null WHERE ID = ?",
+                    SerializerWriteString.INSTANCE)
+                    .exec(tableID);
+        } catch (BasicException e) {
+            LOGGER.log(Level.SEVERE, "Exception clearing customer name in table by id: " + tableID, e);
         }
     }
 
-    /**
-     *
-     * @param waiterName
-     * @param tableName
-     */
+    @Override
     public void setWaiterNameInTable(String waiterName, String tableName) {
-        String sqlQuery = "UPDATE places SET WAITER=? WHERE NAME=?";
-        try (Connection con = dbSession.getConnection(); PreparedStatement pstmt = con.prepareStatement(sqlQuery);) {
-            pstmt.setString(1, waiterName);
-            pstmt.setString(2, tableName);
-            pstmt.executeUpdate();
-        }
-        catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "", e);
+        try {
+            new PreparedSentence(dbSession,
+                    "UPDATE places SET WAITER = ? WHERE NAME = ?",
+                    new SerializerWriteBasic(new Datas[]{Datas.STRING, Datas.STRING}))
+                    .exec(new Object[]{waiterName, tableName});
+        } catch (BasicException e) {
+            LOGGER.log(Level.SEVERE, "Exception setting waiter in table: " + tableName, e);
         }
     }
 
-    /**
-     *
-     * @param waiterName
-     * @param tableID
-     */
+    @Override
     public void setWaiterNameInTableById(String waiterName, String tableID) {
-        String sqlQuery = "UPDATE places SET WAITER=? WHERE ID=?";
-        try (Connection con = dbSession.getConnection(); PreparedStatement pstmt = con.prepareStatement(sqlQuery);) {
-            pstmt.setString(1, waiterName);
-            pstmt.setString(2, tableID);
-            pstmt.executeUpdate();
-        }
-        catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "", e);
+        try {
+            new PreparedSentence(dbSession,
+                    "UPDATE places SET WAITER = ? WHERE ID = ?",
+                    new SerializerWriteBasic(new Datas[]{Datas.STRING, Datas.STRING}))
+                    .exec(new Object[]{waiterName, tableID});
+        } catch (BasicException e) {
+            LOGGER.log(Level.SEVERE, "Exception setting waiter in table by id: " + tableID, e);
         }
     }
 
-    /**
-     *
-     * @param tableName
-     * @return
-     */
+    @Override
     public String getWaiterNameInTable(String tableName) {
-        String sqlQuery = "SELECT waiter FROM places WHERE NAME=?";
-        try (Connection con = dbSession.getConnection(); PreparedStatement pstmt = con.prepareStatement(sqlQuery);) {
-            pstmt.setString(1, tableName);
-            ResultSet rs = pstmt.executeQuery();
-
-            if (rs.next()) {
-                String waiter = rs.getString("WAITER");
-                return (waiter);
-            }
+        try {
+            String waiter = (String) new PreparedSentence(dbSession,
+                    "SELECT waiter FROM places WHERE NAME = ?",
+                    SerializerWriteString.INSTANCE,
+                    SerializerReadString.INSTANCE)
+                    .find(tableName);
+            return waiter != null ? waiter : "";
+        } catch (BasicException e) {
+            LOGGER.log(Level.SEVERE, "Exception getting waiter in table: " + tableName, e);
+            return "";
         }
-        catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "", e);
-        }
-
-        return "";
     }
 
-    /**
-     *
-     * @param tableID
-     * @return
-     */
+    @Override
     public String getWaiterNameInTableById(String tableID) {
-        String sqlQuery = "SELECT waiter FROM places WHERE ID=?";
-        try (Connection con = dbSession.getConnection(); PreparedStatement pstmt = con.prepareStatement(sqlQuery);) {
-            pstmt.setString(1, tableID);
-            ResultSet rs = pstmt.executeQuery();
-
-            if (rs.next()) {
-                String waiter = rs.getString("WAITER");
-                return (waiter);
-            }
+        try {
+            String waiter = (String) new PreparedSentence(dbSession,
+                    "SELECT waiter FROM places WHERE ID = ?",
+                    SerializerWriteString.INSTANCE,
+                    SerializerReadString.INSTANCE)
+                    .find(tableID);
+            return waiter != null ? waiter : "";
+        } catch (BasicException e) {
+            LOGGER.log(Level.SEVERE, "Exception getting waiter in table by id: " + tableID, e);
+            return "";
         }
-        catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "", e);
-        }
-
-        return "";
     }
 
-    /**
-     *
-     * @param tableName
-     */
+    @Override
     public void clearWaiterNameInTable(String tableName) {
-        String sqlQuery = "UPDATE places SET WAITER=null WHERE NAME=?";
-        try (Connection con = dbSession.getConnection(); PreparedStatement pstmt = con.prepareStatement(sqlQuery);) {
-            pstmt.setString(1, tableName);
-            pstmt.executeUpdate();
-        }
-        catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "", e);
+        try {
+            new PreparedSentence(dbSession,
+                    "UPDATE places SET WAITER = null WHERE NAME = ?",
+                    SerializerWriteString.INSTANCE)
+                    .exec(tableName);
+        } catch (BasicException e) {
+            LOGGER.log(Level.SEVERE, "Exception clearing waiter in table: " + tableName, e);
         }
     }
 
-    /**
-     *
-     * @param tableID
-     */
+    @Override
     public void clearWaiterNameInTableById(String tableID) {
-        String sqlQuery = "UPDATE places SET WAITER=null WHERE ID=?";
-        try (Connection con = dbSession.getConnection(); PreparedStatement pstmt = con.prepareStatement(sqlQuery);) {
-            pstmt.setString(1, tableID);
-            pstmt.executeUpdate();
-        }
-        catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "", e);
-        }
-    }
-
-    /**
-     *
-     * @param ID
-     * @return
-     */
-    public String getTicketIdInTable(String ID) {
-        try (Connection con = dbSession.getConnection()) {
-            String sqlQuery = "SELECT TICKETID FROM places WHERE ID='" + ID + "'";
-            Statement stmt = con.createStatement();
-            ResultSet rs = stmt.executeQuery(sqlQuery);
-
-            if (rs.next()) {
-                String customer = rs.getString("TICKETID");
-                return (customer);
-            }
-        }
-        catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "", e);
-        }
-
-        return "";
-    }
-
-    /**
-     *
-     * @param TicketID
-     * @param tableName
-     */
-    public void setTicketIdInTable(String TicketID, String tableName) {
-        String sqlQuery = "UPDATE places SET TICKETID=? WHERE NAME=?";
-        try (Connection con = dbSession.getConnection(); PreparedStatement pstmt = con.prepareStatement(sqlQuery);) {
-            pstmt.setString(1, TicketID);
-            pstmt.setString(2, tableName);
-            pstmt.executeUpdate();
-        }
-        catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "", e);
+        try {
+            new PreparedSentence(dbSession,
+                    "UPDATE places SET WAITER = null WHERE ID = ?",
+                    SerializerWriteString.INSTANCE)
+                    .exec(tableID);
+        } catch (BasicException e) {
+            LOGGER.log(Level.SEVERE, "Exception clearing waiter in table by id: " + tableID, e);
         }
     }
 
-    /**
-     *
-     * @param tableName
-     */
+    @Override
+    public String getTicketIdInTable(String tableID) {
+        try {
+            String ticket = (String) new PreparedSentence(dbSession,
+                    "SELECT TICKETID FROM places WHERE ID = ?",
+                    SerializerWriteString.INSTANCE,
+                    SerializerReadString.INSTANCE)
+                    .find(tableID);
+            return ticket != null ? ticket : "";
+        } catch (BasicException e) {
+            LOGGER.log(Level.SEVERE, "Exception getting ticketId in table by id: " + tableID, e);
+            return "";
+        }
+    }
+
+    @Override
+    public void setTicketIdInTable(String ticketId, String tableName) {
+        try {
+            new PreparedSentence(dbSession,
+                    "UPDATE places SET TICKETID = ? WHERE NAME = ?",
+                    new SerializerWriteBasic(new Datas[]{Datas.STRING, Datas.STRING}))
+                    .exec(new Object[]{ticketId, tableName});
+        } catch (BasicException e) {
+            LOGGER.log(Level.SEVERE, "Exception setting ticketId in table: " + tableName, e);
+        }
+    }
+
+    @Override
     public void clearTicketIdInTable(String tableName) {
-        String sqlQuery = "UPDATE places SET TICKETID=null WHERE NAME=?";
-        try (Connection con = dbSession.getConnection(); PreparedStatement pstmt = con.prepareStatement(sqlQuery);) {
-            pstmt.setString(1, tableName);
-            pstmt.executeUpdate();
-        }
-        catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "", e);
+        try {
+            new PreparedSentence(dbSession,
+                    "UPDATE places SET TICKETID = null WHERE NAME = ?",
+                    SerializerWriteString.INSTANCE)
+                    .exec(tableName);
+        } catch (BasicException e) {
+            LOGGER.log(Level.SEVERE, "Exception clearing ticketId in table: " + tableName, e);
         }
     }
 
-    /**
-     *
-     * @param tableID
-     */
+    @Override
     public void clearTicketIdInTableById(String tableID) {
-        String sqlQuery = "UPDATE places SET TICKETID=null WHERE ID=?";
-        try (Connection con = dbSession.getConnection(); PreparedStatement pstmt = con.prepareStatement(sqlQuery);) {
-            pstmt.setString(1, tableID);
-            pstmt.executeUpdate();
-        }
-        catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "", e);
+        try {
+            new PreparedSentence(dbSession,
+                    "UPDATE places SET TICKETID = null WHERE ID = ?",
+                    SerializerWriteString.INSTANCE)
+                    .exec(tableID);
+        } catch (BasicException e) {
+            LOGGER.log(Level.SEVERE, "Exception clearing ticketId in table by id: " + tableID, e);
         }
     }
 
-    /**
-     *
-     * @param ticketID
-     * @return
-     */
+    @Override
     public Integer countTicketIdInTable(String ticketID) {
-        try (Connection con = dbSession.getConnection()) {
-            String sqlQuery = "SELECT COUNT(*) AS RECORDCOUNT FROM places WHERE TICKETID='" + ticketID + "'";
-            Statement stmt = con.createStatement();
-            ResultSet rs = stmt.executeQuery(sqlQuery);
-
-            if (rs.next()) {
-                Integer count = rs.getInt("RECORDCOUNT");
-                return (count);
-            }
+        try {
+            Integer count = (Integer) new PreparedSentence(dbSession,
+                    "SELECT COUNT(*) FROM places WHERE TICKETID = ?",
+                    SerializerWriteString.INSTANCE,
+                    SerializerReadInteger.INSTANCE)
+                    .find(ticketID);
+            return count != null ? count : 0;
+        } catch (BasicException e) {
+            LOGGER.log(Level.SEVERE, "Exception counting ticketId in places: " + ticketID, e);
+            return 0;
         }
-        catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "", e);
-        }
-
-        return 0;
     }
 
-    /**
-     *
-     * @param ticketID
-     * @return
-     */
+    @Override
     public String getTableDetails(String ticketID) {
-        try (Connection con = dbSession.getConnection()) {
-            String sqlQuery = "SELECT NAME FROM places WHERE TICKETID='" + ticketID + "'";
-            Statement stmt = con.createStatement();
-            ResultSet rs = stmt.executeQuery(sqlQuery);
-
-            if (rs.next()) {
-                String name = rs.getString("NAME");
-                return (name);
-            }
+        try {
+            String name = (String) new PreparedSentence(dbSession,
+                    "SELECT NAME FROM places WHERE TICKETID = ?",
+                    SerializerWriteString.INSTANCE,
+                    SerializerReadString.INSTANCE)
+                    .find(ticketID);
+            return name != null ? name : "";
+        } catch (BasicException e) {
+            LOGGER.log(Level.SEVERE, "Exception getting table details for ticketId: " + ticketID, e);
+            return "";
         }
-        catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "", e);
-        }
-
-        return "";
     }
 
-    /**
-     *
-     * @param tableID
-     */
+    @Override
     public void setTableMovedFlag(String tableID) {
-        String sqlQuery = "UPDATE places SET TABLEMOVED='true' WHERE ID=?";
-        try (Connection con = dbSession.getConnection(); PreparedStatement pstmt = con.prepareStatement(sqlQuery);) {
-            pstmt.setString(1, tableID);
-            pstmt.executeUpdate();
-        }
-        catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "", e);
+        try {
+            new PreparedSentence(dbSession,
+                    "UPDATE places SET TABLEMOVED = 'true' WHERE ID = ?",
+                    SerializerWriteString.INSTANCE)
+                    .exec(tableID);
+        } catch (BasicException e) {
+            LOGGER.log(Level.SEVERE, "Exception setting table moved flag: " + tableID, e);
         }
     }
 
-    /**
-     *
-     * @param ticketID
-     * @return
-     */
+    @Override
     public String getTableMovedName(String ticketID) {
-        try (Connection con = dbSession.getConnection()) {
-            String sqlQuery = "SELECT NAME FROM places WHERE TICKETID='" + ticketID + "' AND TABLEMOVED ='true'";
-            Statement stmt = con.createStatement();
-            ResultSet rs = stmt.executeQuery(sqlQuery);
-
-            if (rs.next()) {
-                String name = rs.getString("NAME");
-                return (name);
-            }
+        try {
+            return (String) new PreparedSentence(dbSession,
+                    "SELECT NAME FROM places WHERE TICKETID = ? AND TABLEMOVED = 'true'",
+                    SerializerWriteString.INSTANCE,
+                    SerializerReadString.INSTANCE)
+                    .find(ticketID);
+        } catch (BasicException e) {
+            LOGGER.log(Level.SEVERE, "Exception getting table moved name for ticketId: " + ticketID, e);
+            return null;
         }
-        catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "", e);
-        }
-
-        return null;
     }
 
-    /**
-     *
-     * @param ticketID
-     * @return
-     */
+    @Override
     public Boolean getTableMovedFlag(String ticketID) {
-        try (Connection con = dbSession.getConnection()) {
-            String sqlQuery = "SELECT TABLEMOVED FROM places WHERE TICKETID='" + ticketID + "'";
-            Statement stmt = con.createStatement();
-            ResultSet rs = stmt.executeQuery(sqlQuery);
-
-            if (rs.next()) {
-                return (rs.getBoolean("TABLEMOVED"));
-            }
+        try {
+            String moved = (String) new PreparedSentence(dbSession,
+                    "SELECT TABLEMOVED FROM places WHERE TICKETID = ?",
+                    SerializerWriteString.INSTANCE,
+                    SerializerReadString.INSTANCE)
+                    .find(ticketID);
+            return moved != null && ("true".equalsIgnoreCase(moved) || "1".equals(moved));
+        } catch (BasicException e) {
+            LOGGER.log(Level.SEVERE, "Exception getting table moved flag for ticketId: " + ticketID, e);
+            return false;
         }
-        catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "", e);
-        }
-
-        return false;
     }
 
-    /**
-     *
-     * @param tableID
-     */
+    @Override
     public void clearTableMovedFlag(String tableID) {
-        String sqlQuery = "UPDATE places SET TABLEMOVED='false' WHERE NAME=?";
-        try (Connection con = dbSession.getConnection(); PreparedStatement pstmt = con.prepareStatement(sqlQuery);) {
-            pstmt.setString(1, tableID);
-            pstmt.executeUpdate();
-        }
-        catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "", e);
+        try {
+            new PreparedSentence(dbSession,
+                    "UPDATE places SET TABLEMOVED = 'false' WHERE NAME = ?",
+                    SerializerWriteString.INSTANCE)
+                    .exec(tableID);
+        } catch (BasicException e) {
+            LOGGER.log(Level.SEVERE, "Exception clearing table moved flag: " + tableID, e);
         }
     }
 
     @Override
     public void updatePlaces(UpdatePlacePositionCommand command) throws BasicException {
         Objects.requireNonNull(command, "command must not be null");
-        new StaticSentence(this.dbSession,
+        new StaticSentence<>(this.dbSession,
                 "UPDATE PLACES SET X = ?, Y = ? WHERE ID = ?",
                 new SerializerWriteBasic(new Datas[]{Datas.INT, Datas.INT, Datas.STRING}))
                 .exec(new Object[]{command.x(), command.y(), command.id()});
-    }
-
-    @Override
-    @Deprecated
-    public void updatePlaces(int x, int y, String id) throws BasicException {
-        updatePlaces(new UpdatePlacePositionCommand(id, x, y));
     }
 }
