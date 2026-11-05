@@ -24,6 +24,7 @@ import com.openbravo.pos.inventory.AttributeInstEntry;
 import com.openbravo.pos.inventory.AttributeInstInfo;
 import com.openbravo.pos.inventory.AttributeService;
 import com.openbravo.pos.inventory.AttributeSetInfo;
+import com.openbravo.pos.inventory.CreateAttributeSetInstanceCommand;
 import com.openbravo.pos.inventory.DataLogicAttribute;
 import java.awt.BorderLayout;
 import java.awt.Component;
@@ -274,7 +275,8 @@ public class JProductAttEditPanel extends JPanel {
                 entries.add(new AttributeInstEntry(item.getAttribute(), item.getValue()));
             }
             try {
-                id = attributeService.findOrCreateAttributeSetInstance(attsetid, description.toString(), entries);
+                id = attributeService.findOrCreateAttributeSetInstance(
+                        CreateAttributeSetInstanceCommand.of(attsetid, description.toString(), entries));
             } catch (BasicException ex) {
             }
         }
