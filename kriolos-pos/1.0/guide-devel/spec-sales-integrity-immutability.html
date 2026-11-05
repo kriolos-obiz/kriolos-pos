@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>RFC: Sales Document Integrity, Pre-Calculated Immutability (WORM) &amp; Audit Trail :: KriolOS POS Documentation</title>
+    <meta name="generator" content="Antora 3.2.2">
+    <link rel="stylesheet" href="../../../_/css/site.css">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="../../..">KriolOS POS Documentation</a>
+      <button class="navbar-burger" aria-controls="topbar-nav" aria-expanded="false" aria-label="Toggle main menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="#">Home</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="#">Products</a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item" href="#">Product A</a>
+            <a class="navbar-item" href="#">Product B</a>
+            <a class="navbar-item" href="#">Product C</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="#">Services</a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item" href="#">Service A</a>
+            <a class="navbar-item" href="#">Service B</a>
+            <a class="navbar-item" href="#">Service C</a>
+          </div>
+        </div>
+        <div class="navbar-item">
+          <span class="control">
+            <a class="button is-primary" href="#">Download</a>
+          </span>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="kriolos-pos" data-version="1.0">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <button class="nav-menu-toggle" aria-label="Toggle expand/collapse all" style="display: none"></button>
+    <h3 class="title"><a href="../index.html">KriolOS POS Documentation</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <span class="nav-text">Home
+.Guides</span>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="index.html">Developer Guide</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../guide-user/index.html">User Guide</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../guide-comercial/index.html">Commercial Guide</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../guide-migration/index.html">Migration Guide</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../notes/index.html">Architecture Notes</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Developer Guide</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="product-vision.html">Product Vision</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="contributors.html">Contributors</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Architecture &amp; Modeling</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="arch-principles.html">Architecture Principles</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="arch-dev-environment.html">Development Environment &amp; QA</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="arch-domain-modeling.html">Domain Modeling</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="spec-navigation-flow.html">Specification: Navigation History Flow</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="spec-database-configuration.html">Specification: Tiered Configuration (Bootstrap vs. DB)</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">User Interface</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="ui-guidelines.html">UI Guidelines</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="spec-iconography.html">Specification: Iconography &amp; Agnostic Vector Assets</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="ui-modal-migration.html">Modal Architecture (PosUIModal)</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="ui-custom-buttons.html">Custom Buttons &amp; Events</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Tickets &amp; Sales</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="sales-layout-migration.html">Sales Layout Architecture Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="sales-ticket-lifecycle.html">Ticket Lifecycle &amp; Taxes</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="3">
+    <a class="nav-link" href="spec-sales-integrity-immutability.html">Specification: Sales Integrity, Pre-Calculated Immutability (WORM)</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="sales-backoffice-tickets.html">Back Office Tickets</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="sales-next-gen-architecture.html">Next-Generation Sales &amp; Catalog Architecture</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="spec-document-series.html">Specification: Document Number Series Architecture</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="spec-audit-journal.html">Specification: Audit Journal &amp; Event Log</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Database &amp; Persistence</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="data-schema-overview.html">Database Schema Overview</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="data-access-layer.html">Database Access Layer</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="transaction-performance-strategy.html">Transaction Performance &amp; Pooling Strategy</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Peripherals &amp; Hardware</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="hardware-peripherals.html">Peripheral &amp; Scales Overview</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="hardware-printers.html">Printers &amp; ESC/POS</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="hardware-barcodes.html">Barcode Support</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Reporting &amp; Printing</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="report-jasper-overview.html">Reporting Overview (JasperReports)</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="report-pdf-export.html">PDF Export</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="spec-cash-reporting-standards.html">Specification: Standard Cash Reports (X/Z Reports &amp; PosLog)</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="resources-assets.html">Resources &amp; Assets Overview</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Testing &amp; Automation</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="parameterized-testing.html">Parameterized Testing as a First-Class Practice</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="automation-multilingual-audio-narration.html">Automated Video Showcase &amp; Multi-Language Audio Narration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Troubleshooting</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="troubleshooting-known-issues.html">Known Issues</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">User Guide</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../guide-user/index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../guide-user/user-setup-guide.html">Setup &amp; Installation</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Commercial Guide</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../guide-comercial/index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../guide-comercial/commercial-product-vision.html">Product Vision</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Migration Guide</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../guide-migration/index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../guide-migration/quarkus-desktop-migration.html">Quarkus Desktop Migration Plan</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../guide-migration/migration-implementation-plan.html">Deep Analysis &amp; Implementation Plan</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Legacy Architecture</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../legacy/index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../legacy/legacy-datalogic-architecture.html">DataLogic Scope &amp; Monolith Analysis</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Architecture Notes</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../notes/index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../notes/notes-taxes-rounding.html">Taxes &amp; Rounding</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">KriolOS POS Documentation</span>
+    <span class="version">1.0</span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <div class="title"><a href="../index.html">KriolOS POS Documentation</a></div>
+      <ul class="versions">
+        <li class="version is-current is-latest">
+          <a href="../index.html">1.0</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../index.html">KriolOS POS Documentation</a></li>
+    <li>Developer Guide</li>
+    <li>Tickets &amp; Sales</li>
+    <li><a href="spec-sales-integrity-immutability.html">Specification: Sales Integrity, Pre-Calculated Immutability (WORM)</a></li>
+  </ul>
+</nav>
+<div class="edit-this-page"><a href="https://github.com/kriolos-obiz/kriolos-pos/edit/main/docs/modules/guide-devel/pages/spec-sales-integrity-immutability.adoc">Edit this Page</a></div>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">RFC: Sales Document Integrity, Pre-Calculated Immutability (WORM) &amp; Audit Trail</h1>
+<div id="toc" class="toc">
+<div id="toctitle">Table of Contents</div>
+<ul class="sectlevel1">
+<li><a href="#1-current-state-problem-statement">1. 1. Current State &amp; Problem Statement</a></li>
+<li><a href="#2-target-architecture-write-once-read-many-worm">2. 2. Target Architecture: Write Once, Read Many (WORM)</a></li>
+<li><a href="#3-migration-verification-protocol-mandatory-requirement">3. 3. Migration &amp; Verification Protocol (MANDATORY REQUIREMENT)</a>
+<ul class="sectlevel2">
+<li><a href="#step-1-initial-database-data-baseline">3.1. Step 1: Initial Database Data Baseline</a></li>
+<li><a href="#step-2-pre-test-execution-snapshot-extraction">3.2. Step 2: Pre-Test Execution &amp; Snapshot Extraction</a></li>
+<li><a href="#step-3-execute-schema-engine-modifications">3.3. Step 3: Execute Schema &amp; Engine Modifications</a></li>
+<li><a href="#step-4-post-test-execution-json-comparison">3.4. Step 4: Post-Test Execution &amp; JSON Comparison</a></li>
+</ul>
+</li>
+<li><a href="#4-integration-with-document-series-and-audit-journal">4. 4. Integration with Document Series and Audit Journal</a></li>
+</ul>
+</div>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph lead">
+<p>Architectural RFC &amp; Roadmap Specification for Sales Document Integrity, Pre-Calculated Denormalization, Immutable Storage (WORM), and Regression Verification Protocol.</p>
+</div>
+<hr>
+</div>
+</div>
+<div class="sect1">
+<h2 id="1-current-state-problem-statement"><a class="anchor" href="#1-current-state-problem-statement"></a>1. 1. Current State &amp; Problem Statement</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Currently in legacy Openbravo POS / KriolOS POS:
+1. <strong>Dynamic Recalculation on the Fly</strong>:
+   - Finalized tickets/receipts do not persistently store all pre-calculated line amounts (e.g., price with tax inclusive, total taxes, breakdown per individual tax rate, discount subtotals).
+   - In multiple critical flows—such as analytical SQL queries, JasperReports execution, and receipt reprinting—totals and tax lines are recalculated dynamically from raw or current tax tables.
+2. <strong>Historical Vulnerability &amp; Audit Drift</strong>:
+   - If an administrator changes a tax percentage, product tax category, or customer exemption rate later, running a historical sales report or reprinting an archived receipt can yield different financial totals than those originally charged to the consumer.
+3. <strong>Missing Audit Snapshots</strong>:
+   - The system lacks an immutable snapshot capturing the full state of related entities at the moment of checkout (e.g., <code>ticket</code>, <code>ticketline</code>, <code>tickettaxes</code>, <code>ticketcustomers</code>).</p>
+</div>
+<hr>
+</div>
+</div>
+<div class="sect1">
+<h2 id="2-target-architecture-write-once-read-many-worm"><a class="anchor" href="#2-target-architecture-write-once-read-many-worm"></a>2. 2. Target Architecture: Write Once, Read Many (WORM)</h2>
+<div class="sectionbody">
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><strong>Pre-Calculated Line &amp; Header Persisted Values</strong>:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Every line item (<code>ticketline</code>) and ticket header (<code>ticket</code>) must persistently store exact pre-calculated monetary values using <code>DECIMAL(19,4)</code> / <code>BigDecimal</code>:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Net Price, Tax Amount, Gross Price, Applied Discount, and Applied Tax Rate.</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><strong>Immutable Document Snapshot &amp; Hash Chaining</strong>:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Each completed sale transaction produces an immutable JSON snapshot payload.</p>
+</li>
+<li>
+<p>Computes a cryptographic checksum (SHA-256) over the canonical payload.</p>
+</li>
+<li>
+<p>Supports forward-integration with Document Series (<code>spec-document-series.adoc</code>) and Audit Journal (<code>spec-audit-journal.adoc</code>).</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><strong>Zero Recalculation on Reporting &amp; Reprinting</strong>:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Reports and receipt reprints query the pre-calculated persisted columns and snapshot payload directly, eliminating any dependence on dynamic tax master tables.</p>
+</li>
+</ul>
+</div>
+</li>
+</ol>
+</div>
+<hr>
+</div>
+</div>
+<div class="sect1">
+<h2 id="3-migration-verification-protocol-mandatory-requirement"><a class="anchor" href="#3-migration-verification-protocol-mandatory-requirement"></a>3. 3. Migration &amp; Verification Protocol (MANDATORY REQUIREMENT)</h2>
+<div class="sectionbody">
+<div class="admonitionblock caution">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-caution" title="Caution"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>This is a <strong>HIGH-IMPACT ARCHITECTURAL CHANGE</strong> requiring strict regression validation before and after schema/code alterations.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>The verification workflow must adhere to the following deterministic cycle:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>@startuml
+start
+:1. Initial Database State;
+:2. Execute Pre-Test Suite;
+:3. Capture Financial Totals &amp; Report Outputs into JSON Artifacts;
+:4. Apply Database &amp; Code Changes (WORM, Pre-Calculated Fields);
+:5. Execute Post-Test Suite;
+:6. Deterministic JSON Diff Comparison (Pre-Test vs Post-Test);
+if (Discrepancy Detected?) then (yes)
+  :Fail Validation &amp; Rollback;
+  stop
+else (no)
+  :Approve Migration;
+  stop
+endif
+@enduml</pre>
+</div>
+</div>
+<div class="sect2">
+<h3 id="step-1-initial-database-data-baseline"><a class="anchor" href="#step-1-initial-database-data-baseline"></a>3.1. Step 1: Initial Database Data Baseline</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>Establish a standardized regression dataset containing complex sales scenarios:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Multi-tax orders (e.g., Standard VAT + Reduced VAT + Zero Rate).</p>
+</li>
+<li>
+<p>Mixed customer profiles (retail consumer, B2B tax-exempt, discounted).</p>
+</li>
+<li>
+<p>Split tenders (Cash, Card, Voucher) and partial returns/credit notes.</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="step-2-pre-test-execution-snapshot-extraction"><a class="anchor" href="#step-2-pre-test-execution-snapshot-extraction"></a>3.2. Step 2: Pre-Test Execution &amp; Snapshot Extraction</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>Run end-to-end sales reconciliation queries and JasperReports generation against the baseline.</p>
+</li>
+<li>
+<p>Serialize and export all resulting numbers into a structured JSON file:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-json hljs" data-lang="json">{
+  "test_run_timestamp": "2026-11-02T02:00:00Z",
+  "ticket_id": "c8a41234-...",
+  "expected_totals": {
+    "gross_total": 125.5000,
+    "net_total": 105.4600,
+    "tax_total": 20.0400
+  },
+  "tax_breakdown": [
+    { "tax_id": "001", "rate": 0.19, "base": 105.4600, "amount": 20.0400 }
+  ]
+}</code></pre>
+</div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="step-3-execute-schema-engine-modifications"><a class="anchor" href="#step-3-execute-schema-engine-modifications"></a>3.3. Step 3: Execute Schema &amp; Engine Modifications</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>Implement the pre-calculated columns, entities, and migration changesets.</p>
+</li>
+<li>
+<p>Introduce the WORM snapshot persistence engine.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="step-4-post-test-execution-json-comparison"><a class="anchor" href="#step-4-post-test-execution-json-comparison"></a>3.4. Step 4: Post-Test Execution &amp; JSON Comparison</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>Execute the exact same scenarios on the updated engine.</p>
+</li>
+<li>
+<p>Compare the resulting JSON output against the pre-test JSON baseline:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Every net, tax, gross, and payment breakdown must match down to the exact decimal scale.</p>
+</li>
+<li>
+<p>Zero regression tolerance.</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+<hr>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="4-integration-with-document-series-and-audit-journal"><a class="anchor" href="#4-integration-with-document-series-and-audit-journal"></a>4. 4. Integration with Document Series and Audit Journal</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>As specified in:
+* <code>spec-document-series.adoc</code>: Every finalized ticket binds to an official legal document number (e.g., <code>FT 2026/000142</code>).
+* <code>spec-audit-journal.adoc</code>: The immutable ticket creation event is logged into <code>pos_journal</code> with its canonical SHA-256 payload checksum.</p>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>This page was built using the Antora default UI.</p>
+  <p>The source code for this UI is licensed under the terms of the MPL-2.0 license.</p>
+</footer>
+<script id="site-script" src="../../../_/js/site.js" data-ui-root-path="../../../_"></script>
+<script async src="../../../_/js/vendor/highlight.js"></script>
+  </body>
+</html>

@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Type-Safety-First Modernization Plan :: KriolOS POS Documentation</title>
+    <meta name="generator" content="Antora 3.2.2">
+    <link rel="stylesheet" href="../../../_/css/site.css">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="../../..">KriolOS POS Documentation</a>
+      <button class="navbar-burger" aria-controls="topbar-nav" aria-expanded="false" aria-label="Toggle main menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="#">Home</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="#">Products</a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item" href="#">Product A</a>
+            <a class="navbar-item" href="#">Product B</a>
+            <a class="navbar-item" href="#">Product C</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="#">Services</a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item" href="#">Service A</a>
+            <a class="navbar-item" href="#">Service B</a>
+            <a class="navbar-item" href="#">Service C</a>
+          </div>
+        </div>
+        <div class="navbar-item">
+          <span class="control">
+            <a class="button is-primary" href="#">Download</a>
+          </span>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="kriolos-pos" data-version="1.0">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <button class="nav-menu-toggle" aria-label="Toggle expand/collapse all" style="display: none"></button>
+    <h3 class="title"><a href="../index.html">KriolOS POS Documentation</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <span class="nav-text">Home
+.Guides</span>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="index.html">Developer Guide</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../guide-user/index.html">User Guide</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../guide-comercial/index.html">Commercial Guide</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../guide-migration/index.html">Migration Guide</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../notes/index.html">Architecture Notes</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Developer Guide</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="product-vision.html">Product Vision</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="contributors.html">Contributors</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Architecture &amp; Modeling</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="arch-principles.html">Architecture Principles</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="arch-dev-environment.html">Development Environment &amp; QA</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="arch-domain-modeling.html">Domain Modeling</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="spec-navigation-flow.html">Specification: Navigation History Flow</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="spec-database-configuration.html">Specification: Tiered Configuration (Bootstrap vs. DB)</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">User Interface</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="ui-guidelines.html">UI Guidelines</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="spec-iconography.html">Specification: Iconography &amp; Agnostic Vector Assets</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="ui-modal-migration.html">Modal Architecture (PosUIModal)</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="ui-custom-buttons.html">Custom Buttons &amp; Events</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Tickets &amp; Sales</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="sales-layout-migration.html">Sales Layout Architecture Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="sales-ticket-lifecycle.html">Ticket Lifecycle &amp; Taxes</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="spec-sales-integrity-immutability.html">Specification: Sales Integrity, Pre-Calculated Immutability (WORM)</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="sales-backoffice-tickets.html">Back Office Tickets</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="sales-next-gen-architecture.html">Next-Generation Sales &amp; Catalog Architecture</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="spec-document-series.html">Specification: Document Number Series Architecture</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="spec-audit-journal.html">Specification: Audit Journal &amp; Event Log</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Database &amp; Persistence</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="data-schema-overview.html">Database Schema Overview</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="data-access-layer.html">Database Access Layer</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="transaction-performance-strategy.html">Transaction Performance &amp; Pooling Strategy</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Peripherals &amp; Hardware</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="hardware-peripherals.html">Peripheral &amp; Scales Overview</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="hardware-printers.html">Printers &amp; ESC/POS</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="hardware-barcodes.html">Barcode Support</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Reporting &amp; Printing</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="report-jasper-overview.html">Reporting Overview (JasperReports)</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="report-pdf-export.html">PDF Export</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="spec-cash-reporting-standards.html">Specification: Standard Cash Reports (X/Z Reports &amp; PosLog)</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="resources-assets.html">Resources &amp; Assets Overview</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Testing &amp; Automation</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="parameterized-testing.html">Parameterized Testing as a First-Class Practice</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="automation-multilingual-audio-narration.html">Automated Video Showcase &amp; Multi-Language Audio Narration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Troubleshooting</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="troubleshooting-known-issues.html">Known Issues</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">User Guide</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../guide-user/index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../guide-user/user-setup-guide.html">Setup &amp; Installation</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Commercial Guide</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../guide-comercial/index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../guide-comercial/commercial-product-vision.html">Product Vision</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Migration Guide</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../guide-migration/index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../guide-migration/quarkus-desktop-migration.html">Quarkus Desktop Migration Plan</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../guide-migration/migration-implementation-plan.html">Deep Analysis &amp; Implementation Plan</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Legacy Architecture</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../legacy/index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../legacy/legacy-datalogic-architecture.html">DataLogic Scope &amp; Monolith Analysis</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Architecture Notes</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../notes/index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../notes/notes-taxes-rounding.html">Taxes &amp; Rounding</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">KriolOS POS Documentation</span>
+    <span class="version">1.0</span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <div class="title"><a href="../index.html">KriolOS POS Documentation</a></div>
+      <ul class="versions">
+        <li class="version is-current is-latest">
+          <a href="../index.html">1.0</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../index.html">KriolOS POS Documentation</a></li>
+    <li><a href="type-safety-modernization-plan.html">Type-Safety-First Modernization Plan</a></li>
+  </ul>
+</nav>
+<div class="edit-this-page"><a href="https://github.com/kriolos-obiz/kriolos-pos/edit/main/docs/modules/guide-devel/pages/type-safety-modernization-plan.adoc">Edit this Page</a></div>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Type-Safety-First Modernization Plan</h1>
+<div id="toc" class="toc">
+<div id="toctitle">Table of Contents</div>
+<ul class="sectlevel1">
+<li><a href="#status-and-scope">1. Status and Scope</a></li>
+<li><a href="#user-story">2. User Story</a></li>
+<li><a href="#acceptance-criteria">3. Acceptance Criteria</a></li>
+<li><a href="#evidence-and-priority">4. Evidence and Priority</a>
+<ul class="sectlevel2">
+<li><a href="#highest-value-type-safety-boundary">4.1. Highest-Value Type-Safety Boundary</a></li>
+<li><a href="#transaction-reliability-gate">4.2. Transaction Reliability Gate</a></li>
+</ul>
+</li>
+<li><a href="#migration-sequence">5. Migration Sequence</a>
+<ul class="sectlevel2">
+<li><a href="#phase-0-freeze-baseline-and-inventory">5.1. Phase 0: Freeze Baseline and Inventory</a></li>
+<li><a href="#phase-1-type-safe-catalog-pilot">5.2. Phase 1: Type-Safe Catalog Pilot</a></li>
+<li><a href="#phase-2-transaction-exception-safety">5.3. Phase 2: Transaction Exception Safety</a></li>
+<li><a href="#phase-3-typed-commands-and-results">5.4. Phase 3: Typed Commands and Results</a></li>
+<li><a href="#phase-4-remove-persistence-leakage-from-service-ports">5.5. Phase 4: Remove Persistence Leakage from Service Ports</a></li>
+<li><a href="#phase-5-logic-and-code-organization">5.6. Phase 5: Logic and Code Organization</a></li>
+<li><a href="#phase-6-delivery-verification">5.7. Phase 6: Delivery Verification</a></li>
+</ul>
+</li>
+<li><a href="#pre-migration-test-plan">6. Pre-Migration Test Plan</a></li>
+<li><a href="#risks-and-controls">7. Risks and Controls</a></li>
+<li><a href="#definition-of-done">8. Definition of Done</a></li>
+</ul>
+</div>
+<div class="sect1">
+<h2 id="status-and-scope"><a class="anchor" href="#status-and-scope"></a>1. Status and Scope</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Work item</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">KP-128: Type-safe service contracts and staged logic organization</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Branch</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>feature/KP-128-type-safety-modernization</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Status</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">In progress; typed category and supplier creation pilots implemented and verified on JDK 17</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Java compatibility</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Preserve Java 17 API baseline (<code>maven.compiler.release=17</code>); verify on Java 17, Java 25, and Java 27</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>This plan addresses the highest-priority technical debt identified for modernization: weakly typed public service contracts that expose <code>Object[]</code>, raw persistence providers, and database query abstractions to callers. Business-logic extraction and broad code organization are later phases, after stable typed boundaries and behavioral tests exist.</p>
+</div>
+<div class="paragraph">
+<p>No framework rewrite, Java release-level increase, CI/CD change, database replacement, connection-pool change, or performance redesign is included.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="user-story"><a class="anchor" href="#user-story"></a>2. User Story</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>As a KriolOS POS maintainer, I want application-facing service contracts to use explicit domain types instead of positional arrays and persistence APIs, so that invalid field mappings are caught at compile time and later business-logic reorganization can proceed without changing user-visible behavior.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="acceptance-criteria"><a class="anchor" href="#acceptance-criteria"></a>3. Acceptance Criteria</h2>
+<div class="sectionbody">
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Given a caller creates a catalog category, when it crosses the application/service boundary, then the ID, name, and show-name flag are passed by named typed parameters and persisted without positional mapping.</p>
+</li>
+<li>
+<p>Given a service API is migrated, when the full reactor compiles, then all current application and module callers compile against the typed API; any compatibility adapter is explicitly deprecated and has a removal condition.</p>
+</li>
+<li>
+<p>Given a service API is migrated, then its public contract does not expose <code>Object[]</code>, raw collection types, <code>Row</code>, <code>TableDefinition</code>, <code>SentenceList</code>, <code>SentenceExec</code>, <code>SaveProvider</code>, or <code>ListProvider</code> unless a documented framework adapter requires it.</p>
+</li>
+<li>
+<p>Given an unexpected unchecked exception occurs after a database transaction begins, when the transaction fails, then the database work is rolled back, the session reports no active transaction, auto-commit is restored, and a subsequent transaction can commit independently.</p>
+</li>
+<li>
+<p>Given a ticket sale succeeds, then receipt, ticket, lines, taxes, payments, stock movements, voucher state, and customer debt remain in one atomic database transaction; printing remains a post-commit action with an explicit recovery path.</p>
+</li>
+<li>
+<p>Given the migration is complete, the full test suite passes on JDK 17, JDK 25, and JDK 27 while production code remains compatible with <code>--release 17</code>.</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="evidence-and-priority"><a class="anchor" href="#evidence-and-priority"></a>4. Evidence and Priority</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="highest-value-type-safety-boundary"><a class="anchor" href="#highest-value-type-safety-boundary"></a>4.1. Highest-Value Type-Safety Boundary</h3>
+<div class="paragraph">
+<p><code>CatalogService</code> already exposes typed category creation (<code>createCategory(String, String, boolean)</code>) alongside a deprecated <code>createCategory(Object[])</code> overload. <code>JPanelCSVImport</code> was migrated to the typed call and an HSQLDB contract test verifies the persisted ID, name, and show-name flag.</p>
+</div>
+<div class="paragraph">
+<p><code>SupplierService</code> previously exposed only <code>createSupplier(Object[])</code>, and <code>JPanelCSVImport</code> used a four-position array. The implementation now accepts <code>SupplierCreateCommand</code>; the old array overload remains a deprecated compatibility adapter. An HSQLDB contract test verifies the persisted ID, name, search key, and visibility flag through both the typed method and the legacy array adapter.</p>
+</div>
+<div class="paragraph">
+<p><code>ImportService.execCSVStockUpdate(Object[])</code> accepted six positional fields from <code>StockQtyImport</code>. The caller now passes <code>StockQuantityImportEntry</code>; <code>DataLogicImport</code> owns the SQL-column mapping and retains the deprecated array overload. An HSQLDB test verifies the existing <code>csvimport</code> column mapping.</p>
+</div>
+<div class="paragraph">
+<p><code>CatalogService</code> also exposes persistence-layer types such as <code>TableDefinition</code>, <code>Row</code>, <code>SentenceList</code>, <code>SentenceExec</code>, and <code>ListProvider</code>. Its active product save-provider API is now parameterized as <code>SaveProvider&lt;Object[]&gt;</code>; the array remains because the current Swing editor sends positional rows. Equivalent leakage appears in other <code>*Service</code> interfaces. The first inventory pass found these leaks in interfaces including catalog, customer, people, inventory/stock, payment/treasury, restaurant, tax, ticket lifecycle, supplier, reports, shifts, and resources.</p>
+</div>
+<div class="paragraph">
+<p>A broad text scan found 349 <code>Object[]</code> occurrences across 130 production files in the selected app/domain/base source trees. This is a discovery count, not a defect count: many occurrences are legitimate JDBC bind arrays, Swing table-model values, or legacy editor callbacks. Only public service/logic contracts and their caller mappings are migration targets.</p>
+</div>
+<div class="paragraph">
+<p><code>StockService.adjustStock(Object[])</code> has an unsafe positional contract (<code>productId</code>, <code>locationId</code>, attribute-set instance ID, units), but the current source scan did not find an application caller and its test fake is a no-op. It is inventoried for a later decision, not selected as the first pilot.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="transaction-reliability-gate"><a class="anchor" href="#transaction-reliability-gate"></a>4.2. Transaction Reliability Gate</h3>
+<div class="paragraph">
+<p><code>DataLogicSales.saveTicket()</code> coordinates receipt/ticket/line/payment/tax writes plus stock, voucher, and customer-debt changes under <code>Transaction.execute()</code>. The wrapper handles checked database/domain exceptions but does not roll back for unchecked exceptions. This must be characterized and corrected before moving checkout logic or persistence responsibilities. It is a blocking reliability gate, not a reason to begin with a checkout rewrite.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="migration-sequence"><a class="anchor" href="#migration-sequence"></a>5. Migration Sequence</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="phase-0-freeze-baseline-and-inventory"><a class="anchor" href="#phase-0-freeze-baseline-and-inventory"></a>5.1. Phase 0: Freeze Baseline and Inventory</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Record the current Java 17, 25, and 27 test/build baseline on the feature branch.</p>
+</li>
+<li>
+<p>Inventory public service signatures by module: <code>Object[]</code>, raw collections, persistence-library types, and caller count.</p>
+</li>
+<li>
+<p>Classify each array/API as a public domain contract, a Swing callback, a JDBC binder, or a generated/compatibility adapter. Do not convert binder arrays or framework-required values mechanically.</p>
+</li>
+<li>
+<p>Add category/supplier persistence contract tests, customer-import mapping tests on both HSQLDB and SQLite, and the transaction failure test plan before changing production contracts.</p>
+</li>
+<li>
+<p>Record current legacy API callers and their owning modules; compilation is the migration gate for each removal.</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect2">
+<h3 id="phase-1-type-safe-catalog-pilot"><a class="anchor" href="#phase-1-type-safe-catalog-pilot"></a>5.2. Phase 1: Type-Safe Catalog Pilot</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Change CSV category and supplier import paths to call their typed service methods with named values/records.</p>
+</li>
+<li>
+<p>Add in-memory HSQLDB contract tests proving typed calls persist exact fields and flags.</p>
+</li>
+<li>
+<p>Parameterize the active product save-provider return contract as <code>SaveProvider&lt;Object[]&gt;</code>, retaining the documented Swing row boundary.</p>
+</li>
+<li>
+<p>Keep deprecated array overloads temporarily for compatibility; remove them only after a repository-wide caller search is clean and external API compatibility is reviewed.</p>
+</li>
+<li>
+<p>Completed: category and supplier typed-create pilots, including legacy adapter parity, pass focused JDK 17 tests; the app reactor <code>test-compile</code> passes on JDK 17.</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect2">
+<h3 id="phase-2-transaction-exception-safety"><a class="anchor" href="#phase-2-transaction-exception-safety"></a>5.3. Phase 2: Transaction Exception Safety</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Completed separately by Antigravity: <code>Transaction.execute()</code> now attempts rollback for checked exceptions, runtime exceptions, and errors, and preserves rollback failures as suppressed exceptions.</p>
+</li>
+<li>
+<p>Completed separately by Antigravity: <code>TransactionTest</code> covers successful commit, checked failure, runtime failure, error, commit <code>SQLException</code>, rollback failure, and nested transaction behavior; focused JDK 17 test run passed.</p>
+</li>
+<li>
+<p>Still required: add a real-session regression that injects <code>RuntimeException</code> after a write and verifies rollback, cleared transaction state, restored auto-commit, and successful reuse of the session.</p>
+</li>
+<li>
+<p>Add HSQLDB integration coverage for ticket-save all-or-nothing behavior, including injected failures after receipt, stock, voucher, and debt mutations.</p>
+</li>
+<li>
+<p>Verify all participating data services use the same transaction/session for mutations that must be atomic.</p>
+</li>
+<li>
+<p>Keep receipt printing outside the database transaction; separately verify that a print failure leaves a committed ticket eligible for reprint/recovery.</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect2">
+<h3 id="phase-3-typed-commands-and-results"><a class="anchor" href="#phase-3-typed-commands-and-results"></a>5.4. Phase 3: Typed Commands and Results</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Introduce named records/value types for high-risk multi-field commands (for example, stock adjustment and import rows), with validation at construction or service entry.</p>
+</li>
+<li>
+<p><strong>Command Pattern Architectural Standard</strong>: Service mutations and operations requiring multiple fields must use an immutable Java 17 <code>record</code> named <code>&lt;Action&gt;&lt;Entity&gt;Command</code> (for example, <code>StockAdjustmentCommand</code>, <code>SupplierCreateCommand</code>). Service interfaces declare a single command parameter (<code>void adjustStock(StockAdjustmentCommand command)</code>) and avoid multi-parameter overloads to prevent parameter bloat and positional confusion.</p>
+</li>
+<li>
+<p>Replace <code>Object[]</code> service methods with typed commands/results and update callers in the same module slice.</p>
+</li>
+<li>
+<p>Keep SQL parameter arrays private to data-access implementation methods.</p>
+</li>
+<li>
+<p>Add parity tests for units, location, product, attribute instance, sign, nullability, and error behavior before deleting legacy adapters.</p>
+</li>
+<li>
+<p>Completed pilot: <code>StockQuantityImportEntry</code> replaces the active stock-import caller&#8217;s six-element array; JDK 17 HSQLDB mapping test and app reactor <code>test-compile</code> pass.</p>
+</li>
+<li>
+<p>Completed by Antigravity: <code>StockAdjustmentCommand</code> replaces four-parameter and array-based stock adjustment; <code>StockService</code> and <code>DataLogicInventory</code> consume the command directly with full bundle decomposition support.</p>
+</li>
+<li>
+<p>Completed customer-import gate: the same five-field typed <code>CustomerCsvImportEntry</code> mapping passes on HSQLDB in the domain contract and SQLite in the app test module on JDK 17. The SQLite driver was already on Surefire&#8217;s classpath; the app test explicitly loads it because automatic registration did not occur in this test environment.</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect2">
+<h3 id="phase-4-remove-persistence-leakage-from-service-ports"><a class="anchor" href="#phase-4-remove-persistence-leakage-from-service-ports"></a>5.5. Phase 4: Remove Persistence Leakage from Service Ports</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Replace <code>SentenceList</code>, <code>SentenceExec</code>, <code>Row</code>, <code>TableDefinition</code>, raw <code>SaveProvider</code>, and raw <code>ListProvider</code> exposure with typed service operations and domain collections.</p>
+</li>
+<li>
+<p>Implement adapters at the data/UI boundary so Swing tables/editors can migrate independently.</p>
+</li>
+<li>
+<p>Migrate one bounded domain at a time (catalog, customer/people, inventory/stock, then sales/reporting), preserving module ownership and public behavior.</p>
+</li>
+<li>
+<p>Keep compatibility adapters deprecated until all in-repository callers compile against typed ports and external-consumer compatibility is reviewed.</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect2">
+<h3 id="phase-5-logic-and-code-organization"><a class="anchor" href="#phase-5-logic-and-code-organization"></a>5.6. Phase 5: Logic and Code Organization</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Only after service contracts are typed, extract use-case orchestration from data-access classes into focused application services.</p>
+</li>
+<li>
+<p>Keep SQL, row mapping, and transaction participation in persistence adapters; keep business rules in typed domain/application services.</p>
+</li>
+<li>
+<p>Preserve one explicit transaction boundary for checkout and its ledger side effects; do not split commits or add asynchronous persistence in this phase.</p>
+</li>
+<li>
+<p>Use the existing sales lifecycle and next-generation architecture documents as design inputs, but update them only when implementation decisions are confirmed.</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect2">
+<h3 id="phase-6-delivery-verification"><a class="anchor" href="#phase-6-delivery-verification"></a>5.7. Phase 6: Delivery Verification</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Run the focused module test after each change, then full <code>./mvnw clean test</code> on JDK 17, 25, and 27.</p>
+</li>
+<li>
+<p>Run <code>./mvnw clean test-compile</code> and verify <code>maven.compiler.release</code> remains 17.</p>
+</li>
+<li>
+<p>Audit public service interfaces for remaining untyped contracts and document each allowed exception with its boundary reason and removal condition.</p>
+</li>
+<li>
+<p>Verify no user CI/CD or operating-system support changes were made as part of this type-safety task.</p>
+</li>
+<li>
+<p>Merge through a reviewed pull request to <code>develop</code>; do not commit unrelated user worktree changes.</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="pre-migration-test-plan"><a class="anchor" href="#pre-migration-test-plan"></a>6. Pre-Migration Test Plan</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 14.2857%;">
+<col style="width: 28.5714%;">
+<col style="width: 28.5714%;">
+<col style="width: 28.5715%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Test</th>
+<th class="tableblock halign-left valign-top">Given / When</th>
+<th class="tableblock halign-left valign-top">Required observable result</th>
+<th class="tableblock halign-left valign-top">Gate</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Catalog category contract</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Given an in-memory category table, when the typed <code>CatalogService.createCategory</code> is invoked</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Exactly one row contains the supplied ID, name, and show-name flag</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Phase 0 baseline; must remain green through all phases</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Category import mapping</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Given an imported category name, when <code>JPanelCSVImport</code> resolves/creates it</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The created category ID is returned and associated with the imported product</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Add before migrating the importer call</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Customer import mapping (HSQLDB + SQLite)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Given a <code>CustomerCsvImportEntry</code>, when the typed <code>ImportService</code> method persists it in each configured test engine</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Exactly one <code>csvimport</code> row stores ID, row number, status, search key, and name in the same columns on both engines</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Passed on JDK 17; retain as a regression test</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Transaction commit</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Given a valid transaction body, when it completes</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Writes are committed and transaction state is cleared</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Phase 2 baseline</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Checked failure rollback</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Given a transaction body throws <code>BasicException</code>, when executed</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No writes remain; transaction state is cleared; auto-commit is restored</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Phase 2 baseline</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Unchecked failure rollback</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Given a transaction body throws <code>RuntimeException</code> after a write, when executed</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No writes remain; transaction state is cleared; auto-commit is restored; a new transaction succeeds</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Phase 2 regression; expected red before the fix, required green before Phase 3</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Ticket atomicity</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Given a sale with lines, taxes, payments, stock, voucher, and customer debt mutations, when an injected write fails</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No partial ticket/ledger mutation survives rollback</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Required before checkout logic is reorganized</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Ticket success</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Given a valid paid ticket, when persisted successfully</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Each receipt/ticket/line/tax/payment/stock/voucher/debt effect is committed exactly once</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Must remain green after Phase 5</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Post-commit print recovery</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Given persistence succeeds but printing fails</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Sale remains committed and is discoverable for reprint; no database rollback is attempted</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Verify existing recovery contract or add one before changing print flow</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>The <code>Unchecked failure rollback</code> regression is intentionally expected to fail on the current implementation until Phase 2 fixes transaction cleanup. All other baseline tests must pass before the relevant migration slice begins. Keep that known red isolated and clearly reported; do not disable or weaken it.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="risks-and-controls"><a class="anchor" href="#risks-and-controls"></a>7. Risks and Controls</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Over-broad array conversion</strong>: <code>Object[]</code> is also used by JDBC serializers and Swing models. <strong>Control</strong>: migrate only public service/domain contracts; preserve framework adapters until their replacement is proven.</p>
+</li>
+<li>
+<p><strong>Compatibility break for plugins/scripts</strong>: Service APIs may have external consumers. <strong>Control</strong>: deprecate adapters first, scan repository call sites, and obtain compatibility approval before removal.</p>
+</li>
+<li>
+<p><strong>Transaction participant mismatch</strong>: Separate service beans may not share the transaction session. <strong>Control</strong>: prove same-session participation with integration tests before moving writes.</p>
+</li>
+<li>
+<p><strong>Test setup masks behavior</strong>: Mock-only tests cannot prove database atomicity. <strong>Control</strong>: use isolated in-memory HSQLDB for persistence contracts and mocks only for unrelated external boundaries.</p>
+</li>
+<li>
+<p><strong>JDK and OS support confusion</strong>: JDK 25/27 are verification runtimes, not a new minimum. <strong>Control</strong>: keep <code>--release 17</code>; treat CI matrix/OS updates as a separately reviewed SDLC change.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="definition-of-done"><a class="anchor" href="#definition-of-done"></a>8. Definition of Done</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Typed service contracts replace the selected unsafe APIs; any remaining legacy API has a named owner, compatibility reason, and removal condition.</p>
+</li>
+<li>
+<p>Baseline and regression tests pass at their designated gates, including the transaction rollback tests.</p>
+</li>
+<li>
+<p>Full reactor tests pass on Java 17, 25, and 27 with the Java 17 API baseline unchanged.</p>
+</li>
+<li>
+<p>Checkout side effects remain atomic, and post-commit printing/recovery semantics are verified.</p>
+</li>
+<li>
+<p>Changes are reviewed and merged by PR; user-owned CI/worktree edits are not included implicitly.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>This page was built using the Antora default UI.</p>
+  <p>The source code for this UI is licensed under the terms of the MPL-2.0 license.</p>
+</footer>
+<script id="site-script" src="../../../_/js/site.js" data-ui-root-path="../../../_"></script>
+<script async src="../../../_/js/vendor/highlight.js"></script>
+  </body>
+</html>
