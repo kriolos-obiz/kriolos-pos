@@ -250,7 +250,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, Tickets
         if (m_oTicket != null) {
             String currentTicket = m_oTicket.getId();
             try {
-                dlReceipts.updateSharedTicket(currentTicket, m_oTicket, m_oTicket.getPickupId());
+                dlReceipts.updateSharedTicket(SaveSharedTicketCommand.of(currentTicket, m_oTicket, m_oTicket.getPickupId()));
             }
             catch (BasicException ex) {
                 LOGGER.log(System.Logger.Level.ERROR, "Exception on save current ticket: " + currentTicket, ex);

@@ -61,14 +61,34 @@ public interface SharedTicketService {
     SharedTicketInfo getSharedTicketInfo(String sharedId) throws BasicException;
 
     /**
+     * Inserts a new shared ticket using a validated command record.
+     *
+     * @param command save shared ticket command
+     * @throws BasicException on persistence error
+     */
+    void insertSharedTicket(SaveSharedTicketCommand command) throws BasicException;
+
+    /**
      * Inserts a new shared ticket.
      *
      * @param id Shared ticket identifier
      * @param ticket Ticket information
      * @param pickupid Pickup order sequence ID
      * @throws BasicException on persistence error
+     * @deprecated Use {@link #insertSharedTicket(SaveSharedTicketCommand)}
      */
-    void insertSharedTicket(String id, TicketInfo ticket, int pickupid) throws BasicException;
+    @Deprecated(since = "2.4.0", forRemoval = false)
+    default void insertSharedTicket(String id, TicketInfo ticket, int pickupid) throws BasicException {
+        insertSharedTicket(SaveSharedTicketCommand.of(id, ticket, pickupid));
+    }
+
+    /**
+     * Updates an existing shared ticket using a validated command record.
+     *
+     * @param command save shared ticket command
+     * @throws BasicException on persistence error
+     */
+    void updateSharedTicket(SaveSharedTicketCommand command) throws BasicException;
 
     /**
      * Updates an existing shared ticket.
@@ -77,8 +97,22 @@ public interface SharedTicketService {
      * @param ticket Ticket information
      * @param pickupid Pickup order sequence ID
      * @throws BasicException on persistence error
+     * @deprecated Use {@link #updateSharedTicket(SaveSharedTicketCommand)}
      */
-    void updateSharedTicket(String id, TicketInfo ticket, int pickupid) throws BasicException;
+    @Deprecated(since = "2.4.0", forRemoval = false)
+    default void updateSharedTicket(String id, TicketInfo ticket, int pickupid) throws BasicException {
+        updateSharedTicket(SaveSharedTicketCommand.of(id, ticket, pickupid));
+    }
+
+    /**
+     * Updates an existing restaurant shared ticket using a validated command record.
+     *
+     * @param command save shared ticket command
+     * @throws BasicException on persistence error
+     */
+    default void updateRSharedTicket(SaveSharedTicketCommand command) throws BasicException {
+        updateSharedTicket(command);
+    }
 
     /**
      * Updates an existing restaurant shared ticket.
@@ -87,8 +121,12 @@ public interface SharedTicketService {
      * @param ticket Ticket information
      * @param pickupid Pickup order sequence ID
      * @throws BasicException on persistence error
+     * @deprecated Use {@link #updateRSharedTicket(SaveSharedTicketCommand)}
      */
-    void updateRSharedTicket(String id, TicketInfo ticket, int pickupid) throws BasicException;
+    @Deprecated(since = "2.4.0", forRemoval = false)
+    default void updateRSharedTicket(String id, TicketInfo ticket, int pickupid) throws BasicException {
+        updateRSharedTicket(SaveSharedTicketCommand.of(id, ticket, pickupid));
+    }
 
     /**
      * Locks a shared ticket to prevent concurrent modification across terminals.
@@ -109,14 +147,28 @@ public interface SharedTicketService {
     void unlockSharedTicket(String id, String unlocked) throws BasicException;
 
     /**
+     * Inserts a restaurant shared ticket using a validated command record.
+     *
+     * @param command save shared ticket command
+     * @throws BasicException on persistence error
+     */
+    default void insertRSharedTicket(SaveSharedTicketCommand command) throws BasicException {
+        insertSharedTicket(command);
+    }
+
+    /**
      * Inserts a restaurant shared ticket.
      *
      * @param id Shared ticket identifier
      * @param ticket Ticket information
      * @param pickupid Pickup order sequence ID
      * @throws BasicException on persistence error
+     * @deprecated Use {@link #insertRSharedTicket(SaveSharedTicketCommand)}
      */
-    void insertRSharedTicket(String id, TicketInfo ticket, int pickupid) throws BasicException;
+    @Deprecated(since = "2.4.0", forRemoval = false)
+    default void insertRSharedTicket(String id, TicketInfo ticket, int pickupid) throws BasicException {
+        insertRSharedTicket(SaveSharedTicketCommand.of(id, ticket, pickupid));
+    }
 
     /**
      * Deletes a shared ticket by ID.

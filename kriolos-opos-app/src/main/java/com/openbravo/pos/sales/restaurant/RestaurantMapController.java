@@ -22,6 +22,7 @@ import com.openbravo.basic.AppLocal;
 import com.openbravo.pos.panels.AppView;
 import com.openbravo.pos.admin.DataLogicSystem;
 import com.openbravo.pos.sales.DataLogicReceipts;
+import com.openbravo.pos.sales.SaveSharedTicketCommand;
 import com.openbravo.pos.sales.SharedTicketService;
 import com.openbravo.pos.sales.TicketsEditor;
 import com.openbravo.pos.ticket.TicketInfo;
@@ -263,7 +264,7 @@ public class RestaurantMapController {
             ticket = new TicketInfo();
             ensureTicketUser(ticket);
             try {
-                sharedTicketService.insertSharedTicket(place.getId(), ticket, ticket.getPickupId());
+                sharedTicketService.insertSharedTicket(SaveSharedTicketCommand.of(place.getId(), ticket, ticket.getPickupId()));
             }
             catch (BasicException ex) {
                 LOGGER.log(System.Logger.Level.WARNING, "Exception creating ticket: ", ex);
@@ -360,7 +361,7 @@ public class RestaurantMapController {
                     targetTicket.setCustomer(ticketClip.getCustomer());
                 }
                 ticketClip.getLines().forEach(targetTicket::addLine);
-                sharedTicketService.updateRSharedTicket(place.getId(), targetTicket, targetTicket.getPickupId());
+                sharedTicketService.updateRSharedTicket(SaveSharedTicketCommand.of(place.getId(), targetTicket, targetTicket.getPickupId()));
                 sharedTicketService.deleteSharedTicket(placeClipboard.getId());
             }
             catch (BasicException ex) {
@@ -391,7 +392,7 @@ public class RestaurantMapController {
         TicketInfo existing = getTicketInfo(place);
         if (existing == null) {
             try {
-                sharedTicketService.insertRSharedTicket(place.getId(), ticketClip, ticketClip.getPickupId());
+                sharedTicketService.insertRSharedTicket(SaveSharedTicketCommand.of(place.getId(), ticketClip, ticketClip.getPickupId()));
                 place.setPeople(true);
                 sharedTicketService.deleteSharedTicket(placeClipboard.getId());
                 placeClipboard.setPeople(false);
@@ -422,9 +423,9 @@ public class RestaurantMapController {
                 sharedTicketService.getSharedTicket(placeCurrent.getId());
 
                 if ("override".equals(lockState) || LOCKED_STATE.equals(lockState)) {
-                    sharedTicketService.updateSharedTicket(placeCurrent.getId(),
+                    sharedTicketService.updateSharedTicket(SaveSharedTicketCommand.of(placeCurrent.getId(),
                             panelTicket.getActiveTicket(),
-                            panelTicket.getActiveTicket().getPickupId());
+                            panelTicket.getActiveTicket().getPickupId()));
                     sharedTicketService.unlockSharedTicket(placeCurrent.getId(), null);
                     placeCurrent = null;
                 } else {
@@ -466,8 +467,8 @@ public class RestaurantMapController {
     public void moveCurrentTicket(Component parent) {
         if (placeCurrent != null) {
             try {
-                sharedTicketService.updateRSharedTicket(placeCurrent.getId(),
-                        panelTicket.getActiveTicket(), panelTicket.getActiveTicket().getPickupId());
+                sharedTicketService.updateRSharedTicket(SaveSharedTicketCommand.of(placeCurrent.getId(),
+                        panelTicket.getActiveTicket(), panelTicket.getActiveTicket().getPickupId()));
             }
             catch (BasicException ex) {
                 LOGGER.log(System.Logger.Level.WARNING, "Exception moving ticket: ", ex);

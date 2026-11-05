@@ -42,6 +42,7 @@ import com.openbravo.pos.sales.AuditService;
 import com.openbravo.pos.sales.JProductLineEditPanel;
 import com.openbravo.pos.sales.SalesService;
 import com.openbravo.pos.sales.SalesServiceImpl;
+import com.openbravo.pos.sales.SaveSharedTicketCommand;
 import com.openbravo.pos.sales.SharedTicketInfo;
 import com.openbravo.pos.sales.SharedTicketService;
 import com.openbravo.pos.sales.TaxService;
@@ -612,12 +613,11 @@ public class ModernTwo extends JPanel implements JPanelView, TicketsEditor {
                 return;
             }
             try {
-                String id = ticket.getId();
-                int pickupId = ticket.getPickupId();
+                SaveSharedTicketCommand cmd = SaveSharedTicketCommand.of(ticket.getId(), ticket, ticket.getPickupId());
                 try {
-                    dlReceipts.insertSharedTicket(id, ticket, pickupId);
+                    dlReceipts.insertSharedTicket(cmd);
                 } catch (Exception ex) {
-                    dlReceipts.updateSharedTicket(id, ticket, pickupId);
+                    dlReceipts.updateSharedTicket(cmd);
                 }
             } catch (Exception e) {
                 LOGGER.log(Level.WARNING, "Failed to save or update shared ticket", e);

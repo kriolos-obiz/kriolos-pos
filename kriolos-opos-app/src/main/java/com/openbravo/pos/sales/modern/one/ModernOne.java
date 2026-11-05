@@ -38,6 +38,7 @@ import com.openbravo.pos.ticket.TicketParser;
 import com.openbravo.pos.sales.JProductLineEditPanel;
 import com.openbravo.pos.sales.SalesService;
 import com.openbravo.pos.sales.SalesServiceImpl;
+import com.openbravo.pos.sales.SaveSharedTicketCommand;
 import com.openbravo.pos.sales.SharedTicketService;
 import com.openbravo.pos.sales.TaxService;
 import com.openbravo.pos.sales.TaxesException;
@@ -498,15 +499,15 @@ public class ModernOne extends JPanel implements JPanelView, TicketsEditor {
             try {
                 
                 String ticketID = ticketInfo.getId();
-                int pickupId = ticketInfo.getPickupId();
+                SaveSharedTicketCommand cmd = SaveSharedTicketCommand.of(ticketID, ticketInfo, ticketInfo.getPickupId());
                 
                 LOGGER.log(Level.INFO, "Save shared ticket: "+ticketID);
                 
                 TicketInfo foundTicket = dlReceipts.getSharedTicket(ticketID);
                 if(foundTicket == null){
-                    dlReceipts.insertSharedTicket(ticketID, ticketInfo, pickupId);
+                    dlReceipts.insertSharedTicket(cmd);
                 }else {
-                    dlReceipts.updateSharedTicket(ticketID, ticketInfo, pickupId);
+                    dlReceipts.updateSharedTicket(cmd);
                 }
                 
             } catch (Exception e) {
