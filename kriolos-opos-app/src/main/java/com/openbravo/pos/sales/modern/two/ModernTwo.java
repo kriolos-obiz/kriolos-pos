@@ -39,6 +39,7 @@ import com.openbravo.pos.ticket.TicketParser;
 import com.openbravo.pos.scripting.ScriptEngine;
 import com.openbravo.pos.scripting.ScriptFactory;
 import com.openbravo.pos.sales.AuditService;
+import com.openbravo.pos.sales.RecordAuditTicketDeletedCommand;
 import com.openbravo.pos.sales.JProductLineEditPanel;
 import com.openbravo.pos.sales.SalesService;
 import com.openbravo.pos.sales.SalesServiceImpl;
@@ -310,7 +311,7 @@ public class ModernTwo extends JPanel implements JPanelView, TicketsEditor {
 
     public void deleteTicket() {
         if (auditService != null && app != null && app.getAppUserView() != null && app.getAppUserView().getUser() != null) {
-            auditService.addTicketDeleted(app.getAppUserView().getUser().getName());
+            auditService.recordTicketDeleted(RecordAuditTicketDeletedCommand.of(app.getAppUserView().getUser().getName()));
         }
         clearCurrentTicket();
     }

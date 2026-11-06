@@ -6,6 +6,12 @@
     "available": [],
     "completed": [
       {
+        "id": "TASK-026",
+        "agent": "antigravity",
+        "description": "KP-136: Modernize AuditService with RecordAuditLineRemovedCommand and RecordAuditTicketDeletedCommand",
+        "completed_at": "2026-11-06T22:42:45Z"
+      },
+      {
         "id": "TASK-025",
         "agent": "antigravity",
         "description": "KP-135: Modernize StockService with RecordStockMovementCommand and RevertStockMovementCommand",

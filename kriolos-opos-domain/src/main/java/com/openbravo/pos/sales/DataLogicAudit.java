@@ -24,6 +24,7 @@ import com.openbravo.data.loader.Session;
 import com.openbravo.data.loader.StaticSentence;
 import com.openbravo.pos.container.BeanFactoryDataSingle;
 import java.util.Date;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -42,13 +43,8 @@ public class DataLogicAudit extends BeanFactoryDataSingle implements AuditServic
     }
 
     @Override
-    public final void addTicketLineRemoved(String username, String ticketId, String productId, String productName, double quantity) {
-        addTicketLineRemoved(username, ticketId, productId, productName, quantity, new Date());
-    }
-
-    @Override
-
-    public final void addTicketLineRemoved(String username, String ticketId, String productId, String productName, double quantity, Date date) {
+    public void recordLineRemoved(RecordAuditLineRemovedCommand command) {
+        Objects.requireNonNull(command, "command must not be null");
         final SentenceExec m_lineremoved = new StaticSentence(this.sessionDB,
                 """
                 INSERT INTO lineremoved (NAME, TICKETID, PRODUCTID, PRODUCTNAME, UNITS, REMOVEDDATE)
@@ -61,7 +57,14 @@ public class DataLogicAudit extends BeanFactoryDataSingle implements AuditServic
                 }));
 
         try {
-            Object[] line = new Object[]{username, ticketId, productId, productName, quantity, date};
+            Object[] line = new Object[]{
+                command.username(),
+                command.ticketId(),
+                command.productId(),
+                command.productName(),
+                command.units(),
+                command.date()
+            };
             m_lineremoved.exec(line);
         } catch (BasicException e) {
             LOGGER.log(Level.SEVERE, "Exception on execute line removed: ", e);
@@ -69,12 +72,8 @@ public class DataLogicAudit extends BeanFactoryDataSingle implements AuditServic
     }
 
     @Override
-    public final void addTicketDeleted(String username) {
-        addTicketDeleted(username, new Date());
-    }
-
-    @Override
-    public final void addTicketDeleted(String username, Date date) {
+    public void recordTicketDeleted(RecordAuditTicketDeletedCommand command) {
+        Objects.requireNonNull(command, "command must not be null");
         final SentenceExec m_ticketremoved = new StaticSentence(this.sessionDB,
                 """
                 INSERT INTO lineremoved (NAME, TICKETID, PRODUCTNAME, UNITS, REMOVEDDATE)
@@ -85,10 +84,40 @@ public class DataLogicAudit extends BeanFactoryDataSingle implements AuditServic
                     Datas.STRING, Datas.DOUBLE, Datas.TIMESTAMP
                 }));
         try {
-            Object[] ticketDeleted = new Object[]{username, "Void", "Ticket Deleted", 0.0, date};
+            Object[] ticketDeleted = new Object[]{
+                command.username(),
+                "Void",
+                "Ticket Deleted",
+                0.0,
+                command.date()
+            };
             m_ticketremoved.exec(ticketDeleted);
         } catch (BasicException e) {
             LOGGER.log(Level.SEVERE, "Exception on execute ticket removed: ", e);
         }
+    }
+
+    @Override
+    @Deprecated
+    public final void addTicketLineRemoved(String username, String ticketId, String productId, String productName, double quantity) {
+        recordLineRemoved(RecordAuditLineRemovedCommand.of(username, ticketId, productId, productName, quantity));
+    }
+
+    @Override
+    @Deprecated
+    public final void addTicketLineRemoved(String username, String ticketId, String productId, String productName, double quantity, Date date) {
+        recordLineRemoved(RecordAuditLineRemovedCommand.of(username, ticketId, productId, productName, quantity, date));
+    }
+
+    @Override
+    @Deprecated
+    public final void addTicketDeleted(String username) {
+        recordTicketDeleted(RecordAuditTicketDeletedCommand.of(username));
+    }
+
+    @Override
+    @Deprecated
+    public final void addTicketDeleted(String username, Date date) {
+        recordTicketDeleted(RecordAuditTicketDeletedCommand.of(username, date));
     }
 }

@@ -24,6 +24,7 @@ import com.openbravo.basic.BasicException;
 import com.openbravo.beans.JPasswordPanel;
 import com.openbravo.data.gui.MessageInf;
 import com.openbravo.pos.sales.AuditService;
+import com.openbravo.pos.sales.RecordAuditTicketDeletedCommand;
 import com.openbravo.pos.sales.JTicketsBag;
 import com.openbravo.pos.sales.SaveSharedTicketCommand;
 import com.openbravo.pos.sales.SharedTicketInfo;
@@ -142,7 +143,7 @@ public class JTicketsBagShared extends JTicketsBag {
     @Override
     public void deleteTicket() {
 
-        auditService.addTicketDeleted(m_App.getAppUserView().getUser().getName());
+        auditService.recordTicketDeleted(RecordAuditTicketDeletedCommand.of(m_App.getAppUserView().getUser().getName()));
         updateCount();
     }
 

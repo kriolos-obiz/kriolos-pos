@@ -1254,19 +1254,19 @@ public class DataLogicSales extends BeanFactoryDataSingle implements TicketLifec
     }
 
     /**
-     * @deprecated Use {@link DataLogicAudit#addTicketLineRemoved(String, String, String, String, double)} instead.
+     * @deprecated Use {@link DataLogicAudit#recordLineRemoved(RecordAuditLineRemovedCommand)} instead.
      */
     @Deprecated
     public final void addTicketLineRemoved(String username, String ticketId, String productId, String productName, double quantity) {
-        getDataLogicAudit().addTicketLineRemoved(username, ticketId, productId, productName, quantity);
+        getDataLogicAudit().recordLineRemoved(RecordAuditLineRemovedCommand.of(username, ticketId, productId, productName, quantity));
     }
 
     /**
-     * @deprecated Use {@link DataLogicAudit#addTicketDeleted(String)} instead.
+     * @deprecated Use {@link DataLogicAudit#recordTicketDeleted(RecordAuditTicketDeletedCommand)} instead.
      */
     @Deprecated
     public final void addTicketDeleted(String username) {
-        getDataLogicAudit().addTicketDeleted(username);
+        getDataLogicAudit().recordTicketDeleted(RecordAuditTicketDeletedCommand.of(username));
     }
 
 }
