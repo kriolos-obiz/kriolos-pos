@@ -37,7 +37,7 @@ public class JPanelPlaces extends JPanelTable {
 
     private static final long serialVersionUID = 1L;
 
-    private TableDefinition tplaces;
+    private TableDefinition<Place> tplaces;
     private PlacesEditor jeditor;
 
     public JPanelPlaces() {}

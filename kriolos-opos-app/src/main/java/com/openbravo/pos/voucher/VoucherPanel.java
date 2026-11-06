@@ -27,7 +27,7 @@ import com.openbravo.pos.panels.JPanelTable2;
 
 public class VoucherPanel extends JPanelTable2 {
 
-    private TableDefinition tableDefinition;
+    private TableDefinition<VoucherInfo> tableDefinition;
     private VoucherEditor editor;    
     private VoucherService voucherService;
 

@@ -83,7 +83,7 @@ public interface CustomerService {
      * @deprecated Direct access to persistence TableDefinition leaks data loader internals into the domain.
      */
     @Deprecated(since = "1.0.0")
-    TableDefinition getTableCustomers();
+    TableDefinition<Object[]> getTableCustomers();
 
     /**
      * @deprecated Direct access to Row metadata leaks data loader internals into the domain.

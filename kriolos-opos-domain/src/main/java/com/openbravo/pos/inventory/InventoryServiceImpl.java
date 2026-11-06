@@ -145,7 +145,7 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     @Override
-    public TableDefinition getTableLocations() {
+    public TableDefinition<Object[]> getTableLocations() {
         return dlInventory != null ? dlInventory.getTableLocations() : null;
     }
 

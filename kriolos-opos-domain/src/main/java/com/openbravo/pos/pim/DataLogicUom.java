@@ -56,8 +56,8 @@ public class DataLogicUom extends BeanFactoryDataSingle {
      *
      * @return UOM {@link TableDefinition}
      */
-    public TableDefinition getTableUom() {
-        return new TableDefinition(sessionDB,
+    public TableDefinition<Object[]> getTableUom() {
+        return new TableDefinition<>(sessionDB,
                 "uom",
                 new String[]{"id", "name"},
                 new String[]{"id", AppLocal.getIntString("label.name")},

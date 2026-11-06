@@ -1187,7 +1187,7 @@ public class DataLogicSales extends BeanFactoryDataSingle implements TicketLifec
      * @deprecated Use {@link DataLogicInventory#getTableLocations()} instead.
      */
     @Deprecated
-    public final TableDefinition getTableLocations() {
+    public final TableDefinition<Object[]> getTableLocations() {
         return getDataLogicInventory().getTableLocations();
     }
 
@@ -1203,7 +1203,7 @@ public class DataLogicSales extends BeanFactoryDataSingle implements TicketLifec
      * @deprecated Use {@link CatalogService#getTableUom()} instead.
      */
     @Deprecated
-    public final TableDefinition getTableUom() {
+    public final TableDefinition<Object[]> getTableUom() {
         return getCatalogService().getTableUom();
     }
 

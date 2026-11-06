@@ -37,7 +37,7 @@ public class CategoriesPanel extends JPanelTable {
 
     private static final long serialVersionUID = 1L;
     
-    private TableDefinition tcategories;
+    private TableDefinition<Object[]> tcategories;
     private CategoriesEditor jeditor;
     
     /** Creates a new instance of JPanelCategories */

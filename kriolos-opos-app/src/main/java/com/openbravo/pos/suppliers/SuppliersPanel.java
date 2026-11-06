@@ -40,7 +40,7 @@ public class SuppliersPanel extends JPanelTable {
 
     private static final long serialVersionUID = 1L;
     
-    private TableDefinition tsuppliers;
+    private TableDefinition<Object[]> tsuppliers;
     private SuppliersView jeditor;
     
     /** Creates a new instance of SuppliersPanel */

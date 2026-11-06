@@ -35,7 +35,7 @@ import javax.swing.ListCellRenderer;
  */
 public class JPanelFloors extends JPanelTable {
     
-    private TableDefinition tfloors;
+    private TableDefinition<FloorsInfo> tfloors;
     private FloorsEditor jeditor;
     
     /** Creates a new instance of JPanelFloors */

@@ -6,6 +6,12 @@
     "available": [],
     "completed": [
       {
+        "id": "TASK-024",
+        "agent": "antigravity",
+        "description": "KP-134: Modernize remaining TableDefinition usages across domain services and panels",
+        "completed_at": "2026-11-06T07:24:00Z"
+      },
+      {
         "id": "TASK-023",
         "agent": "antigravity",
         "description": "KP-133: Modernize TaxService with tax commands and typed TableDefinition",

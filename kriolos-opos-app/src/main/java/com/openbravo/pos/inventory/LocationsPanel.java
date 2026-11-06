@@ -34,7 +34,7 @@ import javax.swing.ListCellRenderer;
  */
 public class LocationsPanel extends JPanelTable {
     
-    private TableDefinition tlocations;
+    private TableDefinition<Object[]> tlocations;
     private LocationsView jeditor;
     
     /** Creates a new instance of LocationsPanel */

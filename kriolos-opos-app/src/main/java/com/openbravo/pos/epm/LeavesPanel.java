@@ -35,7 +35,7 @@ import javax.swing.ListCellRenderer;
  */
 public class LeavesPanel extends JPanelTable {
 
-    private TableDefinition tleaves;
+    private TableDefinition<LeavesInfo> tleaves;
     private LeavesView jeditor;
 
     /** Creates a new instance of LeavesPanel */

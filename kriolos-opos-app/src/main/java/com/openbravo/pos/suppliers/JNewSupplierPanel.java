@@ -39,7 +39,7 @@ public class JNewSupplierPanel extends JPanel {
     private static final long serialVersionUID = 1L;
 
     private SupplierService dlSupplier;
-    private TableDefinition tsuppliers;
+    private TableDefinition<Object[]> tsuppliers;
     private SupplierInfoExt selectedSupplier;
     private SuppliersView suppliersView;
     private PosUIModal modalContext;

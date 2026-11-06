@@ -195,14 +195,14 @@ public interface CatalogService {
      *
      * @return categories {@link TableDefinition}
      */
-    TableDefinition getTableCategories();
+    TableDefinition<Object[]> getTableCategories();
 
     /**
      * Returns the table definition for units of measure.
      *
      * @return UOM {@link TableDefinition}
      */
-    TableDefinition getTableUom();
+    TableDefinition<Object[]> getTableUom();
 
     /**
      * Retrieves Unit of Measure details by ID.

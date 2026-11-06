@@ -208,8 +208,8 @@ public class DataLogicCustomers extends BeanFactoryDataSingle implements Custome
     }
     // </editor-fold>
 
-    public final TableDefinition getTableCustomers() {
-        TableDefinition tcustomers = new TableDefinition(s,
+    public final TableDefinition<Object[]> getTableCustomers() {
+        TableDefinition<Object[]> tcustomers = new TableDefinition<>(s,
                 "customers",
                 new String[]{
                     "ID",

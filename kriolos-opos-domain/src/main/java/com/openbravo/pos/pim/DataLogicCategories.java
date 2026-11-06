@@ -58,8 +58,8 @@ public class DataLogicCategories extends BeanFactoryDataSingle {
      *
      * @return category {@link TableDefinition}
      */
-    public TableDefinition getTableCategories() {
-        return new TableDefinition(sessionDB,
+    public TableDefinition<Object[]> getTableCategories() {
+        return new TableDefinition<>(sessionDB,
                 "categories",
                 new String[]{"ID", "NAME", "PARENTID", "IMAGE", "TEXTTIP", "CATSHOWNAME", "CATORDER",
                     "CATALOGCOLOR",

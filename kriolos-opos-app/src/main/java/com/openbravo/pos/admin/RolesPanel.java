@@ -34,8 +34,7 @@ import javax.swing.ListCellRenderer;
  */
 public class RolesPanel extends JPanelTable {
     
-    private TableDefinition troles;
-    private TableDefinition trolesmenu;
+    private TableDefinition<RoleInfo> troles;
     private RolesView jeditor;
 
     public RolesPanel() {}

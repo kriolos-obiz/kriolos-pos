@@ -155,8 +155,8 @@ public class DataLogicInventory extends BeanFactoryDataSingle implements StockSe
         return list != null ? list : Collections.emptyList();
     }
 
-    public final TableDefinition getTableLocations() {
-        return new TableDefinition(sessionDB,
+    public final TableDefinition<Object[]> getTableLocations() {
+        return new TableDefinition<>(sessionDB,
                 "locations",
                 new String[]{"ID", "NAME", "ADDRESS"},
                 new String[]{"ID", AppLocal.getIntString("label.locationname"),

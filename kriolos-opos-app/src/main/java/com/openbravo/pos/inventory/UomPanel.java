@@ -15,7 +15,7 @@ import javax.swing.ListCellRenderer;
 
 public class UomPanel extends JPanelTable {
 
-     private TableDefinition tuom;
+     private TableDefinition<Object[]> tuom;
      private UomEditor jeditor;
      
     @Override

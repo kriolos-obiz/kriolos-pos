@@ -170,7 +170,7 @@ class CustomerServiceTest {
             }
 
             @Override
-            public TableDefinition getTableCustomers() {
+            public TableDefinition<Object[]> getTableCustomers() {
                 return null;
             }
 

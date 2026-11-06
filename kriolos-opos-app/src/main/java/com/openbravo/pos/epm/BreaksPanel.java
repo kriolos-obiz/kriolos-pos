@@ -35,7 +35,7 @@ import javax.swing.ListCellRenderer;
  */
 public class BreaksPanel extends JPanelTable {
 
-    private TableDefinition tbreaks;
+    private TableDefinition<BreaksInfo> tbreaks;
     private BreaksView jeditor;
 
     /**

@@ -36,7 +36,7 @@ import javax.swing.ListCellRenderer;
 public class PeoplePanel extends JPanelTable {
     
     private PeopleService peopleService;
-    private TableDefinition tpeople;
+    private TableDefinition<PeopleInfo> tpeople;
     private PeopleView jeditor;
     
     /** Creates a new instance of JPanelPeople */
