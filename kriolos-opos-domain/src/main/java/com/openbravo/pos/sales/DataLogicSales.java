@@ -26,6 +26,7 @@ import com.openbravo.pos.ticket.FindTicketsInfo;
 import com.openbravo.pos.pim.UomInfo;
 import com.openbravo.pos.inventory.LocationInfo;
 import com.openbravo.pos.inventory.ProductsBundleInfo;
+import com.openbravo.pos.inventory.RecordStockMovementCommand;
 import com.openbravo.pos.inventory.TaxCustCategoryInfo;
 import com.openbravo.pos.inventory.TaxCategoryInfo;
 import com.openbravo.pos.inventory.AttributeSetInfo;
@@ -767,7 +768,7 @@ public class DataLogicSales extends BeanFactoryDataSingle implements TicketLifec
                     ticketlineinsert.exec(l);
 
                     if (l.getProductID() != null && l.isProductService() != true) {
-                        getStockService().recordStockMovement(
+                        getStockService().recordStockMovement(RecordStockMovementCommand.of(
                             UUID.randomUUID().toString(),
                             ticket.getDate(),
                             l.getMultiply() < 0.0
@@ -779,7 +780,7 @@ public class DataLogicSales extends BeanFactoryDataSingle implements TicketLifec
                             -l.getMultiply(),
                             l.getPrice(),
                             ticket.getUser().getName()
-                        );
+                        ));
                     }
                 }
 
@@ -897,7 +898,7 @@ public class DataLogicSales extends BeanFactoryDataSingle implements TicketLifec
                 for (int ticketLineNumber = 0; ticketLineNumber < ticket.getLinesCount(); ticketLineNumber++) {
 
                     if (ticket.getLine(ticketLineNumber).getProductID() != null) {
-                        getStockService().recordStockMovement(
+                        getStockService().recordStockMovement(RecordStockMovementCommand.of(
                             UUID.randomUUID().toString(),
                             nowDate,
                             ticket.getLine(ticketLineNumber).getMultiply() >= 0.0
@@ -909,7 +910,7 @@ public class DataLogicSales extends BeanFactoryDataSingle implements TicketLifec
                             ticket.getLine(ticketLineNumber).getMultiply(),
                             ticket.getLine(ticketLineNumber).getPrice(),
                             ticket.getUser().getName()
-                        );
+                        ));
                     }
                     // For productBundle
                     List<ProductsBundleInfo> bundle = getProductsBundle((String) ticket.getLine(ticketLineNumber).getProductID());
@@ -919,7 +920,7 @@ public class DataLogicSales extends BeanFactoryDataSingle implements TicketLifec
                             ProductInfoExt bundleProduct = getProductInfoExtById(
                                     bundleComponent.getProductBundleId());
 
-                            getStockService().recordStockMovement(
+                            getStockService().recordStockMovement(RecordStockMovementCommand.of(
                                 UUID.randomUUID().toString(),
                                 nowDate,
                                 ticket.getLine(ticketLineNumber).getMultiply()
@@ -936,7 +937,7 @@ public class DataLogicSales extends BeanFactoryDataSingle implements TicketLifec
                                 * bundleComponent.getQuantity(),
                                 bundleProduct.getPriceSell(),
                                 ticket.getUser().getName()
-                            );
+                            ));
                         }
                     }
                 }

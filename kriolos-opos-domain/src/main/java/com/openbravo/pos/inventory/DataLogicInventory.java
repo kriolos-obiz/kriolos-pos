@@ -504,6 +504,22 @@ public class DataLogicInventory extends BeanFactoryDataSingle implements StockSe
     }
 
     @Override
+    public void recordStockMovement(RecordStockMovementCommand command) throws BasicException {
+        getStockDiaryInsert().exec(new Object[]{
+            command.id(),
+            command.date(),
+            command.reasonKey(),
+            command.location(),
+            command.productId(),
+            command.attSetInstId(),
+            command.units(),
+            command.price(),
+            command.appUser()
+        });
+    }
+
+    @Override
+    @Deprecated
     public void recordStockMovement(
             String id,
             Date date,
@@ -515,20 +531,25 @@ public class DataLogicInventory extends BeanFactoryDataSingle implements StockSe
             double price,
             String appUser
     ) throws BasicException {
-        getStockDiaryInsert().exec(new Object[]{
-            id,
-            date,
-            reasonKey,
-            location,
-            productId,
-            attSetInstId,
-            units,
-            price,
-            appUser
+        recordStockMovement(RecordStockMovementCommand.of(
+                id, date, reasonKey, location, productId, attSetInstId, units, price, appUser));
+    }
+
+    @Override
+    public void revertStockMovement(RevertStockMovementCommand command) throws BasicException {
+        getStockDiaryDelete().exec(new Object[]{
+            command.diaryId(),
+            null,
+            null,
+            command.location(),
+            command.productId(),
+            command.attSetInstId(),
+            command.units()
         });
     }
 
     @Override
+    @Deprecated
     public void revertStockMovement(
             String diaryId,
             String location,
@@ -536,15 +557,8 @@ public class DataLogicInventory extends BeanFactoryDataSingle implements StockSe
             String attSetInstId,
             double units
     ) throws BasicException {
-        getStockDiaryDelete().exec(new Object[]{
-            diaryId,
-            null,
-            null,
-            location,
-            productId,
-            attSetInstId,
-            units
-        });
+        revertStockMovement(RevertStockMovementCommand.of(
+                diaryId, location, productId, attSetInstId, units));
     }
 
     @Override
