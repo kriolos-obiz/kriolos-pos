@@ -36,7 +36,7 @@ import javax.swing.ListCellRenderer;
  */
 public class TaxPanel extends JPanelTable {
 
-    private TableDefinition ttaxes;
+    private TableDefinition<Object[]> ttaxes;
     private TaxEditor jeditor;
     
     /** Creates a new instance of JPanelDuty */

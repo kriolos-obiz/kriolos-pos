@@ -20,6 +20,7 @@ import com.openbravo.basic.BasicException;
 import com.openbravo.data.loader.DataRead;
 import com.openbravo.data.loader.Datas;
 import com.openbravo.data.loader.SentenceList;
+import com.openbravo.data.loader.SerializerWriteBasic;
 import com.openbravo.data.loader.Session;
 import com.openbravo.data.loader.StaticSentence;
 import com.openbravo.data.loader.TableDefinition;
@@ -133,8 +134,44 @@ public class DataLogicTax extends BeanFactoryDataSingle implements TaxService {
         return getTaxCategoriesList();
     }
 
-    public TableDefinition getTableTaxes() {
-        return new TableDefinition(sessionDB,
+    @Override
+    public void createTaxCategory(CreateTaxCategoryCommand command) throws BasicException {
+        new StaticSentence<>(sessionDB,
+                "INSERT INTO taxcategories (ID, NAME) VALUES (?, ?)",
+                new SerializerWriteBasic(new Datas[]{Datas.STRING, Datas.STRING}))
+                .exec(new Object[]{command.id(), command.name()});
+    }
+
+    @Override
+    public void createTaxCustCategory(CreateTaxCustCategoryCommand command) throws BasicException {
+        new StaticSentence<>(sessionDB,
+                "INSERT INTO taxcustcategories (ID, NAME) VALUES (?, ?)",
+                new SerializerWriteBasic(new Datas[]{Datas.STRING, Datas.STRING}))
+                .exec(new Object[]{command.id(), command.name()});
+    }
+
+    @Override
+    public void createTax(CreateTaxCommand command) throws BasicException {
+        new StaticSentence<>(sessionDB,
+                "INSERT INTO taxes (ID, NAME, CATEGORY, CUSTCATEGORY, PARENTID, RATE, RATECASCADE, RATEORDER) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                new SerializerWriteBasic(new Datas[]{
+                    Datas.STRING, Datas.STRING, Datas.STRING, Datas.STRING,
+                    Datas.STRING, Datas.DOUBLE, Datas.BOOLEAN, Datas.INT}))
+                .exec(new Object[]{
+                    command.id(),
+                    command.name(),
+                    command.taxCategoryId(),
+                    command.taxCustCategoryId(),
+                    command.parentId(),
+                    command.rate(),
+                    command.cascade(),
+                    command.order()});
+    }
+
+    @Override
+    public TableDefinition<Object[]> getTableTaxes() {
+        return new TableDefinition<>(sessionDB,
                 "taxes",
                 new String[]{"ID", "NAME", "CATEGORY", "CUSTCATEGORY", "PARENTID", "RATE",
                     "RATECASCADE",
@@ -155,8 +192,9 @@ public class DataLogicTax extends BeanFactoryDataSingle implements TaxService {
                 new int[]{0});
     }
 
-    public TableDefinition getTableTaxCustCategories() {
-        return new TableDefinition(sessionDB,
+    @Override
+    public TableDefinition<Object[]> getTableTaxCustCategories() {
+        return new TableDefinition<>(sessionDB,
                 "taxcustcategories",
                 new String[]{"ID", "NAME"},
                 new String[]{"ID", AppLocal.getIntString("label.name")},
@@ -165,8 +203,9 @@ public class DataLogicTax extends BeanFactoryDataSingle implements TaxService {
                 new int[]{0});
     }
 
-    public TableDefinition getTableTaxCategories() {
-        return new TableDefinition(sessionDB,
+    @Override
+    public TableDefinition<Object[]> getTableTaxCategories() {
+        return new TableDefinition<>(sessionDB,
                 "taxcategories",
                 new String[]{"ID", "NAME"},
                 new String[]{"ID", AppLocal.getIntString("label.name")},

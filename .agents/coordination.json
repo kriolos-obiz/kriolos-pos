@@ -6,6 +6,12 @@
     "available": [],
     "completed": [
       {
+        "id": "TASK-023",
+        "agent": "antigravity",
+        "description": "KP-133: Modernize TaxService with tax commands and typed TableDefinition",
+        "completed_at": "2026-11-06T05:43:30Z"
+      },
+      {
         "id": "TASK-022",
         "agent": "antigravity",
         "description": "KP-132: Modernize SupplierService with UpdateSupplierNotesCommand and typed TableDefinition",

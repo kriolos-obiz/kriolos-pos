@@ -1163,7 +1163,7 @@ public class DataLogicSales extends BeanFactoryDataSingle implements TicketLifec
      * @deprecated Use {@link TaxService#getTableTaxes()} instead.
      */
     @Deprecated
-    public final TableDefinition getTableTaxes() {
+    public final TableDefinition<Object[]> getTableTaxes() {
         return getTaxService().getTableTaxes();
     }
 
@@ -1171,7 +1171,7 @@ public class DataLogicSales extends BeanFactoryDataSingle implements TicketLifec
      * @deprecated Use {@link TaxService#getTableTaxCustCategories()} instead.
      */
     @Deprecated
-    public final TableDefinition getTableTaxCustCategories() {
+    public final TableDefinition<Object[]> getTableTaxCustCategories() {
         return getTaxService().getTableTaxCustCategories();
     }
 
@@ -1179,7 +1179,7 @@ public class DataLogicSales extends BeanFactoryDataSingle implements TicketLifec
      * @deprecated Use {@link TaxService#getTableTaxCategories()} instead.
      */
     @Deprecated
-    public final TableDefinition getTableTaxCategories() {
+    public final TableDefinition<Object[]> getTableTaxCategories() {
         return getTaxService().getTableTaxCategories();
     }
 
