@@ -16,6 +16,8 @@
  */
 package com.openbravo.pos.suppliers;
 
+import java.util.Objects;
+
 /**
  * Typed values required to create a supplier master-data entry.
  *
@@ -26,4 +28,26 @@ package com.openbravo.pos.suppliers;
  * @author KriolOS
  */
 public record SupplierCreateCommand(String id, String name, String searchKey, boolean visible) {
+
+    public SupplierCreateCommand {
+        Objects.requireNonNull(id, "id must not be null");
+        if (id.isBlank()) {
+            throw new IllegalArgumentException("id must not be blank");
+        }
+        Objects.requireNonNull(name, "name must not be null");
+        if (name.isBlank()) {
+            throw new IllegalArgumentException("name must not be blank");
+        }
+        Objects.requireNonNull(searchKey, "searchKey must not be null");
+        if (searchKey.isBlank()) {
+            throw new IllegalArgumentException("searchKey must not be blank");
+        }
+        id = id.trim();
+        name = name.trim();
+        searchKey = searchKey.trim();
+    }
+
+    public static SupplierCreateCommand of(String id, String name, String searchKey, boolean visible) {
+        return new SupplierCreateCommand(id, name, searchKey, visible);
+    }
 }

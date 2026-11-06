@@ -6,6 +6,12 @@
     "available": [],
     "completed": [
       {
+        "id": "TASK-022",
+        "agent": "antigravity",
+        "description": "KP-132: Modernize SupplierService with UpdateSupplierNotesCommand and typed TableDefinition",
+        "completed_at": "2026-11-06T05:19:30Z"
+      },
+      {
         "id": "TASK-021",
         "agent": "antigravity",
         "description": "KP-131: Modernize TreasuryService with RecordPaymentMovementCommand and DeletePaymentMovementCommand",
