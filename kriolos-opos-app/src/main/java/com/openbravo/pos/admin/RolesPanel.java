@@ -16,6 +16,7 @@
 
 package com.openbravo.pos.admin;
 
+import com.openbravo.basic.BasicException;
 import com.openbravo.data.gui.ListCellRendererBasic;
 import com.openbravo.data.loader.ComparatorCreator;
 import com.openbravo.data.loader.TableDefinition;
@@ -29,8 +30,10 @@ import com.openbravo.pos.panels.JPanelTable;
 import javax.swing.ListCellRenderer;
 
 /**
+ * Type-safe JPanelTable implementation for Role security maintenance.
  *
  * @author adrianromero
+ * @author KriolOS
  */
 public class RolesPanel extends JPanelTable {
     
@@ -47,18 +50,28 @@ public class RolesPanel extends JPanelTable {
     }
 
     @Override
-    public ListProvider getListProvider() {
-        return new ListProviderCreator(troles);
+    public ListProvider<RoleInfo> getListProvider() {
+        return new ListProviderCreator<>(troles);
     }
 
     @Override
-    public DefaultSaveProvider getSaveProvider() {
-        return new DefaultSaveProvider(troles);        
+    public DefaultSaveProvider<RoleInfo> getSaveProvider() {
+        return new DefaultSaveProvider<>(troles);        
     }
 
     @Override
-    public Vectorer getVectorer() {
-        return troles.getVectorerBasic(new int[] {1});
+    public Vectorer<RoleInfo> getVectorer() {
+        return new Vectorer<>() {
+            @Override
+            public String[] getHeaders() throws BasicException {
+                return new String[]{AppLocal.getIntString("label.name")};
+            }
+
+            @Override
+            public String[] getValues(RoleInfo role) throws BasicException {
+                return new String[]{role != null && role.getName() != null ? role.getName() : ""};
+            }
+        };
     }
 
     @Override
@@ -67,12 +80,12 @@ public class RolesPanel extends JPanelTable {
     }
 
     @Override
-    public ListCellRenderer getListCellRenderer() {
-        return new ListCellRendererBasic(troles.getRenderStringBasic(new int[] {1}));
+    public ListCellRenderer<?> getListCellRenderer() {
+        return new ListCellRendererBasic(v -> v instanceof RoleInfo r ? r.getName() : (v != null ? v.toString() : ""));
     }
 
     @Override
-    public EditorRecord getEditor() {
+    public EditorRecord<RoleInfo> getEditor() {
         return jeditor;
     }
  

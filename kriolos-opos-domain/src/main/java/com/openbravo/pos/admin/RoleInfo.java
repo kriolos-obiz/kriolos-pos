@@ -18,24 +18,39 @@ package com.openbravo.pos.admin;
 
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.loader.DataRead;
+import com.openbravo.data.loader.DataWrite;
 import com.openbravo.data.loader.IKeyed;
 import com.openbravo.data.loader.SerializableRead;
+import com.openbravo.data.loader.SerializerRead;
+import com.openbravo.data.loader.SerializerWrite;
+import java.io.Serializable;
 
 /**
+ * Domain entity representing a Role in KriolOS POS security model.
  *
  * @author adrianromero
- * Created on 27 de febrero de 2007, 23:27
- *
+ * @author KriolOS
  */
-public class RoleInfo implements SerializableRead, IKeyed {
+public class RoleInfo implements SerializableRead, Serializable, IKeyed {
     
     private static final long serialVersionUID = 9110127845966L;
+
     private String m_sID;
     protected String m_sName;
+    protected byte[] m_aPermissions;
     
     public RoleInfo() {
-        m_sID = null;
-        m_sName = null;
+        this(null, null, null);
+    }
+
+    public RoleInfo(String id, String name) {
+        this(id, name, null);
+    }
+
+    public RoleInfo(String id, String name, byte[] permissions) {
+        this.m_sID = id;
+        this.m_sName = name;
+        this.m_aPermissions = permissions;
     }
     
     @Override
@@ -56,6 +71,14 @@ public class RoleInfo implements SerializableRead, IKeyed {
     public String getID() {
         return m_sID;
     }
+
+    public void setId(String id) {
+        m_sID = id;
+    }
+
+    public String getId() {
+        return m_sID;
+    }
     
     public String getName() {
         return m_sName;
@@ -63,10 +86,59 @@ public class RoleInfo implements SerializableRead, IKeyed {
     
     public void setName(String sValue) {
         m_sName = sValue;
-    }    
+    }
+
+    public byte[] getPermissions() {
+        return m_aPermissions;
+    }
+
+    public void setPermissions(byte[] permissions) {
+        this.m_aPermissions = permissions;
+    }
     
     @Override
     public String toString() {
         return m_sName;
+    }
+
+    /**
+     * Serializer for reading RoleInfo from JDBC queries.
+     * Columns: 1: ID, 2: NAME, 3: PERMISSIONS
+     */
+    public static SerializerRead<RoleInfo> getSerializerRead() {
+        return (DataRead dr) -> new RoleInfo(dr.getString(1), dr.getString(2), dr.getBytes(3));
+    }
+
+    /**
+     * Serializer for inserting RoleInfo.
+     */
+    public static SerializerWrite<RoleInfo> getSerializerInsert() {
+        return (DataWrite dp, RoleInfo role) -> {
+            dp.setString(1, role.getID());
+            dp.setString(2, role.getName());
+            dp.setBytes(3, role.getPermissions());
+        };
+    }
+
+    /**
+     * Serializer for updating RoleInfo.
+     * Columns: 1: ID, 2: NAME, 3: PERMISSIONS, 4: ID (WHERE id = ?)
+     */
+    public static SerializerWrite<RoleInfo> getSerializerUpdate() {
+        return (DataWrite dp, RoleInfo role) -> {
+            dp.setString(1, role.getID());
+            dp.setString(2, role.getName());
+            dp.setBytes(3, role.getPermissions());
+            dp.setString(4, role.getID());
+        };
+    }
+
+    /**
+     * Serializer for deleting RoleInfo by ID.
+     */
+    public static SerializerWrite<RoleInfo> getSerializerDelete() {
+        return (DataWrite dp, RoleInfo role) -> {
+            dp.setString(1, role.getID());
+        };
     }
 }

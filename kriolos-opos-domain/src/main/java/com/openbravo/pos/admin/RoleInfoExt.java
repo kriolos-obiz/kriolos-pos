@@ -13,23 +13,22 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package com.openbravo.pos.admin;
 
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.loader.DataRead;
 
 /**
+ * Extended role entity for backwards compatibility.
  *
  * @author adrianromero Created on 27 de febrero de 2007, 23:46
- *
+ * @author KriolOS
  */
 public class RoleInfoExt extends RoleInfo {
 
-    protected byte[] m_aPermissions;
-
     public RoleInfoExt() {
         super();
-        m_aPermissions = null;
     }
 
     @Override

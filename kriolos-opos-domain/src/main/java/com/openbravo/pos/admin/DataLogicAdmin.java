@@ -47,13 +47,17 @@ public class DataLogicAdmin extends BeanFactoryDataSingle implements PeopleServi
                  new int[]{0}
         );
 
-        m_troles = new TableDefinition(s,
+        m_troles = new TableDefinition<>(s,
                 "roles",
                  new String[]{"ID", "NAME", "PERMISSIONS"},
                  new String[]{"ID", AppLocal.getIntString("label.name"), "PERMISSIONS"},
                  new Datas[]{Datas.STRING, Datas.STRING, Datas.BYTES},
                  new Formats[]{Formats.STRING, Formats.STRING, Formats.NULL},
-                 new int[]{0}
+                 new int[]{0},
+                 RoleInfo.getSerializerRead(),
+                 RoleInfo.getSerializerInsert(),
+                 RoleInfo.getSerializerUpdate(),
+                 RoleInfo.getSerializerDelete()
         );
     }
 

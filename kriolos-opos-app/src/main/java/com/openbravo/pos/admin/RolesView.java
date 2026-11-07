@@ -32,7 +32,7 @@ import java.util.UUID;
  *
  * @author adrianromero
  */
-public final class RolesView extends javax.swing.JPanel implements EditorRecord {
+public final class RolesView extends javax.swing.JPanel implements EditorRecord<RoleInfo> {
     
     private String m_oId;
 
@@ -72,36 +72,38 @@ public final class RolesView extends javax.swing.JPanel implements EditorRecord 
     }
     
     @Override
-    public void writeValueDelete(Object value) {
-
-        Object[] role = (Object[]) value;
-        m_oId = (String)role[0];
-        m_jName.setText(Formats.STRING.formatValue((String)role[1]));
-        m_RSyntaxTextArea.setText(Formats.BYTEA.formatValue((byte[])role[2]));
+    public void writeValueDelete(RoleInfo role) {
+        if (role == null) {
+            writeValueEOF();
+            return;
+        }
+        m_oId = role.getID();
+        m_jName.setText(Formats.STRING.formatValue(role.getName()));
+        m_RSyntaxTextArea.setText(Formats.BYTEA.formatValue(role.getPermissions()));
         m_RSyntaxTextArea.setCaretPosition(0);
         m_jName.setEnabled(false);
         m_RSyntaxTextArea.setEnabled(false);
     }
 
     @Override
-    public void writeValueEdit(Object value) {
-
-        Object[] role = (Object[]) value;
-        m_oId = (String)role[0];
-        m_jName.setText(Formats.STRING.formatValue((String)role[1]));
-        m_RSyntaxTextArea.setText(Formats.BYTEA.formatValue((byte[])role[2]));
-        //m_RSyntaxTextArea.setCaretPosition(0);
+    public void writeValueEdit(RoleInfo role) {
+        if (role == null) {
+            writeValueEOF();
+            return;
+        }
+        m_oId = role.getID();
+        m_jName.setText(Formats.STRING.formatValue(role.getName()));
+        m_RSyntaxTextArea.setText(Formats.BYTEA.formatValue(role.getPermissions()));
         m_jName.setEnabled(true);
         m_RSyntaxTextArea.setEnabled(true);
     }
 
     @Override
-    public Object createValue() throws BasicException {
-
-        Object[] role = new Object[3];
-        role[0] = m_oId == null ? UUID.randomUUID().toString() : m_oId;
-        role[1] = m_jName.getText();
-        role[2] = Formats.BYTEA.parseValue(m_RSyntaxTextArea.getText());
+    public RoleInfo createValue() throws BasicException {
+        RoleInfo role = new RoleInfo();
+        role.setID(m_oId == null ? UUID.randomUUID().toString() : m_oId);
+        role.setName(m_jName.getText());
+        role.setPermissions((byte[]) Formats.BYTEA.parseValue(m_RSyntaxTextArea.getText()));
         return role;
     }
 

@@ -28,29 +28,6 @@
     "in_progress": [],
     "available": [
       {
-        "id": "TASK-034",
-        "ticket": "KP-144",
-        "recommended_for": "Collaborating AI Agent",
-        "priority": "MEDIUM",
-        "title": "Type-Safe Security & Roles Vertical Pipeline",
-        "description": "Modernize RolesPanel, RolesEditor, and DataLogicSecurity to use TableDefinition<RoleInfo> with typed EditorRecord<RoleInfo>, removing Object[] arrays from role permission configuration.",
-        "target_packages": [
-          "kriolos-opos-domain: com.openbravo.pos.security",
-          "kriolos-opos-app: com.openbravo.pos.security"
-        ],
-        "target_files": [
-          "kriolos-opos-app/src/main/java/com/openbravo/pos/security/RolesPanel.java",
-          "kriolos-opos-app/src/main/java/com/openbravo/pos/security/RolesEditor.java",
-          "kriolos-opos-domain/src/main/java/com/openbravo/pos/security/DataLogicSecurity.java"
-        ],
-        "git_branch_instruction": "feature/KP-144-typesafe-roles",
-        "acceptance_criteria": [
-          "RolesPanel and RolesEditor operate on RoleInfo without Object[] conversions.",
-          "DataLogicSecurity exposes typed TableDefinition<RoleInfo>.",
-          "./mvnw test -pl kriolos-opos-domain,kriolos-opos-app passes with zero errors."
-        ]
-      },
-      {
         "id": "TASK-035",
         "ticket": "KP-145",
         "recommended_for": "Collaborating AI Agent",
@@ -77,6 +54,13 @@
       }
     ],
     "completed": [
+      {
+        "id": "TASK-034",
+        "agent": "antigravity",
+        "ticket": "KP-144",
+        "description": "KP-144: Implement end-to-end type-safe pipeline for Roles and Security with TableDefinition and EditorRecord",
+        "completed_at": "2026-11-07T16:28:00Z"
+      },
       {
         "id": "TASK-033",
         "agent": "antigravity",
