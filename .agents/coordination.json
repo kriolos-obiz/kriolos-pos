@@ -28,32 +28,6 @@
     "in_progress": [],
     "available": [
       {
-        "id": "TASK-032",
-        "ticket": "KP-142",
-        "recommended_for": "Collaborating AI Agent",
-        "priority": "MEDIUM",
-        "title": "Type-Safe Hospitality Floor & Place Vertical Pipeline",
-        "description": "Modernize PlacesPanel, FloorsPanel, and DataLogicRestaurant to use TableDefinition<PlaceInfo> and TableDefinition<FloorInfo> with typed EditorRecord implementations, completely removing Object[] mapping.",
-        "target_packages": [
-          "kriolos-opos-domain: com.openbravo.pos.restaurant",
-          "kriolos-opos-app: com.openbravo.pos.restaurant"
-        ],
-        "target_files": [
-          "kriolos-opos-app/src/main/java/com/openbravo/pos/restaurant/PlacesPanel.java",
-          "kriolos-opos-app/src/main/java/com/openbravo/pos/restaurant/PlacesEditor.java",
-          "kriolos-opos-app/src/main/java/com/openbravo/pos/restaurant/FloorsPanel.java",
-          "kriolos-opos-app/src/main/java/com/openbravo/pos/restaurant/FloorsEditor.java",
-          "kriolos-opos-domain/src/main/java/com/openbravo/pos/restaurant/DataLogicRestaurant.java"
-        ],
-        "git_branch_instruction": "feature/KP-142-typesafe-hospitality-places",
-        "acceptance_criteria": [
-          "PlacesPanel and FloorsPanel operate entirely on PlaceInfo and FloorInfo types.",
-          "PlacesEditor and FloorsEditor implement EditorRecord<PlaceInfo> and EditorRecord<FloorInfo>.",
-          "No Object[] casts in table definitions or save/load providers.",
-          "./mvnw test -pl kriolos-opos-domain,kriolos-opos-app passes with zero errors."
-        ]
-      },
-      {
         "id": "TASK-033",
         "ticket": "KP-143",
         "recommended_for": "Collaborating AI Agent",
@@ -127,6 +101,13 @@
       }
     ],
     "completed": [
+      {
+        "id": "TASK-032",
+        "agent": "antigravity",
+        "ticket": "KP-142",
+        "description": "KP-142: Implement end-to-end type-safe pipeline for Hospitality floors and places with TableDefinition and EditorRecord",
+        "completed_at": "2026-11-07T06:17:00Z"
+      },
       {
         "id": "TASK-031",
         "agent": "antigravity",

@@ -32,7 +32,7 @@ import javax.swing.JPanel;
  *
  * @author adrianromero
  */
-public final class PlacesEditor extends JPanel implements EditorRecord {
+public final class PlacesEditor extends JPanel implements EditorRecord<Place> {
     
     private RestaurantService restaurantService;
     private SentenceList m_sentfloor;
@@ -142,16 +142,17 @@ public final class PlacesEditor extends JPanel implements EditorRecord {
      * @param value
      */
     @Override
-    public void writeValueDelete(Object value) {
-        
-        Object[] place = (Object[]) value;
-        m_sID = Formats.STRING.formatValue((String)place[0]);
-        m_jName.setText(Formats.STRING.formatValue((String)place[1]));
-        m_jSeats.setText(Formats.STRING.formatValue((String)place[2]));        
-        m_jX.setText(Formats.INT.formatValue((Integer)place[3]));
-        m_jY.setText(Formats.INT.formatValue((Integer)place[4]));
-        m_FloorModel.setSelectedKey(place[5]);
-        
+    public void writeValueDelete(Place place) {
+        if (place == null) {
+            writeValueEOF();
+            return;
+        }
+        m_sID = place.getId();
+        m_jName.setText(place.getName());
+        m_jSeats.setText(place.getSeats());        
+        m_jX.setText(Formats.INT.formatValue(place.getX()));
+        m_jY.setText(Formats.INT.formatValue(place.getY()));
+        m_FloorModel.setSelectedKey(place.getFloor());
 
         m_jName.setEnabled(false);
         m_jSeats.setEnabled(false);        
@@ -160,20 +161,18 @@ public final class PlacesEditor extends JPanel implements EditorRecord {
         m_jY.setEnabled(false);
     }
 
-    /**
-     *
-     * @param value
-     */
     @Override
-    public void writeValueEdit(Object value) {
-        
-        Object[] place = (Object[]) value;
-        m_sID = Formats.STRING.formatValue((String)place[0]);
-        m_jName.setText(Formats.STRING.formatValue((String)place[1]));
-        m_jSeats.setText(Formats.STRING.formatValue((String)place[2]));        
-        m_jX.setText(Formats.INT.formatValue((Integer)place[3]));
-        m_jY.setText(Formats.INT.formatValue((Integer)place[4]));
-        m_FloorModel.setSelectedKey(place[5]);
+    public void writeValueEdit(Place place) {
+        if (place == null) {
+            writeValueEOF();
+            return;
+        }
+        m_sID = place.getId();
+        m_jName.setText(place.getName());
+        m_jSeats.setText(place.getSeats());        
+        m_jX.setText(Formats.INT.formatValue(place.getX()));
+        m_jY.setText(Formats.INT.formatValue(place.getY()));
+        m_FloorModel.setSelectedKey(place.getFloor());
 
         m_jName.setEnabled(true);
         m_jSeats.setEnabled(true);        
@@ -182,22 +181,18 @@ public final class PlacesEditor extends JPanel implements EditorRecord {
         m_jY.setEnabled(true);
     }
 
-    /**
-     *
-     * @return
-     * @throws BasicException
-     */
     @Override
-    public Object createValue() throws BasicException {
-        Object[] place = new Object[7];
-        place[0] = m_sID;
-        place[1] = m_jName.getText();
-        place[2] = m_jSeats.getText();        
-        place[3] = Formats.INT.parseValue(m_jX.getText());
-        place[4] = Formats.INT.parseValue(m_jY.getText());
-        place[5] = m_FloorModel.getSelectedKey();
-        place[6] = "qwerty";
-        return place;
+    public Place createValue() throws BasicException {
+        Integer x = (Integer) Formats.INT.parseValue(m_jX.getText());
+        Integer y = (Integer) Formats.INT.parseValue(m_jY.getText());
+        return new Place(
+                m_sID,
+                m_jName.getText(),
+                m_jSeats.getText(),
+                x != null ? x : 0,
+                y != null ? y : 0,
+                (String) m_FloorModel.getSelectedKey()
+        );
     }
     
     /**

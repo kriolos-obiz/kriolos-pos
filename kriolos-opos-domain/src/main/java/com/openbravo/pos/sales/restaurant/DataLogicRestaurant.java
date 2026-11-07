@@ -160,8 +160,12 @@ public class DataLogicRestaurant extends BeanFactoryDataSingle implements Restau
                 new String[]{"ID", "NAME", "IMAGE"},
                 new String[]{"ID", AppLocal.getIntString("label.name"), "IMAGE"},
                 new Datas[]{Datas.STRING, Datas.STRING, Datas.IMAGE},
-                new Formats[]{Formats.NULL, Formats.STRING},
-                new int[]{0});
+                new Formats[]{Formats.STRING, Formats.STRING, Formats.NULL},
+                new int[]{0},
+                FloorsInfo.getSerializerRead(),
+                FloorsInfo.getSerializerInsert(),
+                FloorsInfo.getSerializerUpdate(),
+                FloorsInfo.getSerializerDelete());
     }
 
     @Override
@@ -175,7 +179,11 @@ public class DataLogicRestaurant extends BeanFactoryDataSingle implements Restau
                     AppLocal.getIntString("label.placefloor")},
                 new Datas[]{Datas.STRING, Datas.STRING, Datas.STRING, Datas.INT, Datas.INT, Datas.STRING},
                 new Formats[]{Formats.STRING, Formats.STRING, Formats.STRING, Formats.INT, Formats.INT, Formats.NULL},
-                new int[]{0});
+                new int[]{0},
+                Place.getSerializerRead(),
+                Place.getSerializerInsert(),
+                Place.getSerializerUpdate(),
+                Place.getSerializerDelete());
     }
 
     @Override

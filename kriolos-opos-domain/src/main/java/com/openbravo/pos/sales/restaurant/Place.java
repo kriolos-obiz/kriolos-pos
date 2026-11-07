@@ -18,15 +18,21 @@ package com.openbravo.pos.sales.restaurant;
 
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.loader.DataRead;
+import com.openbravo.data.loader.DataWrite;
+import com.openbravo.data.loader.IKeyed;
 import com.openbravo.data.loader.SerializableRead;
+import com.openbravo.data.loader.SerializerRead;
+import com.openbravo.data.loader.SerializerWrite;
+import java.io.Serializable;
 
 /**
  * Domain entity representing a restaurant table/place.
  * UI components (buttons, rendering, layouts) are decoupled and managed by the presentation layer.
  *
  * @author JG uniCenta
+ * @author KriolOS
  */
-public class Place implements SerializableRead, java.io.Serializable {
+public class Place implements SerializableRead, Serializable, IKeyed {
 
     private static final long serialVersionUID = 8652254694281L;
 
@@ -49,6 +55,30 @@ public class Place implements SerializableRead, java.io.Serializable {
     public Place() {
     }
 
+    /**
+     * Constructs a Place with its primary persistence attributes.
+     *
+     * @param id identifier
+     * @param name place/table label
+     * @param seats seat count description
+     * @param x floor X coordinate
+     * @param y floor Y coordinate
+     * @param floor parent floor identifier
+     */
+    public Place(String id, String name, String seats, int x, int y, String floor) {
+        this.m_sId = id;
+        this.m_sName = name;
+        this.m_sSeats = seats;
+        this.m_ix = x;
+        this.m_iy = y;
+        this.m_sfloor = floor;
+    }
+
+    @Override
+    public Object getKey() {
+        return m_sId;
+    }
+
     @Override
     public void readValues(DataRead dr) throws BasicException {
         m_sId = dr.getString(1);
@@ -68,28 +98,44 @@ public class Place implements SerializableRead, java.io.Serializable {
         return m_sId;
     }
 
+    public void setId(String id) {
+        this.m_sId = id;
+    }
+
     public String getTicketID() {
         return m_ticketId;
+    }
+
+    public void setTicketID(String ticketId) {
+        this.m_ticketId = ticketId;
     }
 
     public String getName() {
         return m_sName;
     }
 
+    public void setName(String name) {
+        this.m_sName = name;
+    }
+
     public String getSeats() {
         return m_sSeats;
+    }
+
+    public void setSeats(String seats) {
+        this.m_sSeats = seats;
     }
 
     public int getX() {
         return m_ix;
     }
 
-    public int getY() {
-        return m_iy;
-    }
-
     public void setX(int x) {
         this.m_ix = x;
+    }
+
+    public int getY() {
+        return m_iy;
     }
 
     public void setY(int y) {
@@ -108,12 +154,24 @@ public class Place implements SerializableRead, java.io.Serializable {
         return m_sfloor;
     }
 
+    public void setFloor(String floor) {
+        this.m_sfloor = floor;
+    }
+
     public String getCustomer() {
         return m_customer;
     }
 
+    public void setCustomer(String customer) {
+        this.m_customer = customer;
+    }
+
     public String getWaiter() {
         return m_waiter;
+    }
+
+    public void setWaiter(String waiter) {
+        this.m_waiter = waiter;
     }
 
     public boolean hasPeople() {
@@ -122,5 +180,74 @@ public class Place implements SerializableRead, java.io.Serializable {
 
     public void setPeople(boolean bValue) {
         this.m_bPeople = bValue;
+    }
+
+    @Override
+    public String toString() {
+        return m_sName;
+    }
+
+    /**
+     * Returns a {@link SerializerRead} for deserializing Place records from JDBC queries.
+     * Binding: 1: ID, 2: NAME, 3: SEATS, 4: X, 5: Y, 6: FLOOR
+     *
+     * @return row serializer for {@link Place}
+     */
+    public static SerializerRead<Place> getSerializerRead() {
+        return (DataRead dr) -> new Place(
+                dr.getString(1),
+                dr.getString(2),
+                dr.getString(3),
+                dr.getInt(4) != null ? dr.getInt(4) : 0,
+                dr.getInt(5) != null ? dr.getInt(5) : 0,
+                dr.getString(6)
+        );
+    }
+
+    /**
+     * Returns a {@link SerializerWrite} for inserting Place records.
+     * Binding: 1: ID, 2: NAME, 3: SEATS, 4: X, 5: Y, 6: FLOOR
+     *
+     * @return serializer for INSERT statement
+     */
+    public static SerializerWrite<Place> getSerializerInsert() {
+        return (DataWrite dp, Place p) -> {
+            dp.setString(1, p.getId());
+            dp.setString(2, p.getName());
+            dp.setString(3, p.getSeats());
+            dp.setInt(4, p.getX());
+            dp.setInt(5, p.getY());
+            dp.setString(6, p.getFloor());
+        };
+    }
+
+    /**
+     * Returns a {@link SerializerWrite} for updating Place records.
+     * Binding: 1: ID, 2: NAME, 3: SEATS, 4: X, 5: Y, 6: FLOOR, 7: ID (WHERE id = ?)
+     *
+     * @return serializer for UPDATE statement
+     */
+    public static SerializerWrite<Place> getSerializerUpdate() {
+        return (DataWrite dp, Place p) -> {
+            dp.setString(1, p.getId());
+            dp.setString(2, p.getName());
+            dp.setString(3, p.getSeats());
+            dp.setInt(4, p.getX());
+            dp.setInt(5, p.getY());
+            dp.setString(6, p.getFloor());
+            dp.setString(7, p.getId());
+        };
+    }
+
+    /**
+     * Returns a {@link SerializerWrite} for deleting Place records.
+     * Binding: 1: ID (WHERE id = ?)
+     *
+     * @return serializer for DELETE statement
+     */
+    public static SerializerWrite<Place> getSerializerDelete() {
+        return (DataWrite dp, Place p) -> {
+            dp.setString(1, p.getId());
+        };
     }
 }
