@@ -6,10 +6,16 @@
     "available": [],
     "completed": [
       {
+        "id": "TASK-028",
+        "agent": "antigravity",
+        "description": "KP-138: Modernize CustomerService generics and ResourceService with SetResourceCommand",
+        "completed_at": "2026-11-07T04:52:45Z"
+      },
+      {
         "id": "TASK-027",
         "agent": "antigravity",
         "description": "KP-137: Modernize CatalogService with CreateCategoryCommand and parameterize getProductCatQBF()",
-        "completed_at": "2026-11-07T01:50:15Z"
+        "completed_at": "2026-11-07T03:55:38Z"
       },
       {
         "id": "TASK-026",

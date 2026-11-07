@@ -180,7 +180,7 @@ class CustomerServiceTest {
             }
 
             @Override
-            public SaveProvider getCustomerSaveProvider() {
+            public SaveProvider<Object[]> getCustomerSaveProvider() {
                 return null;
             }
 

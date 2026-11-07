@@ -80,13 +80,24 @@ public interface ResourceService {
     Properties getResourceAsProperties(String sName);
 
     /**
+     * Persists or updates a resource entry in the database using a validated command record.
+     *
+     * @param command validated resource persistence command
+     */
+    void setResource(SetResourceCommand command);
+
+    /**
      * Persists or updates a resource entry in the database.
      *
      * @param name Resource name identifier
      * @param type Resource type code (e.g. 0 = text/xml, 1 = image, 2 = binary)
      * @param data Binary payload bytes
+     * @deprecated Use {@link #setResource(SetResourceCommand)} instead.
      */
-    void setResource(String name, int type, byte[] data);
+    @Deprecated
+    default void setResource(String name, int type, byte[] data) {
+        setResource(SetResourceCommand.of(name, type, data));
+    }
 
     /**
      * Persists or updates a binary resource entry in the database.

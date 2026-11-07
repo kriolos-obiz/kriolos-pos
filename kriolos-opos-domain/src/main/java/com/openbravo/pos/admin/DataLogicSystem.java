@@ -22,6 +22,7 @@ import com.openbravo.basic.BasicException;
 import com.openbravo.data.loader.*;
 import com.openbravo.format.Formats;
 import com.openbravo.pos.admin.ResourceInfo;
+import com.openbravo.pos.resources.SetResourceCommand;
 import com.openbravo.basic.AppLocal;
 import com.openbravo.util.ThumbNailBuilder;
 import com.openbravo.pos.voucher.VoucherInfo;
@@ -230,12 +231,20 @@ public class DataLogicSystem extends BeanFactoryDataSingle implements SystemServ
         return resource;
     }
 
+    @Override
+    public void setResource(SetResourceCommand command) {
+        Objects.requireNonNull(command, "command must not be null");
+        setResource(command.name(), command.type(), command.data());
+    }
+
     /**
      *
      * @param name
      * @param type
      * @param data
      */
+    @Override
+    @Deprecated
     public final void setResource(String name, int type, byte[] data) {
 
         Datas[] resourcedata = new Datas[]{Datas.STRING, Datas.STRING, Datas.INT, Datas.BYTES};

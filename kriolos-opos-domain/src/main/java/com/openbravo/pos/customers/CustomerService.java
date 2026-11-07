@@ -95,7 +95,7 @@ public interface CustomerService {
      * @deprecated Direct access to SaveProvider leaks data loader internals into the domain.
      */
     @Deprecated(since = "1.0.0")
-    SaveProvider getCustomerSaveProvider();
+    SaveProvider<Object[]> getCustomerSaveProvider();
 
     /**
      * @deprecated Use {@link #findAllCustomers()} or dedicated finder queries instead of raw SentenceList.
