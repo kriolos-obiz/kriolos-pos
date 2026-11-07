@@ -1,11 +1,12 @@
 package com.openbravo.pos.inventory;
 
+import com.openbravo.basic.AppLocal;
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.user.DirtyManager;
 import com.openbravo.data.user.EditorRecord;
 import com.openbravo.format.Formats;
-import com.openbravo.basic.AppLocal;
 import com.openbravo.pos.panels.AppView;
+import com.openbravo.pos.pim.UomInfo;
 import java.awt.Component;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
@@ -13,22 +14,29 @@ import java.awt.datatransfer.StringSelection;
 import java.util.UUID;
 import javax.swing.JOptionPane;
 
-public final class UomEditor extends javax.swing.JPanel implements EditorRecord {
+/**
+ * Strongly typed editor component for Unit of Measure (UOM) records.
+ *
+ * @author JG uniCenta
+ * @author KriolOS
+ */
+public final class UomEditor extends javax.swing.JPanel implements EditorRecord<UomInfo> {
+
+    private static final long serialVersionUID = 1L;
+
     private String m_id;
     
-    /** Creates new form JPanelUnits Of Measure
-     * @param app
-     * @param dirty */
+    /**
+     * Creates new form UomEditor.
+     *
+     * @param app application view context
+     * @param dirty dirty state manager
+     */
     public UomEditor(AppView app, DirtyManager dirty) {     
-
         initComponents();
-        
         m_jName.getDocument().addDocumentListener(dirty);
-        
         writeValueEOF();
     }
-    
-    
 
     /** This method is called from within the constructor to
      * initialize the form.
@@ -80,9 +88,8 @@ public final class UomEditor extends javax.swing.JPanel implements EditorRecord 
     }// </editor-fold>//GEN-END:initComponents
 
     private void jLabel2MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jLabel2MouseClicked
-
-        if (evt.getClickCount() == 2) {
-            String uuidString = m_id.toString();
+        if (evt.getClickCount() == 2 && m_id != null) {
+            String uuidString = m_id;
             StringSelection stringSelection = new StringSelection(uuidString);
             Clipboard clpbrd = Toolkit.getDefaultToolkit().getSystemClipboard();
             clpbrd.setContents(stringSelection, null);
@@ -106,31 +113,31 @@ public final class UomEditor extends javax.swing.JPanel implements EditorRecord 
 
     @Override
     public void writeValueInsert() {
-
         m_id = UUID.randomUUID().toString();
         m_jName.setText(null);
         m_jName.setEnabled(true);
-        
     }
 
     @Override
-    public void writeValueEdit(Object value) {
-        Object[] obj = (Object[]) value;
-        
-        m_id = (String)obj[0];
-        m_jName.setText(Formats.STRING.formatValue((String)obj[1]));
+    public void writeValueEdit(UomInfo value) {
+        if (value == null) {
+            writeValueEOF();
+            return;
+        }
+        m_id = value.getId();
+        m_jName.setText(Formats.STRING.formatValue(value.getName()));
         m_jName.setEnabled(true);
-        
     }
 
     @Override
-    public void writeValueDelete(Object value) {
-        Object[] obj = (Object[]) value;
-        
-        m_id = (String)obj[0];
-        m_jName.setText(Formats.STRING.formatValue((String)obj[1]));
+    public void writeValueDelete(UomInfo value) {
+        if (value == null) {
+            writeValueEOF();
+            return;
+        }
+        m_id = value.getId();
+        m_jName.setText(Formats.STRING.formatValue(value.getName()));
         m_jName.setEnabled(false);
-        
     }
 
     @Override
@@ -139,17 +146,12 @@ public final class UomEditor extends javax.swing.JPanel implements EditorRecord 
 
     @Override
     public Component getComponent() {
-         return this;
+        return this;
     }
 
     @Override
-    public Object createValue() throws BasicException {
-        Object[] obj = new Object[2];
-        obj[0] = m_id;
-        obj[1] = m_jName.getText();        
-        
-        return obj;
-        
+    public UomInfo createValue() throws BasicException {
+        return new UomInfo(m_id, m_jName.getText());
     }
 
     public boolean isDataValid() {

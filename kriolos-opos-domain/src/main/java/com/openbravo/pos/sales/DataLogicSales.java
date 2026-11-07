@@ -1204,7 +1204,7 @@ public class DataLogicSales extends BeanFactoryDataSingle implements TicketLifec
      * @deprecated Use {@link CatalogService#getTableUom()} instead.
      */
     @Deprecated
-    public final TableDefinition<Object[]> getTableUom() {
+    public final TableDefinition<UomInfo> getTableUom() {
         return getCatalogService().getTableUom();
     }
 

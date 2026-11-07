@@ -34,6 +34,10 @@ public class TableDefinition<T> {
     
     private int[] idinx;
    
+    private SerializerRead<T> serializerRead;
+    private SerializerWrite<T> serializerInsert;
+    private SerializerWrite<T> serializerUpdate;
+    private SerializerWrite<T> serializerDelete;
     
     /** 
      * Creates a new instance of TableDefinition
@@ -59,6 +63,54 @@ public class TableDefinition<T> {
   
         this.idinx = idinx;
     }  
+
+    /**
+     * Creates a typed TableDefinition with explicit serializer configurations.
+     *
+     * @param s session
+     * @param tablename Table Name
+     * @param fieldname Fields name
+     * @param fieldtran Field label
+     * @param fielddata Fields datatype
+     * @param fieldformat Field format
+     * @param idinx IDs position
+     * @param serializerRead row deserializer
+     * @param serializerInsert insert statement parameter serializer
+     * @param serializerUpdate update statement parameter serializer
+     * @param serializerDelete delete statement parameter serializer
+     */
+    public TableDefinition(Session s, String tablename, String[] fieldname, 
+            String[] fieldtran, Datas[] fielddata, Formats[] fieldformat, int[] idinx,
+            SerializerRead<T> serializerRead,
+            SerializerWrite<T> serializerInsert,
+            SerializerWrite<T> serializerUpdate,
+            SerializerWrite<T> serializerDelete) {
+        this(s, tablename, fieldname, fieldtran, fielddata, fieldformat, idinx);
+        this.serializerRead = serializerRead;
+        this.serializerInsert = serializerInsert;
+        this.serializerUpdate = serializerUpdate;
+        this.serializerDelete = serializerDelete;
+    }
+
+    /**
+     * Creates a typed TableDefinition with row deserializer and common parameter serializer.
+     *
+     * @param s session
+     * @param tablename Table Name
+     * @param fieldname Fields name
+     * @param fieldtran Field label
+     * @param fielddata Fields datatype
+     * @param fieldformat Field format
+     * @param idinx IDs position
+     * @param serializerRead row deserializer
+     * @param serializerWrite parameter serializer for DML operations
+     */
+    public TableDefinition(Session s, String tablename, String[] fieldname, 
+            String[] fieldtran, Datas[] fielddata, Formats[] fieldformat, int[] idinx,
+            SerializerRead<T> serializerRead,
+            SerializerWrite<T> serializerWrite) {
+        this(s, tablename, fieldname, fieldtran, fielddata, fieldformat, idinx, serializerRead, serializerWrite, serializerWrite, serializerWrite);
+    }
 
     /**
      *
@@ -150,6 +202,9 @@ public class TableDefinition<T> {
     }
 
     public SentenceList<T> getListSentence() {
+        if (serializerRead != null) {
+            return getListSentence(serializerRead);
+        }
         return getListSentence(getSerializerReadBasic());
     }
 
@@ -176,11 +231,14 @@ public class TableDefinition<T> {
     }
 
     public SentenceExec getDeleteSentence() {
+        if (serializerDelete != null) {
+            return getDeleteSentence(serializerDelete);
+        }
         return new PreparedSentenceExec(m_s,getDeleteSQL(), fielddata, idinx);
     }
 
-    private SentenceExec getDeleteSentence(SerializerWrite<T> sw) {
-        return new PreparedSentence(m_s, getDeleteSQL(), sw, null);
+    public SentenceExec getDeleteSentence(SerializerWrite<T> sw) {
+        return new PreparedSentenceExec<>(m_s, getDeleteSQL(), sw);
     }
     
 
@@ -200,11 +258,21 @@ public class TableDefinition<T> {
     }
 
     public SentenceExec getInsertSentence() {
+        if (serializerInsert != null) {
+            return getInsertSentence(serializerInsert);
+        }
         return getInsertSentence(getAllFields());
     }
     
     public SentenceExec getInsertSentence(int[] fieldindx) {
+        if (serializerInsert != null) {
+            return new PreparedSentenceExec<>(m_s, getInsertSQL(fieldindx), serializerInsert);
+        }
         return new PreparedSentenceExec(m_s,getInsertSQL(fieldindx), fielddata, fieldindx);
+    }
+
+    public SentenceExec getInsertSentence(SerializerWrite<T> sw) {
+        return new PreparedSentenceExec<>(m_s, getInsertSQL(getAllFields()), sw);
     }
     
     private String getInsertSQL(int[] fieldindx) {
@@ -242,11 +310,21 @@ public class TableDefinition<T> {
     }
 
     public SentenceExec getUpdateSentence() {
+        if (serializerUpdate != null) {
+            return getUpdateSentence(serializerUpdate);
+        }
         return getUpdateSentence(getAllFields());
     }
 
     public SentenceExec getUpdateSentence(int[] fieldindx) {
+        if (serializerUpdate != null) {
+            return new PreparedSentenceExec<>(m_s, getUpdateSQL(fieldindx), serializerUpdate);
+        }
         return new PreparedSentenceExec(m_s,getUpdateSQL(fieldindx), fielddata, updateStatementParams(fieldindx));
+    }
+
+    public SentenceExec getUpdateSentence(SerializerWrite<T> sw) {
+        return new PreparedSentenceExec<>(m_s, getUpdateSQL(getAllFields()), sw);
     }
     
     private String getUpdateSQL(int[] fieldindx) {

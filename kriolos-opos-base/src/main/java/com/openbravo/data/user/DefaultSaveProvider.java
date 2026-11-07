@@ -15,15 +15,19 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package com.openbravo.data.user;
-import com.openbravo.data.loader.TableDefinition;
+
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.loader.SentenceExec;
+import com.openbravo.data.loader.TableDefinition;
 
 /**
- * 
+ * Standard SaveProvider implementation delegating to SentenceExec instances.
+ *
+ * @param <TYPE> the entity type handled by this save provider
  * @author JG uniCenta
+ * @author KriolOS
  */
-public class DefaultSaveProvider implements SaveProvider<Object[]>{
+public class DefaultSaveProvider<TYPE> implements SaveProvider<TYPE> {
 
     protected SentenceExec m_sentupdate;
     protected SentenceExec m_sentinsert;
@@ -35,13 +39,13 @@ public class DefaultSaveProvider implements SaveProvider<Object[]>{
         m_sentdelete = sentdelete;
     }
 
-    public DefaultSaveProvider(TableDefinition table) {
+    public DefaultSaveProvider(TableDefinition<TYPE> table) {
         m_sentupdate = table.getUpdateSentence();
         m_sentdelete = table.getDeleteSentence();
         m_sentinsert = table.getInsertSentence();
     }
 
-    public DefaultSaveProvider(TableDefinition table, int[] fields) {
+    public DefaultSaveProvider(TableDefinition<TYPE> table, int[] fields) {
         m_sentupdate = table.getUpdateSentence(fields);
         m_sentdelete = table.getDeleteSentence();
         m_sentinsert = table.getInsertSentence(fields);
@@ -53,7 +57,7 @@ public class DefaultSaveProvider implements SaveProvider<Object[]>{
     }
 
     @Override
-    public int deleteData(Object[] value) throws BasicException {
+    public int deleteData(TYPE value) throws BasicException {
         return m_sentdelete.exec(value);
     }
 
@@ -63,7 +67,7 @@ public class DefaultSaveProvider implements SaveProvider<Object[]>{
     }
 
     @Override
-    public int insertData(Object[] value) throws BasicException {
+    public int insertData(TYPE value) throws BasicException {
         return m_sentinsert.exec(value);
     }
 
@@ -73,7 +77,7 @@ public class DefaultSaveProvider implements SaveProvider<Object[]>{
     }
 
     @Override
-    public int updateData(Object[] value) throws BasicException {
+    public int updateData(TYPE value) throws BasicException {
         return m_sentupdate.exec(value);
     }
 }

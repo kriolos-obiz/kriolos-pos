@@ -1,10 +1,165 @@
 {
-  "protocol_version": "1.0",
+  "protocol_version": "2.0",
+  "coordinator": {
+    "lead_agent": "antigravity",
+    "role": "Lead Software Architect & Scrum Master",
+    "status": "active",
+    "responsibilities": [
+      "System architecture integrity, modular monolith boundaries, and clean code enforcement",
+      "Lock arbitration, task assignment, and conflict avoidance across AI agents",
+      "PR & commit review and verification against Java 17 LTS standards",
+      "Maven reactor build and test gatekeeping (zero failure tolerance)"
+    ]
+  },
+  "governance_and_rules": {
+    "coordination_mandate": "All AI agents (e.g., GitHub Copilot, Gemini, secondary assistants) collaborating in this repository MUST operate strictly under the direction and architecture standards established by 'antigravity'. Read .agents/EPIC_TYPESAFE.md for design patterns.",
+    "agent_execution_rules": [
+      "1. LOCK CHECK MANDATE: Inspect 'active_locks' before reading or modifying any files. Never touch any file or package locked by another agent.",
+      "2. TASK CLAIM PROTOCOL: To claim an available task, move it from 'task_queue.available' to 'task_queue.in_progress', set your 'agent' identifier, and add all files/directories you intend to modify into 'active_locks' in this JSON file before changing code.",
+      "3. FEATURE BRANCHING: Always branch from the latest commit on 'develop' using the naming format 'feature/KP-<id>-<short-description>'. Never commit directly to 'develop' or 'main'.",
+      "4. CONVENTIONAL COMMITS: Every commit message must strictly adhere to Conventional Commits v1.0.0 (e.g. 'feat(scope): short description in English', 'test(scope): ...', 'refactor(scope): ...').",
+      "5. ZERO REMOTE PUSH MANDATE: Do NOT push any branch to 'origin' unless the human user explicitly instructs you to do so.",
+      "6. MANDATORY TEST VERIFICATION: Before completing your task, run: 'export JAVA_HOME=/home/dev/.sdkman/candidates/java/17.0.12-tem; export PATH=$JAVA_HOME/bin:$PATH; ./mvnw test -pl <target-modules>' and ensure 100% test pass rate.",
+      "7. RELEASE LOCKS ON COMPLETION: Once verified and committed locally on your feature branch, release your paths from 'active_locks', move the task to 'task_queue.completed' with a timestamp, and notify the user and Lead Architect."
+    ]
+  },
   "active_locks": [],
   "task_queue": {
     "in_progress": [],
-    "available": [],
+    "available": [
+      {
+        "id": "TASK-031",
+        "ticket": "KP-141",
+        "recommended_for": "Collaborating AI Agent (e.g. Copilot)",
+        "priority": "HIGH (Recommended First Pick)",
+        "title": "Type-Safe Tax Category & Customer Tax Category Vertical Pipeline",
+        "description": "Eliminate Object[] arrays in TaxCategoryPanel and TaxCustCategoryPanel by replacing raw TableDefinition with TableDefinition<TaxCategoryInfo> and TableDefinition<TaxCustCategoryInfo>, implementing EditorRecord<T> on editors, and wiring DataLogicSales methods.",
+        "target_packages": [
+          "kriolos-opos-domain: com.openbravo.pos.ticket",
+          "kriolos-opos-app: com.openbravo.pos.panels (TaxCategoryPanel, TaxCustCategoryPanel)"
+        ],
+        "target_files": [
+          "kriolos-opos-app/src/main/java/com/openbravo/pos/panels/TaxCategoryPanel.java",
+          "kriolos-opos-app/src/main/java/com/openbravo/pos/panels/TaxCategoryEditor.java",
+          "kriolos-opos-app/src/main/java/com/openbravo/pos/panels/TaxCustCategoryPanel.java",
+          "kriolos-opos-app/src/main/java/com/openbravo/pos/panels/TaxCustCategoryEditor.java",
+          "kriolos-opos-domain/src/main/java/com/openbravo/pos/forms/DataLogicSales.java"
+        ],
+        "git_branch_instruction": "feature/KP-141-typesafe-tax-categories",
+        "acceptance_criteria": [
+          "TaxCategoryPanel and TaxCustCategoryPanel do not instantiate raw TableDefinition or cast to Object[].",
+          "TaxCategoryEditor and TaxCustCategoryEditor implement EditorRecord<TaxCategoryInfo> and EditorRecord<TaxCustCategoryInfo>.",
+          "TableDefinition sentences in DataLogicSales utilize typed SerializerRead and SerializerWrite without Object[].",
+          "Existing CRUD behavior (insert, update, delete, search) is preserved 100%.",
+          "./mvnw test -pl kriolos-opos-domain,kriolos-opos-app passes with zero errors."
+        ]
+      },
+      {
+        "id": "TASK-032",
+        "ticket": "KP-142",
+        "recommended_for": "Collaborating AI Agent",
+        "priority": "MEDIUM",
+        "title": "Type-Safe Hospitality Floor & Place Vertical Pipeline",
+        "description": "Modernize PlacesPanel, FloorsPanel, and DataLogicRestaurant to use TableDefinition<PlaceInfo> and TableDefinition<FloorInfo> with typed EditorRecord implementations, completely removing Object[] mapping.",
+        "target_packages": [
+          "kriolos-opos-domain: com.openbravo.pos.restaurant",
+          "kriolos-opos-app: com.openbravo.pos.restaurant"
+        ],
+        "target_files": [
+          "kriolos-opos-app/src/main/java/com/openbravo/pos/restaurant/PlacesPanel.java",
+          "kriolos-opos-app/src/main/java/com/openbravo/pos/restaurant/PlacesEditor.java",
+          "kriolos-opos-app/src/main/java/com/openbravo/pos/restaurant/FloorsPanel.java",
+          "kriolos-opos-app/src/main/java/com/openbravo/pos/restaurant/FloorsEditor.java",
+          "kriolos-opos-domain/src/main/java/com/openbravo/pos/restaurant/DataLogicRestaurant.java"
+        ],
+        "git_branch_instruction": "feature/KP-142-typesafe-hospitality-places",
+        "acceptance_criteria": [
+          "PlacesPanel and FloorsPanel operate entirely on PlaceInfo and FloorInfo types.",
+          "PlacesEditor and FloorsEditor implement EditorRecord<PlaceInfo> and EditorRecord<FloorInfo>.",
+          "No Object[] casts in table definitions or save/load providers.",
+          "./mvnw test -pl kriolos-opos-domain,kriolos-opos-app passes with zero errors."
+        ]
+      },
+      {
+        "id": "TASK-033",
+        "ticket": "KP-143",
+        "recommended_for": "Collaborating AI Agent",
+        "priority": "HIGH (Alternative Pick)",
+        "title": "Type-Safe Suppliers Vertical Pipeline",
+        "description": "Modernize SuppliersPanel, SuppliersEditor, and DataLogicSupplier to use TableDefinition<SupplierInfo> with typed EditorRecord<SupplierInfo>, removing Object[] array manipulations in supplier maintenance.",
+        "target_packages": [
+          "kriolos-opos-domain: com.openbravo.pos.suppliers",
+          "kriolos-opos-app: com.openbravo.pos.suppliers"
+        ],
+        "target_files": [
+          "kriolos-opos-app/src/main/java/com/openbravo/pos/suppliers/SuppliersPanel.java",
+          "kriolos-opos-app/src/main/java/com/openbravo/pos/suppliers/SuppliersEditor.java",
+          "kriolos-opos-domain/src/main/java/com/openbravo/pos/suppliers/DataLogicSupplier.java"
+        ],
+        "git_branch_instruction": "feature/KP-143-typesafe-suppliers",
+        "acceptance_criteria": [
+          "SuppliersPanel uses TableDefinition<SupplierInfo> and DefaultSaveProvider<SupplierInfo>.",
+          "SuppliersEditor implements EditorRecord<SupplierInfo> with strongly typed getters/setters.",
+          "Existing supplier notes commands from KP-132 remain fully integrated and unbroken.",
+          "./mvnw test -pl kriolos-opos-domain,kriolos-opos-app passes with zero errors."
+        ]
+      },
+      {
+        "id": "TASK-034",
+        "ticket": "KP-144",
+        "recommended_for": "Collaborating AI Agent",
+        "priority": "MEDIUM",
+        "title": "Type-Safe Security & Roles Vertical Pipeline",
+        "description": "Modernize RolesPanel, RolesEditor, and DataLogicSecurity to use TableDefinition<RoleInfo> with typed EditorRecord<RoleInfo>, removing Object[] arrays from role permission configuration.",
+        "target_packages": [
+          "kriolos-opos-domain: com.openbravo.pos.security",
+          "kriolos-opos-app: com.openbravo.pos.security"
+        ],
+        "target_files": [
+          "kriolos-opos-app/src/main/java/com/openbravo/pos/security/RolesPanel.java",
+          "kriolos-opos-app/src/main/java/com/openbravo/pos/security/RolesEditor.java",
+          "kriolos-opos-domain/src/main/java/com/openbravo/pos/security/DataLogicSecurity.java"
+        ],
+        "git_branch_instruction": "feature/KP-144-typesafe-roles",
+        "acceptance_criteria": [
+          "RolesPanel and RolesEditor operate on RoleInfo without Object[] conversions.",
+          "DataLogicSecurity exposes typed TableDefinition<RoleInfo>.",
+          "./mvnw test -pl kriolos-opos-domain,kriolos-opos-app passes with zero errors."
+        ]
+      },
+      {
+        "id": "TASK-035",
+        "ticket": "KP-145",
+        "recommended_for": "Collaborating AI Agent",
+        "priority": "MEDIUM",
+        "title": "Type-Safe HR Breaks & Leaves Vertical Pipeline",
+        "description": "Modernize BreaksPanel, LeaveTypePanel, and DataLogicHR to eliminate Object[] by typing TableDefinition<BreakInfo> and TableDefinition<LeaveTypeInfo>.",
+        "target_packages": [
+          "kriolos-opos-domain: com.openbravo.pos.hr",
+          "kriolos-opos-app: com.openbravo.pos.hr"
+        ],
+        "target_files": [
+          "kriolos-opos-app/src/main/java/com/openbravo/pos/hr/BreaksPanel.java",
+          "kriolos-opos-app/src/main/java/com/openbravo/pos/hr/BreaksEditor.java",
+          "kriolos-opos-app/src/main/java/com/openbravo/pos/hr/LeaveTypePanel.java",
+          "kriolos-opos-app/src/main/java/com/openbravo/pos/hr/LeaveTypeEditor.java",
+          "kriolos-opos-domain/src/main/java/com/openbravo/pos/hr/DataLogicHR.java"
+        ],
+        "git_branch_instruction": "feature/KP-145-typesafe-hr",
+        "acceptance_criteria": [
+          "BreaksPanel and LeaveTypePanel use strongly typed models and editors.",
+          "DataLogicHR provides typed TableDefinition and sentence mappers.",
+          "./mvnw test -pl kriolos-opos-domain,kriolos-opos-app passes with zero errors."
+        ]
+      }
+    ],
     "completed": [
+      {
+        "id": "TASK-030",
+        "agent": "antigravity",
+        "description": "KP-140: Implement end-to-end type-safe pipeline for UOM, generic DefaultSaveProvider, and typed TableDefinition",
+        "completed_at": "2026-11-07T05:39:00Z"
+      },
       {
         "id": "TASK-029",
         "agent": "antigravity",

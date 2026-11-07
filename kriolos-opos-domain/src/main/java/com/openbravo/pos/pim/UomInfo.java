@@ -2,8 +2,10 @@ package com.openbravo.pos.pim;
 
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.loader.DataRead;
+import com.openbravo.data.loader.DataWrite;
 import com.openbravo.data.loader.IKeyed;
 import com.openbravo.data.loader.SerializerRead;
+import com.openbravo.data.loader.SerializerWrite;
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -123,5 +125,44 @@ public class UomInfo implements IKeyed, Serializable {
      */
     public static SerializerRead<UomInfo> getSerializerRead() {
         return (DataRead dr) -> new UomInfo(dr.getString(1), dr.getString(2));
+    }
+
+    /**
+     * Returns a {@link SerializerWrite} for inserting UomInfo records.
+     * Binding: 1: ID, 2: NAME
+     *
+     * @return serializer for INSERT statement
+     */
+    public static SerializerWrite<UomInfo> getSerializerInsert() {
+        return (DataWrite dp, UomInfo info) -> {
+            dp.setString(1, info.getId());
+            dp.setString(2, info.getName());
+        };
+    }
+
+    /**
+     * Returns a {@link SerializerWrite} for updating UomInfo records.
+     * Binding: 1: ID, 2: NAME, 3: ID (WHERE id = ?) matching TableDefinition getUpdateSentence(getAllFields())
+     *
+     * @return serializer for UPDATE statement
+     */
+    public static SerializerWrite<UomInfo> getSerializerUpdate() {
+        return (DataWrite dp, UomInfo info) -> {
+            dp.setString(1, info.getId());
+            dp.setString(2, info.getName());
+            dp.setString(3, info.getId());
+        };
+    }
+
+    /**
+     * Returns a {@link SerializerWrite} for deleting UomInfo records.
+     * Binding: 1: ID (WHERE id = ?)
+     *
+     * @return serializer for DELETE statement
+     */
+    public static SerializerWrite<UomInfo> getSerializerDelete() {
+        return (DataWrite dp, UomInfo info) -> {
+            dp.setString(1, info.getId());
+        };
     }
 }

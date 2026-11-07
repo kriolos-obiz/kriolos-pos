@@ -52,18 +52,22 @@ public class DataLogicUom extends BeanFactoryDataSingle {
     }
 
     /**
-     * Returns the table definition for the {@code uom} database table.
+     * Returns the strongly typed table definition for the {@code uom} database table.
      *
-     * @return UOM {@link TableDefinition}
+     * @return UOM {@link TableDefinition} parameterized with {@link UomInfo}
      */
-    public TableDefinition<Object[]> getTableUom() {
+    public TableDefinition<UomInfo> getTableUom() {
         return new TableDefinition<>(sessionDB,
                 "uom",
                 new String[]{"id", "name"},
                 new String[]{"id", AppLocal.getIntString("label.name")},
                 new Datas[]{Datas.STRING, Datas.STRING},
                 new Formats[]{Formats.STRING, Formats.STRING},
-                new int[]{0});
+                new int[]{0},
+                UomInfo.getSerializerRead(),
+                UomInfo.getSerializerInsert(),
+                UomInfo.getSerializerUpdate(),
+                UomInfo.getSerializerDelete());
     }
 
     /**

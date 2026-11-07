@@ -254,7 +254,7 @@ public class CatalogServiceImpl extends BeanFactoryDataSingle implements Catalog
     // =========================================================================
 
     @Override
-    public TableDefinition<Object[]> getTableUom() {
+    public TableDefinition<UomInfo> getTableUom() {
         return dataLogicUom.getTableUom();
     }
 

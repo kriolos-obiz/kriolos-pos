@@ -212,11 +212,11 @@ public interface CatalogService {
     TableDefinition<Object[]> getTableCategories();
 
     /**
-     * Returns the table definition for units of measure.
+     * Returns the strongly typed table definition for units of measure.
      *
-     * @return UOM {@link TableDefinition}
+     * @return UOM {@link TableDefinition} parameterized with {@link UomInfo}
      */
-    TableDefinition<Object[]> getTableUom();
+    TableDefinition<UomInfo> getTableUom();
 
     /**
      * Retrieves Unit of Measure details by ID.
