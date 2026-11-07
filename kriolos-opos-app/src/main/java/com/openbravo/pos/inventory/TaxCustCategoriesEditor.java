@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-///    Foundation, Inc., 51 Franklin Street, Fifth floor, Boston, MA  02110-1301  USA
 
 package com.openbravo.pos.inventory;
 
@@ -31,26 +30,28 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
 /**
+ * Strongly typed editor component for Customer Tax Category records.
  *
  * @author JG uniCenta
+ * @author KriolOS
  */
-public final class TaxCustCategoriesEditor extends JPanel implements EditorRecord {
+public final class TaxCustCategoriesEditor extends JPanel implements EditorRecord<TaxCustCategoryInfo> {
     
+    private static final long serialVersionUID = 1L;
+
     private String m_oId;
     
-    /** Creates new form taxEditor
-     * @param dirty */
+    /**
+     * Creates new form TaxCustCategoriesEditor.
+     *
+     * @param dirty dirty state listener
+     */
     public TaxCustCategoriesEditor(DirtyManager dirty) {
         initComponents();
-
         m_jName.getDocument().addDocumentListener(dirty);
-        
         writeValueEOF();
     }
 
-    /**
-     *
-     */
     @Override
     public void writeValueEOF() {
         m_oId = null;
@@ -58,9 +59,6 @@ public final class TaxCustCategoriesEditor extends JPanel implements EditorRecor
         m_jName.setEnabled(false);
     }
 
-    /**
-     *
-     */
     @Override
     public void writeValueInsert() {
         m_oId = UUID.randomUUID().toString();
@@ -68,60 +66,38 @@ public final class TaxCustCategoriesEditor extends JPanel implements EditorRecor
         m_jName.setEnabled(true);
     }
 
-    /**
-     *
-     * @param value
-     */
     @Override
-    public void writeValueDelete(Object value) {
-
-        Object[] taxcustcat = (Object[]) value;
-        m_oId = (String)taxcustcat[0];
-        m_jName.setText(Formats.STRING.formatValue((String)taxcustcat[1]));
+    public void writeValueDelete(TaxCustCategoryInfo value) {
+        if (value == null) {
+            writeValueEOF();
+            return;
+        }
+        m_oId = value.getID();
+        m_jName.setText(Formats.STRING.formatValue(value.getName()));
         m_jName.setEnabled(false);
     }    
 
-    /**
-     *
-     * @param value
-     */
     @Override
-    public void writeValueEdit(Object value) {
-
-        Object[] taxcustcat = (Object[]) value;
-        m_oId = (String)taxcustcat[0];
-        m_jName.setText(Formats.STRING.formatValue((String)taxcustcat[1]));
+    public void writeValueEdit(TaxCustCategoryInfo value) {
+        if (value == null) {
+            writeValueEOF();
+            return;
+        }
+        m_oId = value.getID();
+        m_jName.setText(Formats.STRING.formatValue(value.getName()));
         m_jName.setEnabled(true);
     }
 
-    /**
-     *
-     * @return
-     * @throws BasicException
-     */
     @Override
-    public Object createValue() throws BasicException {
-        
-        Object[] taxcustcat = new Object[2];
-
-        taxcustcat[0] = m_oId;
-        taxcustcat[1] = m_jName.getText();
-
-        return taxcustcat;
+    public TaxCustCategoryInfo createValue() throws BasicException {
+        return new TaxCustCategoryInfo(m_oId, m_jName.getText());
     }
 
-    /**
-     *
-     * @return
-     */
     @Override
     public Component getComponent() {
         return this;
     }
     
-    /**
-     *
-     */
     @Override
     public void refresh() {
     }
@@ -138,29 +114,44 @@ public final class TaxCustCategoriesEditor extends JPanel implements EditorRecor
         jLabel2 = new javax.swing.JLabel();
         m_jName = new javax.swing.JTextField();
 
-        setLayout(null);
-
         jLabel2.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
         jLabel2.setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/openbravo/images/info.png"))); // NOI18N
         jLabel2.setText(AppLocal.getIntString("label.name")); // NOI18N
-        jLabel2.setToolTipText("");
+        jLabel2.setPreferredSize(new java.awt.Dimension(34, 30));
         jLabel2.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 jLabel2MouseClicked(evt);
             }
         });
-        add(jLabel2);
-        jLabel2.setBounds(20, 20, 80, 25);
 
-        m_jName.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
-        add(m_jName);
-        m_jName.setBounds(100, 20, 200, 25);
+        m_jName.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
+        m_jName.setPreferredSize(new java.awt.Dimension(34, 30));
+
+        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
+        this.setLayout(layout);
+        layout.setHorizontalGroup(
+            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 80, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(m_jName, javax.swing.GroupLayout.PREFERRED_SIZE, 200, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap())
+        );
+        layout.setVerticalGroup(
+            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(layout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(m_jName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
     }// </editor-fold>//GEN-END:initComponents
 
     private void jLabel2MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jLabel2MouseClicked
-
-        if (evt.getClickCount() == 2) {
-            String uuidString = m_oId.toString();
+        if (evt.getClickCount() == 2 && m_oId != null) {
+            String uuidString = m_oId;
             StringSelection stringSelection = new StringSelection(uuidString);
             Clipboard clpbrd = Toolkit.getDefaultToolkit().getSystemClipboard();
             clpbrd.setContents(stringSelection, null);
@@ -170,10 +161,8 @@ public final class TaxCustCategoriesEditor extends JPanel implements EditorRecor
         }
     }//GEN-LAST:event_jLabel2MouseClicked
 
-
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel jLabel2;
     private javax.swing.JTextField m_jName;
     // End of variables declaration//GEN-END:variables
-
 }

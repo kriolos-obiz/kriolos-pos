@@ -110,12 +110,12 @@ class TaxServiceTest {
             }
 
             @Override
-            public TableDefinition<Object[]> getTableTaxCustCategories() {
+            public TableDefinition<TaxCustCategoryInfo> getTableTaxCustCategories() {
                 return null;
             }
 
             @Override
-            public TableDefinition<Object[]> getTableTaxCategories() {
+            public TableDefinition<TaxCategoryInfo> getTableTaxCategories() {
                 return null;
             }
         };

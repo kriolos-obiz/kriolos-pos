@@ -193,24 +193,32 @@ public class DataLogicTax extends BeanFactoryDataSingle implements TaxService {
     }
 
     @Override
-    public TableDefinition<Object[]> getTableTaxCustCategories() {
+    public TableDefinition<TaxCustCategoryInfo> getTableTaxCustCategories() {
         return new TableDefinition<>(sessionDB,
                 "taxcustcategories",
                 new String[]{"ID", "NAME"},
                 new String[]{"ID", AppLocal.getIntString("label.name")},
                 new Datas[]{Datas.STRING, Datas.STRING},
                 new Formats[]{Formats.STRING, Formats.STRING},
-                new int[]{0});
+                new int[]{0},
+                TaxCustCategoryInfo.getSerializerRead(),
+                TaxCustCategoryInfo.getSerializerInsert(),
+                TaxCustCategoryInfo.getSerializerUpdate(),
+                TaxCustCategoryInfo.getSerializerDelete());
     }
 
     @Override
-    public TableDefinition<Object[]> getTableTaxCategories() {
+    public TableDefinition<TaxCategoryInfo> getTableTaxCategories() {
         return new TableDefinition<>(sessionDB,
                 "taxcategories",
                 new String[]{"ID", "NAME"},
                 new String[]{"ID", AppLocal.getIntString("label.name")},
                 new Datas[]{Datas.STRING, Datas.STRING},
                 new Formats[]{Formats.STRING, Formats.STRING},
-                new int[]{0});
+                new int[]{0},
+                TaxCategoryInfo.getSerializerRead(),
+                TaxCategoryInfo.getSerializerInsert(),
+                TaxCategoryInfo.getSerializerUpdate(),
+                TaxCategoryInfo.getSerializerDelete());
     }
 }

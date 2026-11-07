@@ -69,8 +69,8 @@ public interface TaxService {
 
     TableDefinition<Object[]> getTableTaxes();
 
-    TableDefinition<Object[]> getTableTaxCustCategories();
+    TableDefinition<TaxCustCategoryInfo> getTableTaxCustCategories();
 
-    TableDefinition<Object[]> getTableTaxCategories();
+    TableDefinition<TaxCategoryInfo> getTableTaxCategories();
 }
 

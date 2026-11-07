@@ -28,33 +28,6 @@
     "in_progress": [],
     "available": [
       {
-        "id": "TASK-031",
-        "ticket": "KP-141",
-        "recommended_for": "Collaborating AI Agent (e.g. Copilot)",
-        "priority": "HIGH (Recommended First Pick)",
-        "title": "Type-Safe Tax Category & Customer Tax Category Vertical Pipeline",
-        "description": "Eliminate Object[] arrays in TaxCategoryPanel and TaxCustCategoryPanel by replacing raw TableDefinition with TableDefinition<TaxCategoryInfo> and TableDefinition<TaxCustCategoryInfo>, implementing EditorRecord<T> on editors, and wiring DataLogicSales methods.",
-        "target_packages": [
-          "kriolos-opos-domain: com.openbravo.pos.ticket",
-          "kriolos-opos-app: com.openbravo.pos.panels (TaxCategoryPanel, TaxCustCategoryPanel)"
-        ],
-        "target_files": [
-          "kriolos-opos-app/src/main/java/com/openbravo/pos/panels/TaxCategoryPanel.java",
-          "kriolos-opos-app/src/main/java/com/openbravo/pos/panels/TaxCategoryEditor.java",
-          "kriolos-opos-app/src/main/java/com/openbravo/pos/panels/TaxCustCategoryPanel.java",
-          "kriolos-opos-app/src/main/java/com/openbravo/pos/panels/TaxCustCategoryEditor.java",
-          "kriolos-opos-domain/src/main/java/com/openbravo/pos/forms/DataLogicSales.java"
-        ],
-        "git_branch_instruction": "feature/KP-141-typesafe-tax-categories",
-        "acceptance_criteria": [
-          "TaxCategoryPanel and TaxCustCategoryPanel do not instantiate raw TableDefinition or cast to Object[].",
-          "TaxCategoryEditor and TaxCustCategoryEditor implement EditorRecord<TaxCategoryInfo> and EditorRecord<TaxCustCategoryInfo>.",
-          "TableDefinition sentences in DataLogicSales utilize typed SerializerRead and SerializerWrite without Object[].",
-          "Existing CRUD behavior (insert, update, delete, search) is preserved 100%.",
-          "./mvnw test -pl kriolos-opos-domain,kriolos-opos-app passes with zero errors."
-        ]
-      },
-      {
         "id": "TASK-032",
         "ticket": "KP-142",
         "recommended_for": "Collaborating AI Agent",
@@ -154,6 +127,12 @@
       }
     ],
     "completed": [
+      {
+        "id": "TASK-031",
+        "agent": "antigravity",
+        "description": "KP-141: Implement end-to-end type-safe pipeline for Tax Categories and Customer Tax Categories",
+        "completed_at": "2026-11-07T06:02:00Z"
+      },
       {
         "id": "TASK-030",
         "agent": "antigravity",

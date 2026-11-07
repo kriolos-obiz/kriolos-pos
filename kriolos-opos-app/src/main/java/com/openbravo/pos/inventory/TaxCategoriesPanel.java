@@ -16,100 +16,83 @@
 
 package com.openbravo.pos.inventory;
 
+import com.openbravo.basic.AppLocal;
+import com.openbravo.basic.BasicException;
 import com.openbravo.data.gui.ListCellRendererBasic;
 import com.openbravo.data.loader.ComparatorCreator;
 import com.openbravo.data.loader.TableDefinition;
 import com.openbravo.data.loader.Vectorer;
+import com.openbravo.data.user.DefaultSaveProvider;
 import com.openbravo.data.user.EditorRecord;
 import com.openbravo.data.user.ListProvider;
 import com.openbravo.data.user.ListProviderCreator;
-import com.openbravo.data.user.DefaultSaveProvider;
-import com.openbravo.basic.AppLocal;
-import com.openbravo.pos.sales.TaxService;
 import com.openbravo.pos.panels.JPanelTable;
+import com.openbravo.pos.sales.TaxService;
 import javax.swing.ListCellRenderer;
 
 /**
+ * Strongly typed maintenance panel for Tax Categories.
  *
  * @author adrianromero
+ * @author KriolOS
  */
 public class TaxCategoriesPanel extends JPanelTable {
 
-    private TableDefinition<Object[]> ttaxcategories;
-    private TaxCustCategoriesEditor jeditor;
+    private static final long serialVersionUID = 1L;
+
+    private TableDefinition<TaxCategoryInfo> ttaxcategories;
+    private TaxCategoriesEditor jeditor;
     
-    /** Creates a new instance of JPanelDuty */
     public TaxCategoriesPanel() {
     }
     
-    /**
-     *
-     */
     @Override
     protected void init() {
         TaxService taxService = app.getBean(TaxService.class);        
         ttaxcategories = taxService.getTableTaxCategories();
-        jeditor = new TaxCustCategoriesEditor(dirty);
+        jeditor = new TaxCategoriesEditor(dirty);
     }
     
-    /**
-     *
-     * @return
-     */
     @Override
-    public ListProvider getListProvider() {
-        return new ListProviderCreator(ttaxcategories);
+    public ListProvider<TaxCategoryInfo> getListProvider() {
+        return new ListProviderCreator<>(ttaxcategories);
     }
     
-    /**
-     *
-     * @return
-     */
     @Override
-    public DefaultSaveProvider getSaveProvider() {
-        return new DefaultSaveProvider(ttaxcategories);      
+    public DefaultSaveProvider<TaxCategoryInfo> getSaveProvider() {
+        return new DefaultSaveProvider<>(ttaxcategories);      
     }
     
-    /**
-     *
-     * @return
-     */
     @Override
-    public Vectorer getVectorer() {
-        return ttaxcategories.getVectorerBasic(new int[]{1});
+    public Vectorer<TaxCategoryInfo> getVectorer() {
+        return new Vectorer<>() {
+            @Override
+            public String[] getHeaders() throws BasicException {
+                return new String[]{AppLocal.getIntString("label.name")};
+            }
+
+            @Override
+            public String[] getValues(TaxCategoryInfo obj) throws BasicException {
+                return new String[]{obj != null ? obj.getName() : ""};
+            }
+        };
     }
     
-    /**
-     *
-     * @return
-     */
     @Override
     public ComparatorCreator getComparatorCreator() {
-        return ttaxcategories.getComparatorCreator(new int[] {1});
+        return ttaxcategories.getComparatorCreator(new int[]{1});
     }
     
-    /**
-     *
-     * @return
-     */
     @Override
-    public ListCellRenderer getListCellRenderer() {
-        return new ListCellRendererBasic(ttaxcategories.getRenderStringBasic(new int[]{1}));
+    public ListCellRenderer<?> getListCellRenderer() {
+        return new ListCellRendererBasic(v -> v instanceof TaxCategoryInfo c ? c.getName() : (v != null ? v.toString() : ""));
     }
     
-    /**
-     *
-     * @return
-     */
     @Override
-    public EditorRecord getEditor() {
+    public EditorRecord<TaxCategoryInfo> getEditor() {
         return jeditor;
     }
         
-    /**
-     *
-     * @return
-     */
     @Override
     public String getTitle() {
         return AppLocal.getIntString("Menu.TaxCategories");
