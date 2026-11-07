@@ -97,7 +97,7 @@ class SupplierServiceTest {
             }
 
             @Override
-            public TableDefinition<Object[]> getTableSuppliers() {
+            public TableDefinition<SupplierInfo> getTableSuppliers() {
                 return null;
             }
 

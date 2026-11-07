@@ -28,30 +28,6 @@
     "in_progress": [],
     "available": [
       {
-        "id": "TASK-033",
-        "ticket": "KP-143",
-        "recommended_for": "Collaborating AI Agent",
-        "priority": "HIGH (Alternative Pick)",
-        "title": "Type-Safe Suppliers Vertical Pipeline",
-        "description": "Modernize SuppliersPanel, SuppliersEditor, and DataLogicSupplier to use TableDefinition<SupplierInfo> with typed EditorRecord<SupplierInfo>, removing Object[] array manipulations in supplier maintenance.",
-        "target_packages": [
-          "kriolos-opos-domain: com.openbravo.pos.suppliers",
-          "kriolos-opos-app: com.openbravo.pos.suppliers"
-        ],
-        "target_files": [
-          "kriolos-opos-app/src/main/java/com/openbravo/pos/suppliers/SuppliersPanel.java",
-          "kriolos-opos-app/src/main/java/com/openbravo/pos/suppliers/SuppliersEditor.java",
-          "kriolos-opos-domain/src/main/java/com/openbravo/pos/suppliers/DataLogicSupplier.java"
-        ],
-        "git_branch_instruction": "feature/KP-143-typesafe-suppliers",
-        "acceptance_criteria": [
-          "SuppliersPanel uses TableDefinition<SupplierInfo> and DefaultSaveProvider<SupplierInfo>.",
-          "SuppliersEditor implements EditorRecord<SupplierInfo> with strongly typed getters/setters.",
-          "Existing supplier notes commands from KP-132 remain fully integrated and unbroken.",
-          "./mvnw test -pl kriolos-opos-domain,kriolos-opos-app passes with zero errors."
-        ]
-      },
-      {
         "id": "TASK-034",
         "ticket": "KP-144",
         "recommended_for": "Collaborating AI Agent",
@@ -101,6 +77,13 @@
       }
     ],
     "completed": [
+      {
+        "id": "TASK-033",
+        "agent": "antigravity",
+        "ticket": "KP-143",
+        "description": "KP-143: Implement end-to-end type-safe pipeline for Suppliers with TableDefinition and EditorRecord",
+        "completed_at": "2026-11-07T06:51:00Z"
+      },
       {
         "id": "TASK-032",
         "agent": "antigravity",

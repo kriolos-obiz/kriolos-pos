@@ -37,7 +37,7 @@ public class DataLogicSuppliers extends BeanFactoryDataSingle implements Supplie
      * Main Method for supplier object
      */
     protected Session s;
-    private TableDefinition<Object[]> tsuppliers;
+    private TableDefinition<SupplierInfo> tsuppliers;
     private static final Datas[] supplierdatas = new Datas[]{
         Datas.STRING,
         Datas.STRING,
@@ -116,7 +116,11 @@ public class DataLogicSuppliers extends BeanFactoryDataSingle implements Supplie
                     Formats.STRING, Formats.STRING, Formats.STRING, Formats.STRING,
                     Formats.STRING, Formats.STRING, Formats.BOOLEAN, Formats.TIMESTAMP,
                     Formats.CURRENCY, Formats.STRING},
-                new int[]{0}
+                new int[]{0},
+                SupplierInfo.getSerializerRead(),
+                SupplierInfo.getSerializerInsert(),
+                SupplierInfo.getSerializerUpdate(),
+                SupplierInfo.getSerializerDelete()
         );
     }
 
@@ -233,7 +237,7 @@ public class DataLogicSuppliers extends BeanFactoryDataSingle implements Supplie
     }
 
     @Override
-    public final TableDefinition<Object[]> getTableSuppliers() {
+    public final TableDefinition<SupplierInfo> getTableSuppliers() {
         return tsuppliers;
     }
 

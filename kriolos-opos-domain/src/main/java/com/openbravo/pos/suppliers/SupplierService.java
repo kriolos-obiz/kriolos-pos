@@ -63,7 +63,7 @@ public interface SupplierService {
         return updateSupplierNotes(new UpdateSupplierNotesCommand(supplier.getId(), supplier.getNotes()));
     }
 
-    TableDefinition<Object[]> getTableSuppliers();
+    TableDefinition<SupplierInfo> getTableSuppliers();
 
     List<SupplierTransaction> getSuppliersTransactionList(String sId) throws BasicException;
 }

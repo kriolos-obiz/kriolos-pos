@@ -39,7 +39,7 @@ public class JNewSupplierPanel extends JPanel {
     private static final long serialVersionUID = 1L;
 
     private SupplierService dlSupplier;
-    private TableDefinition<Object[]> tsuppliers;
+    private TableDefinition<SupplierInfo> tsuppliers;
     private SupplierInfoExt selectedSupplier;
     private SuppliersView suppliersView;
     private PosUIModal modalContext;
@@ -92,7 +92,7 @@ public class JNewSupplierPanel extends JPanel {
         }
     }
 
-    public Object createValue() throws BasicException {
+    public SupplierInfo createValue() throws BasicException {
         return suppliersView != null ? suppliersView.createValue() : null;
     }
 
@@ -154,8 +154,11 @@ public class JNewSupplierPanel extends JPanel {
 
     private void m_jBtnOKActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_m_jBtnOKActionPerformed
         try {
-            Object supplier = createValue();
-            String m_oId = ((Object[]) supplier)[0].toString();
+            SupplierInfo supplier = createValue();
+            if (supplier == null) {
+                return;
+            }
+            String m_oId = supplier.getId();
 
             int status = tsuppliers.getInsertSentence().exec(supplier);
 

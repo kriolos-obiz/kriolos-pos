@@ -30,22 +30,7 @@ import java.util.Date;
 public class SupplierInfoExt extends SupplierInfo {
     
     protected String suppliertaxid;
-    protected String suppliervatid;    
-    protected String notes;
-    protected boolean visible;
     protected String card;
-    protected Double maxdebt;
-    protected Date curdate;
-    protected Double curdebt;
-    protected String firstname;
-    protected String lastname;
-    protected String phone2;
-    protected String fax;
-    protected String address;
-    protected String address2;
-    protected String city;
-    protected String region;
-    protected String country;
 
     /** Creates a new instance of SupplierInfoExt
      * @param id */
@@ -64,13 +49,13 @@ public class SupplierInfoExt extends SupplierInfo {
     }    
 
     public String getSupplierVATID() {
-        return suppliervatid;
+        return vatid;
     }
     public void setSupplierVATID(String suppliervatid) {
-        this.suppliervatid = suppliervatid;
+        this.vatid = suppliervatid;
     }
     public String printSupplierVATID() {       
-        return Formats.STRING.formatValue(suppliervatid);
+        return Formats.STRING.formatValue(vatid);
     }    
     
     public String getNotes() {

@@ -28,105 +28,93 @@ import com.openbravo.data.user.EditorRecord;
 import com.openbravo.data.user.ListProvider;
 import com.openbravo.data.user.ListProviderCreator;
 import com.openbravo.data.user.DefaultSaveProvider;
+import com.openbravo.format.Formats;
 import com.openbravo.basic.AppLocal;
 import com.openbravo.pos.panels.JPanelTable;
 import javax.swing.ListCellRenderer;
 
 /**
+ * Type-safe JPanelTable implementation for Supplier master data management.
  *
  * @author Jack Gerrard
+ * @author KriolOS
  */
 public class SuppliersPanel extends JPanelTable {
 
     private static final long serialVersionUID = 1L;
     
-    private TableDefinition<Object[]> tsuppliers;
+    private TableDefinition<SupplierInfo> tsuppliers;
     private SuppliersView jeditor;
     
     /** Creates a new instance of SuppliersPanel */
     public SuppliersPanel() {}
     
-    /**
-     *
-     */
     @Override
     protected void init() {        
         SupplierService dlSuppliers = app.getBean(SupplierService.class);
         tsuppliers = dlSuppliers.getTableSuppliers();        
         jeditor = new SuppliersView(app, dirty);    
-        
     }
     
-    /**
-     *
-     * @throws BasicException
-     */
     @Override
     public void activate() throws BasicException { 
         jeditor.activate();         
         super.activate();
     }
     
-    /**
-     *
-     * @return
-     */
     @Override
-    public ListProvider getListProvider() {
-        return new ListProviderCreator(tsuppliers);
+    public ListProvider<SupplierInfo> getListProvider() {
+        return new ListProviderCreator<>(tsuppliers);
     }
     
-    /**
-     *
-     * @return
-     */
     @Override
-    public DefaultSaveProvider getSaveProvider() {
-        return new DefaultSaveProvider(tsuppliers, new int[] {
-            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 
-            11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21});      
+    public DefaultSaveProvider<SupplierInfo> getSaveProvider() {
+        return new DefaultSaveProvider<>(tsuppliers);      
     }
     
-    /**
-     *
-     * @return
-     */
     @Override
-    public Vectorer getVectorer() {
-        return tsuppliers.getVectorerBasic(new int[]{1, 2, 3, 4});
+    public Vectorer<SupplierInfo> getVectorer() {
+        return new Vectorer<>() {
+            @Override
+            public String[] getHeaders() throws BasicException {
+                return new String[]{
+                    AppLocal.getIntString("label.searchkey"),
+                    AppLocal.getIntString("label.taxid"),
+                    AppLocal.getIntString("label.name"),
+                    AppLocal.getIntString("label.maxdebt")
+                };
+            }
+
+            @Override
+            public String[] getValues(SupplierInfo obj) throws BasicException {
+                if (obj == null) {
+                    return new String[]{"", "", "", ""};
+                }
+                return new String[]{
+                    Formats.STRING.formatValue(obj.getSearchkey()),
+                    Formats.STRING.formatValue(obj.getTaxid()),
+                    Formats.STRING.formatValue(obj.getName()),
+                    Formats.CURRENCY.formatValue(obj.getMaxdebt())
+                };
+            }
+        };
     }
     
-    /**
-     *
-     * @return
-     */
     @Override
     public ComparatorCreator getComparatorCreator() {
-        return tsuppliers.getComparatorCreator(new int[] {1, 2, 3, 4});
+        return tsuppliers.getComparatorCreator(new int[]{1, 2, 3, 4});
     }
     
-    /**
-     *
-     * @return
-     */
     @Override
-    public ListCellRenderer getListCellRenderer() {
-        return new ListCellRendererBasic(tsuppliers.getRenderStringBasic(new int[]{3}));
+    public ListCellRenderer<?> getListCellRenderer() {
+        return new ListCellRendererBasic(v -> v instanceof SupplierInfo s ? s.getName() : (v != null ? v.toString() : ""));
     }
     
-    /**
-     *
-     * @return
-     */
     @Override
-    public EditorRecord getEditor() {
+    public EditorRecord<SupplierInfo> getEditor() {
         return jeditor;
     }
 
-    /**
-     *
-     * @return
-     */
     @Override
     public String getTitle() {
         return AppLocal.getIntString("Menu.SuppliersManagement");

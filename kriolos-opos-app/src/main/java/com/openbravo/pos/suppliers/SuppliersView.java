@@ -48,7 +48,7 @@ import javax.swing.table.JTableHeader;
  *
  * @author Jack Gerrard
  */
-public final class SuppliersView extends javax.swing.JPanel implements EditorRecord {
+public final class SuppliersView extends javax.swing.JPanel implements EditorRecord<SupplierInfo> {
 
     private static final Logger LOGGER = Logger.getLogger(SuppliersView.class.getName());
     private static final long serialVersionUID = 1L;
@@ -248,7 +248,7 @@ public final class SuppliersView extends javax.swing.JPanel implements EditorRec
      * @param value
      */
     @Override
-    public void writeValueDelete(Object value) {
+    public void writeValueDelete(SupplierInfo value) {
 
         setValues(value);
 
@@ -286,35 +286,60 @@ public final class SuppliersView extends javax.swing.JPanel implements EditorRec
 
     }
     
-    private void setValues(Object value){
-    Object[] supplier = (Object[]) value;
-        m_oId = (String)supplier[0];
-        m_jSearchkey.setText((String) supplier[1]);
-        m_jTaxID.setText((String) supplier[2]);
-        m_jName.setText((String) supplier[3]);
-        txtMaxdebt.setText(Formats.CURRENCY.formatValue((Double)supplier[4]));
+    private void setValues(SupplierInfo supplier) {
+        if (supplier == null) {
+            m_oId = null;
+            m_jSearchkey.setText(null);
+            m_jTaxID.setText(null);
+            m_jName.setText(null);
+            txtMaxdebt.setText(null);
+            txtAddress.setText(null);
+            txtAddress2.setText(null);
+            txtPostal.setText(null);
+            txtCity.setText(null);
+            txtRegion.setText(null);
+            txtCountry.setText(null);
+            txtFirstName.setText(null);
+            txtLastName.setText(null);
+            txtEmail.setText(null);
+            txtPhone.setText(null);
+            txtPhone2.setText(null);
+            txtFax.setText(null);
+            m_jNotes.setText(null);
+            m_jVisible.setSelected(false);
+            txtCurdate.setText(null);
+            txtCurdebt.setText(null);
+            m_jVATID.setText(null);
+            return;
+        }
 
-        txtAddress.setText(Formats.STRING.formatValue((String)supplier[5]));
-        txtAddress2.setText(Formats.STRING.formatValue((String)supplier[6]));
-        txtPostal.setText(Formats.STRING.formatValue((String)supplier[7]));
-        txtCity.setText(Formats.STRING.formatValue((String)supplier[8]));
-        txtRegion.setText(Formats.STRING.formatValue((String)supplier[9]));
-        txtCountry.setText(Formats.STRING.formatValue((String)supplier[10]));
+        m_oId = supplier.getId();
+        m_jSearchkey.setText(supplier.getSearchkey());
+        m_jTaxID.setText(supplier.getTaxid());
+        m_jName.setText(supplier.getName());
+        txtMaxdebt.setText(Formats.CURRENCY.formatValue(supplier.getMaxdebt()));
 
-        txtFirstName.setText(Formats.STRING.formatValue((String)supplier[11]));
-        txtLastName.setText(Formats.STRING.formatValue((String)supplier[12]));
-        txtEmail.setText(Formats.STRING.formatValue((String)supplier[13]));
-        txtPhone.setText(Formats.STRING.formatValue((String)supplier[14]));
-        txtPhone2.setText(Formats.STRING.formatValue((String)supplier[15]));
-        txtFax.setText(Formats.STRING.formatValue((String)supplier[16]));
+        txtAddress.setText(Formats.STRING.formatValue(supplier.getAddress()));
+        txtAddress2.setText(Formats.STRING.formatValue(supplier.getAddress2()));
+        txtPostal.setText(Formats.STRING.formatValue(supplier.getPostal()));
+        txtCity.setText(Formats.STRING.formatValue(supplier.getCity()));
+        txtRegion.setText(Formats.STRING.formatValue(supplier.getRegion()));
+        txtCountry.setText(Formats.STRING.formatValue(supplier.getCountry()));
 
-        m_jNotes.setText((String) supplier[17]);
-        m_jVisible.setSelected(((Boolean) supplier[18]));
+        txtFirstName.setText(Formats.STRING.formatValue(supplier.getFirstname()));
+        txtLastName.setText(Formats.STRING.formatValue(supplier.getLastname()));
+        txtEmail.setText(Formats.STRING.formatValue(supplier.getEmail()));
+        txtPhone.setText(Formats.STRING.formatValue(supplier.getPhone()));
+        txtPhone2.setText(Formats.STRING.formatValue(supplier.getPhone2()));
+        txtFax.setText(Formats.STRING.formatValue(supplier.getFax()));
 
-        txtCurdate.setText(Formats.TIMESTAMP.formatValue((Date)supplier[19]));
-        txtCurdebt.setText(Formats.CURRENCY.formatValue((Double)supplier[20]));
+        m_jNotes.setText(supplier.getNotes());
+        m_jVisible.setSelected(supplier.isVisible());
 
-        m_jVATID.setText((String) supplier[21]);
+        txtCurdate.setText(Formats.TIMESTAMP.formatValue(supplier.getCurdate()));
+        txtCurdebt.setText(Formats.CURRENCY.formatValue(supplier.getCurdebt()));
+
+        m_jVATID.setText(supplier.getVatid());
     }
 
     /**
@@ -323,7 +348,7 @@ public final class SuppliersView extends javax.swing.JPanel implements EditorRec
      * @param value
      */
     @Override
-    public void writeValueEdit(Object value) {
+    public void writeValueEdit(SupplierInfo value) {
         
         setValues(value);
 
@@ -390,34 +415,30 @@ public final class SuppliersView extends javax.swing.JPanel implements EditorRec
      * @throws BasicException
      */
     @Override
-    public Object createValue() throws BasicException {
-        
-        
-        Object[] supplier = new Object[23];
-        supplier[0] = m_oId == null ? UUID.randomUUID().toString() : m_oId;
-        supplier[1] = m_jSearchkey.getText();
-        supplier[2] = m_jTaxID.getText();
-        supplier[3] = m_jName.getText();
-        supplier[4] = Formats.CURRENCY.parseValue(txtMaxdebt.getText(), 0.0);
-        supplier[5] = Formats.STRING.parseValue(txtAddress.getText());
-        supplier[6] = Formats.STRING.parseValue(txtAddress2.getText());
-        supplier[7] = Formats.STRING.parseValue(txtPostal.getText());
-        supplier[8] = Formats.STRING.parseValue(txtCity.getText());
-        supplier[9] = Formats.STRING.parseValue(txtRegion.getText());
-        supplier[10] = Formats.STRING.parseValue(txtCountry.getText());
-        supplier[11] = Formats.STRING.parseValue(txtFirstName.getText());
-        supplier[12] = Formats.STRING.parseValue(txtLastName.getText());
-        supplier[13] = Formats.STRING.parseValue(txtEmail.getText());
-        supplier[14] = Formats.STRING.parseValue(txtPhone.getText());
-        supplier[15] = Formats.STRING.parseValue(txtPhone2.getText());
-        supplier[16] = Formats.STRING.parseValue(txtFax.getText());
-        supplier[17] = m_jNotes.getText();
-        supplier[18] = m_jVisible.isSelected();
-        supplier[19] = Formats.TIMESTAMP.parseValue(txtCurdate.getText());
-        supplier[20] = Formats.CURRENCY.parseValue(txtCurdebt.getText());
-        supplier[21] = m_jVATID.getText();
+    public SupplierInfo createValue() throws BasicException {
 
-        supplier[22] = (Object) getAppView();
+        SupplierInfo supplier = new SupplierInfo(m_oId == null ? UUID.randomUUID().toString() : m_oId);
+        supplier.setSearchkey(m_jSearchkey.getText());
+        supplier.setTaxid(m_jTaxID.getText());
+        supplier.setName(m_jName.getText());
+        supplier.setMaxdebt(Formats.CURRENCY.parseValue(txtMaxdebt.getText(), 0.0));
+        supplier.setAddress(Formats.STRING.parseValue(txtAddress.getText()));
+        supplier.setAddress2(Formats.STRING.parseValue(txtAddress2.getText()));
+        supplier.setPostal(Formats.STRING.parseValue(txtPostal.getText()));
+        supplier.setCity(Formats.STRING.parseValue(txtCity.getText()));
+        supplier.setRegion(Formats.STRING.parseValue(txtRegion.getText()));
+        supplier.setCountry(Formats.STRING.parseValue(txtCountry.getText()));
+        supplier.setFirstname(Formats.STRING.parseValue(txtFirstName.getText()));
+        supplier.setLastname(Formats.STRING.parseValue(txtLastName.getText()));
+        supplier.setEmail(Formats.STRING.parseValue(txtEmail.getText()));
+        supplier.setPhone(Formats.STRING.parseValue(txtPhone.getText()));
+        supplier.setPhone2(Formats.STRING.parseValue(txtPhone2.getText()));
+        supplier.setFax(Formats.STRING.parseValue(txtFax.getText()));
+        supplier.setNotes(m_jNotes.getText());
+        supplier.setVisible(m_jVisible.isSelected());
+        supplier.setCurdate(Formats.TIMESTAMP.parseValue(txtCurdate.getText()));
+        supplier.setCurdebt(Formats.CURRENCY.parseValue(txtCurdebt.getText()));
+        supplier.setVatid(m_jVATID.getText());
 
         repaint();
         refresh();
