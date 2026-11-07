@@ -30,6 +30,15 @@
     ],
     "completed": [
       {
+        "id": "TASK-036",
+        "ticket": "KP-146",
+        "agent": "antigravity",
+        "branch": "feature/KP-146-typesafe-locations",
+        "title": "Type-Safe Locations (Warehouses) Vertical Pipeline",
+        "description": "Modernize LocationsPanel, LocationsView, DataLogicInventory, and InventoryService to use TableDefinition<LocationInfo> with typed EditorRecord implementations, removing Object[] mapping.",
+        "completed_at": "2026-11-07T21:36:00Z"
+      },
+      {
         "id": "TASK-034",
         "agent": "antigravity",
         "ticket": "KP-144",

@@ -155,7 +155,7 @@ public class DataLogicInventory extends BeanFactoryDataSingle implements StockSe
         return list != null ? list : Collections.emptyList();
     }
 
-    public final TableDefinition<Object[]> getTableLocations() {
+    public final TableDefinition<LocationInfo> getTableLocations() {
         return new TableDefinition<>(sessionDB,
                 "locations",
                 new String[]{"ID", "NAME", "ADDRESS"},
@@ -163,7 +163,11 @@ public class DataLogicInventory extends BeanFactoryDataSingle implements StockSe
                     AppLocal.getIntString("label.locationaddress")},
                 new Datas[]{Datas.STRING, Datas.STRING, Datas.STRING},
                 new Formats[]{Formats.STRING, Formats.STRING, Formats.STRING},
-                new int[]{0});
+                new int[]{0},
+                LocationInfo.getSerializerRead(),
+                LocationInfo.getSerializerInsert(),
+                LocationInfo.getSerializerUpdate(),
+                LocationInfo.getSerializerDelete());
     }
 
     public final ProductStock getProductStockState(String pId, String location) throws BasicException {

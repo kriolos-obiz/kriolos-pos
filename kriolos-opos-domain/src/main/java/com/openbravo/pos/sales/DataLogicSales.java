@@ -1188,7 +1188,7 @@ public class DataLogicSales extends BeanFactoryDataSingle implements TicketLifec
      * @deprecated Use {@link DataLogicInventory#getTableLocations()} instead.
      */
     @Deprecated
-    public final TableDefinition<Object[]> getTableLocations() {
+    public final TableDefinition<LocationInfo> getTableLocations() {
         return getDataLogicInventory().getTableLocations();
     }
 

@@ -32,7 +32,7 @@ import javax.swing.JOptionPane;
  *
  * @author adrianromero
  */
-public final class LocationsView extends javax.swing.JPanel implements EditorRecord {
+public final class LocationsView extends javax.swing.JPanel implements EditorRecord<LocationInfo> {
     
     // private DirtyManager m_Dirty = new DirtyManager();    
     private String m_sID;
@@ -78,15 +78,17 @@ public final class LocationsView extends javax.swing.JPanel implements EditorRec
 
     /**
      *
-     * @param value
+     * @param location
      */
     @Override
-    public void writeValueDelete(Object value) {
-        
-        Object[] location = (Object[]) value;
-        m_sID = Formats.STRING.formatValue((String)location[0]);
-        m_jName.setText(Formats.STRING.formatValue((String)location[1]));
-        m_jAddress.setText(Formats.STRING.formatValue((String)location[2]));
+    public void writeValueDelete(LocationInfo location) {
+        if (location == null) {
+            writeValueEOF();
+            return;
+        }
+        m_sID = location.getId();
+        m_jName.setText(location.getName());
+        m_jAddress.setText(location.getAddress());
 
         m_jName.setEnabled(false);
         m_jAddress.setEnabled(false);
@@ -94,15 +96,17 @@ public final class LocationsView extends javax.swing.JPanel implements EditorRec
 
     /**
      *
-     * @param value
+     * @param location
      */
     @Override
-    public void writeValueEdit(Object value) {
-        
-        Object[] location = (Object[]) value;
-        m_sID = Formats.STRING.formatValue((String)location[0]);
-        m_jName.setText(Formats.STRING.formatValue((String)location[1]));
-        m_jAddress.setText(Formats.STRING.formatValue((String)location[2]));
+    public void writeValueEdit(LocationInfo location) {
+        if (location == null) {
+            writeValueEOF();
+            return;
+        }
+        m_sID = location.getId();
+        m_jName.setText(location.getName());
+        m_jAddress.setText(location.getAddress());
 
         m_jName.setEnabled(true);
         m_jAddress.setEnabled(true);
@@ -114,12 +118,12 @@ public final class LocationsView extends javax.swing.JPanel implements EditorRec
      * @throws BasicException
      */
     @Override
-    public Object createValue() throws BasicException {
-        Object[] location = new Object[3];
-        location[0] = m_sID;
-        location[1] = m_jName.getText();
-        location[2] = m_jAddress.getText();
-        return location;
+    public LocationInfo createValue() throws BasicException {
+        return new LocationInfo(
+                m_sID == null ? UUID.randomUUID().toString() : m_sID,
+                m_jName.getText(),
+                m_jAddress.getText()
+        );
     }
 
     /**

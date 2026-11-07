@@ -127,7 +127,7 @@ public interface InventoryService {
      *
      * @return TableDefinition for locations
      */
-    default TableDefinition<Object[]> getTableLocations() {
+    default TableDefinition<LocationInfo> getTableLocations() {
         return null;
     }
 
