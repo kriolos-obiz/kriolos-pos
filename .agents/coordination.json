@@ -6,6 +6,12 @@
     "available": [],
     "completed": [
       {
+        "id": "TASK-029",
+        "agent": "antigravity",
+        "description": "KP-139: Document domain command pattern mandate and generic type safety modernization",
+        "completed_at": "2026-11-07T04:58:00Z"
+      },
+      {
         "id": "TASK-028",
         "agent": "antigravity",
         "description": "KP-138: Modernize CustomerService generics and ResourceService with SetResourceCommand",
