@@ -39,6 +39,7 @@ import javax.swing.JOptionPane;
 import javax.swing.table.AbstractTableModel;
 import com.openbravo.pos.catalog.CatalogService;
 import com.openbravo.pos.catalog.CategoryStock;
+import com.openbravo.pos.pim.CategoryInfo;
 import com.openbravo.pos.pim.DataLogicPIM;
 import com.openbravo.util.DataTypeUtils;
 import java.awt.Font;
@@ -47,8 +48,9 @@ import javax.swing.table.JTableHeader;
 /**
  *
  * @author adrianromero
+ * @author KriolOS
  */
-public final class CategoriesEditor extends JPanel implements EditorRecord {
+public final class CategoriesEditor extends JPanel implements EditorRecord<CategoryInfo> {
 
     private final static Logger LOGGER = Logger.getLogger(CategoriesEditor.class.getName());
 
@@ -70,7 +72,7 @@ public final class CategoriesEditor extends JPanel implements EditorRecord {
 
         initComponents();
 
-        catalogService = app.getBean(CatalogService.class);
+        catalogService = app != null ? app.getBean(CatalogService.class) : null;
         dataLogicPIM = (catalogService instanceof DataLogicPIM) ? (DataLogicPIM) catalogService : null;
         categoryParentModel = new ComboBoxValModel(); 
 
@@ -92,12 +94,12 @@ public final class CategoriesEditor extends JPanel implements EditorRecord {
      */
     @Override
     public void refresh() {
-
-        List categories = catalogService.getCategoriesListAll();
-        categories.add(0, null);
-        categoryParentModel = new ComboBoxValModel(categories);
-        categoryParentCombox.setModel(categoryParentModel);
-
+        if (catalogService != null) {
+            List categories = catalogService.getCategoriesListAll();
+            categories.add(0, null);
+            categoryParentModel = new ComboBoxValModel(categories);
+            categoryParentCombox.setModel(categoryParentModel);
+        }
         jLblProdCount.setText(null);
     }
 
@@ -152,20 +154,23 @@ public final class CategoriesEditor extends JPanel implements EditorRecord {
 
     /**
      *
-     * @param value
+     * @param cat
      */
     @Override
-    public void writeValueDelete(Object value) {
-        Object[] cat = (Object[]) value;
-        categoryId = (String) cat[0];
-        categoryNameText.setText(Formats.STRING.formatValue((String) cat[1]));
-        categoryParentModel.setSelectedKey(cat[2]);
-        categoryImage.setImage((BufferedImage) cat[3]);
-        categoryTipText.setText(Formats.STRING.formatValue((String) cat[4]));
-        categoryShowName.setSelected(DataTypeUtils.toBoolean(cat[5]));
-        categoryCatalogOrder.setText(Formats.STRING.formatValue((String) cat[6]));
-        categoryColorPicker.setColor((String) cat[7]);
-        categoryShowInCatalog.setSelected(DataTypeUtils.toBoolean(cat[8]));
+    public void writeValueDelete(CategoryInfo cat) {
+        if (cat == null) {
+            writeValueEOF();
+            return;
+        }
+        categoryId = cat.getId();
+        categoryNameText.setText(Formats.STRING.formatValue(cat.getName()));
+        categoryParentModel.setSelectedKey(cat.getParentId());
+        categoryImage.setImage(cat.getImage());
+        categoryTipText.setText(Formats.STRING.formatValue(cat.getTextTip()));
+        categoryShowName.setSelected(cat.isCatShowName());
+        categoryCatalogOrder.setText(Formats.STRING.formatValue(cat.getCatalogOrder()));
+        categoryColorPicker.setColor(cat.getCatalogColor());
+        categoryShowInCatalog.setSelected(cat.isCatalogEnabled());
 
         categoryNameText.setEnabled(false);
         categoryParentCombox.setEnabled(false);
@@ -177,27 +182,29 @@ public final class CategoriesEditor extends JPanel implements EditorRecord {
         categoryColorPicker.setEnabled(false);
 
         stockModel = new CategoriesEditor.StockTableModel(getProductsByCategoryId(categoryId));
-
     }
 
     /**
      *
-     * @param value
+     * @param cat
      */
     @Override
-    public void writeValueEdit(Object value) {
-        Object[] cat = (Object[]) value;
-        categoryId = (String) cat[0];
-        categoryNameText.setText(Formats.STRING.formatValue((String) cat[1]));
-        categoryParentModel.setSelectedKey(cat[2]);
-        categoryImage.setImage((BufferedImage) cat[3]);
-        categoryTipText.setText(Formats.STRING.formatValue((String) cat[4]));
-        categoryShowName.setSelected(DataTypeUtils.toBoolean(cat[5]));
-        categoryCatalogOrder.setText(Formats.STRING.formatValue((String) cat[6]));
-        categoryColorPicker.setColor((String) cat[7]);
-        categoryShowInCatalog.setSelected(DataTypeUtils.toBoolean(cat[8]));
+    public void writeValueEdit(CategoryInfo cat) {
+        if (cat == null) {
+            writeValueEOF();
+            return;
+        }
+        categoryId = cat.getId();
+        categoryNameText.setText(Formats.STRING.formatValue(cat.getName()));
+        categoryParentModel.setSelectedKey(cat.getParentId());
+        categoryImage.setImage(cat.getImage());
+        categoryTipText.setText(Formats.STRING.formatValue(cat.getTextTip()));
+        categoryShowName.setSelected(cat.isCatShowName());
+        categoryCatalogOrder.setText(Formats.STRING.formatValue(cat.getCatalogOrder()));
+        categoryColorPicker.setColor(cat.getCatalogColor());
+        categoryShowInCatalog.setSelected(cat.isCatalogEnabled());
 
-        if (categoryCatalogOrder.getText().isBlank()) {
+        if (categoryCatalogOrder.getText() != null && categoryCatalogOrder.getText().isBlank()) {
             categoryCatalogOrder.setText(null);
         }
 
@@ -213,30 +220,23 @@ public final class CategoriesEditor extends JPanel implements EditorRecord {
         resetTranxTable();
     }
     
-    
-    
     /**
      *
      * @return @throws BasicException
      */
     @Override
-    public Object createValue() throws BasicException {
-
-        Object[] cat = new Object[10];
-
-        cat[0] = categoryId;
-        cat[1] = categoryNameText.getText();
-        cat[2] = categoryParentModel.getSelectedKey();
-        cat[3] = categoryImage.getImage();
-        cat[4] = categoryTipText.getText();
-        cat[5] = categoryShowName.isSelected();
-        if (categoryCatalogOrder.getText().isBlank()) {
-            categoryCatalogOrder.setText(null);
-        }
-        cat[6] = categoryCatalogOrder.getText();
-        cat[7] = categoryColorPicker.getHexColor();
-        cat[8] = categoryShowInCatalog.isSelected();
-
+    public CategoryInfo createValue() throws BasicException {
+        CategoryInfo cat = new CategoryInfo();
+        cat.setID(categoryId == null ? UUID.randomUUID().toString() : categoryId);
+        cat.setName(categoryNameText.getText());
+        cat.setParentId((String) categoryParentModel.getSelectedKey());
+        cat.setImage(categoryImage.getImage());
+        cat.setTextTip(categoryTipText.getText());
+        cat.setCatShowName(categoryShowName.isSelected());
+        String order = categoryCatalogOrder.getText();
+        cat.setCatalogOrder((order != null && !order.isBlank()) ? order : null);
+        cat.setCatalogColor(categoryColorPicker.getHexColor());
+        cat.setCatalogEnabled(categoryShowInCatalog.isSelected());
         return cat;
     }
 
@@ -264,6 +264,9 @@ public final class CategoriesEditor extends JPanel implements EditorRecord {
     }
 
     private List<CategoryStock> getProductsByCategoryId(String categoryId) {
+        if (catalogService == null || categoryId == null) {
+            return new ArrayList<>();
+        }
 
         try {
             categoryStockList = catalogService.getCategorysProductList(categoryId);
@@ -274,10 +277,12 @@ public final class CategoriesEditor extends JPanel implements EditorRecord {
 
         List<CategoryStock> categoryList = new ArrayList<>();
 
-        for (CategoryStock categoryStock : categoryStockList) {
-            String categoryStockId = categoryStock.getCategoryId();
-            if (categoryStockId.equals(categoryId)) {
-                categoryList.add(categoryStock);
+        if (categoryStockList != null) {
+            for (CategoryStock categoryStock : categoryStockList) {
+                String categoryStockId = categoryStock.getCategoryId();
+                if (categoryStockId != null && categoryStockId.equals(categoryId)) {
+                    categoryList.add(categoryStock);
+                }
             }
         }
 

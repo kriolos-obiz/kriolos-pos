@@ -245,7 +245,7 @@ public class CatalogServiceImpl extends BeanFactoryDataSingle implements Catalog
     }
 
     @Override
-    public TableDefinition<Object[]> getTableCategories() {
+    public TableDefinition<CategoryInfo> getTableCategories() {
         return dataLogicCategories.getTableCategories();
     }
 

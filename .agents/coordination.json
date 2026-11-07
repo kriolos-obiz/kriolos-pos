@@ -30,6 +30,15 @@
     ],
     "completed": [
       {
+        "id": "TASK-037",
+        "ticket": "KP-147",
+        "agent": "antigravity",
+        "branch": "feature/KP-147-typesafe-categories",
+        "title": "Type-Safe Product Categories Vertical Pipeline",
+        "description": "Modernize CategoriesPanel, CategoriesEditor, DataLogicCategories, and CatalogService to use TableDefinition<CategoryInfo> with typed EditorRecord implementations, removing Object[] mapping.",
+        "completed_at": "2026-11-07T23:25:30Z"
+      },
+      {
         "id": "TASK-036",
         "ticket": "KP-146",
         "agent": "antigravity",

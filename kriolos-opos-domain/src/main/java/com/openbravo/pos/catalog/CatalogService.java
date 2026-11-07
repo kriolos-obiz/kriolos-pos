@@ -209,7 +209,7 @@ public interface CatalogService {
      *
      * @return categories {@link TableDefinition}
      */
-    TableDefinition<Object[]> getTableCategories();
+    TableDefinition<CategoryInfo> getTableCategories();
 
     /**
      * Returns the strongly typed table definition for units of measure.

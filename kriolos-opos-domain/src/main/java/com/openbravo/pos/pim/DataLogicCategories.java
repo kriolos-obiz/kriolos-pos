@@ -60,22 +60,23 @@ public class DataLogicCategories extends BeanFactoryDataSingle {
      *
      * @return category {@link TableDefinition}
      */
-    public TableDefinition<Object[]> getTableCategories() {
+    public TableDefinition<CategoryInfo> getTableCategories() {
         return new TableDefinition<>(sessionDB,
                 "categories",
-                new String[]{"ID", "NAME", "PARENTID", "IMAGE", "TEXTTIP", "CATSHOWNAME", "CATORDER",
-                    "CATALOGCOLOR",
-                    "CATALOGENABLED"},
-                new String[]{"ID", AppLocal.getIntString("label.name"), "",
+                new String[]{"ID", "NAME", "IMAGE", "TEXTTIP", "CATSHOWNAME", "CATORDER",
+                    "CATALOGCOLOR", "CATALOGENABLED", "PARENTID"},
+                new String[]{"ID", AppLocal.getIntString("label.name"),
                     AppLocal.getIntString("label.image"), "",
-                    "", "", "", ""},
-                new Datas[]{Datas.STRING, Datas.STRING, Datas.STRING, Datas.IMAGE, Datas.STRING,
-                    Datas.BOOLEAN,
-                    Datas.STRING, Datas.STRING, Datas.BOOLEAN},
-                new Formats[]{Formats.STRING, Formats.STRING, Formats.STRING, Formats.NULL,
-                    Formats.STRING,
-                    Formats.BOOLEAN, Formats.STRING, Formats.STRING, Formats.BOOLEAN},
-                new int[]{0});
+                    "", "", "", "", ""},
+                new Datas[]{Datas.STRING, Datas.STRING, Datas.IMAGE, Datas.STRING,
+                    Datas.BOOLEAN, Datas.STRING, Datas.STRING, Datas.BOOLEAN, Datas.STRING},
+                new Formats[]{Formats.STRING, Formats.STRING, Formats.NULL,
+                    Formats.STRING, Formats.BOOLEAN, Formats.STRING, Formats.STRING, Formats.BOOLEAN, Formats.STRING},
+                new int[]{0},
+                CategoryInfo.getSerializerRead(),
+                CategoryInfo.getSerializerInsert(),
+                CategoryInfo.getSerializerUpdate(),
+                CategoryInfo.getSerializerDelete());
     }
 
     /**
