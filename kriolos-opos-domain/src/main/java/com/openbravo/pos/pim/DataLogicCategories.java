@@ -12,8 +12,10 @@ import com.openbravo.data.loader.StaticSentence;
 import com.openbravo.data.loader.TableDefinition;
 import com.openbravo.format.Formats;
 import com.openbravo.basic.AppLocal;
+import com.openbravo.pos.catalog.CreateCategoryCommand;
 import com.openbravo.pos.container.BeanFactoryDataSingle;
 import java.util.List;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -77,19 +79,32 @@ public class DataLogicCategories extends BeanFactoryDataSingle {
     }
 
     /**
+     * Inserts a new category into the database using a validated command record.
+     *
+     * @param command validated category creation command
+     * @throws BasicException on persistence error
+     */
+    public void createCategory(CreateCategoryCommand command) throws BasicException {
+        Objects.requireNonNull(command, "command must not be null");
+        SentenceExec createCatSentence = new StaticSentence(this.sessionDB,
+                "INSERT INTO categories ( ID, NAME, CATSHOWNAME ) "
+                + "VALUES (?, ?, ?)",
+                new SerializerWriteBasic(new Datas[]{Datas.STRING, Datas.STRING, Datas.BOOLEAN}));
+        createCatSentence.exec(new Object[]{command.id(), command.name(), command.showName()});
+    }
+
+    /**
      * Inserts a new category into the database.
      *
      * @param id       category unique identifier
      * @param name     category display name
      * @param showName whether to display the name on the touch button
      * @throws BasicException on persistence error
+     * @deprecated Use {@link #createCategory(CreateCategoryCommand)} instead.
      */
+    @Deprecated
     public void createCategory(String id, String name, boolean showName) throws BasicException {
-        SentenceExec createCatSentence = new StaticSentence(this.sessionDB,
-                "INSERT INTO categories ( ID, NAME, CATSHOWNAME ) "
-                + "VALUES (?, ?, ?)",
-                new SerializerWriteBasic(new Datas[]{Datas.STRING, Datas.STRING, Datas.BOOLEAN}));
-        createCatSentence.exec(new Object[]{id, name, showName});
+        createCategory(CreateCategoryCommand.of(id, name, showName));
     }
 
     /**
@@ -97,7 +112,7 @@ public class DataLogicCategories extends BeanFactoryDataSingle {
      *
      * @param category array containing [ID, NAME, CATSHOWNAME]
      * @throws BasicException on persistence error
-     * @deprecated Use {@link #createCategory(String, String, boolean)} instead.
+     * @deprecated Use {@link #createCategory(CreateCategoryCommand)} instead.
      */
     @Deprecated
     public void createCategory(Object[] category) throws BasicException {

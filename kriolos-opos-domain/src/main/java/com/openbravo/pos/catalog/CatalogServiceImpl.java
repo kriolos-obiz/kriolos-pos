@@ -174,7 +174,7 @@ public class CatalogServiceImpl extends BeanFactoryDataSingle implements Catalog
     }
 
     @Override
-    public SentenceList getProductCatQBF() {
+    public SentenceList<Object[]> getProductCatQBF() {
         return dataLogicProducts.getProductCatQBF();
     }
 
@@ -218,11 +218,18 @@ public class CatalogServiceImpl extends BeanFactoryDataSingle implements Catalog
     }
 
     @Override
+    public void createCategory(CreateCategoryCommand command) throws BasicException {
+        dataLogicCategories.createCategory(command);
+    }
+
+    @Override
+    @Deprecated
     public void createCategory(String id, String name, boolean showName) throws BasicException {
         dataLogicCategories.createCategory(id, name, showName);
     }
 
     @Override
+    @Deprecated
     public void createCategory(Object[] category) throws BasicException {
         dataLogicCategories.createCategory(category);
     }

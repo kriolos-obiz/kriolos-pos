@@ -94,24 +94,38 @@ public interface CatalogService {
     List<CategoryInfo> getSubcategories(String categoryId) throws BasicException;
 
     /**
+     * Inserts a new category into persistence using a validated command record.
+     *
+     * @param command validated category creation command
+     * @throws BasicException on persistence failure
+     */
+    void createCategory(CreateCategoryCommand command) throws BasicException;
+
+    /**
      * Inserts a new category with explicit domain parameters.
      *
      * @param id       category unique identifier
      * @param name     category display name
      * @param showName whether to display the name on the touch button
      * @throws BasicException on persistence failure
+     * @deprecated Use {@link #createCategory(CreateCategoryCommand)} instead.
      */
-    void createCategory(String id, String name, boolean showName) throws BasicException;
+    @Deprecated
+    default void createCategory(String id, String name, boolean showName) throws BasicException {
+        createCategory(CreateCategoryCommand.of(id, name, showName));
+    }
 
     /**
      * Inserts a new category into persistence.
      *
      * @param category category record attributes [ID, NAME, CATSHOWNAME]
      * @throws BasicException on persistence failure
-     * @deprecated Use {@link #createCategory(String, String, boolean)} instead.
+     * @deprecated Use {@link #createCategory(CreateCategoryCommand)} instead.
      */
     @Deprecated
-    void createCategory(Object[] category) throws BasicException;
+    default void createCategory(Object[] category) throws BasicException {
+        createCategory((String) category[0], (String) category[1], (Boolean) category[2]);
+    }
 
     /**
      * Retrieves all categories as an in-memory list.
@@ -293,13 +307,13 @@ public interface CatalogService {
     SentenceList<CategoryInfo> getCategoriesList_1();
 
     /**
-     * Returns raw sentence list for product QBF query.
+     * Returns sentence query for product QBF query.
      *
-     * @return {@link SentenceList}
+     * @return {@link SentenceList} of product records
      * @deprecated Use {@link #getProductListProvider()} instead.
      */
     @Deprecated
-    SentenceList getProductCatQBF();
+    SentenceList<Object[]> getProductCatQBF();
 
     /**
      * Returns sentence for inserting a product.

@@ -283,8 +283,8 @@ public class DataLogicProducts extends BeanFactoryDataSingle {
      *
      * @return {@link SentenceList} of product records
      */
-    public SentenceList getProductCatQBF() {
-        return new StaticSentence(sessionDB,
+    public SentenceList<Object[]> getProductCatQBF() {
+        return new StaticSentence<>(sessionDB,
                 new QBFBuilder(
                         "SELECT "
                         + "P.ID, P.REFERENCE, P.CODE, P.CODETYPE, P.NAME, P.PRICEBUY, P.PRICESELL, "

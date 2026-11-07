@@ -6,6 +6,12 @@
     "available": [],
     "completed": [
       {
+        "id": "TASK-027",
+        "agent": "antigravity",
+        "description": "KP-137: Modernize CatalogService with CreateCategoryCommand and parameterize getProductCatQBF()",
+        "completed_at": "2026-11-07T01:50:15Z"
+      },
+      {
         "id": "TASK-026",
         "agent": "antigravity",
         "description": "KP-136: Modernize AuditService with RecordAuditLineRemovedCommand and RecordAuditTicketDeletedCommand",
