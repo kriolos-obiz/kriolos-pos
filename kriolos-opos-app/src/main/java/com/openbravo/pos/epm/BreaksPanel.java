@@ -24,6 +24,7 @@ import com.openbravo.data.loader.Vectorer;
 import com.openbravo.data.user.EditorRecord;
 import com.openbravo.data.user.ListProvider;
 import com.openbravo.data.user.ListProviderCreator;
+import com.openbravo.data.user.SaveProvider;
 import com.openbravo.data.user.DefaultSaveProvider;
 import com.openbravo.basic.AppLocal;
 import com.openbravo.pos.panels.JPanelTable;
@@ -70,52 +71,48 @@ public class BreaksPanel extends JPanelTable {
      * @return
      */
     @Override
-    public ListProvider getListProvider() {
-        return new ListProviderCreator(tbreaks);
+    public ListProvider<BreaksInfo> getListProvider() {
+        return new ListProviderCreator<>(tbreaks);
     }
 
-    /**
-     *
-     * @return
-     */
     @Override
-    public DefaultSaveProvider getSaveProvider() {
-        return new DefaultSaveProvider(tbreaks, new int[] {0, 1, 2, 3});
+    public SaveProvider<BreaksInfo> getSaveProvider() {
+        return new DefaultSaveProvider<>(tbreaks);
     }
 
-    /**
-     *
-     * @return
-     */
     @Override
-    public Vectorer getVectorer() {
-        return tbreaks.getVectorerBasic(new int[]{1, 2});
+    public Vectorer<BreaksInfo> getVectorer() {
+        return new Vectorer<>() {
+            @Override
+            public String[] getHeaders() throws BasicException {
+                return new String[]{
+                    AppLocal.getIntString("label.name"),
+                    AppLocal.getIntString("label.notes")
+                };
+            }
+
+            @Override
+            public String[] getValues(BreaksInfo breaks) throws BasicException {
+                return new String[]{
+                    breaks != null && breaks.getName() != null ? breaks.getName() : "",
+                    breaks != null && breaks.getNotes() != null ? breaks.getNotes() : ""
+                };
+            }
+        };
     }
 
-    /**
-     *
-     * @return
-     */
     @Override
     public ComparatorCreator getComparatorCreator() {
         return tbreaks.getComparatorCreator(new int[] {1, 2});
     }
 
-    /**
-     *
-     * @return
-     */
     @Override
-    public ListCellRenderer getListCellRenderer() {
-        return new ListCellRendererBasic(tbreaks.getRenderStringBasic(new int[]{1}));
+    public ListCellRenderer<?> getListCellRenderer() {
+        return new ListCellRendererBasic(v -> v instanceof BreaksInfo b ? b.getName() : (v != null ? v.toString() : ""));
     }
 
-    /**
-     *
-     * @return
-     */
     @Override
-    public EditorRecord getEditor() {
+    public EditorRecord<BreaksInfo> getEditor() {
         return jeditor;
     }
 

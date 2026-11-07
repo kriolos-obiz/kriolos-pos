@@ -16,71 +16,142 @@
 
 package com.openbravo.pos.epm;
 
+import com.openbravo.basic.BasicException;
+import com.openbravo.data.loader.DataRead;
+import com.openbravo.data.loader.DataWrite;
 import com.openbravo.data.loader.IKeyed;
+import com.openbravo.data.loader.SerializerRead;
+import com.openbravo.data.loader.SerializerWrite;
+import java.io.Serializable;
 
 /**
+ * Domain entity representing an employee break definition.
  *
- * @author  Ali Safdar and Aneeqa Baber
+ * @author Ali Safdar and Aneeqa Baber
+ * @author KriolOS
  */
-public class BreaksInfo implements IKeyed {
+public class BreaksInfo implements Serializable, IKeyed {
 
     private static final long serialVersionUID = 8936482715929L;
+
     private String m_sID;
     private String m_sName;
+    private String m_sNotes;
+    private boolean m_bVisible = true;
 
-    /**
-     *
-     * @param id
-     * @param name
-     */
-    public BreaksInfo(String id, String name) {
-        m_sID = id;
-        m_sName = name;
+    public BreaksInfo() {
+        this(null, null, null, true);
     }
 
-    /**
-     *
-     * @return
-     */
+    public BreaksInfo(String id, String name) {
+        this(id, name, null, true);
+    }
+
+    public BreaksInfo(String id, String name, String notes, boolean visible) {
+        this.m_sID = id;
+        this.m_sName = name;
+        this.m_sNotes = notes;
+        this.m_bVisible = visible;
+    }
+
     @Override
     public Object getKey() {
         return m_sID;
     }
 
-    /**
-     *
-     * @param sID
-     */
     public void setID(String sID) {
         m_sID = sID;
     }
 
-    /**
-     *
-     * @return
-     */
     public String getID() {
         return m_sID;
     }
 
-    /**
-     *
-     * @return
-     */
+    public String getId() {
+        return m_sID;
+    }
+
+    public void setId(String id) {
+        this.m_sID = id;
+    }
+
     public String getName() {
         return m_sName;
     }
 
-    /**
-     *
-     * @param sName
-     */
     public void setName(String sName) {
         m_sName = sName;
     }
 
+    public String getNotes() {
+        return m_sNotes;
+    }
+
+    public void setNotes(String notes) {
+        this.m_sNotes = notes;
+    }
+
+    public boolean isVisible() {
+        return m_bVisible;
+    }
+
+    public void setVisible(boolean visible) {
+        this.m_bVisible = visible;
+    }
+
     @Override
-    public String toString(){
+    public String toString() {
         return m_sName;
+    }
+
+    /**
+     * Serializer for reading BreaksInfo from JDBC queries.
+     * Columns: 1: ID, 2: NAME, 3: NOTES, 4: VISIBLE
+     */
+    public static SerializerRead<BreaksInfo> getSerializerRead() {
+        return (DataRead dr) -> {
+            Boolean vis = dr.getBoolean(4);
+            return new BreaksInfo(
+                    dr.getString(1),
+                    dr.getString(2),
+                    dr.getString(3),
+                    vis != null ? vis : true
+            );
+        };
+    }
+
+    /**
+     * Serializer for inserting BreaksInfo.
+     */
+    public static SerializerWrite<BreaksInfo> getSerializerInsert() {
+        return (DataWrite dp, BreaksInfo b) -> {
+            dp.setString(1, b.getId());
+            dp.setString(2, b.getName());
+            dp.setString(3, b.getNotes());
+            dp.setBoolean(4, b.isVisible());
+        };
+    }
+
+    /**
+     * Serializer for updating BreaksInfo.
+     * Columns: 1: ID, 2: NAME, 3: NOTES, 4: VISIBLE, 5: ID (WHERE id = ?)
+     */
+    public static SerializerWrite<BreaksInfo> getSerializerUpdate() {
+        return (DataWrite dp, BreaksInfo b) -> {
+            dp.setString(1, b.getId());
+            dp.setString(2, b.getName());
+            dp.setString(3, b.getNotes());
+            dp.setBoolean(4, b.isVisible());
+            dp.setString(5, b.getId());
+        };
+    }
+
+    /**
+     * Serializer for deleting BreaksInfo by ID.
+     */
+    public static SerializerWrite<BreaksInfo> getSerializerDelete() {
+        return (DataWrite dp, BreaksInfo b) -> {
+            dp.setString(1, b.getId());
+        };
     }
 }

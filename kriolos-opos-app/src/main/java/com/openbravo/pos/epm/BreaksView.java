@@ -30,7 +30,7 @@ import java.util.UUID;
  *
  * @author Ali Safdar and Aneeqa Baber
  */
-public final class BreaksView extends javax.swing.JPanel implements EditorRecord {
+public final class BreaksView extends javax.swing.JPanel implements EditorRecord<BreaksInfo> {
 
     private String m_oId;
     private final ShiftService shiftService;
@@ -44,7 +44,7 @@ public final class BreaksView extends javax.swing.JPanel implements EditorRecord
     }
 
     public BreaksView(AppView app, DirtyManager dirty, ShiftService shiftService) {
-        this.shiftService = shiftService != null ? shiftService : app.getBean(ShiftService.class);
+        this.shiftService = shiftService != null ? shiftService : (app != null ? app.getBean(ShiftService.class) : null);
         initComponents();
         m_Dirty = dirty;
         m_jBreakName.getDocument().addDocumentListener(dirty);
@@ -88,15 +88,18 @@ public final class BreaksView extends javax.swing.JPanel implements EditorRecord
 
     /**
      *
-     * @param value
+     * @param breaks
      */
     @Override
-    public void writeValueEdit(Object value) {
-        Object[] breaks = (Object[]) value;
-        m_oId = (String)breaks[0];
-        m_jBreakName.setText((String) breaks[1]);
-        m_jBreakDescription.setText((String) breaks[2]);
-        m_jVisible.setSelected(((Boolean) breaks[3]).booleanValue());
+    public void writeValueEdit(BreaksInfo breaks) {
+        if (breaks == null) {
+            writeValueEOF();
+            return;
+        }
+        m_oId = breaks.getId();
+        m_jBreakName.setText(breaks.getName());
+        m_jBreakDescription.setText(breaks.getNotes());
+        m_jVisible.setSelected(breaks.isVisible());
         m_jBreakName.setEditable(true);
         m_jBreakDescription.setEnabled(true);
         m_jVisible.setEnabled(true);
@@ -104,15 +107,18 @@ public final class BreaksView extends javax.swing.JPanel implements EditorRecord
 
     /**
      *
-     * @param value
+     * @param breaks
      */
     @Override
-    public void writeValueDelete(Object value) {
-        Object[] breaks = (Object[]) value;
-        m_oId = (String)breaks[0];
-        m_jBreakName.setText((String) breaks[1]);
-        m_jBreakDescription.setText((String) breaks[2]);
-        m_jVisible.setSelected(((Boolean) breaks[3]).booleanValue());
+    public void writeValueDelete(BreaksInfo breaks) {
+        if (breaks == null) {
+            writeValueEOF();
+            return;
+        }
+        m_oId = breaks.getId();
+        m_jBreakName.setText(breaks.getName());
+        m_jBreakDescription.setText(breaks.getNotes());
+        m_jVisible.setSelected(breaks.isVisible());
         m_jBreakName.setEditable(false);
         m_jBreakDescription.setEnabled(false);
         m_jVisible.setEnabled(false);
@@ -140,14 +146,13 @@ public final class BreaksView extends javax.swing.JPanel implements EditorRecord
      * @throws BasicException
      */
     @Override
-    public Object createValue() throws BasicException {
-        Object[] breaks = new Object[4];
-        breaks[0] = m_oId == null ? UUID.randomUUID().toString() : m_oId;
-        breaks[1] = m_jBreakName.getText();
-        breaks[2] = m_jBreakDescription.getText();
-        breaks[3] = Boolean.valueOf(m_jVisible.isSelected());
-
-        return breaks;
+    public BreaksInfo createValue() throws BasicException {
+        return new BreaksInfo(
+            m_oId == null ? UUID.randomUUID().toString() : m_oId,
+            m_jBreakName.getText(),
+            m_jBreakDescription.getText(),
+            m_jVisible.isSelected()
+        );
     }
     
     /** This method is called from within the constructor to

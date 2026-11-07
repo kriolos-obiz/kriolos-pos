@@ -27,31 +27,6 @@
   "task_queue": {
     "in_progress": [],
     "available": [
-      {
-        "id": "TASK-035",
-        "ticket": "KP-145",
-        "recommended_for": "Collaborating AI Agent",
-        "priority": "MEDIUM",
-        "title": "Type-Safe HR Breaks & Leaves Vertical Pipeline",
-        "description": "Modernize BreaksPanel, LeaveTypePanel, and DataLogicHR to eliminate Object[] by typing TableDefinition<BreakInfo> and TableDefinition<LeaveTypeInfo>.",
-        "target_packages": [
-          "kriolos-opos-domain: com.openbravo.pos.hr",
-          "kriolos-opos-app: com.openbravo.pos.hr"
-        ],
-        "target_files": [
-          "kriolos-opos-app/src/main/java/com/openbravo/pos/hr/BreaksPanel.java",
-          "kriolos-opos-app/src/main/java/com/openbravo/pos/hr/BreaksEditor.java",
-          "kriolos-opos-app/src/main/java/com/openbravo/pos/hr/LeaveTypePanel.java",
-          "kriolos-opos-app/src/main/java/com/openbravo/pos/hr/LeaveTypeEditor.java",
-          "kriolos-opos-domain/src/main/java/com/openbravo/pos/hr/DataLogicHR.java"
-        ],
-        "git_branch_instruction": "feature/KP-145-typesafe-hr",
-        "acceptance_criteria": [
-          "BreaksPanel and LeaveTypePanel use strongly typed models and editors.",
-          "DataLogicHR provides typed TableDefinition and sentence mappers.",
-          "./mvnw test -pl kriolos-opos-domain,kriolos-opos-app passes with zero errors."
-        ]
-      }
     ],
     "completed": [
       {
@@ -260,6 +235,15 @@
         "agent": "copilot",
         "description": "Document parameterized tests as a first-class repository practice",
         "completed_at": "2026-11-04T19:32:00Z"
+      },
+      {
+        "id": "TASK-035",
+        "ticket": "KP-145",
+        "agent": "antigravity",
+        "branch": "feature/KP-145-typesafe-epm-breaks-leaves",
+        "title": "Type-Safe EPM Breaks & Leaves Vertical Pipeline",
+        "description": "Modernize BreaksPanel, BreaksView, LeavesPanel, LeavesView, and DataLogicPresenceManagement to use TableDefinition<BreaksInfo> and TableDefinition<LeavesInfo> with typed EditorRecord implementations, removing Object[] mapping.",
+        "completed_at": "2026-11-07T19:16:00Z"
       }
     ]
   }

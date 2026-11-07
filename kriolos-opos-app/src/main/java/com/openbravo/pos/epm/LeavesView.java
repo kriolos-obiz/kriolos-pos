@@ -31,7 +31,7 @@ import java.util.Calendar;
  *
  * @author Ali Safdar and Aneeqa Baber
  */
-public final class LeavesView extends javax.swing.JPanel implements EditorRecord {
+public final class LeavesView extends javax.swing.JPanel implements EditorRecord<LeavesInfo> {
 
     private String leaveId;
     private String m_employeeid;
@@ -52,7 +52,7 @@ public final class LeavesView extends javax.swing.JPanel implements EditorRecord
     }
 
     public LeavesView(AppView app, DirtyManager dirty, ShiftService shiftService) {
-        this.shiftService = shiftService != null ? shiftService : app.getBean(ShiftService.class);
+        this.shiftService = shiftService != null ? shiftService : (app != null ? app.getBean(ShiftService.class) : null);
         initComponents();
 
         m_Dirty = dirty;
@@ -109,17 +109,20 @@ public final class LeavesView extends javax.swing.JPanel implements EditorRecord
 
     /**
      *
-     * @param value
+     * @param leaves
      */
     @Override
-    public void writeValueEdit(Object value) {
-        Object[] leaves = (Object[]) value;
-        leaveId = (String) leaves[0];
-        m_employeeid = (String) leaves[1];
-        m_jEmployeeName.setText((String) leaves[2]);
-        m_jStartDate.setText(Formats.TIMESTAMP.formatValue((Date) leaves[3]));
-        m_jEndDate.setText(Formats.TIMESTAMP.formatValue((Date) leaves[4]));
-        m_jLeaveNote.setText((String) leaves[5]);
+    public void writeValueEdit(LeavesInfo leaves) {
+        if (leaves == null) {
+            writeValueEOF();
+            return;
+        }
+        leaveId = leaves.getID();
+        m_employeeid = leaves.getPplId();
+        m_jEmployeeName.setText(leaves.getName());
+        m_jStartDate.setText(leaves.getStartDate() != null ? Formats.TIMESTAMP.formatValue(leaves.getStartDate()) : null);
+        m_jEndDate.setText(leaves.getEndDate() != null ? Formats.TIMESTAMP.formatValue(leaves.getEndDate()) : null);
+        m_jLeaveNote.setText(leaves.getNotes());
         m_jEmployeeName.setEditable(true);
         m_jStartDate.setEnabled(true);
         m_jEndDate.setEnabled(true);
@@ -128,17 +131,20 @@ public final class LeavesView extends javax.swing.JPanel implements EditorRecord
 
     /**
      *
-     * @param value
+     * @param leaves
      */
     @Override
-    public void writeValueDelete(Object value) {
-        Object[] leaves = (Object[]) value;
-        leaveId = (String) leaves[0];
-        m_employeeid = (String) leaves[1];
-        m_jEmployeeName.setText((String) leaves[2]);
-        m_jStartDate.setText(Formats.TIMESTAMP.formatValue((Date) leaves[3]));
-        m_jEndDate.setText(Formats.TIMESTAMP.formatValue((Date) leaves[4]));
-        m_jLeaveNote.setText((String) leaves[5]);
+    public void writeValueDelete(LeavesInfo leaves) {
+        if (leaves == null) {
+            writeValueEOF();
+            return;
+        }
+        leaveId = leaves.getID();
+        m_employeeid = leaves.getPplId();
+        m_jEmployeeName.setText(leaves.getName());
+        m_jStartDate.setText(leaves.getStartDate() != null ? Formats.TIMESTAMP.formatValue(leaves.getStartDate()) : null);
+        m_jEndDate.setText(leaves.getEndDate() != null ? Formats.TIMESTAMP.formatValue(leaves.getEndDate()) : null);
+        m_jLeaveNote.setText(leaves.getNotes());
         m_jEmployeeName.setEditable(false);
         m_jStartDate.setEnabled(false);
         m_jEndDate.setEnabled(false);
@@ -166,22 +172,21 @@ public final class LeavesView extends javax.swing.JPanel implements EditorRecord
      * @return @throws BasicException
      */
     @Override
-    public Object createValue() throws BasicException {
-        Object[] leaves = new Object[6];
-        leaves[0] = leaveId == null ? UUID.randomUUID().toString() : leaveId;
-        leaves[1] = m_employeeid;
-        leaves[2] = m_jEmployeeName.getText();
-        leaves[3] = Formats.TIMESTAMP.parseValue(m_jStartDate.getText());
-        leaves[4] = Formats.TIMESTAMP.parseValue(m_jEndDate.getText());
-        leaves[5] = m_jLeaveNote.getText();
-        boolean isCheckedIn = shiftService.isCheckedIn(m_employeeid);
-        Date startDate = Formats.TIMESTAMP.parseValue(m_jStartDate.getText());
-        Date endDate = Formats.TIMESTAMP.parseValue(m_jEndDate.getText());
-        Date systemDate = new Date();
-        if (isCheckedIn && startDate.before(systemDate) && endDate.after(systemDate)) {
-            shiftService.blockEmployee(m_employeeid);
+    public LeavesInfo createValue() throws BasicException {
+        String id = leaveId == null ? UUID.randomUUID().toString() : leaveId;
+        String name = m_jEmployeeName.getText();
+        Date startDate = (Date) Formats.TIMESTAMP.parseValue(m_jStartDate.getText());
+        Date endDate = (Date) Formats.TIMESTAMP.parseValue(m_jEndDate.getText());
+        String notes = m_jLeaveNote.getText();
+
+        if (m_employeeid != null && shiftService != null) {
+            boolean isCheckedIn = shiftService.isCheckedIn(m_employeeid);
+            Date systemDate = new Date();
+            if (isCheckedIn && startDate != null && endDate != null && startDate.before(systemDate) && endDate.after(systemDate)) {
+                shiftService.blockEmployee(m_employeeid);
+            }
         }
-        return leaves;
+        return new LeavesInfo(id, m_employeeid, name, startDate, endDate, notes);
     }
 // TODO - rewrite IsValidEndDate using Apache commons or Calendar 
 
