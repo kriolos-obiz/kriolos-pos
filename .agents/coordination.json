@@ -30,6 +30,15 @@
     ],
     "completed": [
       {
+        "id": "TASK-038",
+        "ticket": "KP-148",
+        "agent": "antigravity",
+        "branch": "feature/KP-148-typesafe-people",
+        "title": "Type-Safe Users & People Vertical Pipeline",
+        "description": "Modernize PeoplePanel, PeopleView, DataLogicAdmin, and PeopleService to use TableDefinition<PeopleInfo> with typed EditorRecord implementations, removing Object[] mapping.",
+        "completed_at": "2026-11-08T04:30:00Z"
+      },
+      {
         "id": "TASK-037",
         "ticket": "KP-147",
         "agent": "antigravity",

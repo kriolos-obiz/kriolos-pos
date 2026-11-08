@@ -48,9 +48,9 @@ public interface PeopleService {
     /**
      * Gets the record save provider for inserting, updating, and deleting people.
      *
-     * @return SaveProvider for people record data arrays
+     * @return SaveProvider for people records
      */
-    SaveProvider<Object[]> getPeopleSaveProvider();
+    SaveProvider<PeopleInfo> getPeopleSaveProvider();
 
     /**
      * Gets the query sentence for retrieving the list of users ordered by name.

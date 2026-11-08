@@ -38,13 +38,17 @@ public class DataLogicAdmin extends BeanFactoryDataSingle implements PeopleServi
     public void init(Session s) {
         this.s = s;
 
-        m_tpeople = new TableDefinition(s,
+        m_tpeople = new TableDefinition<>(s,
                 "people",
                  new String[]{"ID", "NAME", "APPPASSWORD", "ROLE", "VISIBLE", "CARD", "IMAGE"},
                  new String[]{"ID", AppLocal.getIntString("label.peoplename"), AppLocal.getIntString("label.Password"), AppLocal.getIntString("label.role"), AppLocal.getIntString("label.peoplevisible"), AppLocal.getIntString("label.card"), AppLocal.getIntString("label.peopleimage")},
                  new Datas[]{Datas.STRING, Datas.STRING, Datas.STRING, Datas.STRING, Datas.BOOLEAN, Datas.STRING, Datas.IMAGE},
                  new Formats[]{Formats.STRING, Formats.STRING, Formats.STRING, Formats.STRING, Formats.BOOLEAN, Formats.STRING, Formats.NULL},
-                 new int[]{0}
+                 new int[]{0},
+                 PeopleInfo.getSerializerRead(),
+                 PeopleInfo.getSerializerInsert(),
+                 PeopleInfo.getSerializerUpdate(),
+                 PeopleInfo.getSerializerDelete()
         );
 
         m_troles = new TableDefinition<>(s,
@@ -71,38 +75,9 @@ public class DataLogicAdmin extends BeanFactoryDataSingle implements PeopleServi
 
     
 
-    private SentenceExec peopleSentenceExecUpdate(){
-        Datas[] resourcedata = new Datas[]{Datas.STRING, Datas.STRING, Datas.STRING, Datas.STRING, Datas.BOOLEAN, Datas.STRING, Datas.IMAGE};
-         SentenceExec sentupdate = new PreparedSentenceExec(this.s,
-                 "UPDATE people SET NAME = ?, APPPASSWORD = ?, ROLE = ?, VISIBLE = ?, CARD = ?, IMAGE = ? WHERE ID = ?",
-               resourcedata,new int[]{1, 2, 3, 4, 5, 6, 0});
-         
-        return sentupdate;
-    }
-    
-    private SentenceExec peopleSentenceExecDelete(){
-        Datas[] resourcedata = new Datas[]{Datas.STRING};
-         SentenceExec sentdelete = new PreparedSentenceExec(this.s,
-                "DELETE FROM people WHERE ID = ?",
-                resourcedata,new int[]{0});
-         
-        return sentdelete;
-    }
-    
-    private SentenceExec peopleSentenceExecInsert(){
-        Datas[] resourcedata = new Datas[]{Datas.STRING, Datas.STRING, Datas.STRING, Datas.STRING, Datas.BOOLEAN, Datas.STRING, Datas.IMAGE};
-         SentenceExec sentinsert = new PreparedSentenceExec(this.s,
-                "INSERT INTO people(ID, NAME, APPPASSWORD, ROLE, VISIBLE, CARD, IMAGE) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                resourcedata,new int[]{0, 1, 2, 3, 4, 5, 6});
-         
-        return sentinsert;
-    }
-    
-    public SaveProvider<Object[]> getPeopleSaveProvider(){
-        return new DefaultSaveProvider(
-                peopleSentenceExecUpdate(), 
-                peopleSentenceExecInsert(), 
-                peopleSentenceExecDelete());
+    @Override
+    public SaveProvider<PeopleInfo> getPeopleSaveProvider(){
+        return new DefaultSaveProvider<>(m_tpeople);
     }
             
 

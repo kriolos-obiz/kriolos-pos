@@ -37,7 +37,7 @@ import javax.swing.*;
  *
  * @author adrianromero
  */
-public class PeopleView extends JPanel implements EditorRecord<Object> {
+public class PeopleView extends JPanel implements EditorRecord<PeopleInfo> {
 
     private static final long serialVersionUID = 1L;
     
@@ -62,8 +62,9 @@ public class PeopleView extends JPanel implements EditorRecord<Object> {
         initComponents();
                 
         // El modelo de roles
-        m_sentrole = peopleService.getRolesList();
+        m_sentrole = peopleService != null ? peopleService.getRolesList() : null;
         m_RoleModel = new ComboBoxValModel<>();
+        m_jRole.setModel(m_RoleModel);
         
         m_Dirty = dirty;
         m_jName.getDocument().addDocumentListener(dirty);
@@ -144,35 +145,41 @@ public class PeopleView extends JPanel implements EditorRecord<Object> {
      * @param value
      */
     @Override
-    public void writeValueDelete(Object value) {
-        Object[] people = (Object[]) value;
-        m_oId = (String)people[0];
-        m_jName.setText(Formats.STRING.formatValue((String)people[1]));
-        m_sPassword = Formats.STRING.formatValue((String)people[2]);
-        m_RoleModel.setSelectedKey(people[3]);
-        m_jVisible.setSelected(((Boolean) people[4]));
-        m_jcard.setText(Formats.STRING.formatValue((String)people[5]));
-        m_jImage.setImage((BufferedImage) people[6]);
+    public void writeValueDelete(PeopleInfo people) {
+        if (people == null) {
+            writeValueEOF();
+            return;
+        }
+        m_oId = people.getId();
+        m_jName.setText(people.getName());
+        m_sPassword = people.getPassword();
+        m_RoleModel.setSelectedKey(people.getRole());
+        m_jVisible.setSelected(people.isVisible());
+        m_jcard.setText(people.getCard());
+        m_jImage.setImage(people.getImage());
         
         disableFields();
     }
 
     /**
      *
-     * @param value
+     * @param people
      */
     @Override
-    public void writeValueEdit(Object value) {
-        Object[] people = (Object[]) value;
-        m_oId = (String)people[0];
-        m_jName.setText(Formats.STRING.formatValue((String)people[1]));
-        m_sPassword = Formats.STRING.formatValue((String)people[2]);
-        m_RoleModel.setSelectedKey(people[3]);
-        m_jVisible.setSelected(((Boolean) people[4]));
-        m_jcard.setText(Formats.STRING.formatValue((String)people[5]));
-        m_jImage.setImage((BufferedImage) people[6]);
+    public void writeValueEdit(PeopleInfo people) {
+        if (people == null) {
+            writeValueEOF();
+            return;
+        }
+        m_oId = people.getId();
+        m_jName.setText(people.getName());
+        m_sPassword = people.getPassword();
+        m_RoleModel.setSelectedKey(people.getRole());
+        m_jVisible.setSelected(people.isVisible());
+        m_jcard.setText(people.getCard());
+        m_jImage.setImage(people.getImage());
         
-        if (m_jcard.getText().length() == 16) {
+        if (m_jcard.getText() != null && m_jcard.getText().length() == 16) {
             jLblCardID.setText(AppLocal.getIntString("label.ibutton"));
         } else {
             jLblCardID.setText(AppLocal.getIntString("label.card"));            
@@ -187,16 +194,16 @@ public class PeopleView extends JPanel implements EditorRecord<Object> {
      * @throws BasicException
      */
     @Override
-    public Object createValue() throws BasicException {
-        Object[] people = new Object[7];
-        people[0] = m_oId == null ? UUID.randomUUID().toString() : m_oId;
-        people[1] = Formats.STRING.parseValue(m_jName.getText());
-        people[2] = Formats.STRING.parseValue(m_sPassword);
-        people[3] = m_RoleModel.getSelectedKey();
-        people[4] = m_jVisible.isSelected();
-        people[5] = Formats.STRING.parseValue(m_jcard.getText());
-        people[6] = m_jImage.getImage();
-        return people;
+    public PeopleInfo createValue() throws BasicException {
+        return new PeopleInfo(
+            m_oId == null ? UUID.randomUUID().toString() : m_oId,
+            m_jName.getText(),
+            m_sPassword,
+            (String) m_RoleModel.getSelectedKey(),
+            m_jVisible.isSelected(),
+            m_jcard.getText(),
+            m_jImage.getImage()
+        );
     }
 
     /**
@@ -213,9 +220,10 @@ public class PeopleView extends JPanel implements EditorRecord<Object> {
      * @throws BasicException
      */
     public void activate() throws BasicException {
-        
-        m_RoleModel = new ComboBoxValModel<>(m_sentrole.list());
-        m_jRole.setModel(m_RoleModel);
+        if (m_sentrole != null) {
+            m_RoleModel = new ComboBoxValModel<>(m_sentrole.list());
+            m_jRole.setModel(m_RoleModel);
+        }
     }
     
    
