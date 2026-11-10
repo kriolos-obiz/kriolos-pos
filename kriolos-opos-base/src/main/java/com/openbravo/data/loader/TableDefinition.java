@@ -163,6 +163,10 @@ public class TableDefinition<T> {
         return new ComparatorCreatorBasic(fieldtran, fielddata, aiOrders);
     }
 
+    public Session getSession() {
+        return m_s;
+    }
+
     private IKeyGetter getKeyGetterBasic() {
         if (idinx.length == 1) {
             return new KeyGetterFirst(idinx);

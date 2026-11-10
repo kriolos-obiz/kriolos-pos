@@ -30,6 +30,15 @@
     ],
     "completed": [
       {
+        "id": "TASK-039",
+        "ticket": "KP-151",
+        "agent": "antigravity",
+        "branch": "feature/KP-151-people-transaction-commit",
+        "title": "Transaction Commit and Default Visibility for People Pipeline",
+        "description": "Wrap DefaultSaveProvider DML operations in Transaction, restore connection autoCommit in DBMigrator, and default user visibility to true.",
+        "completed_at": "2026-11-10T12:11:00Z"
+      },
+      {
         "id": "TASK-038",
         "ticket": "KP-148",
         "agent": "antigravity",

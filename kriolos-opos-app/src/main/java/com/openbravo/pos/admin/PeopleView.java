@@ -137,6 +137,7 @@ public class PeopleView extends JPanel implements EditorRecord<PeopleInfo> {
     public void writeValueInsert() {
         cleanFields();
         m_oId = UUID.randomUUID().toString();
+        m_jVisible.setSelected(true);
         enableFields();        
     }
     

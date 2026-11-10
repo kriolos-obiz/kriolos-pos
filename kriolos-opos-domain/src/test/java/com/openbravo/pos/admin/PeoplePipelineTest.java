@@ -108,5 +108,49 @@ class PeoplePipelineTest {
             }
         }
     }
+
+    @Test
+    @DisplayName("Should commit transaction and persist data even when connection autoCommit is disabled")
+    void shouldCommitTransactionEvenWhenAutoCommitDisabled() throws Exception {
+        String dbName = "people_tx_test_" + UUID.randomUUID().toString().replace("-", "");
+        Session session = new Session("jdbc:hsqldb:mem:" + dbName + ";sql.syntax_mys=true", "SA", "");
+
+        try {
+            try (Statement st = session.getConnection().createStatement()) {
+                st.executeUpdate("CREATE TABLE people ("
+                        + "id VARCHAR(36) PRIMARY KEY, "
+                        + "name VARCHAR(255) NOT NULL, "
+                        + "apppassword VARCHAR(255), "
+                        + "role VARCHAR(36) NOT NULL, "
+                        + "visible BOOLEAN NOT NULL, "
+                        + "card VARCHAR(255), "
+                        + "image VARBINARY(16777215))");
+            }
+
+            // Simulate driver or Liquibase leaving autoCommit disabled
+            session.getConnection().setAutoCommit(false);
+
+            DataLogicAdmin dataLogic = new DataLogicAdmin();
+            dataLogic.init(session);
+
+            SaveProvider<PeopleInfo> saveProvider = dataLogic.getPeopleSaveProvider();
+            PeopleInfo person = new PeopleInfo("u-tx-1", "Tx User", "hash", "role-1", true, "CARD1", null);
+
+            assertEquals(1, saveProvider.insertData(person));
+
+            // Verify in a separate connection reading the DB that the row was committed
+            Session readSession = new Session("jdbc:hsqldb:mem:" + dbName + ";sql.syntax_mys=true", "SA", "");
+            try (Statement st = readSession.getConnection().createStatement()) {
+                var rs = st.executeQuery("SELECT count(*) FROM people WHERE id = 'u-tx-1'");
+                assertTrue(rs.next());
+                assertEquals(1, rs.getInt(1));
+            }
+        } finally {
+            try (Statement st = session.getConnection().createStatement()) {
+                st.execute("SHUTDOWN");
+            } catch (Exception ignored) {
+            }
+        }
+    }
 }
 

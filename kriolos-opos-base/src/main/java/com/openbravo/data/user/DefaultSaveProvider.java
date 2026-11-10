@@ -18,10 +18,13 @@ package com.openbravo.data.user;
 
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.loader.SentenceExec;
+import com.openbravo.data.loader.Session;
 import com.openbravo.data.loader.TableDefinition;
+import com.openbravo.data.loader.Transaction;
 
 /**
  * Standard SaveProvider implementation delegating to SentenceExec instances.
+ * Wraps mutation operations inside database transactions when a Session is provided.
  *
  * @param <TYPE> the entity type handled by this save provider
  * @author JG uniCenta
@@ -29,26 +32,34 @@ import com.openbravo.data.loader.TableDefinition;
  */
 public class DefaultSaveProvider<TYPE> implements SaveProvider<TYPE> {
 
+    protected Session session;
     protected SentenceExec m_sentupdate;
     protected SentenceExec m_sentinsert;
     protected SentenceExec m_sentdelete;
 
     public DefaultSaveProvider(SentenceExec sentupdate, SentenceExec sentinsert, SentenceExec sentdelete) {
-        m_sentupdate = sentupdate;
-        m_sentinsert = sentinsert;
-        m_sentdelete = sentdelete;
+        this(null, sentupdate, sentinsert, sentdelete);
+    }
+
+    public DefaultSaveProvider(Session session, SentenceExec sentupdate, SentenceExec sentinsert, SentenceExec sentdelete) {
+        this.session = session;
+        this.m_sentupdate = sentupdate;
+        this.m_sentinsert = sentinsert;
+        this.m_sentdelete = sentdelete;
     }
 
     public DefaultSaveProvider(TableDefinition<TYPE> table) {
-        m_sentupdate = table.getUpdateSentence();
-        m_sentdelete = table.getDeleteSentence();
-        m_sentinsert = table.getInsertSentence();
+        this(table != null ? table.getSession() : null,
+                table != null ? table.getUpdateSentence() : null,
+                table != null ? table.getInsertSentence() : null,
+                table != null ? table.getDeleteSentence() : null);
     }
 
     public DefaultSaveProvider(TableDefinition<TYPE> table, int[] fields) {
-        m_sentupdate = table.getUpdateSentence(fields);
-        m_sentdelete = table.getDeleteSentence();
-        m_sentinsert = table.getInsertSentence(fields);
+        this(table != null ? table.getSession() : null,
+                table != null ? table.getUpdateSentence(fields) : null,
+                table != null ? table.getInsertSentence(fields) : null,
+                table != null ? table.getDeleteSentence() : null);
     }
 
     @Override
@@ -58,6 +69,14 @@ public class DefaultSaveProvider<TYPE> implements SaveProvider<TYPE> {
 
     @Override
     public int deleteData(TYPE value) throws BasicException {
+        if (session != null) {
+            return new Transaction<Integer>(session) {
+                @Override
+                public Integer transact() throws BasicException {
+                    return m_sentdelete.exec(value);
+                }
+            }.execute();
+        }
         return m_sentdelete.exec(value);
     }
 
@@ -68,6 +87,14 @@ public class DefaultSaveProvider<TYPE> implements SaveProvider<TYPE> {
 
     @Override
     public int insertData(TYPE value) throws BasicException {
+        if (session != null) {
+            return new Transaction<Integer>(session) {
+                @Override
+                public Integer transact() throws BasicException {
+                    return m_sentinsert.exec(value);
+                }
+            }.execute();
+        }
         return m_sentinsert.exec(value);
     }
 
@@ -78,6 +105,14 @@ public class DefaultSaveProvider<TYPE> implements SaveProvider<TYPE> {
 
     @Override
     public int updateData(TYPE value) throws BasicException {
+        if (session != null) {
+            return new Transaction<Integer>(session) {
+                @Override
+                public Integer transact() throws BasicException {
+                    return m_sentupdate.exec(value);
+                }
+            }.execute();
+        }
         return m_sentupdate.exec(value);
     }
 }

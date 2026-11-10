@@ -173,11 +173,15 @@ public class DataLogicSystem extends BeanFactoryDataSingle implements SystemServ
     @Override
     public final void execChangePassword(ChangePasswordCommand command) throws BasicException {
         Objects.requireNonNull(command, "command must not be null");
-        final SentenceExec m_changepassword = new StaticSentence(this.session,
-                "UPDATE people SET APPPASSWORD = ? WHERE ID = ?",
-                new SerializerWriteBasic(new Datas[]{Datas.STRING, Datas.STRING}));
-
-        m_changepassword.exec(new Object[]{command.newPassword(), command.userId()});
+        new Transaction<Integer>(this.session) {
+            @Override
+            public Integer transact() throws BasicException {
+                final SentenceExec m_changepassword = new StaticSentence(session,
+                        "UPDATE people SET APPPASSWORD = ? WHERE ID = ?",
+                        new SerializerWriteBasic(new Datas[]{Datas.STRING, Datas.STRING}));
+                return m_changepassword.exec(new Object[]{command.newPassword(), command.userId()});
+            }
+        }.execute();
     }
 
     @Override

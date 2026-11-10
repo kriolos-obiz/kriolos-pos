@@ -45,10 +45,9 @@ public class DBMigrator {
     public static void execDBMigration(com.openbravo.data.loader.Session dbSession) throws BasicException {
         boolean res = false;
         LOGGER.info("Database Migration init");
+        Connection conn = null;
         try {
-
-            //Connection conn = DriverManager.getConnection(connectionUrl, username, password);
-            Connection conn = dbSession.getConnection();
+            conn = dbSession.getConnection();
             //Liquibase
             JdbcConnection connliquibase = new JdbcConnection(conn);
             
@@ -64,6 +63,17 @@ public class DBMigrator {
         } catch (LiquibaseException | SQLException ex) {
             LOGGER.log(Level.SEVERE, "DB Migration Exception: ", ex);
             throw new BasicException("DB Migration Exception: ", ex);
+        } finally {
+            if (conn != null) {
+                try {
+                    if (!conn.getAutoCommit()) {
+                        conn.commit();
+                        conn.setAutoCommit(true);
+                    }
+                } catch (SQLException ex) {
+                    LOGGER.log(Level.WARNING, "Exception restoring connection autoCommit after migration: ", ex);
+                }
+            }
         }
     }
 }

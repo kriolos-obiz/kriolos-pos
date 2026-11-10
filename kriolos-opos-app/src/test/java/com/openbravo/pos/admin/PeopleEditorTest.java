@@ -35,6 +35,7 @@ class PeopleEditorTest {
         view.writeValueInsert();
         PeopleInfo insertValue = view.createValue();
         assertNotNull(insertValue.getId());
+        assertTrue(insertValue.isVisible());
 
         // 3. Edit with 16-digit card
         BufferedImage img = new BufferedImage(8, 8, BufferedImage.TYPE_INT_ARGB);
