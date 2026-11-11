@@ -16,6 +16,7 @@
 
 package com.openbravo.pos.admin;
 
+import com.openbravo.basic.BasicException;
 import com.openbravo.data.gui.ListCellRendererBasic;
 import com.openbravo.data.loader.ComparatorCreator;
 import com.openbravo.data.loader.TableDefinition;
@@ -23,20 +24,23 @@ import com.openbravo.data.loader.Vectorer;
 import com.openbravo.data.user.EditorRecord;
 import com.openbravo.data.user.ListProvider;
 import com.openbravo.data.user.ListProviderCreator;
-import com.openbravo.data.user.DefaultSaveProvider;
+import com.openbravo.data.user.SaveProvider;
 import com.openbravo.basic.AppLocal;
 import com.openbravo.pos.resources.ResourceService;
 import com.openbravo.pos.panels.JPanelTable;
 import javax.swing.ListCellRenderer;
 
 /**
+ * Type-safe JPanelTable implementation for Application Resources maintenance.
  *
  * @author adrianromero
+ * @author KriolOS
  */
 public class ResourcesPanel extends JPanelTable {
 
     private static final long serialVersionUID = 1L;
 
+    private ResourceService resourceService;
     private TableDefinition<ResourceInfo> tresources;
     private ResourcesView jeditor;
 
@@ -44,7 +48,7 @@ public class ResourcesPanel extends JPanelTable {
 
     @Override
     protected void init() {
-        ResourceService resourceService = app.getBean(ResourceService.class);
+        resourceService = app.getBean(ResourceService.class);
         tresources = resourceService.getTableResources();         
         jeditor = new ResourcesView(dirty);           
     }
@@ -56,17 +60,27 @@ public class ResourcesPanel extends JPanelTable {
 
     @Override
     public ListProvider<ResourceInfo> getListProvider() {
-        return new ListProviderCreator(tresources);
+        return new ListProviderCreator<>(tresources);
     }
 
     @Override
-    public DefaultSaveProvider getSaveProvider() {
-        return new DefaultSaveProvider(tresources);        
+    public SaveProvider<ResourceInfo> getSaveProvider() {
+        return resourceService.getResourceSaveProvider();        
     }
 
     @Override
-    public Vectorer getVectorer() {
-        return tresources.getVectorerBasic(new int[] {1});
+    public Vectorer<ResourceInfo> getVectorer() {
+        return new Vectorer<>() {
+            @Override
+            public String[] getHeaders() throws BasicException {
+                return new String[]{AppLocal.getIntString("label.name")};
+            }
+
+            @Override
+            public String[] getValues(ResourceInfo r) throws BasicException {
+                return new String[]{r != null && r.getName() != null ? r.getName() : ""};
+            }
+        };
     }
 
     @Override
@@ -75,11 +89,12 @@ public class ResourcesPanel extends JPanelTable {
     }
 
     @Override
-    public ListCellRenderer getListCellRenderer() {
-        return new ListCellRendererBasic(tresources.getRenderStringBasic(new int[] {1}));
+    public ListCellRenderer<?> getListCellRenderer() {
+        return new ListCellRendererBasic(v -> v instanceof ResourceInfo r ? r.getName() : (v != null ? v.toString() : ""));
     }
 
-    public EditorRecord getEditor() {
+    @Override
+    public EditorRecord<ResourceInfo> getEditor() {
         return jeditor;
     }
  

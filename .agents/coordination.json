@@ -30,6 +30,15 @@
     ],
     "completed": [
       {
+        "id": "TASK-040",
+        "ticket": "KP-149",
+        "agent": "antigravity",
+        "branch": "feature/KP-149-typesafe-resources",
+        "title": "Type-Safe Resources Vertical Pipeline",
+        "description": "Modernize ResourcesPanel, ResourcesView, DataLogicSystem, and ResourceService to use TableDefinition<ResourceInfo> with typed EditorRecord implementations, removing Object[] mapping.",
+        "completed_at": "2026-11-11T03:53:00Z"
+      },
+      {
         "id": "TASK-039",
         "ticket": "KP-151",
         "agent": "antigravity",

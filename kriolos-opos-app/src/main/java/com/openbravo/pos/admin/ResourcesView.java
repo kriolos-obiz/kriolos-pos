@@ -44,13 +44,13 @@ import org.fife.ui.rtextarea.RTextScrollPane;
  *
  * @author adrianromero
  */
-public final class ResourcesView extends JPanel implements EditorRecord {
+public final class ResourcesView extends JPanel implements EditorRecord<ResourceInfo> {
     
     private static final Logger LOGGER = Logger.getLogger(ResourcesView.class.getName());
     
     private static final long serialVersionUID = 1L;
     private String m_oId;
-    private final ComboBoxValModel m_ResourceModel;
+    private final ComboBoxValModel<ResourceType> m_ResourceModel;
     
     private final RSyntaxTextArea m_RSyntaxTextArea;
     private final RTextScrollPane m_RTextScrollPane;
@@ -69,7 +69,7 @@ public final class ResourcesView extends JPanel implements EditorRecord {
         //Overview Editor with on CardLayout with "text" Identifier
         m_jContainer.add(cp, "text");
         
-        m_ResourceModel = new ComboBoxValModel();
+        m_ResourceModel = new ComboBoxValModel<>();
         m_ResourceModel.add(ResourceType.TEXT);
         m_ResourceModel.add(ResourceType.IMAGE);
         m_ResourceModel.add(ResourceType.BINARY);
@@ -128,26 +128,29 @@ public final class ResourcesView extends JPanel implements EditorRecord {
      * @param value
      */
     @Override
-    public void writeValueDelete(Object value) {
-        Object[] resource = (Object[]) value;
-        m_oId = (String)resource[0];
-        m_jName.setText((String) resource[1]);
-        m_ResourceModel.setSelectedKey(resource[2]);
+    public void writeValueDelete(ResourceInfo resource) {
+        if (resource == null) {
+            writeValueEOF();
+            return;
+        }
+        m_oId = resource.getId();
+        m_jName.setText(resource.getName());
+        m_ResourceModel.setSelectedKey(resource.getRestype());
         
         ResourceType restype = (ResourceType) m_ResourceModel.getSelectedItem();
         if (restype == ResourceType.TEXT) {
-            m_RSyntaxTextArea.setText(Formats.BYTEA.formatValue((byte[])resource[3]));
+            m_RSyntaxTextArea.setText(Formats.BYTEA.formatValue(resource.getContent()));
             m_RSyntaxTextArea.setSyntaxEditingStyle(getResourceSyntaxStyle(m_RSyntaxTextArea.getText()));
             m_RSyntaxTextArea.setCaretPosition(0);
             
             m_jImage.setImage(null);
         } else if (restype == ResourceType.IMAGE) {
             m_RSyntaxTextArea.setText(null);
-            m_jImage.setImage(ImageUtils.readImage((byte[]) resource[3]));
+            m_jImage.setImage(ImageUtils.readImage(resource.getContent()));
         } else if (restype == ResourceType.BINARY) {
-            m_RSyntaxTextArea.setText(resource[3] == null
+            m_RSyntaxTextArea.setText(resource.getContent() == null
                     ? null
-                    : Base64Encoder.encodeChunked((byte[]) resource[3]));
+                    : Base64Encoder.encodeChunked(resource.getContent()));
             m_RSyntaxTextArea.setCaretPosition(0);
             
             m_jImage.setImage(null);
@@ -164,19 +167,22 @@ public final class ResourcesView extends JPanel implements EditorRecord {
 
     /**
      *
-     * @param value
+     * @param resource
      */
     @Override
-    public void writeValueEdit(Object value) {
-        Object[] resource = (Object[]) value;
-        m_oId = (String)resource[0];
-        m_jName.setText((String) resource[1]);
-        m_ResourceModel.setSelectedKey(resource[2]);
+    public void writeValueEdit(ResourceInfo resource) {
+        if (resource == null) {
+            writeValueEOF();
+            return;
+        }
+        m_oId = resource.getId();
+        m_jName.setText(resource.getName());
+        m_ResourceModel.setSelectedKey(resource.getRestype());
         
         ResourceType restype = (ResourceType) m_ResourceModel.getSelectedItem();
         if (restype == ResourceType.TEXT) {
             
-            m_RSyntaxTextArea.setText(Formats.BYTEA.formatValue((byte[])resource[3]));
+            m_RSyntaxTextArea.setText(Formats.BYTEA.formatValue(resource.getContent()));
             m_RSyntaxTextArea.setSyntaxEditingStyle(getResourceSyntaxStyle(m_RSyntaxTextArea.getText()));
             m_RSyntaxTextArea.setCaretPosition(0);
             
@@ -186,11 +192,11 @@ public final class ResourcesView extends JPanel implements EditorRecord {
             m_RSyntaxTextArea.setText(null);
             m_jBtnReadScript.setVisible(false);       
             
-            m_jImage.setImage(ImageUtils.readImage((byte[]) resource[3]));     
+            m_jImage.setImage(ImageUtils.readImage(resource.getContent()));     
         } else if (restype == ResourceType.BINARY) {
-            m_RSyntaxTextArea.setText(resource[2] == null
+            m_RSyntaxTextArea.setText(resource.getContent() == null
                     ? null
-                    : Base64Encoder.encodeChunked((byte[]) resource[3]));
+                    : Base64Encoder.encodeChunked(resource.getContent()));
             m_RSyntaxTextArea.setCaretPosition(0); 
             
             m_jImage.setImage(null);          
@@ -211,25 +217,24 @@ public final class ResourcesView extends JPanel implements EditorRecord {
      * @throws BasicException
      */
     @Override
-    public Object createValue() throws BasicException {
-        Object[] resource = new Object[4];
-
-        resource[0] = m_oId == null ? UUID.randomUUID().toString() : m_oId;
-        resource[1] = m_jName.getText();
+    public ResourceInfo createValue() throws BasicException {
+        String id = m_oId == null ? UUID.randomUUID().toString() : m_oId;
+        String name = m_jName.getText();
         
         ResourceType restype = (ResourceType) m_ResourceModel.getSelectedItem();
-        resource[2] = restype.getKey();
+        int type = restype != null && restype.getKey() != null ? (Integer) restype.getKey() : 0;
+        byte[] content;
         if (restype == ResourceType.TEXT) {
-            resource[3] = Formats.BYTEA.parseValue(m_RSyntaxTextArea.getText());
+            content = (byte[]) Formats.BYTEA.parseValue(m_RSyntaxTextArea.getText());
         } else if (restype == ResourceType.IMAGE) {
-            resource[3] = ImageUtils.writeImage(m_jImage.getImage());
+            content = ImageUtils.writeImage(m_jImage.getImage());
         } else if (restype == ResourceType.BINARY) {
-            resource[3] = Base64Encoder.decode(m_RSyntaxTextArea.getText());
+            content = Base64Encoder.decode(m_RSyntaxTextArea.getText());
         } else {
-            resource[3] = null;
+            content = null;
         }
 
-        return resource;
+        return new ResourceInfo(id, name, type, content);
     }
     
     /**

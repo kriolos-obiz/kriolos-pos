@@ -17,6 +17,7 @@
 package com.openbravo.pos.resources;
 
 import com.openbravo.data.loader.TableDefinition;
+import com.openbravo.data.user.SaveProvider;
 import com.openbravo.pos.admin.ResourceInfo;
 import java.awt.image.BufferedImage;
 import java.util.Properties;
@@ -38,6 +39,15 @@ public interface ResourceService {
      * @return TableDefinition for {@link ResourceInfo}
      */
     TableDefinition<ResourceInfo> getTableResources();
+
+    /**
+     * Gets the save provider for inserting, updating, and deleting resource records.
+     *
+     * @return SaveProvider for {@link ResourceInfo}
+     */
+    default SaveProvider<ResourceInfo> getResourceSaveProvider() {
+        return null;
+    }
 
     /**
      * Retrieves a resource by name as raw binary byte array.
