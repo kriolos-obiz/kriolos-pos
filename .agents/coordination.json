@@ -30,6 +30,15 @@
     ],
     "completed": [
       {
+        "id": "TASK-042",
+        "ticket": "KP-152",
+        "agent": "antigravity",
+        "branch": "feature/KP-152-typesafe-customers",
+        "title": "Type-Safe Customers Vertical Pipeline",
+        "description": "Modernize CustomersPanel, CustomersView, JNewCustomerPanel, CustomerService, and DataLogicCustomers to use TableDefinition<CustomerInfoExt> with typed EditorRecord implementations, removing Object[] mapping.",
+        "completed_at": "2026-11-12T04:24:00Z"
+      },
+      {
         "id": "TASK-041",
         "ticket": "KP-150",
         "agent": "antigravity",

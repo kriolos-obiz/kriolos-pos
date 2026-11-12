@@ -102,7 +102,7 @@ public class JNewCustomerPanel extends JPanel {
         }
     }
 
-    public Object createValue() throws BasicException {
+    public CustomerInfoExt createValue() throws BasicException {
         return customersView != null ? customersView.createValue() : null;
     }
 
@@ -176,8 +176,11 @@ public class JNewCustomerPanel extends JPanel {
 
     private void m_jBtnOKActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_m_jBtnOKActionPerformed
         try {
-            Object customer = createValue();
-            String m_oId = ((Object[]) customer)[0].toString();
+            CustomerInfoExt customer = createValue();
+            if (customer == null) {
+                return;
+            }
+            String m_oId = customer.getId();
 
             int status = customerService.getTableCustomers().getInsertSentence().exec(customer);
 

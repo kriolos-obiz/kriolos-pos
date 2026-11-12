@@ -16,6 +16,12 @@
 
 package com.openbravo.pos.customers;
 
+import com.openbravo.basic.BasicException;
+import com.openbravo.data.loader.DataRead;
+import com.openbravo.data.loader.DataWrite;
+import com.openbravo.data.loader.ImageUtils;
+import com.openbravo.data.loader.SerializerRead;
+import com.openbravo.data.loader.SerializerWrite;
 import com.openbravo.format.Formats;
 import com.openbravo.util.RoundUtils;
 import java.awt.image.BufferedImage;
@@ -50,7 +56,11 @@ public class CustomerInfoExt extends CustomerInfo {
     protected boolean isvip;
     protected Double discount;
     protected String prepay;
-    protected String memodate;    
+    protected Date memodate;
+
+    public CustomerInfoExt() {
+        super(null);
+    }
 
     public CustomerInfoExt(String id) {
         super(id);
@@ -374,13 +384,46 @@ public class CustomerInfoExt extends CustomerInfo {
      *
      * @return memo date string
      */
-    public String getMemoDate() {
+    public Double getCurdebt() {
+        return accdebt != null ? accdebt : getCurDebt();
+    }
+
+    public void setCurdebt(Double curdebt) {
+        this.accdebt = curdebt;
+        setCurDebt(curdebt);
+    }
+
+    public boolean isVip() {
+        return isvip;
+    }
+
+    public void setVip(boolean vip) {
+        this.isvip = vip;
+    }
+
+    public Date getMemoDate() {
         return memodate;
     }
-    public void setMemoDate(String memodate) {
+
+    public void setMemoDate(Date memodate) {
         this.memodate = memodate;
     }
-    
+
+    public void setMemoDate(String memodateStr) {
+        if (memodateStr == null || memodateStr.trim().isEmpty()) {
+            this.memodate = null;
+            return;
+        }
+        try {
+            this.memodate = (Date) Formats.TIMESTAMP.parseValue(memodateStr);
+        } catch (BasicException e) {
+            try {
+                this.memodate = (Date) Formats.DATE.parseValue(memodateStr);
+            } catch (BasicException ignored) {
+                this.memodate = null;
+            }
+        }
+    }
     
     public String printAddress2() {       
         return Formats.STRING.formatValue(address2);
@@ -397,8 +440,133 @@ public class CustomerInfoExt extends CustomerInfo {
     public String printPhone() {       
         return Formats.STRING.formatValue(phone);
     } 
-    public String printMemoDate() {       
-        return Formats.STRING.formatValue(memodate);
-    }        
 
+    public String printMemoDate() {       
+        return Formats.TIMESTAMP.formatValue(memodate);
+    }
+
+    /**
+     * Row mapper deserializing a {@link CustomerInfoExt} instance from a JDBC result set.
+     *
+     * @return deserializer for {@link CustomerInfoExt}
+     */
+    public static SerializerRead<CustomerInfoExt> getSerializerRead() {
+        return (DataRead dr) -> {
+            CustomerInfoExt c = new CustomerInfoExt(dr.getString(1));
+            c.setSearchkey(dr.getString(2));
+            c.setTaxid(dr.getString(3));
+            c.setTaxCustomerID(dr.getString(3));
+            c.setName(dr.getString(4));
+            c.setTaxCustCategoryID(dr.getString(5));
+            c.setCard(dr.getString(6));
+            c.setMaxdebt(dr.getDouble(7));
+            c.setAddress(dr.getString(8));
+            c.setAddress2(dr.getString(9));
+            c.setPostal(dr.getString(10));
+            c.setCity(dr.getString(11));
+            c.setRegion(dr.getString(12));
+            c.setCountry(dr.getString(13));
+            c.setFirstname(dr.getString(14));
+            c.setLastname(dr.getString(15));
+            c.setEmail(dr.getString(16));
+            c.setPhone(dr.getString(17));
+            c.setPhone2(dr.getString(18));
+            c.setFax(dr.getString(19));
+            c.setNotes(dr.getString(20));
+            c.setVisible(dr.getBoolean(21) != null && dr.getBoolean(21));
+            c.setCurdate(dr.getTimestamp(22));
+            c.setCurdebt(dr.getDouble(23));
+            c.setImage(ImageUtils.readImage(dr.getBytes(24)));
+            c.setisVIP(dr.getBoolean(25) != null && dr.getBoolean(25));
+            c.setDiscount(dr.getDouble(26));
+            c.setMemoDate(dr.getTimestamp(27));
+            return c;
+        };
+    }
+
+    /**
+     * Parameter serializer for inserting a new {@link CustomerInfoExt} record.
+     *
+     * @return serializer for INSERT statements
+     */
+    public static SerializerWrite<CustomerInfoExt> getSerializerInsert() {
+        return (DataWrite dp, CustomerInfoExt c) -> {
+            dp.setString(1, c.getId());
+            dp.setString(2, c.getSearchkey());
+            dp.setString(3, c.getTaxid());
+            dp.setString(4, c.getName());
+            dp.setString(5, c.getTaxCustCategoryID());
+            dp.setString(6, c.getCard());
+            dp.setDouble(7, c.getMaxdebt());
+            dp.setString(8, c.getAddress());
+            dp.setString(9, c.getAddress2());
+            dp.setString(10, c.getPostal());
+            dp.setString(11, c.getCity());
+            dp.setString(12, c.getRegion());
+            dp.setString(13, c.getCountry());
+            dp.setString(14, c.getFirstname());
+            dp.setString(15, c.getLastname());
+            dp.setString(16, c.getEmail());
+            dp.setString(17, c.getPhone());
+            dp.setString(18, c.getPhone2());
+            dp.setString(19, c.getFax());
+            dp.setString(20, c.getNotes());
+            dp.setBoolean(21, c.isVisible());
+            dp.setTimestamp(22, c.getCurdate());
+            dp.setDouble(23, c.getCurdebt());
+            dp.setBytes(24, ImageUtils.writeImage(c.getImage()));
+            dp.setBoolean(25, c.isVIP());
+            dp.setDouble(26, c.getDiscount());
+            dp.setTimestamp(27, c.getMemoDate());
+        };
+    }
+
+    /**
+     * Parameter serializer for updating an existing {@link CustomerInfoExt} record.
+     *
+     * @return serializer for UPDATE statements
+     */
+    public static SerializerWrite<CustomerInfoExt> getSerializerUpdate() {
+        return (DataWrite dp, CustomerInfoExt c) -> {
+            dp.setString(1, c.getId());
+            dp.setString(2, c.getSearchkey());
+            dp.setString(3, c.getTaxid());
+            dp.setString(4, c.getName());
+            dp.setString(5, c.getTaxCustCategoryID());
+            dp.setString(6, c.getCard());
+            dp.setDouble(7, c.getMaxdebt());
+            dp.setString(8, c.getAddress());
+            dp.setString(9, c.getAddress2());
+            dp.setString(10, c.getPostal());
+            dp.setString(11, c.getCity());
+            dp.setString(12, c.getRegion());
+            dp.setString(13, c.getCountry());
+            dp.setString(14, c.getFirstname());
+            dp.setString(15, c.getLastname());
+            dp.setString(16, c.getEmail());
+            dp.setString(17, c.getPhone());
+            dp.setString(18, c.getPhone2());
+            dp.setString(19, c.getFax());
+            dp.setString(20, c.getNotes());
+            dp.setBoolean(21, c.isVisible());
+            dp.setTimestamp(22, c.getCurdate());
+            dp.setDouble(23, c.getCurdebt());
+            dp.setBytes(24, ImageUtils.writeImage(c.getImage()));
+            dp.setBoolean(25, c.isVIP());
+            dp.setDouble(26, c.getDiscount());
+            dp.setTimestamp(27, c.getMemoDate());
+            dp.setString(28, c.getId());
+        };
+    }
+
+    /**
+     * Parameter serializer for deleting an existing {@link CustomerInfoExt} record.
+     *
+     * @return serializer for DELETE statements
+     */
+    public static SerializerWrite<CustomerInfoExt> getSerializerDelete() {
+        return (DataWrite dp, CustomerInfoExt c) -> {
+            dp.setString(1, c.getId());
+        };
+    }
 }

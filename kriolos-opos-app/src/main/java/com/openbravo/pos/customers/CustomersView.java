@@ -51,7 +51,7 @@ import javax.swing.table.JTableHeader;
  *
  * @author Jack Gerrard
  */
-public final class CustomersView extends javax.swing.JPanel implements EditorRecord {
+public final class CustomersView extends javax.swing.JPanel implements EditorRecord<CustomerInfoExt> {
 
     private final static System.Logger LOGGER = System.getLogger(CustomersView.class.getName());
     private static final long serialVersionUID = 1L;
@@ -79,16 +79,24 @@ public final class CustomersView extends javax.swing.JPanel implements EditorRec
      * @param dirty
      */
     public CustomersView(AppView app, DirtyManager dirty) {
+        this(app, dirty, app != null ? app.getBean(CustomerService.class) : null, app != null ? app.getBean(TaxService.class) : null);
+    }
+
+    public CustomersView(CustomerService customerService, TaxService taxService, DirtyManager dirty) {
+        this(null, dirty, customerService, taxService);
+    }
+
+    public CustomersView(AppView app, DirtyManager dirty, CustomerService customerService, TaxService taxService) {
         try {
             appView = app;
-            customerService = app.getBean(CustomerService.class);
-            dlCustomers = (customerService instanceof DataLogicCustomers) ? (DataLogicCustomers) customerService : app.getBean(DataLogicCustomers.class);
-            taxService = app.getBean(TaxService.class);
-            dlTax = (taxService instanceof DataLogicTax) ? (DataLogicTax) taxService : null;
+            this.customerService = customerService != null ? customerService : (app != null ? app.getBean(CustomerService.class) : null);
+            this.dlCustomers = (this.customerService instanceof DataLogicCustomers) ? (DataLogicCustomers) this.customerService : (app != null ? app.getBean(DataLogicCustomers.class) : null);
+            this.taxService = taxService != null ? taxService : (app != null ? app.getBean(TaxService.class) : null);
+            this.dlTax = (this.taxService instanceof DataLogicTax) ? (DataLogicTax) this.taxService : null;
 
             initComponents();
 
-            m_sentcat = taxService.getTaxCustCategoriesList();
+            m_sentcat = this.taxService != null ? this.taxService.getTaxCustCategoriesList() : null;
             m_CategoryModel = new ComboBoxValModel();
 
             m_Dirty = dirty;
@@ -143,11 +151,16 @@ public final class CustomersView extends javax.swing.JPanel implements EditorRec
      */
     public void activate() throws BasicException {
 
-        List a = m_sentcat.list();
-        a.add(0, null); // The null item
+        List a = new ArrayList();
+        a.add(null); // The null item
+        if (m_sentcat != null) {
+            List cats = m_sentcat.list();
+            if (cats != null) {
+                a.addAll(cats);
+            }
+        }
         m_CategoryModel = new ComboBoxValModel(a);
         m_jCategory.setModel(m_CategoryModel);
-        String cId = null;
     }
 
     /**
@@ -317,7 +330,7 @@ public final class CustomersView extends javax.swing.JPanel implements EditorRec
      * @param value
      */
     @Override
-    public void writeValueDelete(Object value) {
+    public void writeValueDelete(CustomerInfoExt value) {
 
         setValues(value);
 
@@ -363,35 +376,38 @@ public final class CustomersView extends javax.swing.JPanel implements EditorRec
         refresh();
     }
     
-    private void setValues(Object value){
-        Object[] customer = (Object[]) value;
-        m_oId = (String)customer[0];
-        m_jSearchkey.setText((String) customer[1]);
-        m_jTaxID.setText((String) customer[2]);
-        m_jName.setText((String) customer[3]);
-        m_CategoryModel.setSelectedKey(customer[4]);
-        jcard.setText((String) customer[5]);
-        txtMaxdebt.setText(Formats.CURRENCY.formatValue((Double)customer[6]));
-        txtAddress.setText(Formats.STRING.formatValue((String)customer[7]));
-        txtAddress2.setText(Formats.STRING.formatValue((String)customer[8]));
-        txtPostal.setText(Formats.STRING.formatValue((String)customer[9]));
-        txtCity.setText(Formats.STRING.formatValue((String)customer[10]));
-        txtRegion.setText(Formats.STRING.formatValue((String)customer[11]));
-        txtCountry.setText(Formats.STRING.formatValue((String)customer[12]));
-        txtFirstName.setText(Formats.STRING.formatValue((String)customer[13]));
-        txtLastName.setText(Formats.STRING.formatValue((String)customer[14]));
-        txtEmail.setText(Formats.STRING.formatValue((String)customer[15]));
-        txtPhone.setText(Formats.STRING.formatValue((String)customer[16]));
-        txtPhone2.setText(Formats.STRING.formatValue((String)customer[17]));
-        txtFax.setText(Formats.STRING.formatValue((String)customer[18]));
-        m_jNotes.setText((String) customer[19]);
-        m_jVisible.setSelected(((Boolean) customer[20]));
-        txtCurdate.setText(Formats.TIMESTAMP.formatValue((Date)customer[21]));
-        txtCurdebt.setText(Formats.CURRENCY.formatValue((Double)customer[22]));
-        m_jImage.setImage((BufferedImage) customer[23]);
-        m_jVip.setSelected(((Boolean) customer[24]));
-        txtDiscount.setText(Formats.DOUBLE.formatValue((Double)customer[25]));
-        m_jdate.setText(Formats.TIMESTAMP.formatValue((Date)customer[26]));
+    private void setValues(CustomerInfoExt customer) {
+        if (customer == null) {
+            writeValueEOF();
+            return;
+        }
+        m_oId = customer.getId();
+        m_jSearchkey.setText(customer.getSearchkey());
+        m_jTaxID.setText(customer.getTaxid());
+        m_jName.setText(customer.getName());
+        m_CategoryModel.setSelectedKey(customer.getTaxCustCategoryID());
+        jcard.setText(customer.getCard());
+        txtMaxdebt.setText(Formats.CURRENCY.formatValue(customer.getMaxdebt()));
+        txtAddress.setText(Formats.STRING.formatValue(customer.getAddress()));
+        txtAddress2.setText(Formats.STRING.formatValue(customer.getAddress2()));
+        txtPostal.setText(Formats.STRING.formatValue(customer.getPostal()));
+        txtCity.setText(Formats.STRING.formatValue(customer.getCity()));
+        txtRegion.setText(Formats.STRING.formatValue(customer.getRegion()));
+        txtCountry.setText(Formats.STRING.formatValue(customer.getCountry()));
+        txtFirstName.setText(Formats.STRING.formatValue(customer.getFirstname()));
+        txtLastName.setText(Formats.STRING.formatValue(customer.getLastname()));
+        txtEmail.setText(Formats.STRING.formatValue(customer.getEmail()));
+        txtPhone.setText(Formats.STRING.formatValue(customer.getPhone()));
+        txtPhone2.setText(Formats.STRING.formatValue(customer.getPhone2()));
+        txtFax.setText(Formats.STRING.formatValue(customer.getFax()));
+        m_jNotes.setText(customer.getNotes());
+        m_jVisible.setSelected(customer.isVisible());
+        txtCurdate.setText(Formats.TIMESTAMP.formatValue(customer.getCurdate()));
+        txtCurdebt.setText(Formats.CURRENCY.formatValue(customer.getCurdebt()));
+        m_jImage.setImage(customer.getImage());
+        m_jVip.setSelected(customer.isVIP());
+        txtDiscount.setText(Formats.DOUBLE.formatValue(customer.getDiscount()));
+        m_jdate.setText(Formats.TIMESTAMP.formatValue(customer.getMemoDate()));
     }
 
     /**
@@ -400,7 +416,7 @@ public final class CustomersView extends javax.swing.JPanel implements EditorRec
      * @param value
      */
     @Override
-    public void writeValueEdit(Object value) {
+    public void writeValueEdit(CustomerInfoExt value) {
         setValues(value);
 
         m_jTaxID.setEnabled(true);
@@ -474,37 +490,36 @@ public final class CustomersView extends javax.swing.JPanel implements EditorRec
      * @throws BasicException
      */
     @Override
-    public Object createValue() throws BasicException {
+    public CustomerInfoExt createValue() throws BasicException {
 
-        Object[] customer = new Object[27];
+        CustomerInfoExt customer = new CustomerInfoExt(m_oId == null ? UUID.randomUUID().toString() : m_oId);
 
-        customer[0] = m_oId == null ? UUID.randomUUID().toString() : m_oId;
-        customer[1] = m_jSearchkey.getText();
-        customer[2] = m_jTaxID.getText();
-        customer[3] = m_jName.getText();
-        customer[4] = m_CategoryModel.getSelectedKey();
-        customer[5] = Formats.STRING.parseValue(jcard.getText()); // Format to manage NULL values
-        customer[6] = Formats.CURRENCY.parseValue(txtMaxdebt.getText(), 0.0);
-        customer[7] = Formats.STRING.parseValue(txtAddress.getText());
-        customer[8] = Formats.STRING.parseValue(txtAddress2.getText());
-        customer[9] = Formats.STRING.parseValue(txtPostal.getText());
-        customer[10] = Formats.STRING.parseValue(txtCity.getText());
-        customer[11] = Formats.STRING.parseValue(txtRegion.getText());
-        customer[12] = Formats.STRING.parseValue(txtCountry.getText());
-        customer[13] = Formats.STRING.parseValue(txtFirstName.getText());
-        customer[14] = Formats.STRING.parseValue(txtLastName.getText());
-        customer[15] = Formats.STRING.parseValue(txtEmail.getText());
-        customer[16] = Formats.STRING.parseValue(txtPhone.getText());
-        customer[17] = Formats.STRING.parseValue(txtPhone2.getText());
-        customer[18] = Formats.STRING.parseValue(txtFax.getText());
-        customer[19] = m_jNotes.getText();
-        customer[20] = m_jVisible.isSelected();
-        customer[21] = Formats.TIMESTAMP.parseValue(txtCurdate.getText()); // not saved
-        customer[22] = Formats.CURRENCY.parseValue(txtCurdebt.getText()); // not saved
-        customer[23] = m_jImage.getImage();
-        customer[24] = m_jVip.isSelected();
-        customer[25] = Formats.CURRENCY.parseValue(txtDiscount.getText(), 0.0);
-        customer[26] = Formats.TIMESTAMP.parseValue(m_jdate.getText());
+        customer.setSearchkey(m_jSearchkey.getText());
+        customer.setTaxid(m_jTaxID.getText());
+        customer.setName(m_jName.getText());
+        customer.setTaxCustCategoryID((String) m_CategoryModel.getSelectedKey());
+        customer.setCard((String) Formats.STRING.parseValue(jcard.getText()));
+        customer.setMaxdebt((Double) Formats.CURRENCY.parseValue(txtMaxdebt.getText(), 0.0));
+        customer.setAddress((String) Formats.STRING.parseValue(txtAddress.getText()));
+        customer.setAddress2((String) Formats.STRING.parseValue(txtAddress2.getText()));
+        customer.setPostal((String) Formats.STRING.parseValue(txtPostal.getText()));
+        customer.setCity((String) Formats.STRING.parseValue(txtCity.getText()));
+        customer.setRegion((String) Formats.STRING.parseValue(txtRegion.getText()));
+        customer.setCountry((String) Formats.STRING.parseValue(txtCountry.getText()));
+        customer.setFirstname((String) Formats.STRING.parseValue(txtFirstName.getText()));
+        customer.setLastname((String) Formats.STRING.parseValue(txtLastName.getText()));
+        customer.setEmail((String) Formats.STRING.parseValue(txtEmail.getText()));
+        customer.setPhone((String) Formats.STRING.parseValue(txtPhone.getText()));
+        customer.setPhone2((String) Formats.STRING.parseValue(txtPhone2.getText()));
+        customer.setFax((String) Formats.STRING.parseValue(txtFax.getText()));
+        customer.setNotes(m_jNotes.getText());
+        customer.setVisible(m_jVisible.isSelected());
+        customer.setCurdate((Date) Formats.TIMESTAMP.parseValue(txtCurdate.getText()));
+        customer.setCurdebt((Double) Formats.CURRENCY.parseValue(txtCurdebt.getText()));
+        customer.setImage(m_jImage.getImage());
+        customer.setisVIP(m_jVip.isSelected());
+        customer.setDiscount((Double) Formats.CURRENCY.parseValue(txtDiscount.getText(), 0.0));
+        customer.setMemoDate((Date) Formats.TIMESTAMP.parseValue(m_jdate.getText()));
 
         return customer;
     }

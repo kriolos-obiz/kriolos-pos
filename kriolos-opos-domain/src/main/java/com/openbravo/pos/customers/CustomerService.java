@@ -79,11 +79,7 @@ public interface CustomerService {
 
     List<CustomerTransaction> getCustomersTransactionList(String customerId) throws BasicException;
 
-    /**
-     * @deprecated Direct access to persistence TableDefinition leaks data loader internals into the domain.
-     */
-    @Deprecated(since = "1.0.0")
-    TableDefinition<Object[]> getTableCustomers();
+    TableDefinition<CustomerInfoExt> getTableCustomers();
 
     /**
      * @deprecated Direct access to Row metadata leaks data loader internals into the domain.
@@ -91,11 +87,7 @@ public interface CustomerService {
     @Deprecated(since = "1.0.0")
     Row getCustomersRow();
 
-    /**
-     * @deprecated Direct access to SaveProvider leaks data loader internals into the domain.
-     */
-    @Deprecated(since = "1.0.0")
-    SaveProvider<Object[]> getCustomerSaveProvider();
+    SaveProvider<CustomerInfoExt> getCustomerSaveProvider();
 
     /**
      * @deprecated Use {@link #findAllCustomers()} or dedicated finder queries instead of raw SentenceList.

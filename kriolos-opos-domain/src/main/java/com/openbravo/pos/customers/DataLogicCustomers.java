@@ -208,8 +208,9 @@ public class DataLogicCustomers extends BeanFactoryDataSingle implements Custome
     }
     // </editor-fold>
 
-    public final TableDefinition<Object[]> getTableCustomers() {
-        TableDefinition<Object[]> tcustomers = new TableDefinition<>(s,
+    @Override
+    public final TableDefinition<CustomerInfoExt> getTableCustomers() {
+        TableDefinition<CustomerInfoExt> tcustomers = new TableDefinition<>(s,
                 "customers",
                 new String[]{
                     "ID",
@@ -327,7 +328,11 @@ public class DataLogicCustomers extends BeanFactoryDataSingle implements Custome
                     Formats.DOUBLE, //discount
                     Formats.TIMESTAMP //memodate
                 },
-                new int[]{0}
+                new int[]{0},
+                CustomerInfoExt.getSerializerRead(),
+                CustomerInfoExt.getSerializerInsert(),
+                CustomerInfoExt.getSerializerUpdate(),
+                CustomerInfoExt.getSerializerDelete()
         );
         return tcustomers;
     }
@@ -405,11 +410,9 @@ public class DataLogicCustomers extends BeanFactoryDataSingle implements Custome
         return sentinsert;
     }
 
-    public SaveProvider<Object[]> getCustomerSaveProvider() {
-        return new DefaultSaveProvider(
-                customerSentenceExecUpdate(),
-                customerSentenceExecInsert(),
-                customerSentenceExecDelete());
+    @Override
+    public SaveProvider<CustomerInfoExt> getCustomerSaveProvider() {
+        return new DefaultSaveProvider<>(getTableCustomers());
     }
 
     /**
