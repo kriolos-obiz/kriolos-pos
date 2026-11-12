@@ -1164,7 +1164,7 @@ public class DataLogicSales extends BeanFactoryDataSingle implements TicketLifec
      * @deprecated Use {@link TaxService#getTableTaxes()} instead.
      */
     @Deprecated
-    public final TableDefinition<Object[]> getTableTaxes() {
+    public final TableDefinition<TaxInfo> getTableTaxes() {
         return getTaxService().getTableTaxes();
     }
 

@@ -24,6 +24,8 @@ import com.openbravo.data.loader.SerializerWriteBasic;
 import com.openbravo.data.loader.Session;
 import com.openbravo.data.loader.StaticSentence;
 import com.openbravo.data.loader.TableDefinition;
+import com.openbravo.data.user.DefaultSaveProvider;
+import com.openbravo.data.user.SaveProvider;
 import com.openbravo.format.Formats;
 import com.openbravo.basic.AppLocal;
 import com.openbravo.pos.container.BeanFactoryDataSingle;
@@ -170,7 +172,7 @@ public class DataLogicTax extends BeanFactoryDataSingle implements TaxService {
     }
 
     @Override
-    public TableDefinition<Object[]> getTableTaxes() {
+    public TableDefinition<TaxInfo> getTableTaxes() {
         return new TableDefinition<>(sessionDB,
                 "taxes",
                 new String[]{"ID", "NAME", "CATEGORY", "CUSTCATEGORY", "PARENTID", "RATE",
@@ -189,7 +191,16 @@ public class DataLogicTax extends BeanFactoryDataSingle implements TaxService {
                 new Formats[]{Formats.STRING, Formats.STRING, Formats.STRING, Formats.STRING,
                     Formats.STRING,
                     Formats.PERCENT, Formats.BOOLEAN, Formats.INT},
-                new int[]{0});
+                new int[]{0},
+                TaxInfo.getSerializerRead(),
+                TaxInfo.getSerializerInsert(),
+                TaxInfo.getSerializerUpdate(),
+                TaxInfo.getSerializerDelete());
+    }
+
+    @Override
+    public SaveProvider<TaxInfo> getTaxSaveProvider() {
+        return new DefaultSaveProvider<>(getTableTaxes());
     }
 
     @Override

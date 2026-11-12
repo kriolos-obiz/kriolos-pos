@@ -26,6 +26,7 @@ import com.openbravo.format.Formats;
 import com.openbravo.basic.AppLocal;
 import com.openbravo.pos.panels.AppView;
 import com.openbravo.pos.sales.TaxService;
+import com.openbravo.pos.ticket.TaxInfo;
 import java.awt.Component;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
@@ -39,19 +40,20 @@ import javax.swing.JPanel;
 /**
  *
  * @author JG uniCenta
+ * @author KriolOS
  */
-public class TaxEditor extends JPanel implements EditorRecord {
+public class TaxEditor extends JPanel implements EditorRecord<TaxInfo> {
     
     private String m_oId;
     
-    private SentenceList taxcatsent;
-    private ComboBoxValModel taxcatmodel;    
+    private SentenceList<TaxCategoryInfo> taxcatsent;
+    private ComboBoxValModel<TaxCategoryInfo> taxcatmodel;    
     
-    private SentenceList taxcustcatsent;
-    private ComboBoxValModel taxcustcatmodel;   
+    private SentenceList<TaxCustCategoryInfo> taxcustcatsent;
+    private ComboBoxValModel<TaxCustCategoryInfo> taxcustcatmodel;   
     
-    private SentenceList taxparentsent;
-    private ComboBoxValModel taxparentmodel;    
+    private SentenceList<TaxInfo> taxparentsent;
+    private ComboBoxValModel<TaxInfo> taxparentmodel;    
     
     /** Creates new form taxEditor
      * @param app
@@ -64,13 +66,13 @@ public class TaxEditor extends JPanel implements EditorRecord {
         initComponents();
         
         taxcatsent = taxService.getTaxCategoriesList();
-        taxcatmodel = new ComboBoxValModel();        
+        taxcatmodel = new ComboBoxValModel<>();        
         
         taxcustcatsent = taxService.getTaxCustCategoriesList();
-        taxcustcatmodel = new ComboBoxValModel();    
+        taxcustcatmodel = new ComboBoxValModel<>();    
         
         taxparentsent = taxService.getTaxList();
-        taxparentmodel = new ComboBoxValModel();    
+        taxparentmodel = new ComboBoxValModel<>();    
 
         m_jName.getDocument().addDocumentListener(dirty);
         m_jTaxCategory.addActionListener(dirty);
@@ -88,17 +90,20 @@ public class TaxEditor extends JPanel implements EditorRecord {
      * @throws BasicException
      */
     public void activate() throws BasicException {
-        
-        List a = taxcatsent.list();
-        taxcatmodel = new ComboBoxValModel(a);
+        List<TaxCategoryInfo> a = taxcatsent.list();
+        taxcatmodel = new ComboBoxValModel<>(a);
         m_jTaxCategory.setModel(taxcatmodel);
         
-        a = taxcustcatsent.list();
-        a.add(0, null); // The null item
-        taxcustcatmodel = new ComboBoxValModel(a);
+        List<TaxCustCategoryInfo> b = new ArrayList<>();
+        b.add(null);
+        if (taxcustcatsent != null) {
+            List<TaxCustCategoryInfo> custCats = taxcustcatsent.list();
+            if (custCats != null) {
+                b.addAll(custCats);
+            }
+        }
+        taxcustcatmodel = new ComboBoxValModel<>(b);
         m_jCustTaxCategory.setModel(taxcustcatmodel);    
-        
-       
     }
     
     /**
@@ -106,19 +111,22 @@ public class TaxEditor extends JPanel implements EditorRecord {
      */
     @Override
     public void refresh() {
-        
-        List a;
+        List<TaxInfo> a = new ArrayList<>();
+        a.add(null); // The null item
         
         try {
-            a = taxparentsent.list();
+            if (taxparentsent != null) {
+                List<TaxInfo> parents = taxparentsent.list();
+                if (parents != null) {
+                    a.addAll(parents);
+                }
+            }
         } catch (BasicException eD) {
             MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE, AppLocal.getIntString("message.cannotloadlists"), eD);
             msg.show(this);
-            a = new ArrayList();
         }
         
-        a.add(0, null); // The null item
-        taxparentmodel = new ComboBoxValModel(a);
+        taxparentmodel = new ComboBoxValModel<>(a);
         m_jTaxParent.setModel(taxparentmodel);    
     }
     
@@ -173,17 +181,20 @@ public class TaxEditor extends JPanel implements EditorRecord {
      * @param value
      */
     @Override
-    public void writeValueDelete(Object value) {
+    public void writeValueDelete(TaxInfo value) {
+        if (value == null) {
+            writeValueEOF();
+            return;
+        }
 
-        Object[] tax = (Object[]) value;
-        m_oId = (String)tax[0];
-        m_jName.setText(Formats.STRING.formatValue((String)tax[1]));
-        taxcatmodel.setSelectedKey(tax[2]);
-        taxcustcatmodel.setSelectedKey(tax[3]);
-        taxparentmodel.setSelectedKey(tax[4]);        
-        m_jRate.setText(Formats.PERCENT.formatValue((Double)tax[5]));
-        jCascade.setSelected((Boolean) tax[6]);
-        jOrder.setText(Formats.INT.formatValue((Integer)tax[7]));
+        m_oId = value.getId();
+        m_jName.setText(Formats.STRING.formatValue(value.getName()));
+        taxcatmodel.setSelectedKey(value.getTaxCategoryID());
+        taxcustcatmodel.setSelectedKey(value.getTaxCustCategoryID());
+        taxparentmodel.setSelectedKey(value.getParentID());        
+        m_jRate.setText(Formats.PERCENT.formatValue(value.getRate()));
+        jCascade.setSelected(value.isCascade());
+        jOrder.setText(Formats.INT.formatValue(value.getOrder()));
         
         m_jName.setEnabled(false);
         m_jTaxCategory.setEnabled(false);
@@ -199,17 +210,20 @@ public class TaxEditor extends JPanel implements EditorRecord {
      * @param value
      */
     @Override
-    public void writeValueEdit(Object value) {
+    public void writeValueEdit(TaxInfo value) {
+        if (value == null) {
+            writeValueEOF();
+            return;
+        }
 
-        Object[] tax = (Object[]) value;
-        m_oId = (String)tax[0];
-        m_jName.setText(Formats.STRING.formatValue((String)tax[1]));
-        taxcatmodel.setSelectedKey(tax[2]);
-        taxcustcatmodel.setSelectedKey(tax[3]);
-        taxparentmodel.setSelectedKey(tax[4]);        
-        m_jRate.setText(Formats.PERCENT.formatValue((Double)tax[5]));
-        jCascade.setSelected((Boolean) tax[6]);
-        jOrder.setText(Formats.INT.formatValue((Integer)tax[7]));
+        m_oId = value.getId();
+        m_jName.setText(Formats.STRING.formatValue(value.getName()));
+        taxcatmodel.setSelectedKey(value.getTaxCategoryID());
+        taxcustcatmodel.setSelectedKey(value.getTaxCustCategoryID());
+        taxparentmodel.setSelectedKey(value.getParentID());        
+        m_jRate.setText(Formats.PERCENT.formatValue(value.getRate()));
+        jCascade.setSelected(value.isCascade());
+        jOrder.setText(Formats.INT.formatValue(value.getOrder()));
       
         m_jName.setEnabled(true);
         m_jTaxCategory.setEnabled(true);
@@ -226,20 +240,19 @@ public class TaxEditor extends JPanel implements EditorRecord {
      * @throws BasicException
      */
     @Override
-    public Object createValue() throws BasicException {
-        
-        Object[] tax = new Object[8];
-
-        tax[0] = m_oId;
-        tax[1] = m_jName.getText();
-        tax[2] = taxcatmodel.getSelectedKey();
-        tax[3] = taxcustcatmodel.getSelectedKey(); 
-        tax[4] = taxparentmodel.getSelectedKey(); 
-        tax[5] = Formats.PERCENT.parseValue(m_jRate.getText());
-        tax[6] = Boolean.valueOf(jCascade.isSelected());
-        tax[7] = Formats.INT.parseValue(jOrder.getText());
-        
-        return tax;
+    public TaxInfo createValue() throws BasicException {
+        Double rate = (Double) Formats.PERCENT.parseValue(m_jRate.getText());
+        Integer order = (Integer) Formats.INT.parseValue(jOrder.getText());
+        return new TaxInfo(
+            m_oId,
+            m_jName.getText(),
+            (String) taxcatmodel.getSelectedKey(),
+            (String) taxcustcatmodel.getSelectedKey(),
+            (String) taxparentmodel.getSelectedKey(),
+            rate != null ? rate : 0.0,
+            jCascade.isSelected(),
+            order
+        );
     }
 
     /**

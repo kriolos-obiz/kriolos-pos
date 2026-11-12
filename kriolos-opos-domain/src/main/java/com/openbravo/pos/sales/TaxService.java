@@ -19,6 +19,7 @@ package com.openbravo.pos.sales;
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.loader.SentenceList;
 import com.openbravo.data.loader.TableDefinition;
+import com.openbravo.data.user.SaveProvider;
 import com.openbravo.pos.inventory.TaxCategoryInfo;
 import com.openbravo.pos.inventory.TaxCustCategoryInfo;
 import com.openbravo.pos.ticket.TaxInfo;
@@ -67,7 +68,11 @@ public interface TaxService {
      */
     void createTax(CreateTaxCommand command) throws BasicException;
 
-    TableDefinition<Object[]> getTableTaxes();
+    TableDefinition<TaxInfo> getTableTaxes();
+
+    default SaveProvider<TaxInfo> getTaxSaveProvider() {
+        return null;
+    }
 
     TableDefinition<TaxCustCategoryInfo> getTableTaxCustCategories();
 

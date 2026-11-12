@@ -105,7 +105,7 @@ class TaxServiceTest {
             }
 
             @Override
-            public TableDefinition<Object[]> getTableTaxes() {
+            public TableDefinition<TaxInfo> getTableTaxes() {
                 return null;
             }
 

@@ -30,6 +30,15 @@
     ],
     "completed": [
       {
+        "id": "TASK-041",
+        "ticket": "KP-150",
+        "agent": "antigravity",
+        "branch": "feature/KP-150-typesafe-taxes",
+        "title": "Type-Safe Taxes Vertical Pipeline",
+        "description": "Modernize TaxEditor, TaxPanel, DataLogicTax, and TaxService to use TableDefinition<TaxInfo> with typed EditorRecord implementations, removing Object[] mapping.",
+        "completed_at": "2026-11-12T03:04:00Z"
+      },
+      {
         "id": "TASK-040",
         "ticket": "KP-149",
         "agent": "antigravity",
