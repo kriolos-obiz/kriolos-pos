@@ -100,7 +100,7 @@ public interface TreasuryService {
      *
      * @return SaveProvider for cash drawer movements
      */
-    SaveProvider<Object[]> getPaymentMovementSaveProvider();
+    SaveProvider<PaymentMovement> getPaymentMovementSaveProvider();
 
     /**
      * Generates and retrieves the next ticket payment index sequence number.

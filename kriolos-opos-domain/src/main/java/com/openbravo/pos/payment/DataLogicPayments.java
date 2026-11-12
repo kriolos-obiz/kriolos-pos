@@ -23,7 +23,7 @@ import com.openbravo.data.loader.SentenceExec;
 import com.openbravo.data.loader.SentenceExecTransaction;
 import com.openbravo.data.loader.SerializerWriteBasicExt;
 import com.openbravo.data.loader.Session;
-import com.openbravo.data.user.DefaultSaveProvider;
+import com.openbravo.data.loader.Transaction;
 import com.openbravo.data.user.SaveProvider;
 import com.openbravo.pos.container.BeanFactoryDataSingle;
 import java.util.Date;
@@ -63,6 +63,15 @@ public class DataLogicPayments extends BeanFactoryDataSingle implements Treasury
                                 new int[]{3, 0, 4, 5, 6}))
                         .exec(params);
             }
+
+            @Override
+            public int execInTransaction(Object params) throws BasicException {
+                if (params instanceof PaymentMovement movement) {
+                    recordPaymentMovement(movement);
+                    return 1;
+                }
+                return super.execInTransaction(params);
+            }
         };
     }
 
@@ -79,6 +88,15 @@ public class DataLogicPayments extends BeanFactoryDataSingle implements Treasury
                         new SerializerWriteBasicExt(paymenttabledatas, new int[]{0}))
                         .exec(params);
             }
+
+            @Override
+            public int execInTransaction(Object params) throws BasicException {
+                if (params instanceof PaymentMovement movement) {
+                    deletePaymentMovement(movement);
+                    return 1;
+                }
+                return super.execInTransaction(params);
+            }
         };
     }
 
@@ -87,15 +105,35 @@ public class DataLogicPayments extends BeanFactoryDataSingle implements Treasury
         if (command == null) {
             return;
         }
-        getPaymentMovementInsert().exec(new Object[]{
-            command.receiptId(),
-            command.activeCashIndex(),
-            command.date(),
-            command.paymentId(),
-            command.reason(),
-            command.total(),
-            command.notes()
-        });
+        recordPaymentMovement(new PaymentMovement(
+                command.receiptId(),
+                command.activeCashIndex(),
+                command.date(),
+                command.paymentId(),
+                command.reason(),
+                command.total(),
+                command.notes()
+        ));
+    }
+
+    @Override
+    public void recordPaymentMovement(PaymentMovement movement) throws BasicException {
+        if (movement == null) {
+            return;
+        }
+        new Transaction<Integer>(sessionDB) {
+            @Override
+            public Integer transact() throws BasicException {
+                new PreparedSentence(sessionDB,
+                        "INSERT INTO receipts (ID, MONEY, DATENEW) VALUES (?, ?, ?)",
+                        PaymentMovement.getSerializerReceiptInsert())
+                        .exec(movement);
+                return new PreparedSentence(sessionDB,
+                        "INSERT INTO payments (ID, RECEIPT, PAYMENT, TOTAL, NOTES) VALUES (?, ?, ?, ?, ?)",
+                        PaymentMovement.getSerializerPaymentInsert())
+                        .exec(movement);
+            }
+        }.execute();
     }
 
     @Override
@@ -118,15 +156,34 @@ public class DataLogicPayments extends BeanFactoryDataSingle implements Treasury
         if (command == null) {
             return;
         }
-        getPaymentMovementDelete().exec(new Object[]{
-            command.receiptId(),
-            null,
-            null,
-            command.paymentId(),
-            null,
-            null,
-            null
-        });
+        deletePaymentMovement(new PaymentMovement(
+                command.receiptId(),
+                "",
+                null,
+                command.paymentId(),
+                "",
+                0.0,
+                ""
+        ));
+    }
+
+    public void deletePaymentMovement(PaymentMovement movement) throws BasicException {
+        if (movement == null) {
+            return;
+        }
+        new Transaction<Integer>(sessionDB) {
+            @Override
+            public Integer transact() throws BasicException {
+                new PreparedSentence(sessionDB,
+                        "DELETE FROM payments WHERE ID = ?",
+                        PaymentMovement.getSerializerPaymentDelete())
+                        .exec(movement);
+                return new PreparedSentence(sessionDB,
+                        "DELETE FROM receipts WHERE ID = ?",
+                        PaymentMovement.getSerializerReceiptDelete())
+                        .exec(movement);
+            }
+        }.execute();
     }
 
     @Override
@@ -136,8 +193,40 @@ public class DataLogicPayments extends BeanFactoryDataSingle implements Treasury
     }
 
     @Override
-    public SaveProvider<Object[]> getPaymentMovementSaveProvider() {
-        return new DefaultSaveProvider(null, getPaymentMovementInsert(), getPaymentMovementDelete());
+    public SaveProvider<PaymentMovement> getPaymentMovementSaveProvider() {
+        return new SaveProvider<PaymentMovement>() {
+            @Override
+            public boolean canInsert() {
+                return true;
+            }
+
+            @Override
+            public int insertData(PaymentMovement value) throws BasicException {
+                recordPaymentMovement(value);
+                return 1;
+            }
+
+            @Override
+            public boolean canDelete() {
+                return true;
+            }
+
+            @Override
+            public int deleteData(PaymentMovement value) throws BasicException {
+                deletePaymentMovement(value);
+                return 1;
+            }
+
+            @Override
+            public boolean canUpdate() {
+                return false;
+            }
+
+            @Override
+            public int updateData(PaymentMovement value) {
+                throw new UnsupportedOperationException("Cash drawer movements are append-only.");
+            }
+        };
     }
 
     @Override

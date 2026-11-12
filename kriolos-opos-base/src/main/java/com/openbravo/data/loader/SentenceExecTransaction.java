@@ -67,8 +67,32 @@ public abstract class SentenceExecTransaction implements SentenceExec {
      * @return
      * @throws BasicException
      */
-    public final int exec(final Object params) throws BasicException {
-        return exec((Object[])params);
+    public int exec(final Object params) throws BasicException {
+        if (params instanceof Object[] array) {
+            return exec(array);
+        }
+        Transaction<Integer> t = new Transaction<Integer>(m_s) {
+            @Override
+            public Integer transact() throws BasicException {
+                return execInTransaction(params);
+            }
+        };
+        return t.execute();
+    }
+    
+    /**
+     * Executes the sentence with a single non-array object parameter inside a transaction.
+     * Subclasses can override this method to support strongly-typed entity parameter execution.
+     *
+     * @param params parameter object
+     * @return number of affected rows
+     * @throws BasicException on execution failure
+     */
+    protected int execInTransaction(Object params) throws BasicException {
+        if (params instanceof Object[] array) {
+            return execInTransaction(array);
+        }
+        return 0;
     }
     
     /**

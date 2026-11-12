@@ -21,11 +21,14 @@ import com.openbravo.data.user.ListProvider;
 import com.openbravo.data.user.SaveProvider;
 import com.openbravo.basic.AppLocal;
 import com.openbravo.pos.payment.DataLogicPayments;
+import com.openbravo.pos.payment.PaymentMovement;
 import com.openbravo.pos.payment.TreasuryService;
 
 /**
+ * Cash drawer payments panel for managing cash-in and cash-out operations.
  *
  * @author adrianromero
+ * @author KriolOS
  */
 public class JPanelPayments extends JPanelTable {
     
@@ -53,7 +56,7 @@ public class JPanelPayments extends JPanelTable {
      * @return
      */
     @Override
-    public ListProvider getListProvider() {
+    public ListProvider<PaymentMovement> getListProvider() {
         return null;
     }
     
@@ -62,7 +65,7 @@ public class JPanelPayments extends JPanelTable {
      * @return
      */
     @Override
-    public SaveProvider getSaveProvider() {
+    public SaveProvider<PaymentMovement> getSaveProvider() {
         return treasuryService != null ? treasuryService.getPaymentMovementSaveProvider() : null;
     }
     
@@ -71,7 +74,7 @@ public class JPanelPayments extends JPanelTable {
      * @return
      */
     @Override
-    public EditorRecord getEditor() {
+    public EditorRecord<PaymentMovement> getEditor() {
         return jeditor;
     }
     

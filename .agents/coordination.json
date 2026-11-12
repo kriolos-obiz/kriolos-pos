@@ -31,6 +31,15 @@
     ],
     "completed": [
       {
+        "id": "TASK-044",
+        "ticket": "KP-154",
+        "agent": "antigravity",
+        "branch": "feature/KP-154-typesafe-payments",
+        "title": "Type-Safe Treasury & Cash Drawer Payments Vertical Pipeline",
+        "description": "Modernize PaymentsEditor, JPanelPayments, DataLogicPayments, and TreasuryService to use typed SaveProvider<PaymentMovement> with typed EditorRecord implementations, eliminating Object[] mapping.",
+        "completed_at": "2026-11-12T18:55:30Z"
+      },
+      {
         "id": "TASK-043",
         "ticket": "KP-153",
         "agent": "antigravity",

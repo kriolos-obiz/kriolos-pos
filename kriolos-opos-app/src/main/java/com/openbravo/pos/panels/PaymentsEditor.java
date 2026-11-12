@@ -22,16 +22,19 @@ import com.openbravo.data.loader.IKeyed;
 import com.openbravo.data.user.DirtyManager;
 import com.openbravo.data.user.EditorRecord;
 import com.openbravo.basic.AppLocal;
+import com.openbravo.pos.payment.PaymentMovement;
 import java.awt.Component;
 import java.util.Date;
 import java.util.UUID;
 
 
 /**
+ * Editor panel for cash drawer movements (Cash In / Cash Out).
  *
  * @author adrianromero
+ * @author KriolOS
  */
-public final class PaymentsEditor extends javax.swing.JPanel implements EditorRecord {
+public final class PaymentsEditor extends javax.swing.JPanel implements EditorRecord<PaymentMovement> {
     
     private final ComboBoxValModel m_ReasonModel;
     
@@ -42,9 +45,21 @@ public final class PaymentsEditor extends javax.swing.JPanel implements EditorRe
     private final AppView m_App;
     private String m_sNotes;
     
-    /** Creates new form JPanelPayments
-     * @param oApp
-     * @param dirty */
+    /**
+     * Creates new form PaymentsEditor without AppView for headless testing.
+     *
+     * @param dirty DirtyManager listener
+     */
+    public PaymentsEditor(DirtyManager dirty) {
+        this(null, dirty);
+    }
+
+    /**
+     * Creates new form PaymentsEditor
+     *
+     * @param oApp  active AppView
+     * @param dirty DirtyManager listener
+     */
     public PaymentsEditor(AppView oApp, DirtyManager dirty) {
         
         m_App = oApp;
@@ -77,10 +92,9 @@ public final class PaymentsEditor extends javax.swing.JPanel implements EditorRe
         setReasonTotal(null, null);
         m_jreason.setEnabled(false);
         jTotal.setEnabled(false);
-// JG Added July 2011
         m_sNotes = null;
+        m_jNotes.setText(null);
         m_jNotes.setEnabled(false);
-
     }
 
     /**
@@ -88,7 +102,6 @@ public final class PaymentsEditor extends javax.swing.JPanel implements EditorRe
      */
     @Override
     public void writeValueInsert() {
-
         m_sId = null;
         m_sPaymentId = null;
         datenew = null;
@@ -96,71 +109,85 @@ public final class PaymentsEditor extends javax.swing.JPanel implements EditorRe
         m_jreason.setEnabled(true);
         jTotal.setEnabled(true);   
         jTotal.activate();
-// JG Added July 2011
         m_sNotes = null;
         m_jNotes.setEnabled(true);
-        m_jNotes.setText(m_sNotes);
+        m_jNotes.setText(null);
     }
     
     /**
      *
-     * @param value
+     * @param payment the payment movement record to delete
      */
     @Override
-    public void writeValueDelete(Object value) {
-        Object[] payment = (Object[]) value;
-        m_sId = (String) payment[0];
-        datenew = (Date) payment[2];
-        m_sPaymentId = (String) payment[3];
-        setReasonTotal(payment[4], payment[5]);
+    public void writeValueDelete(PaymentMovement payment) {
+        if (payment == null) {
+            writeValueEOF();
+            return;
+        }
+        m_sId = payment.receiptId();
+        datenew = payment.date();
+        m_sPaymentId = payment.paymentId();
+        setReasonTotal(payment.reason(), payment.total());
         m_jreason.setEnabled(false);
         jTotal.setEnabled(false);
-// JG Added July 2011
-        m_sNotes = (String) payment[6];
+        m_sNotes = payment.notes();
+        m_jNotes.setText(m_sNotes);
         m_jNotes.setEnabled(false);
     }
     
     /**
      *
-     * @param value
+     * @param payment the payment movement record to edit
      */
     @Override
-    public void writeValueEdit(Object value) {
-        Object[] payment = (Object[]) value;
-        m_sId = (String) payment[0];
-        datenew = (Date) payment[2];
-        m_sPaymentId = (String) payment[3];
-        setReasonTotal(payment[4], payment[5]);
+    public void writeValueEdit(PaymentMovement payment) {
+        if (payment == null) {
+            writeValueEOF();
+            return;
+        }
+        m_sId = payment.receiptId();
+        datenew = payment.date();
+        m_sPaymentId = payment.paymentId();
+        setReasonTotal(payment.reason(), payment.total());
         m_jreason.setEnabled(false);
         jTotal.setEnabled(false);
         jTotal.activate();
-// JG Added July 2011
-        m_sNotes = (String) payment[6];
+        m_sNotes = payment.notes();
+        m_jNotes.setText(m_sNotes);
         m_jNotes.setEnabled(false);
     }
     
     /**
      *
-     * @return
+     * @return PaymentMovement domain record created from editor inputs
      * @throws BasicException
      */
     @Override
-    public Object createValue() throws BasicException {
-//JG Modified Array + 1 - July 2011
-        Object[] payment = new Object[7];
-        payment[0] = m_sId == null ? UUID.randomUUID().toString() : m_sId;
-        payment[1] = m_App.getActiveCashIndex();
-        payment[2] = datenew == null ? new Date() : datenew;
-        payment[3] = m_sPaymentId == null ? UUID.randomUUID().toString() : m_sPaymentId;
-        payment[4] = m_ReasonModel.getSelectedKey();
+    public PaymentMovement createValue() throws BasicException {
+        String receiptId = m_sId == null ? UUID.randomUUID().toString() : m_sId;
+        String activeCashIndex = m_App != null ? m_App.getActiveCashIndex() : "1";
+        Date date = datenew == null ? new Date() : datenew;
+        String paymentId = m_sPaymentId == null ? UUID.randomUUID().toString() : m_sPaymentId;
+        String reasonKey = (String) m_ReasonModel.getSelectedKey();
         PaymentReason reason = (PaymentReason) m_ReasonModel.getSelectedItem();
         Double dtotal = jTotal.getValue();
-        payment[5] = reason == null ? dtotal : reason.addSignum(dtotal);
-// JG Added July 2011
-        String snotes = "";
+        double total = 0.0;
+        if (dtotal != null) {
+            Double signed = reason == null ? dtotal : reason.addSignum(dtotal);
+            total = signed != null ? signed : 0.0;
+        }
         m_sNotes = m_jNotes.getText();
-        payment[6] = m_sNotes == null ? snotes : m_sNotes;
-        return payment;
+        String notes = m_sNotes == null ? "" : m_sNotes;
+
+        return new PaymentMovement(
+                receiptId,
+                activeCashIndex,
+                date,
+                paymentId,
+                reasonKey != null ? reasonKey : "cashin",
+                total,
+                notes
+        );
     }
     
     /**
@@ -179,20 +206,19 @@ public final class PaymentsEditor extends javax.swing.JPanel implements EditorRe
     public void refresh() {
     }  
     
-    private void setReasonTotal(Object reasonfield, Object totalfield) {
-        
+    private void setReasonTotal(String reasonfield, Double totalfield) {
         m_ReasonModel.setSelectedKey(reasonfield);
-             
         PaymentReason reason = (PaymentReason) m_ReasonModel.getSelectedItem();     
-        
-        if (reason == null) {
-            jTotal.setDoubleValue((Double) totalfield);
+        if (totalfield == null) {
+            jTotal.setDoubleValue(null);
+        } else if (reason == null) {
+            jTotal.setDoubleValue(totalfield);
         } else {
-            jTotal.setDoubleValue(reason.positivize((Double) totalfield));
+            jTotal.setDoubleValue(reason.positivize(totalfield));
         }  
     }
     
-    private static abstract class PaymentReason implements IKeyed {
+    private static abstract class PaymentReason implements IKeyed<String> {
         private String m_sKey;
         private String m_sText;
         
@@ -200,8 +226,9 @@ public final class PaymentsEditor extends javax.swing.JPanel implements EditorRe
             m_sKey = key;
             m_sText = text;
         }
+
         @Override
-        public Object getKey() {
+        public String getKey() {
             return m_sKey;
         }
         public abstract Double positivize(Double d);

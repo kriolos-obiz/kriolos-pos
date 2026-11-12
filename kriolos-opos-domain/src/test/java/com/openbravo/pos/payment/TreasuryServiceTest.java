@@ -129,7 +129,7 @@ class TreasuryServiceTest {
             }
 
             @Override
-            public SaveProvider<Object[]> getPaymentMovementSaveProvider() {
+            public SaveProvider<PaymentMovement> getPaymentMovementSaveProvider() {
                 return null;
             }
 
