@@ -25,10 +25,20 @@
   },
   "active_locks": [],
   "task_queue": {
-    "in_progress": [],
+    "in_progress": [
+    ],
     "available": [
     ],
     "completed": [
+      {
+        "id": "TASK-043",
+        "ticket": "KP-153",
+        "agent": "antigravity",
+        "branch": "feature/KP-153-customers-swing-binder",
+        "title": "SwingBinder Binding and Validation in CustomersView",
+        "description": "Implement modern SwingBinder two-way data binding, converters, and real-time field validators in CustomersView.",
+        "completed_at": "2026-11-12T06:21:00Z"
+      },
       {
         "id": "TASK-042",
         "ticket": "KP-152",

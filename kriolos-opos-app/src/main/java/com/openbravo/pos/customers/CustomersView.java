@@ -26,6 +26,9 @@ import com.openbravo.pos.panels.AppView;
 import com.openbravo.pos.container.BeanFactoryException;
 import com.openbravo.pos.sales.DataLogicTax;
 import com.openbravo.pos.sales.TaxService;
+import com.openbravo.ui.data.binding.Converter;
+import com.openbravo.ui.data.binding.EmailValidator;
+import com.openbravo.ui.data.binding.SwingBinder;
 import com.openbravo.util.StringUtils;
 import java.awt.Component;
 import java.awt.Desktop;
@@ -56,6 +59,7 @@ public final class CustomersView extends javax.swing.JPanel implements EditorRec
     private final static System.Logger LOGGER = System.getLogger(CustomersView.class.getName());
     private static final long serialVersionUID = 1L;
     private String m_oId;
+    private SwingBinder<CustomerInfoExt> binder;
 
     private SentenceList m_sentcat;
     private ComboBoxValModel m_CategoryModel;
@@ -129,15 +133,126 @@ public final class CustomersView extends javax.swing.JPanel implements EditorRec
 
             m_jdate.getDocument().addDocumentListener(dirty);
 
-            init();
             initValidator();
+            init();
         } catch (BeanFactoryException ex) {
             LOGGER.log(System.Logger.Level.WARNING, "", ex);
         }
     }
 
     private void initValidator() {
-        // Validation managed via com.openbravo.ui binding and validation framework
+        binder = new SwingBinder<>(new CustomerInfoExt());
+
+        // Mandatory Customer Name
+        binder.forField(m_jName)
+                .asRequired(AppLocal.getIntString("validation.required", AppLocal.getIntString("label.name")))
+                .bind(CustomerInfoExt::getName, CustomerInfoExt::setName);
+
+        // Optional valid Email Address
+        binder.forField(txtEmail)
+                .withValidator(new EmailValidator(AppLocal.getIntString("validation.email.invalid")))
+                .bind(CustomerInfoExt::getEmail, CustomerInfoExt::setEmail);
+
+        // Max Debt (Currency format)
+        binder.forField(txtMaxdebt)
+                .withConverter(new CurrencyDoubleConverter())
+                .withValidator(v -> v == null || v >= 0.0, AppLocal.getIntString("validation.number.positive", AppLocal.getIntString("label.maxdebt")))
+                .bind(CustomerInfoExt::getMaxdebt, CustomerInfoExt::setMaxdebt);
+
+        // Discount
+        binder.forField(txtDiscount)
+                .withConverter(new DoubleFormatConverter())
+                .withValidator(v -> v == null || v >= 0.0, AppLocal.getIntString("validation.number.positive", AppLocal.getIntString("label.discount")))
+                .bind(CustomerInfoExt::getDiscount, CustomerInfoExt::setDiscount);
+
+        // General text fields
+        binder.forField(m_jSearchkey).bind(CustomerInfoExt::getSearchkey, CustomerInfoExt::setSearchkey);
+        binder.forField(m_jTaxID).bind(CustomerInfoExt::getTaxid, CustomerInfoExt::setTaxid);
+        binder.forField(jcard).bind(CustomerInfoExt::getCard, CustomerInfoExt::setCard);
+        binder.forField(txtFirstName).bind(CustomerInfoExt::getFirstname, CustomerInfoExt::setFirstname);
+        binder.forField(txtLastName).bind(CustomerInfoExt::getLastname, CustomerInfoExt::setLastname);
+        binder.forField(txtPhone).bind(CustomerInfoExt::getPhone, CustomerInfoExt::setPhone);
+        binder.forField(txtPhone2).bind(CustomerInfoExt::getPhone2, CustomerInfoExt::setPhone2);
+        binder.forField(txtFax).bind(CustomerInfoExt::getFax, CustomerInfoExt::setFax);
+        binder.forField(txtAddress).bind(CustomerInfoExt::getAddress, CustomerInfoExt::setAddress);
+        binder.forField(txtAddress2).bind(CustomerInfoExt::getAddress2, CustomerInfoExt::setAddress2);
+        binder.forField(txtPostal).bind(CustomerInfoExt::getPostal, CustomerInfoExt::setPostal);
+        binder.forField(txtCity).bind(CustomerInfoExt::getCity, CustomerInfoExt::setCity);
+        binder.forField(txtRegion).bind(CustomerInfoExt::getRegion, CustomerInfoExt::setRegion);
+        binder.forField(txtCountry).bind(CustomerInfoExt::getCountry, CustomerInfoExt::setCountry);
+        binder.forField(m_jNotes).bind(CustomerInfoExt::getNotes, CustomerInfoExt::setNotes);
+
+        // Boolean Checkboxes
+        binder.forField(m_jVisible).bind(CustomerInfoExt::isVisible, CustomerInfoExt::setVisible);
+        binder.forField(m_jVip).bind(CustomerInfoExt::isVIP, CustomerInfoExt::setisVIP);
+
+        // Status change synchronization with DirtyManager
+        binder.addStatusChangeListener(() -> {
+            if (m_Dirty != null) {
+                m_Dirty.setDirty(true);
+            }
+        });
+    }
+
+    public boolean isValid() {
+        return binder == null || binder.validate();
+    }
+
+    public SwingBinder<CustomerInfoExt> getBinder() {
+        return binder;
+    }
+
+    private static class CurrencyDoubleConverter implements Converter<String, Double> {
+        @Override
+        public Double toModel(String p) {
+            if (p == null || p.trim().isEmpty()) {
+                return null;
+            }
+            try {
+                return (Double) Formats.CURRENCY.parseValue(p.trim(), 0.0);
+            } catch (BasicException e) {
+                try {
+                    String cleaned = p.replaceAll("[^0-9.,\\-]", "").trim();
+                    if (cleaned.contains(",") && !cleaned.contains(".")) {
+                        cleaned = cleaned.replace(',', '.');
+                    } else if (cleaned.contains(",") && cleaned.contains(".")) {
+                        cleaned = cleaned.replace(",", "");
+                    }
+                    return cleaned.isEmpty() ? null : Double.parseDouble(cleaned);
+                } catch (Exception ignored) {
+                    return null;
+                }
+            }
+        }
+
+        @Override
+        public String toPresentation(Double m) {
+            return m != null ? Formats.CURRENCY.formatValue(m) : "";
+        }
+    }
+
+    private static class DoubleFormatConverter implements Converter<String, Double> {
+        @Override
+        public Double toModel(String p) {
+            if (p == null || p.trim().isEmpty()) {
+                return null;
+            }
+            try {
+                return (Double) Formats.DOUBLE.parseValue(p.trim(), 0.0);
+            } catch (BasicException e) {
+                try {
+                    String cleaned = p.replaceAll("[^0-9.,\\-]", "").trim().replace(',', '.');
+                    return cleaned.isEmpty() ? null : Double.parseDouble(cleaned);
+                } catch (Exception ignored) {
+                    return null;
+                }
+            }
+        }
+
+        @Override
+        public String toPresentation(Double m) {
+            return m != null ? Formats.DOUBLE.formatValue(m) : "";
+        }
     }
 
     private void init() {
@@ -177,6 +292,9 @@ public final class CustomersView extends javax.swing.JPanel implements EditorRec
     @Override
     public void writeValueEOF() {
         m_oId = null;
+        if (binder != null) {
+            binder.clear();
+        }
         m_jTaxID.setText(null);
         m_jSearchkey.setText(null);
         m_jName.setText(null);
@@ -382,31 +500,37 @@ public final class CustomersView extends javax.swing.JPanel implements EditorRec
             return;
         }
         m_oId = customer.getId();
-        m_jSearchkey.setText(customer.getSearchkey());
-        m_jTaxID.setText(customer.getTaxid());
-        m_jName.setText(customer.getName());
-        m_CategoryModel.setSelectedKey(customer.getTaxCustCategoryID());
-        jcard.setText(customer.getCard());
-        txtMaxdebt.setText(Formats.CURRENCY.formatValue(customer.getMaxdebt()));
-        txtAddress.setText(Formats.STRING.formatValue(customer.getAddress()));
-        txtAddress2.setText(Formats.STRING.formatValue(customer.getAddress2()));
-        txtPostal.setText(Formats.STRING.formatValue(customer.getPostal()));
-        txtCity.setText(Formats.STRING.formatValue(customer.getCity()));
-        txtRegion.setText(Formats.STRING.formatValue(customer.getRegion()));
-        txtCountry.setText(Formats.STRING.formatValue(customer.getCountry()));
-        txtFirstName.setText(Formats.STRING.formatValue(customer.getFirstname()));
-        txtLastName.setText(Formats.STRING.formatValue(customer.getLastname()));
-        txtEmail.setText(Formats.STRING.formatValue(customer.getEmail()));
-        txtPhone.setText(Formats.STRING.formatValue(customer.getPhone()));
-        txtPhone2.setText(Formats.STRING.formatValue(customer.getPhone2()));
-        txtFax.setText(Formats.STRING.formatValue(customer.getFax()));
-        m_jNotes.setText(customer.getNotes());
-        m_jVisible.setSelected(customer.isVisible());
+        if (binder != null) {
+            binder.readBean(customer);
+        } else {
+            m_jSearchkey.setText(customer.getSearchkey());
+            m_jTaxID.setText(customer.getTaxid());
+            m_jName.setText(customer.getName());
+            jcard.setText(customer.getCard());
+            txtMaxdebt.setText(Formats.CURRENCY.formatValue(customer.getMaxdebt()));
+            txtAddress.setText(Formats.STRING.formatValue(customer.getAddress()));
+            txtAddress2.setText(Formats.STRING.formatValue(customer.getAddress2()));
+            txtPostal.setText(Formats.STRING.formatValue(customer.getPostal()));
+            txtCity.setText(Formats.STRING.formatValue(customer.getCity()));
+            txtRegion.setText(Formats.STRING.formatValue(customer.getRegion()));
+            txtCountry.setText(Formats.STRING.formatValue(customer.getCountry()));
+            txtFirstName.setText(Formats.STRING.formatValue(customer.getFirstname()));
+            txtLastName.setText(Formats.STRING.formatValue(customer.getLastname()));
+            txtEmail.setText(Formats.STRING.formatValue(customer.getEmail()));
+            txtPhone.setText(Formats.STRING.formatValue(customer.getPhone()));
+            txtPhone2.setText(Formats.STRING.formatValue(customer.getPhone2()));
+            txtFax.setText(Formats.STRING.formatValue(customer.getFax()));
+            m_jNotes.setText(customer.getNotes());
+            m_jVisible.setSelected(customer.isVisible());
+            m_jVip.setSelected(customer.isVIP());
+            txtDiscount.setText(Formats.DOUBLE.formatValue(customer.getDiscount()));
+        }
+        if (m_CategoryModel != null) {
+            m_CategoryModel.setSelectedKey(customer.getTaxCustCategoryID());
+        }
         txtCurdate.setText(Formats.TIMESTAMP.formatValue(customer.getCurdate()));
         txtCurdebt.setText(Formats.CURRENCY.formatValue(customer.getCurdebt()));
         m_jImage.setImage(customer.getImage());
-        m_jVip.setSelected(customer.isVIP());
-        txtDiscount.setText(Formats.DOUBLE.formatValue(customer.getDiscount()));
         m_jdate.setText(Formats.TIMESTAMP.formatValue(customer.getMemoDate()));
     }
 
@@ -494,31 +618,79 @@ public final class CustomersView extends javax.swing.JPanel implements EditorRec
 
         CustomerInfoExt customer = new CustomerInfoExt(m_oId == null ? UUID.randomUUID().toString() : m_oId);
 
-        customer.setSearchkey(m_jSearchkey.getText());
-        customer.setTaxid(m_jTaxID.getText());
-        customer.setName(m_jName.getText());
-        customer.setTaxCustCategoryID((String) m_CategoryModel.getSelectedKey());
-        customer.setCard((String) Formats.STRING.parseValue(jcard.getText()));
-        customer.setMaxdebt((Double) Formats.CURRENCY.parseValue(txtMaxdebt.getText(), 0.0));
-        customer.setAddress((String) Formats.STRING.parseValue(txtAddress.getText()));
-        customer.setAddress2((String) Formats.STRING.parseValue(txtAddress2.getText()));
-        customer.setPostal((String) Formats.STRING.parseValue(txtPostal.getText()));
-        customer.setCity((String) Formats.STRING.parseValue(txtCity.getText()));
-        customer.setRegion((String) Formats.STRING.parseValue(txtRegion.getText()));
-        customer.setCountry((String) Formats.STRING.parseValue(txtCountry.getText()));
-        customer.setFirstname((String) Formats.STRING.parseValue(txtFirstName.getText()));
-        customer.setLastname((String) Formats.STRING.parseValue(txtLastName.getText()));
-        customer.setEmail((String) Formats.STRING.parseValue(txtEmail.getText()));
-        customer.setPhone((String) Formats.STRING.parseValue(txtPhone.getText()));
-        customer.setPhone2((String) Formats.STRING.parseValue(txtPhone2.getText()));
-        customer.setFax((String) Formats.STRING.parseValue(txtFax.getText()));
-        customer.setNotes(m_jNotes.getText());
+        if (binder != null) {
+            try {
+                binder.writeBean(customer);
+            } catch (SwingBinder.ValidationException ex) {
+                LOGGER.log(System.Logger.Level.WARNING, "Validation in createValue: " + ex.getMessage());
+            }
+        }
+
+        if (customer.getName() == null || customer.getName().isEmpty()) {
+            customer.setName(m_jName.getText());
+        }
+        if (customer.getSearchkey() == null) {
+            customer.setSearchkey(m_jSearchkey.getText());
+        }
+        if (customer.getTaxid() == null) {
+            customer.setTaxid(m_jTaxID.getText());
+        }
+        if (m_CategoryModel != null) {
+            customer.setTaxCustCategoryID((String) m_CategoryModel.getSelectedKey());
+        }
+        if (customer.getCard() == null) {
+            customer.setCard((String) Formats.STRING.parseValue(jcard.getText()));
+        }
+        if (customer.getMaxdebt() == null) {
+            customer.setMaxdebt((Double) Formats.CURRENCY.parseValue(txtMaxdebt.getText(), 0.0));
+        }
+        if (customer.getAddress() == null) {
+            customer.setAddress((String) Formats.STRING.parseValue(txtAddress.getText()));
+        }
+        if (customer.getAddress2() == null) {
+            customer.setAddress2((String) Formats.STRING.parseValue(txtAddress2.getText()));
+        }
+        if (customer.getPostal() == null) {
+            customer.setPostal((String) Formats.STRING.parseValue(txtPostal.getText()));
+        }
+        if (customer.getCity() == null) {
+            customer.setCity((String) Formats.STRING.parseValue(txtCity.getText()));
+        }
+        if (customer.getRegion() == null) {
+            customer.setRegion((String) Formats.STRING.parseValue(txtRegion.getText()));
+        }
+        if (customer.getCountry() == null) {
+            customer.setCountry((String) Formats.STRING.parseValue(txtCountry.getText()));
+        }
+        if (customer.getFirstname() == null) {
+            customer.setFirstname((String) Formats.STRING.parseValue(txtFirstName.getText()));
+        }
+        if (customer.getLastname() == null) {
+            customer.setLastname((String) Formats.STRING.parseValue(txtLastName.getText()));
+        }
+        if (customer.getEmail() == null) {
+            customer.setEmail((String) Formats.STRING.parseValue(txtEmail.getText()));
+        }
+        if (customer.getPhone() == null) {
+            customer.setPhone((String) Formats.STRING.parseValue(txtPhone.getText()));
+        }
+        if (customer.getPhone2() == null) {
+            customer.setPhone2((String) Formats.STRING.parseValue(txtPhone2.getText()));
+        }
+        if (customer.getFax() == null) {
+            customer.setFax((String) Formats.STRING.parseValue(txtFax.getText()));
+        }
+        if (customer.getNotes() == null) {
+            customer.setNotes(m_jNotes.getText());
+        }
         customer.setVisible(m_jVisible.isSelected());
         customer.setCurdate((Date) Formats.TIMESTAMP.parseValue(txtCurdate.getText()));
         customer.setCurdebt((Double) Formats.CURRENCY.parseValue(txtCurdebt.getText()));
         customer.setImage(m_jImage.getImage());
         customer.setisVIP(m_jVip.isSelected());
-        customer.setDiscount((Double) Formats.CURRENCY.parseValue(txtDiscount.getText(), 0.0));
+        if (customer.getDiscount() == null) {
+            customer.setDiscount((Double) Formats.CURRENCY.parseValue(txtDiscount.getText(), 0.0));
+        }
         customer.setMemoDate((Date) Formats.TIMESTAMP.parseValue(m_jdate.getText()));
 
         return customer;

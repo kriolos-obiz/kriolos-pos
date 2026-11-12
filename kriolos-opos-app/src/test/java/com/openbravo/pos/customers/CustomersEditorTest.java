@@ -93,4 +93,52 @@ class CustomersEditorTest {
         view.writeValueDelete(null);
         assertNotNull(view.createValue().getId());
     }
+
+    @Test
+    @DisplayName("Should validate valid customer successfully with SwingBinder")
+    void shouldValidateValidCustomerWithSwingBinder() throws BasicException {
+        DirtyManager dirty = new DirtyManager();
+        CustomersView view = new CustomersView(null, null, dirty);
+
+        CustomerInfoExt cust = new CustomerInfoExt("valid-1");
+        cust.setName("Wayne Enterprises");
+        cust.setEmail("bruce@wayne.com");
+        cust.setMaxdebt(5000.0);
+        cust.setDiscount(0.15);
+
+        view.writeValueEdit(cust);
+        assertTrue(view.isValid(), "Valid customer should pass SwingBinder validation");
+        assertNotNull(view.getBinder());
+        assertTrue(view.getBinder().getInvalidFields().isEmpty(), "No fields should be marked invalid");
+    }
+
+    @Test
+    @DisplayName("Should fail SwingBinder validation when required name is missing")
+    void shouldFailValidationWhenRequiredNameIsMissing() throws BasicException {
+        DirtyManager dirty = new DirtyManager();
+        CustomersView view = new CustomersView(null, null, dirty);
+
+        CustomerInfoExt cust = new CustomerInfoExt("invalid-name");
+        cust.setName("");
+        cust.setEmail("contact@test.com");
+
+        view.writeValueEdit(cust);
+        assertFalse(view.isValid(), "Customer with blank name must fail validation");
+        assertFalse(view.getBinder().getInvalidFields().isEmpty(), "Name field should be marked invalid");
+    }
+
+    @Test
+    @DisplayName("Should fail SwingBinder validation when email format is invalid")
+    void shouldFailValidationWhenEmailIsInvalid() throws BasicException {
+        DirtyManager dirty = new DirtyManager();
+        CustomersView view = new CustomersView(null, null, dirty);
+
+        CustomerInfoExt cust = new CustomerInfoExt("invalid-email");
+        cust.setName("Wayne Enterprises");
+        cust.setEmail("not-a-valid-email-string");
+
+        view.writeValueEdit(cust);
+        assertFalse(view.isValid(), "Customer with invalid email syntax must fail validation");
+        assertFalse(view.getBinder().getInvalidFields().isEmpty(), "Email field should be marked invalid");
+    }
 }
