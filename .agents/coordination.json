@@ -31,6 +31,15 @@
     ],
     "completed": [
       {
+        "id": "TASK-046",
+        "ticket": "KP-156",
+        "agent": "antigravity",
+        "branch": "feature/KP-156-locations-swingbinder-validation",
+        "title": "Type-Safe Validation & Two-Way Data Binding for Warehouse Locations (LocationsView)",
+        "description": "Integrate SwingBinder<LocationInfo> with real-time field validation, error feedback, and dirty state management in LocationsView.",
+        "completed_at": "2026-11-13T22:00:30Z"
+      },
+      {
         "id": "TASK-045",
         "ticket": "KP-155",
         "agent": "antigravity",
