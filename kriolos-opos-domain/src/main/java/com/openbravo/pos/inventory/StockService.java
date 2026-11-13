@@ -157,11 +157,51 @@ public interface StockService extends InventoryService {
     }
 
     /**
+     * Records a stock movement in the stock diary ledger using domain record {@link StockDiaryInfo}.
+     *
+     * @param diary the stock diary record
+     * @throws BasicException on persistence error
+     */
+    default void recordStockMovement(StockDiaryInfo diary) throws BasicException {
+        if (diary != null) {
+            recordStockMovement(new RecordStockMovementCommand(
+                    diary.id(),
+                    diary.date(),
+                    diary.reason(),
+                    diary.locationId(),
+                    diary.productId(),
+                    diary.attributeSetInstanceId(),
+                    diary.units(),
+                    diary.price(),
+                    diary.appUser()
+            ));
+        }
+    }
+
+    /**
+     * Reverts a stock movement and adjusts inventory balances using domain record {@link StockDiaryInfo}.
+     *
+     * @param diary the stock diary record to revert
+     * @throws BasicException on persistence error
+     */
+    default void revertStockMovement(StockDiaryInfo diary) throws BasicException {
+        if (diary != null) {
+            revertStockMovement(new RevertStockMovementCommand(
+                    diary.id(),
+                    diary.locationId(),
+                    diary.productId(),
+                    diary.attributeSetInstanceId(),
+                    diary.units()
+            ));
+        }
+    }
+
+    /**
      * Returns the record save provider for stock diary movements (insert and delete).
      *
      * @return SaveProvider for stock diary records
      */
-    SaveProvider getStockDiarySaveProvider();
+    SaveProvider<StockDiaryInfo> getStockDiarySaveProvider();
 
     /**
      * Returns the current stock units for a specific warehouse, product, and attribute instance.

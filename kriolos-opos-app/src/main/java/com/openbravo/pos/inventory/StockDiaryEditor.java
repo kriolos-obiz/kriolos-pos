@@ -47,7 +47,7 @@ import java.util.Date;
 import java.util.UUID;
 import javax.swing.JOptionPane;
 
-public final class StockDiaryEditor extends javax.swing.JPanel implements EditorRecord {
+public final class StockDiaryEditor extends javax.swing.JPanel implements EditorRecord<StockDiaryInfo> {
     
     private final AppView m_App;
     @Deprecated
@@ -67,6 +67,7 @@ public final class StockDiaryEditor extends javax.swing.JPanel implements Editor
     private final SentenceList m_sentsuppliers;
     private ComboBoxValModel m_SuppliersModel;      
     private String m_sID;
+    private String locationId;
 
     private String productid;
     private String productref;
@@ -80,28 +81,38 @@ public final class StockDiaryEditor extends javax.swing.JPanel implements Editor
 
     private final String user;    
 
-    
+    /**
+     * Creates new form StockDiaryEditor for headless testing without live AppView.
+     *
+     * @param dirty DirtyManager listener
+     */
+    public StockDiaryEditor(DirtyManager dirty) {
+        this(null, dirty);
+    }
+
     /** Creates new form StockDiaryEditor
      * @param app
      * @param dirty */
     public StockDiaryEditor(AppView app, DirtyManager dirty) {
         
         m_App = app;
-        ResourceService resService = m_App.getBean(ResourceService.class);
+        ResourceService resService = m_App != null ? m_App.getBean(ResourceService.class) : null;
         m_dlSystem = (resService instanceof DataLogicSystem) ? (DataLogicSystem) resService : null;
-        inventoryService = m_App.getBean(InventoryService.class);
-        m_dlSuppliers = m_App.getBean(SupplierService.class);   
-        catalogService = app.getBean(CatalogService.class);
+        inventoryService = m_App != null ? m_App.getBean(InventoryService.class) : null;
+        m_dlSuppliers = m_App != null ? m_App.getBean(SupplierService.class) : null;   
+        catalogService = m_App != null ? m_App.getBean(CatalogService.class) : null;
         dataLogicPIM = (catalogService instanceof DataLogicPIM) ? (DataLogicPIM) catalogService : null;
-        m_TTP = m_App.createTicketParser();
+        m_TTP = m_App != null ? m_App.createTicketParser() : null;
         
         initComponents();
         
-        user = m_App.getAppUserView().getUser().getName();        
+        user = (m_App != null && m_App.getAppUserView() != null && m_App.getAppUserView().getUser() != null)
+                ? m_App.getAppUserView().getUser().getName()
+                : "Administrator";        
         m_LocationsModel = new ComboBoxValModel();        
         m_LocationsModelDes = new ComboBoxValModel();  
         
-        m_sentsuppliers = m_dlSuppliers.getSupplierList();
+        m_sentsuppliers = m_dlSuppliers != null ? m_dlSuppliers.getSupplierList() : null;
         m_SuppliersModel = new ComboBoxValModel();
         
         m_ReasonModel = new ComboBoxValModel();
@@ -116,10 +127,11 @@ public final class StockDiaryEditor extends javax.swing.JPanel implements Editor
 
         m_jreason.setModel(m_ReasonModel);
 
-        m_cat = (CatalogSelector) com.openbravo.pos.ui.api.catalog.CatalogManager.createDefaultCatalog(app);
-        m_cat.addActionListener(new CatalogListener());
-
-        catcontainer.add(m_cat.getComponent(), BorderLayout.CENTER);        
+        m_cat = (CatalogSelector) (m_App != null ? com.openbravo.pos.ui.api.catalog.CatalogManager.createDefaultCatalog(app) : null);
+        if (m_cat != null) {
+            m_cat.addActionListener(new CatalogListener());
+            catcontainer.add(m_cat.getComponent(), BorderLayout.CENTER);
+        }        
         
         m_jdate.getDocument().addDocumentListener(dirty);
         m_jreason.addActionListener(dirty);
@@ -141,16 +153,18 @@ public final class StockDiaryEditor extends javax.swing.JPanel implements Editor
      * @throws BasicException
      */
     public void activate() throws BasicException {
-        m_cat.loadCatalog();
+        if (m_cat != null) {
+            m_cat.loadCatalog();
+        }
          
-        java.util.List<LocationInfo> l = inventoryService.getLocationsList();
-        m_LocationsModel = new ComboBoxValModel(l);
+        java.util.List<LocationInfo> l = inventoryService != null ? inventoryService.getLocationsList() : null;
+        m_LocationsModel = new ComboBoxValModel(l != null ? l : java.util.Collections.emptyList());
         m_jLocation.setModel(m_LocationsModel);
-        m_LocationsModelDes = new ComboBoxValModel(l);
+        m_LocationsModelDes = new ComboBoxValModel(l != null ? l : java.util.Collections.emptyList());
         m_jLocationDes.setModel(m_LocationsModelDes);
         
-        java.util.List sl = m_sentsuppliers.list();
-        m_SuppliersModel = new ComboBoxValModel(m_sentsuppliers.list());
+        java.util.List sl = m_sentsuppliers != null ? m_sentsuppliers.list() : null;
+        m_SuppliersModel = new ComboBoxValModel(sl != null ? sl : java.util.Collections.emptyList());
         m_jSupplier.setModel(m_SuppliersModel);
         
     }
@@ -168,10 +182,11 @@ public final class StockDiaryEditor extends javax.swing.JPanel implements Editor
     @Override
     public void writeValueEOF() {
         m_sID = null;
+        locationId = null;
         m_jdate.setText(null);
         m_ReasonModel.setSelectedKey(null);
-        m_LocationsModel.setSelectedKey(m_App.getInventoryLocation());
-        m_LocationsModelDes.setSelectedKey(m_App.getInventoryLocation());        
+        m_LocationsModel.setSelectedKey(m_App != null ? m_App.getInventoryLocation() : null);
+        m_LocationsModelDes.setSelectedKey(m_App != null ? m_App.getInventoryLocation() : null);        
         m_SuppliersModel.setSelectedKey(null);        
         
         productid = null;
@@ -201,7 +216,9 @@ public final class StockDiaryEditor extends javax.swing.JPanel implements Editor
         jEditAttributes.setEnabled(false);
         m_junits.setEnabled(false);
         m_jprice.setEnabled(false);
-        m_cat.setComponentEnabled(false);
+        if (m_cat != null) {
+            m_cat.setComponentEnabled(false);
+        }
     }
     
     /**
@@ -210,10 +227,11 @@ public final class StockDiaryEditor extends javax.swing.JPanel implements Editor
     @Override
     public void writeValueInsert() {
         m_sID = UUID.randomUUID().toString();
+        locationId = m_App != null ? m_App.getInventoryLocation() : null;
         m_jdate.setText(Formats.TIMESTAMP.formatValue(DateUtils.getTodayMinutes()));
         m_ReasonModel.setSelectedItem(MovementReason.IN_PURCHASE);
-        m_LocationsModel.setSelectedKey(m_App.getInventoryLocation());
-        m_LocationsModelDes.setSelectedKey(m_App.getInventoryLocation());        
+        m_LocationsModel.setSelectedKey(locationId);
+        m_LocationsModelDes.setSelectedKey(locationId);        
         m_SuppliersModel.setSelectedKey(null);        
         
         productid = null;
@@ -245,30 +263,37 @@ public final class StockDiaryEditor extends javax.swing.JPanel implements Editor
         jEditAttributes.setEnabled(true);
         m_junits.setEnabled(true);
         m_jprice.setEnabled(true);   
-        m_cat.setComponentEnabled(true);
+        if (m_cat != null) {
+            m_cat.setComponentEnabled(true);
+        }
     }
 
     /**
      *
-     * @param value
+     * @param diary the stock diary record to delete
      */
     @Override
-    public void writeValueDelete(Object value) {
-        Object[] diary = (Object[]) value;
-        m_sID = (String) diary[0];
-        m_jdate.setText(Formats.TIMESTAMP.formatValue((Date)diary[1]));
-        m_ReasonModel.setSelectedKey(diary[2]);
-        m_LocationsModel.setSelectedKey(diary[3]);
-        productid = (String) diary[4];
-        attsetinstid = (String) diary[5];
-        m_junits.setText(Formats.DOUBLE.formatValue(signum((Double) diary[6], (Integer) diary[2])));
-        m_jprice.setText(Formats.CURRENCY.formatValue((Double)diary[7]));
-        productref = (String) diary[8];
-        productcode = (String) diary[9];
-        productname =(String) diary[10];
-        attsetid = (String) diary[11];
-        attsetinstdesc = (String) diary[12];
-        m_SuppliersModel.setSelectedKey(diary[13]);        
+    public void writeValueDelete(StockDiaryInfo diary) {
+        if (diary == null) {
+            writeValueEOF();
+            return;
+        }
+        m_sID = diary.id();
+        locationId = diary.locationId();
+        m_jdate.setText(Formats.TIMESTAMP.formatValue(diary.date()));
+        m_ReasonModel.setSelectedKey(diary.reason());
+        m_LocationsModel.setSelectedKey(locationId);
+        productid = diary.productId();
+        attsetinstid = diary.attributeSetInstanceId();
+        m_junits.setText(Formats.DOUBLE.formatValue(signum(diary.units(), diary.reason())));
+        m_jprice.setText(Formats.CURRENCY.formatValue(diary.price()));
+        sAppUser = diary.appUser();
+        productref = diary.productRef();
+        productcode = diary.productCode();
+        productname = diary.productName();
+        attsetid = diary.attributeSetId();
+        attsetinstdesc = diary.attributeSetInstanceDesc();
+        m_SuppliersModel.setSelectedKey(diary.supplierId());        
         
         m_jreference.setText(productref);
         m_jcodebar.setText(productcode);
@@ -291,31 +316,37 @@ public final class StockDiaryEditor extends javax.swing.JPanel implements Editor
         jEditAttributes.setEnabled(false);
         m_junits.setEnabled(false);
         m_jprice.setEnabled(false);   
-        m_cat.setComponentEnabled(false);
+        if (m_cat != null) {
+            m_cat.setComponentEnabled(false);
+        }
     }
     
     /**
      *
-     * @param value
+     * @param diary the stock diary record to edit
      */
     @Override
-    public void writeValueEdit(Object value) {
-        Object[] diary = (Object[]) value;
-        m_sID = (String) diary[0];
-        m_jdate.setText(Formats.TIMESTAMP.formatValue((Date)diary[1]));
-        m_ReasonModel.setSelectedKey(diary[2]);
-        m_LocationsModel.setSelectedKey(diary[3]);
-        productid = (String) diary[4];
-        attsetinstid = (String) diary[5];
-        m_junits.setText(Formats.DOUBLE.formatValue(signum((Double) diary[6], (Integer) diary[2])));
-        m_jprice.setText(Formats.CURRENCY.formatValue((Double)diary[7]));
-        sAppUser = (String) diary[8];
-        productref = (String) diary[9];
-        productcode = (String) diary[10];
-        productname =(String) diary[11];
-        attsetid = (String) diary[12];
-        attsetinstdesc = (String) diary[13];
-        m_SuppliersModel.setSelectedKey(diary[14]);        
+    public void writeValueEdit(StockDiaryInfo diary) {
+        if (diary == null) {
+            writeValueEOF();
+            return;
+        }
+        m_sID = diary.id();
+        locationId = diary.locationId();
+        m_jdate.setText(Formats.TIMESTAMP.formatValue(diary.date()));
+        m_ReasonModel.setSelectedKey(diary.reason());
+        m_LocationsModel.setSelectedKey(locationId);
+        productid = diary.productId();
+        attsetinstid = diary.attributeSetInstanceId();
+        m_junits.setText(Formats.DOUBLE.formatValue(signum(diary.units(), diary.reason())));
+        m_jprice.setText(Formats.CURRENCY.formatValue(diary.price()));
+        sAppUser = diary.appUser();
+        productref = diary.productRef();
+        productcode = diary.productCode();
+        productname = diary.productName();
+        attsetid = diary.attributeSetId();
+        attsetinstdesc = diary.attributeSetInstanceDesc();
+        m_SuppliersModel.setSelectedKey(diary.supplierId());        
 
         m_jreference.setText(productref);
         m_jcodebar.setText(productcode);
@@ -338,34 +369,58 @@ public final class StockDiaryEditor extends javax.swing.JPanel implements Editor
         jEditAttributes.setEnabled(false);
         m_junits.setEnabled(false);
         m_jprice.setEnabled(false);  
-        m_cat.setComponentEnabled(false);
+        if (m_cat != null) {
+            m_cat.setComponentEnabled(false);
+        }
     }
     
     /**
      *
-     * @return
+     * @return StockDiaryInfo domain record created from editor inputs
      * @throws BasicException
      */
     @Override
-    public Object createValue() throws BasicException {
+    public StockDiaryInfo createValue() throws BasicException {
+        String id = m_sID != null ? m_sID : UUID.randomUUID().toString();
+        Date date = (m_jdate.getText() != null && !m_jdate.getText().isBlank())
+                ? (Date) Formats.TIMESTAMP.parseValue(m_jdate.getText())
+                : new Date();
+        Integer reasonKey = (Integer) m_ReasonModel.getSelectedKey();
+        int reason = reasonKey != null ? reasonKey : 1;
+        String location = (m_LocationsModel != null && m_LocationsModel.getSelectedKey() != null)
+                ? (String) m_LocationsModel.getSelectedKey()
+                : (locationId != null ? locationId : "");
+        Double rawUnits = (m_junits.getText() != null && !m_junits.getText().isBlank())
+                ? (Double) Formats.DOUBLE.parseValue(m_junits.getText())
+                : 0.0;
+        Double signedUnits = samesignum(rawUnits != null ? rawUnits : 0.0, reason);
+        double units = signedUnits != null ? signedUnits : 0.0;
+        Double parsedPrice = (m_jprice.getText() != null && !m_jprice.getText().isBlank())
+                ? (Double) Formats.CURRENCY.parseValue(m_jprice.getText())
+                : 0.0;
+        double price = parsedPrice != null ? parsedPrice : 0.0;
+        String currentUser = (m_App != null && m_App.getAppUserView() != null && m_App.getAppUserView().getUser() != null)
+                ? m_App.getAppUserView().getUser().getName()
+                : (sAppUser != null ? sAppUser : user);
+        String supplierId = m_SuppliersModel != null ? (String) m_SuppliersModel.getSelectedKey() : null;
 
-        return new Object[] {
-            m_sID,
-            Formats.TIMESTAMP.parseValue(m_jdate.getText()),
-            m_ReasonModel.getSelectedKey(),
-            m_LocationsModel.getSelectedKey(),
-            productid,
-            attsetinstid,
-            samesignum((Double) Formats.DOUBLE.parseValue(m_junits.getText()), (Integer) m_ReasonModel.getSelectedKey()),
-            Formats.CURRENCY.parseValue(m_jprice.getText()),
-            m_App.getAppUserView().getUser().getName(),
-            productref,
-            productcode,
-            productname,
-            attsetid,
-            attsetinstdesc,
-//            m_SuppliersModel.getSelectedKey()
-        };
+        return new StockDiaryInfo(
+                id,
+                date != null ? date : new Date(),
+                reason,
+                location != null ? location : "",
+                productid != null ? productid : "",
+                attsetinstid,
+                units,
+                price,
+                currentUser != null ? currentUser : "",
+                productref != null ? productref : "",
+                productcode != null ? productcode : "",
+                productname != null ? productname : "",
+                attsetid != null ? attsetid : "",
+                attsetinstdesc != null ? attsetinstdesc : "",
+                supplierId
+        );
     }
     
     /**

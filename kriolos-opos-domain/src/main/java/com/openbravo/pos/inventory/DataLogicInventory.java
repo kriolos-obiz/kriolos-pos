@@ -250,6 +250,15 @@ public class DataLogicInventory extends BeanFactoryDataSingle implements StockSe
                                 new int[]{0, 1, 2, 3, 4, 5, 6, 7, 8}))
                         .exec(params);
             }
+
+            @Override
+            public int execInTransaction(Object params) throws BasicException {
+                if (params instanceof StockDiaryInfo diary) {
+                    recordStockMovement(diary);
+                    return 1;
+                }
+                return super.execInTransaction(params);
+            }
         };
     }
 
@@ -343,6 +352,15 @@ public class DataLogicInventory extends BeanFactoryDataSingle implements StockSe
                         "DELETE FROM stockdiary WHERE ID = ?",
                         new SerializerWriteBasicExt(STOCK_DIARY_DATAS, new int[]{0}))
                         .exec(params);
+            }
+
+            @Override
+            public int execInTransaction(Object params) throws BasicException {
+                if (params instanceof StockDiaryInfo diary) {
+                    revertStockMovement(diary);
+                    return 1;
+                }
+                return super.execInTransaction(params);
             }
         };
     }
@@ -566,8 +584,40 @@ public class DataLogicInventory extends BeanFactoryDataSingle implements StockSe
     }
 
     @Override
-    public SaveProvider getStockDiarySaveProvider() {
-        return new DefaultSaveProvider(null, getStockDiaryInsert(), getStockDiaryDelete());
+    public SaveProvider<StockDiaryInfo> getStockDiarySaveProvider() {
+        return new SaveProvider<StockDiaryInfo>() {
+            @Override
+            public boolean canInsert() {
+                return true;
+            }
+
+            @Override
+            public int insertData(StockDiaryInfo value) throws BasicException {
+                recordStockMovement(value);
+                return 1;
+            }
+
+            @Override
+            public boolean canDelete() {
+                return true;
+            }
+
+            @Override
+            public int deleteData(StockDiaryInfo value) throws BasicException {
+                revertStockMovement(value);
+                return 1;
+            }
+
+            @Override
+            public boolean canUpdate() {
+                return false;
+            }
+
+            @Override
+            public int updateData(StockDiaryInfo value) {
+                throw new UnsupportedOperationException("Stock diary entries are immutable audit records.");
+            }
+        };
     }
 
     @Override

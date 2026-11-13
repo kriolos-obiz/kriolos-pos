@@ -31,6 +31,15 @@
     ],
     "completed": [
       {
+        "id": "TASK-045",
+        "ticket": "KP-155",
+        "agent": "antigravity",
+        "branch": "feature/KP-155-typesafe-stock-diary",
+        "title": "Type-Safe Stock Diary & Inventory Movements Vertical Pipeline",
+        "description": "Modernize StockDiaryEditor, StockDiaryPanel, DataLogicInventory, and StockService to use typed SaveProvider<StockDiaryInfo> with typed EditorRecord implementations, eliminating Object[] mapping.",
+        "completed_at": "2026-11-12T21:45:30Z"
+      },
+      {
         "id": "TASK-044",
         "ticket": "KP-154",
         "agent": "antigravity",

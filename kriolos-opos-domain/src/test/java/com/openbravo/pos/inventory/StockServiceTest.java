@@ -84,7 +84,7 @@ class StockServiceTest {
         }
 
         @Override
-        public com.openbravo.data.user.SaveProvider getStockDiarySaveProvider() {
+        public com.openbravo.data.user.SaveProvider<StockDiaryInfo> getStockDiarySaveProvider() {
             return null;
         }
 
