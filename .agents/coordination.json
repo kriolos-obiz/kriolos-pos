@@ -31,6 +31,15 @@
     ],
     "completed": [
       {
+        "id": "TASK-047",
+        "ticket": "KP-157",
+        "agent": "antigravity",
+        "branch": "feature/KP-157-places-swingbinder-validation",
+        "title": "Type-Safe Validation & Two-Way Data Binding for Restaurant Tables (PlacesEditor)",
+        "description": "Integrate SwingBinder<Place> with real-time field validation, coordinate parsing, and dirty state management in PlacesEditor.",
+        "completed_at": "2026-11-13T23:10:45Z"
+      },
+      {
         "id": "TASK-046",
         "ticket": "KP-156",
         "agent": "antigravity",

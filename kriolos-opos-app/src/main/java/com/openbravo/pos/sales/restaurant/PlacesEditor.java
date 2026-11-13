@@ -16,47 +16,128 @@
 
 package com.openbravo.pos.sales.restaurant;
 
+import com.openbravo.basic.AppLocal;
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.gui.ComboBoxValModel;
 import com.openbravo.data.loader.SentenceList;
 import com.openbravo.data.user.DirtyManager;
 import com.openbravo.data.user.EditorRecord;
 import com.openbravo.format.Formats;
-import com.openbravo.basic.AppLocal;
 import com.openbravo.pos.sales.DataLogicSales;
+import com.openbravo.ui.data.binding.Converter;
+import com.openbravo.ui.data.binding.SwingBinder;
 import java.awt.Component;
 import java.util.UUID;
 import javax.swing.JPanel;
+import javax.swing.JTextField;
 
 /**
+ * Strongly typed editor component for restaurant Place (table) entities,
+ * supporting two-way Swing data binding and real-time validation.
  *
  * @author adrianromero
+ * @author KriolOS
  */
 public final class PlacesEditor extends JPanel implements EditorRecord<Place> {
-    
+
+    private static final System.Logger LOGGER = System.getLogger(PlacesEditor.class.getName());
+    private static final long serialVersionUID = 1L;
+
     private RestaurantService restaurantService;
     private SentenceList m_sentfloor;
     private ComboBoxValModel m_FloorModel;
-    
+    private DirtyManager dirty;
+    private SwingBinder<Place> binder;
+
     private String m_sID;
-    
-    /** Creates new form PlacesEditor
-     * @param restaurantService
-     * @param dirty */
+    private String m_sFloor;
+
+    /**
+     * Headless constructor for testing without active GUI/database session.
+     *
+     * @param dirty dirty state manager
+     */
+    public PlacesEditor(DirtyManager dirty) {
+        this((RestaurantService) null, dirty);
+    }
+
+    /**
+     * Creates new form PlacesEditor.
+     *
+     * @param restaurantService restaurant domain service
+     * @param dirty dirty state manager
+     */
     public PlacesEditor(RestaurantService restaurantService, DirtyManager dirty) {
         initComponents();
-        
+
+        this.dirty = dirty;
         this.restaurantService = restaurantService;
         this.m_sentfloor = restaurantService != null ? restaurantService.getFloorsList() : null;
-        m_FloorModel = new ComboBoxValModel();
-        
+        this.m_FloorModel = new ComboBoxValModel();
+
         m_jName.getDocument().addDocumentListener(dirty);
-        m_jSeats.getDocument().addDocumentListener(dirty);        
+        m_jSeats.getDocument().addDocumentListener(dirty);
         m_jFloor.addActionListener(dirty);
         m_jX.getDocument().addDocumentListener(dirty);
         m_jY.getDocument().addDocumentListener(dirty);
-        
+
+        initValidator();
         writeValueEOF();
+    }
+
+    private void initValidator() {
+        binder = new SwingBinder<>(new Place());
+
+        // Mandatory Table/Place Name
+        binder.forField(m_jName)
+                .asRequired(AppLocal.getIntString("validation.required", AppLocal.getIntString("label.name")))
+                .bind(Place::getName, Place::setName);
+
+        // Optional Seating Capacity
+        binder.forField(m_jSeats)
+                .bind(Place::getSeats, Place::setSeats);
+
+        // Table X Coordinate
+        binder.forField(m_jX)
+                .withConverter(new IntegerConverter())
+                .withValidator(v -> v == null || v >= 0, AppLocal.getIntString("validation.number.positive", "X"))
+                .bind(Place::getX, Place::setX);
+
+        // Table Y Coordinate
+        binder.forField(m_jY)
+                .withConverter(new IntegerConverter())
+                .withValidator(v -> v == null || v >= 0, AppLocal.getIntString("validation.number.positive", "Y"))
+                .bind(Place::getY, Place::setY);
+
+        binder.addStatusChangeListener(() -> {
+            if (dirty != null) {
+                dirty.setDirty(true);
+            }
+        });
+    }
+
+    public boolean isValid() {
+        return binder == null || binder.validate();
+    }
+
+    public SwingBinder<Place> getBinder() {
+        return binder;
+    }
+
+    JTextField getNameField() {
+        return m_jName;
+    }
+
+    JTextField getSeatsField() {
+        return m_jSeats;
+    }
+
+    JTextField getXField() {
+        return m_jX;
+    }
+
+    JTextField getYField() {
+        return m_jY;
     }
 
     /**
@@ -74,7 +155,7 @@ public final class PlacesEditor extends JPanel implements EditorRecord<Place> {
     public PlacesEditor(DataLogicSales dlSales, DirtyManager dirty) {
         this(dlSales != null ? dlSales.getRestaurantService() : null, dirty);
     }
-    
+
     /**
      *
      * @throws BasicException
@@ -89,7 +170,7 @@ public final class PlacesEditor extends JPanel implements EditorRecord<Place> {
         }
         m_jFloor.setModel(m_FloorModel);
     }
-    
+
     /**
      *
      */
@@ -102,16 +183,20 @@ public final class PlacesEditor extends JPanel implements EditorRecord<Place> {
      */
     @Override
     public void writeValueEOF() {
-        
         m_sID = null;
-        m_jName.setText(null);
-        m_jSeats.setText(null);        
+        m_sFloor = null;
+        if (binder != null) {
+            binder.clear();
+        } else {
+            m_jName.setText(null);
+            m_jSeats.setText(null);
+            m_jX.setText(null);
+            m_jY.setText(null);
+        }
         m_FloorModel.setSelectedKey(null);
-        m_jX.setText(null);
-        m_jY.setText(null);
 
         m_jName.setEnabled(false);
-        m_jSeats.setEnabled(false);        
+        m_jSeats.setEnabled(false);
         m_jFloor.setEnabled(false);
         m_jX.setEnabled(false);
         m_jY.setEnabled(false);
@@ -122,16 +207,20 @@ public final class PlacesEditor extends JPanel implements EditorRecord<Place> {
      */
     @Override
     public void writeValueInsert() {
-
-        m_sID = UUID.randomUUID().toString(); 
-        m_jName.setText(null);
-        m_jSeats.setText(null);        
+        m_sID = UUID.randomUUID().toString();
+        m_sFloor = null;
+        if (binder != null) {
+            binder.clear();
+        } else {
+            m_jName.setText(null);
+            m_jSeats.setText(null);
+            m_jX.setText(null);
+            m_jY.setText(null);
+        }
         m_FloorModel.setSelectedKey(null);
-        m_jX.setText(null);
-        m_jY.setText(null);
-        
+
         m_jName.setEnabled(true);
-        m_jSeats.setEnabled(true);        
+        m_jSeats.setEnabled(true);
         m_jFloor.setEnabled(true);
         m_jX.setEnabled(true);
         m_jY.setEnabled(true);
@@ -139,7 +228,7 @@ public final class PlacesEditor extends JPanel implements EditorRecord<Place> {
 
     /**
      *
-     * @param value
+     * @param place
      */
     @Override
     public void writeValueDelete(Place place) {
@@ -148,14 +237,19 @@ public final class PlacesEditor extends JPanel implements EditorRecord<Place> {
             return;
         }
         m_sID = place.getId();
-        m_jName.setText(place.getName());
-        m_jSeats.setText(place.getSeats());        
-        m_jX.setText(Formats.INT.formatValue(place.getX()));
-        m_jY.setText(Formats.INT.formatValue(place.getY()));
+        m_sFloor = place.getFloor();
+        if (binder != null) {
+            binder.readBean(place);
+        } else {
+            m_jName.setText(place.getName());
+            m_jSeats.setText(place.getSeats());
+            m_jX.setText(Formats.INT.formatValue(place.getX()));
+            m_jY.setText(Formats.INT.formatValue(place.getY()));
+        }
         m_FloorModel.setSelectedKey(place.getFloor());
 
         m_jName.setEnabled(false);
-        m_jSeats.setEnabled(false);        
+        m_jSeats.setEnabled(false);
         m_jFloor.setEnabled(false);
         m_jX.setEnabled(false);
         m_jY.setEnabled(false);
@@ -168,14 +262,19 @@ public final class PlacesEditor extends JPanel implements EditorRecord<Place> {
             return;
         }
         m_sID = place.getId();
-        m_jName.setText(place.getName());
-        m_jSeats.setText(place.getSeats());        
-        m_jX.setText(Formats.INT.formatValue(place.getX()));
-        m_jY.setText(Formats.INT.formatValue(place.getY()));
+        m_sFloor = place.getFloor();
+        if (binder != null) {
+            binder.readBean(place);
+        } else {
+            m_jName.setText(place.getName());
+            m_jSeats.setText(place.getSeats());
+            m_jX.setText(Formats.INT.formatValue(place.getX()));
+            m_jY.setText(Formats.INT.formatValue(place.getY()));
+        }
         m_FloorModel.setSelectedKey(place.getFloor());
 
         m_jName.setEnabled(true);
-        m_jSeats.setEnabled(true);        
+        m_jSeats.setEnabled(true);
         m_jFloor.setEnabled(true);
         m_jX.setEnabled(true);
         m_jY.setEnabled(true);
@@ -183,16 +282,74 @@ public final class PlacesEditor extends JPanel implements EditorRecord<Place> {
 
     @Override
     public Place createValue() throws BasicException {
-        Integer x = (Integer) Formats.INT.parseValue(m_jX.getText());
-        Integer y = (Integer) Formats.INT.parseValue(m_jY.getText());
-        return new Place(
+        Integer x = null;
+        Integer y = null;
+        try {
+            x = (Integer) Formats.INT.parseValue(m_jX.getText());
+        } catch (BasicException ignored) {
+        }
+        try {
+            y = (Integer) Formats.INT.parseValue(m_jY.getText());
+        } catch (BasicException ignored) {
+        }
+
+        String floorKey = (String) m_FloorModel.getSelectedKey();
+        if (floorKey == null) {
+            floorKey = m_sFloor;
+        }
+
+        Place place = new Place(
                 m_sID,
                 m_jName.getText(),
                 m_jSeats.getText(),
                 x != null ? x : 0,
                 y != null ? y : 0,
-                (String) m_FloorModel.getSelectedKey()
+                floorKey
         );
+
+        if (binder != null) {
+            try {
+                binder.writeBean(place);
+            } catch (SwingBinder.ValidationException ex) {
+                LOGGER.log(System.Logger.Level.WARNING, "Validation in createValue: " + ex.getMessage());
+            }
+        }
+
+        if (place.getName() == null) {
+            place.setName(m_jName.getText());
+        }
+        if (place.getSeats() == null) {
+            place.setSeats(m_jSeats.getText());
+        }
+        if (place.getFloor() == null) {
+            place.setFloor(floorKey);
+        }
+
+        return place;
+    }
+
+    private static class IntegerConverter implements Converter<String, Integer> {
+
+        @Override
+        public Integer toModel(String p) {
+            if (p == null || p.trim().isEmpty()) {
+                return 0;
+            }
+            try {
+                return (Integer) Formats.INT.parseValue(p.trim(), 0);
+            } catch (BasicException e) {
+                try {
+                    return Integer.parseInt(p.trim());
+                } catch (NumberFormatException nfe) {
+                    return -1;
+                }
+            }
+        }
+
+        @Override
+        public String toPresentation(Integer m) {
+            return m != null ? Formats.INT.formatValue(m) : "";
+        }
     }
     
     /**
