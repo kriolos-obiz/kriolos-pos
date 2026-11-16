@@ -7,11 +7,15 @@ import java.lang.reflect.Proxy;
 import java.util.Collections;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Unit test suite verifying type-safe lifecycle of SuppliersView.
+ * Unit test suite verifying type-safe lifecycle, two-way data binding,
+ * and validation of SuppliersView.
  *
  * @author KriolOS
  */
@@ -98,5 +102,115 @@ class SuppliersEditorTest {
         // 5. EOF reset
         view.writeValueEOF();
     }
-}
 
+    @Test
+    @DisplayName("Should validate valid supplier successfully with SwingBinder")
+    void shouldValidateValidSupplierWithSwingBinder() throws BasicException {
+        DirtyManager dirty = new DirtyManager();
+        SuppliersView view = new SuppliersView(dirty);
+
+        SupplierInfo supplier = new SupplierInfo("supp-wh-1");
+        supplier.setSearchkey("WH-001");
+        supplier.setTaxid("TAX-5544");
+        supplier.setName("Ocean Logistics");
+        supplier.setMaxdebt(15000.0);
+        supplier.setEmail("support@oceanlogistics.cv");
+        supplier.setAddress("Port Area Pier 4");
+        supplier.setCity("Mindelo");
+        supplier.setCountry("Cabo Verde");
+        supplier.setVisible(true);
+
+        view.writeValueEdit(supplier);
+
+        assertTrue(view.isValid(), "Valid supplier entity must pass SwingBinder validation");
+        assertNotNull(view.getBinder(), "SwingBinder instance must be present");
+        assertTrue(view.getBinder().getInvalidFields().isEmpty(), "No fields should be flagged as invalid");
+
+        SupplierInfo created = view.createValue();
+        assertEquals("supp-wh-1", created.getId());
+        assertEquals("Ocean Logistics", created.getName());
+        assertEquals("support@oceanlogistics.cv", created.getEmail());
+        assertEquals(15000.0, created.getMaxdebt());
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {"   ", "\t", "\n"})
+    @DisplayName("Should fail SwingBinder validation when required supplier name is missing or blank")
+    void shouldFailValidationWhenRequiredNameIsMissingOrBlank(String invalidName) throws BasicException {
+        DirtyManager dirty = new DirtyManager();
+        SuppliersView view = new SuppliersView(dirty);
+
+        SupplierInfo supplier = new SupplierInfo("supp-invalid");
+        supplier.setName(invalidName);
+        supplier.setEmail("valid@supplier.com");
+        view.writeValueEdit(supplier);
+
+        assertFalse(view.isValid(), "Supplier with missing or blank name must fail validation");
+        assertFalse(view.getBinder().getInvalidFields().isEmpty(), "Name field must be marked as invalid");
+        assertTrue(view.getBinder().getInvalidFields().contains(view.getNameField()),
+                "The invalid fields collection must contain m_jName component");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"not-an-email", "missing-at.domain.com", "user@invalid", "@missing-user.com"})
+    @DisplayName("Should fail SwingBinder validation when supplier email is malformed")
+    void shouldFailValidationWhenEmailIsInvalid(String invalidEmail) throws BasicException {
+        DirtyManager dirty = new DirtyManager();
+        SuppliersView view = new SuppliersView(dirty);
+
+        SupplierInfo supplier = new SupplierInfo("supp-bad-mail");
+        supplier.setName("Valid Supplier Name");
+        supplier.setEmail(invalidEmail);
+        view.writeValueEdit(supplier);
+
+        assertFalse(view.isValid(), "Supplier with malformed email must fail validation");
+        assertTrue(view.getBinder().getInvalidFields().contains(view.getEmailField()),
+                "The invalid fields collection must contain txtEmail component");
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {"   ", "\t"})
+    @DisplayName("Should pass SwingBinder validation when optional supplier email is blank or null")
+    void shouldPassValidationWhenEmailIsBlankOrNull(String optionalEmail) throws BasicException {
+        DirtyManager dirty = new DirtyManager();
+        SuppliersView view = new SuppliersView(dirty);
+
+        SupplierInfo supplier = new SupplierInfo("supp-no-email");
+        supplier.setName("Valid Supplier No Email");
+        supplier.setEmail(optionalEmail);
+        view.writeValueEdit(supplier);
+
+        assertTrue(view.isValid(), "Optional email should pass when blank or null");
+        assertFalse(view.getBinder().getInvalidFields().contains(view.getEmailField()),
+                "txtEmail should not be marked as invalid when empty");
+    }
+
+    @Test
+    @DisplayName("Should track dirty state when user edits bound supplier fields")
+    void shouldTrackDirtyStateWhenBoundFieldIsModified() {
+        DirtyManager dirty = new DirtyManager();
+        SuppliersView view = new SuppliersView(dirty);
+
+        view.writeValueInsert();
+        dirty.setDirty(false);
+        assertFalse(dirty.isDirty(), "Dirty flag should be cleared after manual reset");
+
+        // Simulate typing in supplier name
+        view.getNameField().setText("New Global Supplier");
+        assertTrue(dirty.isDirty(), "Dirty flag must be set when bound name field is edited");
+    }
+
+    @Test
+    @DisplayName("Should safely handle null values during writeValueEdit and writeValueDelete")
+    void shouldHandleNullGuardsInLifecycle() {
+        DirtyManager dirty = new DirtyManager();
+        SuppliersView view = new SuppliersView(dirty);
+
+        assertDoesNotThrow(() -> view.writeValueEdit(null),
+                "writeValueEdit(null) must safely fallback to EOF without throwing NPE");
+        assertDoesNotThrow(() -> view.writeValueDelete(null),
+                "writeValueDelete(null) must safely fallback to EOF without throwing NPE");
+    }
+}
