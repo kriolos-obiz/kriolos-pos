@@ -5,11 +5,15 @@ import com.openbravo.data.user.DirtyManager;
 import com.openbravo.pos.pim.CategoryInfo;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Unit test suite verifying type-safe lifecycle of CategoriesEditor.
+ * Unit test suite verifying type-safe lifecycle, two-way data binding,
+ * and validation of CategoriesEditor.
  *
  * @author KriolOS
  */
@@ -20,7 +24,7 @@ class CategoriesEditorTest {
     @DisplayName("Should handle CategoryInfo lifecycle type-safely without Object[] arrays")
     void shouldHandleCategoriesEditorLifecycle() throws BasicException {
         DirtyManager dirty = new DirtyManager();
-        CategoriesEditor editor = new CategoriesEditor(null, dirty);
+        CategoriesEditor editor = new CategoriesEditor(dirty);
 
         // 1. Initial EOF
         editor.writeValueEOF();
@@ -65,5 +69,74 @@ class CategoriesEditorTest {
         assertNotNull(resetState.getId());
         assertEquals("", resetState.getName());
     }
-}
 
+    @Test
+    @DisplayName("Should validate valid category successfully with SwingBinder")
+    void shouldValidateValidCategoryWithSwingBinder() throws BasicException {
+        DirtyManager dirty = new DirtyManager();
+        CategoriesEditor editor = new CategoriesEditor(dirty);
+
+        CategoryInfo cat = new CategoryInfo("cat-beverages", "Beverages & Drinks", null, "Cold sodas and juices", true);
+        cat.setCatalogOrder("5");
+        cat.setCatalogColor("#33AAFF");
+        cat.setCatalogEnabled(true);
+        editor.writeValueEdit(cat);
+
+        assertTrue(editor.isValid(), "Valid category entity must pass SwingBinder validation");
+        assertNotNull(editor.getBinder(), "SwingBinder instance must be present");
+        assertTrue(editor.getBinder().getInvalidFields().isEmpty(), "No fields should be flagged as invalid");
+
+        CategoryInfo created = editor.createValue();
+        assertEquals("cat-beverages", created.getId());
+        assertEquals("Beverages & Drinks", created.getName());
+        assertEquals("Cold sodas and juices", created.getTextTip());
+        assertEquals("5", created.getCatalogOrder());
+        assertTrue("#33AAFF".equalsIgnoreCase(created.getCatalogColor()));
+        assertTrue(created.isCatShowName());
+        assertTrue(created.isCatalogEnabled());
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {"   ", "\t", "\n"})
+    @DisplayName("Should fail SwingBinder validation when required category name is missing or blank")
+    void shouldFailValidationWhenRequiredNameIsMissingOrBlank(String invalidName) throws BasicException {
+        DirtyManager dirty = new DirtyManager();
+        CategoriesEditor editor = new CategoriesEditor(dirty);
+
+        CategoryInfo cat = new CategoryInfo("cat-invalid", invalidName, null, "Tip", true);
+        editor.writeValueEdit(cat);
+
+        assertFalse(editor.isValid(), "Category with missing or blank name must fail validation");
+        assertFalse(editor.getBinder().getInvalidFields().isEmpty(), "Name field must be marked as invalid");
+        assertTrue(editor.getBinder().getInvalidFields().contains(editor.getNameField()),
+                "The invalid fields collection must contain categoryNameText component");
+    }
+
+    @Test
+    @DisplayName("Should track dirty state when user edits bound category fields")
+    void shouldTrackDirtyStateWhenBoundFieldIsModified() {
+        DirtyManager dirty = new DirtyManager();
+        CategoriesEditor editor = new CategoriesEditor(dirty);
+
+        editor.writeValueInsert();
+        dirty.setDirty(false);
+        assertFalse(dirty.isDirty(), "Dirty flag should be cleared after manual reset");
+
+        // Simulate typing in category name
+        editor.getNameField().setText("New Organic Produce");
+        assertTrue(dirty.isDirty(), "Dirty flag must be set when bound name field is edited");
+    }
+
+    @Test
+    @DisplayName("Should safely handle null values during writeValueEdit and writeValueDelete")
+    void shouldHandleNullGuardsInLifecycle() {
+        DirtyManager dirty = new DirtyManager();
+        CategoriesEditor editor = new CategoriesEditor(dirty);
+
+        assertDoesNotThrow(() -> editor.writeValueEdit(null),
+                "writeValueEdit(null) must safely fallback to EOF without throwing NPE");
+        assertDoesNotThrow(() -> editor.writeValueDelete(null),
+                "writeValueDelete(null) must safely fallback to EOF without throwing NPE");
+    }
+}

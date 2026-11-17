@@ -41,8 +41,10 @@ import com.openbravo.pos.catalog.CatalogService;
 import com.openbravo.pos.catalog.CategoryStock;
 import com.openbravo.pos.pim.CategoryInfo;
 import com.openbravo.pos.pim.DataLogicPIM;
+import com.openbravo.ui.data.binding.SwingBinder;
 import com.openbravo.util.DataTypeUtils;
 import java.awt.Font;
+import javax.swing.JTextField;
 import javax.swing.table.JTableHeader;
 
 /**
@@ -61,32 +63,105 @@ public final class CategoriesEditor extends JPanel implements EditorRecord<Categ
     private CategoriesEditor.StockTableModel stockModel;
     private final CatalogService catalogService;
     private final DataLogicPIM dataLogicPIM;
+    private DirtyManager dirty;
+    private SwingBinder<CategoryInfo> binder;
 
     /**
-     * Creates new form JPanelCategories
+     * Headless constructor for testing without active AppView session.
      *
-     * @param app
-     * @param dirty
+     * @param dirty dirty state manager
+     */
+    public CategoriesEditor(DirtyManager dirty) {
+        this((AppView) null, dirty);
+    }
+
+    /**
+     * Constructor accepting catalog domain service directly.
+     *
+     * @param catalogService catalog service port
+     * @param dirty dirty state manager
+     */
+    public CategoriesEditor(CatalogService catalogService, DirtyManager dirty) {
+        this(null, dirty, catalogService);
+    }
+
+    /**
+     * Creates new form JPanelCategories with application context.
+     *
+     * @param app application view context
+     * @param dirty dirty state manager
      */
     public CategoriesEditor(AppView app, DirtyManager dirty) {
+        this(app, dirty, app != null ? app.getBean(CatalogService.class) : null);
+    }
 
+    /**
+     * Full dependency-injected constructor.
+     *
+     * @param app application view context
+     * @param dirty dirty state manager
+     * @param catalogService catalog service port
+     */
+    public CategoriesEditor(AppView app, DirtyManager dirty, CatalogService catalogService) {
         initComponents();
 
-        catalogService = app != null ? app.getBean(CatalogService.class) : null;
-        dataLogicPIM = (catalogService instanceof DataLogicPIM) ? (DataLogicPIM) catalogService : null;
-        categoryParentModel = new ComboBoxValModel(); 
+        this.dirty = dirty;
+        this.catalogService = catalogService;
+        this.dataLogicPIM = (catalogService instanceof DataLogicPIM) ? (DataLogicPIM) catalogService : null;
+        this.categoryParentModel = new ComboBoxValModel(); 
 
-        categoryNameText.getDocument().addDocumentListener(dirty);
-        categoryParentCombox.addActionListener(dirty);
-        categoryImage.addPropertyChangeListener("image", dirty);
-        categoryShowName.addActionListener(dirty);
-        categoryTipText.getDocument().addDocumentListener(dirty);
-        categoryCatalogOrder.getDocument().addDocumentListener(dirty);
-        categoryShowInCatalog.addActionListener(dirty);
-        categoryCatalogOrder.getDocument().addDocumentListener(dirty);
-        categoryColorPicker.addPropertyChangeListener("color", dirty);
+        if (dirty != null) {
+            categoryNameText.getDocument().addDocumentListener(dirty);
+            categoryParentCombox.addActionListener(dirty);
+            categoryImage.addPropertyChangeListener("image", dirty);
+            categoryShowName.addActionListener(dirty);
+            categoryTipText.getDocument().addDocumentListener(dirty);
+            categoryCatalogOrder.getDocument().addDocumentListener(dirty);
+            categoryShowInCatalog.addActionListener(dirty);
+            categoryColorPicker.addPropertyChangeListener("color", dirty);
+        }
 
+        initValidator();
         writeValueEOF();
+    }
+
+    private void initValidator() {
+        binder = new SwingBinder<>(new CategoryInfo());
+
+        // Mandatory Category Name
+        binder.forField(categoryNameText)
+                .asRequired(AppLocal.getIntString("validation.required", AppLocal.getIntString("label.name")))
+                .bind(CategoryInfo::getName, CategoryInfo::setName);
+
+        binder.forField(categoryTipText)
+                .bind(CategoryInfo::getTextTip, CategoryInfo::setTextTip);
+
+        binder.forField(categoryCatalogOrder)
+                .bind(CategoryInfo::getCatalogOrder, CategoryInfo::setCatalogOrder);
+
+        binder.forField(categoryShowName)
+                .bind(CategoryInfo::isCatShowName, CategoryInfo::setCatShowName);
+
+        binder.forField(categoryShowInCatalog)
+                .bind(CategoryInfo::isCatalogEnabled, CategoryInfo::setCatalogEnabled);
+
+        binder.addStatusChangeListener(() -> {
+            if (dirty != null) {
+                dirty.setDirty(true);
+            }
+        });
+    }
+
+    public boolean isValid() {
+        return binder == null || binder.validate();
+    }
+
+    public SwingBinder<CategoryInfo> getBinder() {
+        return binder;
+    }
+
+    JTextField getNameField() {
+        return categoryNameText;
     }
 
     /**
@@ -109,22 +184,26 @@ public final class CategoriesEditor extends JPanel implements EditorRecord<Categ
     @Override
     public void writeValueEOF() {
         categoryId = null;
-        categoryNameText.setText(null);
+        if (binder != null) {
+            binder.clear();
+        } else {
+            categoryNameText.setText(null);
+            categoryTipText.setText(null);
+            categoryCatalogOrder.setText(null);
+            categoryShowName.setSelected(false);
+            categoryShowInCatalog.setSelected(false);
+        }
         categoryParentModel.setSelectedKey(null);
         categoryImage.setImage(null);
         categoryNameText.setEnabled(false);
         categoryParentCombox.setEnabled(false);
         categoryImage.setEnabled(false);
-        categoryShowInCatalog.isSelected();
-        categoryTipText.setText(null);
+        categoryShowInCatalog.setEnabled(false);
         categoryTipText.setEnabled(false);
-        categoryShowName.setSelected(false);
         categoryShowName.setEnabled(false);
-        categoryCatalogOrder.setText(null);
         categoryCatalogOrder.setEnabled(false);
         categoryColorPicker.reset();
         categoryColorPicker.setEnabled(false);
-
     }
 
     /**
@@ -133,7 +212,13 @@ public final class CategoriesEditor extends JPanel implements EditorRecord<Categ
     @Override
     public void writeValueInsert() {
         categoryId = UUID.randomUUID().toString();
-        categoryNameText.setText(null);
+        if (binder != null) {
+            binder.clear();
+        } else {
+            categoryNameText.setText(null);
+            categoryTipText.setText(null);
+            categoryCatalogOrder.setText(null);
+        }
         categoryParentModel.setSelectedKey(null);
         categoryImage.setImage(null);
         categoryNameText.setEnabled(true);
@@ -141,15 +226,12 @@ public final class CategoriesEditor extends JPanel implements EditorRecord<Categ
         categoryImage.setEnabled(true);
         categoryShowInCatalog.setSelected(true);
         categoryShowInCatalog.setEnabled(true);
-        categoryTipText.setText(null);
         categoryTipText.setEnabled(true);
         categoryShowName.setSelected(true);
         categoryShowName.setEnabled(true);
-        categoryCatalogOrder.setText(null);
         categoryCatalogOrder.setEnabled(true);
         categoryColorPicker.reset();
         categoryColorPicker.setEnabled(true);
-
     }
 
     /**
@@ -163,14 +245,18 @@ public final class CategoriesEditor extends JPanel implements EditorRecord<Categ
             return;
         }
         categoryId = cat.getId();
-        categoryNameText.setText(Formats.STRING.formatValue(cat.getName()));
+        if (binder != null) {
+            binder.readBean(cat);
+        } else {
+            categoryNameText.setText(Formats.STRING.formatValue(cat.getName()));
+            categoryTipText.setText(Formats.STRING.formatValue(cat.getTextTip()));
+            categoryShowName.setSelected(cat.isCatShowName());
+            categoryCatalogOrder.setText(Formats.STRING.formatValue(cat.getCatalogOrder()));
+            categoryShowInCatalog.setSelected(cat.isCatalogEnabled());
+        }
         categoryParentModel.setSelectedKey(cat.getParentId());
         categoryImage.setImage(cat.getImage());
-        categoryTipText.setText(Formats.STRING.formatValue(cat.getTextTip()));
-        categoryShowName.setSelected(cat.isCatShowName());
-        categoryCatalogOrder.setText(Formats.STRING.formatValue(cat.getCatalogOrder()));
         categoryColorPicker.setColor(cat.getCatalogColor());
-        categoryShowInCatalog.setSelected(cat.isCatalogEnabled());
 
         categoryNameText.setEnabled(false);
         categoryParentCombox.setEnabled(false);
@@ -195,14 +281,18 @@ public final class CategoriesEditor extends JPanel implements EditorRecord<Categ
             return;
         }
         categoryId = cat.getId();
-        categoryNameText.setText(Formats.STRING.formatValue(cat.getName()));
+        if (binder != null) {
+            binder.readBean(cat);
+        } else {
+            categoryNameText.setText(Formats.STRING.formatValue(cat.getName()));
+            categoryTipText.setText(Formats.STRING.formatValue(cat.getTextTip()));
+            categoryShowName.setSelected(cat.isCatShowName());
+            categoryCatalogOrder.setText(Formats.STRING.formatValue(cat.getCatalogOrder()));
+            categoryShowInCatalog.setSelected(cat.isCatalogEnabled());
+        }
         categoryParentModel.setSelectedKey(cat.getParentId());
         categoryImage.setImage(cat.getImage());
-        categoryTipText.setText(Formats.STRING.formatValue(cat.getTextTip()));
-        categoryShowName.setSelected(cat.isCatShowName());
-        categoryCatalogOrder.setText(Formats.STRING.formatValue(cat.getCatalogOrder()));
         categoryColorPicker.setColor(cat.getCatalogColor());
-        categoryShowInCatalog.setSelected(cat.isCatalogEnabled());
 
         if (categoryCatalogOrder.getText() != null && categoryCatalogOrder.getText().isBlank()) {
             categoryCatalogOrder.setText(null);
@@ -228,14 +318,27 @@ public final class CategoriesEditor extends JPanel implements EditorRecord<Categ
     public CategoryInfo createValue() throws BasicException {
         CategoryInfo cat = new CategoryInfo();
         cat.setID(categoryId == null ? UUID.randomUUID().toString() : categoryId);
-        cat.setName(categoryNameText.getText());
+        if (binder != null) {
+            try {
+                binder.writeBean(cat);
+            } catch (SwingBinder.ValidationException ex) {
+                LOGGER.log(Level.WARNING, "Validation in createValue: " + ex.getMessage());
+            }
+        }
+        if (cat.getName() == null) {
+            cat.setName(categoryNameText.getText() != null ? categoryNameText.getText() : "");
+        }
+        if (cat.getTextTip() == null) {
+            cat.setTextTip(categoryTipText.getText());
+        }
+        String order = categoryCatalogOrder.getText();
+        if (cat.getCatalogOrder() == null && order != null && !order.isBlank()) {
+            cat.setCatalogOrder(order);
+        }
         cat.setParentId((String) categoryParentModel.getSelectedKey());
         cat.setImage(categoryImage.getImage());
-        cat.setTextTip(categoryTipText.getText());
-        cat.setCatShowName(categoryShowName.isSelected());
-        String order = categoryCatalogOrder.getText();
-        cat.setCatalogOrder((order != null && !order.isBlank()) ? order : null);
         cat.setCatalogColor(categoryColorPicker.getHexColor());
+        cat.setCatShowName(categoryShowName.isSelected());
         cat.setCatalogEnabled(categoryShowInCatalog.isSelected());
         return cat;
     }
