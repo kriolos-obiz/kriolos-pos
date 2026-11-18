@@ -29,6 +29,15 @@
     "available": [],
     "completed": [
       {
+        "id": "TASK-054",
+        "ticket": "KP-164",
+        "agent": "antigravity",
+        "branch": "feature/KP-164-roles-swingbinder-validation",
+        "title": "Type-Safe Validation & Two-Way Data Binding for Roles (RolesView)",
+        "description": "Integrate SwingBinder<RoleInfo> with real-time field validation, headless constructor, and dirty state tracking in RolesView.",
+        "completed_at": "2026-11-18T17:17:00Z"
+      },
+      {
         "id": "TASK-053",
         "ticket": "KP-163",
         "agent": "antigravity",
