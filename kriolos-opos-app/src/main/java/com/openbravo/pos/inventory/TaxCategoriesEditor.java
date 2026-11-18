@@ -21,6 +21,7 @@ import com.openbravo.data.user.DirtyManager;
 import com.openbravo.data.user.EditorRecord;
 import com.openbravo.format.Formats;
 import com.openbravo.basic.AppLocal;
+import com.openbravo.ui.data.binding.SwingBinder;
 import java.awt.Component;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
@@ -28,6 +29,7 @@ import java.awt.datatransfer.StringSelection;
 import java.util.UUID;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JTextField;
 
 /**
  * Strongly typed editor component for TaxCategory records.
@@ -38,8 +40,11 @@ import javax.swing.JPanel;
 public final class TaxCategoriesEditor extends JPanel implements EditorRecord<TaxCategoryInfo> {
     
     private static final long serialVersionUID = 1L;
+    private static final System.Logger LOGGER = System.getLogger(TaxCategoriesEditor.class.getName());
 
     private String m_oId;
+    private DirtyManager dirty;
+    private SwingBinder<TaxCategoryInfo> binder;
     
     /**
      * Creates new form TaxCategoriesEditor.
@@ -48,21 +53,60 @@ public final class TaxCategoriesEditor extends JPanel implements EditorRecord<Ta
      */
     public TaxCategoriesEditor(DirtyManager dirty) {
         initComponents();
-        m_jName.getDocument().addDocumentListener(dirty);
+        this.dirty = dirty;
+        if (dirty != null) {
+            m_jName.getDocument().addDocumentListener(dirty);
+        }
+        initValidator();
         writeValueEOF();
+    }
+
+    private void initValidator() {
+        binder = new SwingBinder<>(new TaxCategoryInfo(null, null));
+
+        // Mandatory Tax Category Name
+        binder.forField(m_jName)
+                .asRequired(AppLocal.getIntString("validation.required", AppLocal.getIntString("label.name")))
+                .bind(TaxCategoryInfo::getName, TaxCategoryInfo::setName);
+
+        binder.addStatusChangeListener(() -> {
+            if (dirty != null) {
+                dirty.setDirty(true);
+            }
+        });
+    }
+
+    public boolean isValid() {
+        return binder == null || binder.validate();
+    }
+
+    public SwingBinder<TaxCategoryInfo> getBinder() {
+        return binder;
+    }
+
+    JTextField getNameField() {
+        return m_jName;
     }
 
     @Override
     public void writeValueEOF() {
         m_oId = null;
-        m_jName.setText(null);
+        if (binder != null) {
+            binder.clear();
+        } else {
+            m_jName.setText(null);
+        }
         m_jName.setEnabled(false);
     }
 
     @Override
     public void writeValueInsert() {
         m_oId = UUID.randomUUID().toString();
-        m_jName.setText(null);
+        if (binder != null) {
+            binder.clear();
+        } else {
+            m_jName.setText(null);
+        }
         m_jName.setEnabled(true);
     }
 
@@ -73,7 +117,11 @@ public final class TaxCategoriesEditor extends JPanel implements EditorRecord<Ta
             return;
         }
         m_oId = value.getID();
-        m_jName.setText(Formats.STRING.formatValue(value.getName()));
+        if (binder != null) {
+            binder.readBean(value);
+        } else {
+            m_jName.setText(Formats.STRING.formatValue(value.getName()));
+        }
         m_jName.setEnabled(false);
     }    
 
@@ -84,13 +132,28 @@ public final class TaxCategoriesEditor extends JPanel implements EditorRecord<Ta
             return;
         }
         m_oId = value.getID();
-        m_jName.setText(Formats.STRING.formatValue(value.getName()));
+        if (binder != null) {
+            binder.readBean(value);
+        } else {
+            m_jName.setText(Formats.STRING.formatValue(value.getName()));
+        }
         m_jName.setEnabled(true);
     }
 
     @Override
     public TaxCategoryInfo createValue() throws BasicException {
-        return new TaxCategoryInfo(m_oId, m_jName.getText());
+        TaxCategoryInfo cat = new TaxCategoryInfo(m_oId, m_jName.getText());
+        if (binder != null) {
+            try {
+                binder.writeBean(cat);
+            } catch (SwingBinder.ValidationException ex) {
+                LOGGER.log(System.Logger.Level.WARNING, "Validation in createValue: " + ex.getMessage());
+            }
+        }
+        if (cat.getName() == null) {
+            cat.setName(m_jName.getText() != null ? m_jName.getText() : "");
+        }
+        return cat;
     }
 
     @Override

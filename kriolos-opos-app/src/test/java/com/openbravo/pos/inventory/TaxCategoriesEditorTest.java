@@ -4,11 +4,15 @@ import com.openbravo.basic.BasicException;
 import com.openbravo.data.user.DirtyManager;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Unit test suite verifying type-safe lifecycle of TaxCategoriesEditor and TaxCustCategoriesEditor.
+ * Unit test suite verifying type-safe lifecycle, two-way data binding,
+ * and validation of TaxCategoriesEditor and TaxCustCategoriesEditor.
  *
  * @author KriolOS
  */
@@ -78,5 +82,126 @@ class TaxCategoriesEditorTest {
         editor.writeValueEOF();
         assertNull(editor.createValue().getID());
     }
-}
 
+    @Test
+    @DisplayName("Should validate valid tax category successfully with SwingBinder")
+    void shouldValidateValidTaxCategoryWithSwingBinder() throws BasicException {
+        DirtyManager dirty = new DirtyManager();
+        TaxCategoriesEditor editor = new TaxCategoriesEditor(dirty);
+
+        TaxCategoryInfo cat = new TaxCategoryInfo("tc-reduced", "Reduced VAT Rate");
+        editor.writeValueEdit(cat);
+
+        assertTrue(editor.isValid(), "Valid tax category must pass SwingBinder validation");
+        assertNotNull(editor.getBinder(), "SwingBinder instance must be present");
+        assertTrue(editor.getBinder().getInvalidFields().isEmpty(), "No fields should be marked as invalid");
+
+        TaxCategoryInfo created = editor.createValue();
+        assertEquals("tc-reduced", created.getID());
+        assertEquals("Reduced VAT Rate", created.getName());
+    }
+
+    @Test
+    @DisplayName("Should validate valid customer tax category successfully with SwingBinder")
+    void shouldValidateValidTaxCustCategoryWithSwingBinder() throws BasicException {
+        DirtyManager dirty = new DirtyManager();
+        TaxCustCategoriesEditor editor = new TaxCustCategoriesEditor(dirty);
+
+        TaxCustCategoryInfo custCat = new TaxCustCategoryInfo("tcc-exempt", "Diplomatic Exempt");
+        editor.writeValueEdit(custCat);
+
+        assertTrue(editor.isValid(), "Valid customer tax category must pass SwingBinder validation");
+        assertNotNull(editor.getBinder(), "SwingBinder instance must be present");
+        assertTrue(editor.getBinder().getInvalidFields().isEmpty(), "No fields should be marked as invalid");
+
+        TaxCustCategoryInfo created = editor.createValue();
+        assertEquals("tcc-exempt", created.getID());
+        assertEquals("Diplomatic Exempt", created.getName());
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {"   ", "\t", "\n"})
+    @DisplayName("Should fail SwingBinder validation when tax category name is missing or blank")
+    void shouldFailValidationWhenTaxCategoryNameIsMissingOrBlank(String invalidName) throws BasicException {
+        DirtyManager dirty = new DirtyManager();
+        TaxCategoriesEditor editor = new TaxCategoriesEditor(dirty);
+
+        TaxCategoryInfo cat = new TaxCategoryInfo("tc-invalid", invalidName);
+        editor.writeValueEdit(cat);
+
+        assertFalse(editor.isValid(), "Tax category with missing or blank name must fail validation");
+        assertFalse(editor.getBinder().getInvalidFields().isEmpty(), "Name field must be marked as invalid");
+        assertTrue(editor.getBinder().getInvalidFields().contains(editor.getNameField()),
+                "The invalid fields collection must contain m_jName component");
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {"   ", "\t", "\n"})
+    @DisplayName("Should fail SwingBinder validation when customer tax category name is missing or blank")
+    void shouldFailValidationWhenTaxCustCategoryNameIsMissingOrBlank(String invalidName) throws BasicException {
+        DirtyManager dirty = new DirtyManager();
+        TaxCustCategoriesEditor editor = new TaxCustCategoriesEditor(dirty);
+
+        TaxCustCategoryInfo custCat = new TaxCustCategoryInfo("tcc-invalid", invalidName);
+        editor.writeValueEdit(custCat);
+
+        assertFalse(editor.isValid(), "Customer tax category with missing or blank name must fail validation");
+        assertFalse(editor.getBinder().getInvalidFields().isEmpty(), "Name field must be marked as invalid");
+        assertTrue(editor.getBinder().getInvalidFields().contains(editor.getNameField()),
+                "The invalid fields collection must contain m_jName component");
+    }
+
+    @Test
+    @DisplayName("Should track dirty state when user edits bound tax category name")
+    void shouldTrackDirtyStateWhenTaxCategoryFieldIsModified() {
+        DirtyManager dirty = new DirtyManager();
+        TaxCategoriesEditor editor = new TaxCategoriesEditor(dirty);
+
+        editor.writeValueInsert();
+        dirty.setDirty(false);
+        assertFalse(dirty.isDirty(), "Dirty flag should be cleared after manual reset");
+
+        editor.getNameField().setText("Luxury Goods VAT");
+        assertTrue(dirty.isDirty(), "Dirty flag must be set when bound name field is edited");
+    }
+
+    @Test
+    @DisplayName("Should track dirty state when user edits bound customer tax category name")
+    void shouldTrackDirtyStateWhenTaxCustCategoryFieldIsModified() {
+        DirtyManager dirty = new DirtyManager();
+        TaxCustCategoriesEditor editor = new TaxCustCategoriesEditor(dirty);
+
+        editor.writeValueInsert();
+        dirty.setDirty(false);
+        assertFalse(dirty.isDirty(), "Dirty flag should be cleared after manual reset");
+
+        editor.getNameField().setText("Non-Profit Entity");
+        assertTrue(dirty.isDirty(), "Dirty flag must be set when bound name field is edited");
+    }
+
+    @Test
+    @DisplayName("Should safely handle null values during tax category writeValueEdit and writeValueDelete")
+    void shouldHandleNullGuardsInTaxCategoriesLifecycle() {
+        DirtyManager dirty = new DirtyManager();
+        TaxCategoriesEditor editor = new TaxCategoriesEditor(dirty);
+
+        assertDoesNotThrow(() -> editor.writeValueEdit(null),
+                "writeValueEdit(null) must safely fallback to EOF without throwing NPE");
+        assertDoesNotThrow(() -> editor.writeValueDelete(null),
+                "writeValueDelete(null) must safely fallback to EOF without throwing NPE");
+    }
+
+    @Test
+    @DisplayName("Should safely handle null values during customer tax category writeValueEdit and writeValueDelete")
+    void shouldHandleNullGuardsInTaxCustCategoriesLifecycle() {
+        DirtyManager dirty = new DirtyManager();
+        TaxCustCategoriesEditor editor = new TaxCustCategoriesEditor(dirty);
+
+        assertDoesNotThrow(() -> editor.writeValueEdit(null),
+                "writeValueEdit(null) must safely fallback to EOF without throwing NPE");
+        assertDoesNotThrow(() -> editor.writeValueDelete(null),
+                "writeValueDelete(null) must safely fallback to EOF without throwing NPE");
+    }
+}

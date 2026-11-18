@@ -29,6 +29,16 @@
     "available": [],
     "completed": [
       {
+        "id": "TASK-051",
+        "ticket": "KP-161",
+        "agent": "antigravity",
+        "branch": "feature/KP-161-tax-categories-swingbinder-validation",
+        "title": "Type-Safe Validation & Two-Way Data Binding for Tax Categories & Customer Tax Categories",
+        "description": "Integrate SwingBinder with real-time field validation, headless lifecycle, and dirty state tracking in TaxCategoriesEditor and TaxCustCategoriesEditor.",
+        "completed_at": "2026-11-17T23:25:00Z"
+      },
+    "completed": [
+      {
         "id": "TASK-050",
         "ticket": "KP-160",
         "agent": "antigravity",
@@ -37,7 +47,6 @@
         "description": "Integrate SwingBinder<CategoryInfo> with real-time field validation, headless constructor, image binding, and dirty state tracking in CategoriesEditor.",
         "completed_at": "2026-11-17T13:45:00Z"
       },
-    "completed": [
       {
         "id": "TASK-049",
         "ticket": "KP-159",
