@@ -29,6 +29,15 @@
     "available": [],
     "completed": [
       {
+        "id": "TASK-053",
+        "ticket": "KP-163",
+        "agent": "antigravity",
+        "branch": "feature/KP-163-uom-swingbinder-validation",
+        "title": "Type-Safe Validation & Two-Way Data Binding for Units of Measure (UomEditor)",
+        "description": "Integrate SwingBinder<UomInfo> with real-time field validation, headless constructor, and dirty state tracking in UomEditor.",
+        "completed_at": "2026-11-18T16:38:00Z"
+      },
+      {
         "id": "TASK-052",
         "ticket": "KP-162",
         "agent": "antigravity",
@@ -37,7 +46,6 @@
         "description": "Integrate SwingBinder<TaxInfo> with real-time field validation, headless constructors, rate converters, and dirty state tracking in TaxEditor.",
         "completed_at": "2026-11-18T12:11:00Z"
       },
-    "completed": [
       {
         "id": "TASK-051",
         "ticket": "KP-161",
