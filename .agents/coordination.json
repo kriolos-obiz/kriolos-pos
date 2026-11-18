@@ -29,6 +29,15 @@
     "available": [],
     "completed": [
       {
+        "id": "TASK-055",
+        "ticket": "KP-165",
+        "agent": "antigravity",
+        "branch": "feature/KP-165-people-swingbinder-validation",
+        "title": "Type-Safe Validation & Two-Way Data Binding for Users (PeopleView)",
+        "description": "Integrate SwingBinder<PeopleInfo> with real-time field validation, headless constructor, and dirty state tracking in PeopleView.",
+        "completed_at": "2026-11-18T19:56:00Z"
+      },
+      {
         "id": "TASK-054",
         "ticket": "KP-164",
         "agent": "antigravity",
