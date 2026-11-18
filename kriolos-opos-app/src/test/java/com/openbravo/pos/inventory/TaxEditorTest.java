@@ -13,15 +13,19 @@ import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Unit test suite verifying type-safe lifecycle of TaxEditor.
+ * Unit test suite verifying type-safe lifecycle, two-way data binding,
+ * and validation of TaxEditor.
  *
  * @author KriolOS
  */
-@DisplayName("Tax Editor Type-Safe Lifecycle Test Suite")
+@DisplayName("Tax Editor Type-Safe Lifecycle & Validation Test Suite")
 class TaxEditorTest {
 
     private static class SimpleSentenceList<T> implements SentenceList<T> {
@@ -173,5 +177,75 @@ class TaxEditorTest {
         assertNull(editor.createValue().getId());
         editor.writeValueDelete(null);
         assertNull(editor.createValue().getId());
+    }
+
+    @Test
+    @DisplayName("Should validate valid tax successfully with SwingBinder")
+    void shouldValidateValidTaxWithSwingBinder() throws BasicException {
+        DirtyManager dirty = new DirtyManager();
+        TaxService taxService = new StubTaxService();
+        TaxEditor editor = new TaxEditor(dirty, taxService);
+        editor.activate();
+        editor.refresh();
+
+        TaxInfo tax = new TaxInfo("tax-reduced", "Reduced Tax 8%", "tc-001", "tcc-001", null, 0.08, false, 2);
+        editor.writeValueEdit(tax);
+
+        assertTrue(editor.isValid(), "Valid tax entity must pass SwingBinder validation");
+        assertNotNull(editor.getBinder(), "SwingBinder instance must be present");
+        assertTrue(editor.getBinder().getInvalidFields().isEmpty(), "No fields should be marked as invalid");
+
+        TaxInfo created = editor.createValue();
+        assertEquals("tax-reduced", created.getId());
+        assertEquals("Reduced Tax 8%", created.getName());
+        assertEquals(0.08, created.getRate(), 0.0001);
+        assertFalse(created.isCascade());
+        assertEquals(2, created.getOrder());
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {"   ", "\t", "\n"})
+    @DisplayName("Should fail SwingBinder validation when tax name is missing or blank")
+    void shouldFailValidationWhenTaxNameIsMissingOrBlank(String invalidName) throws BasicException {
+        DirtyManager dirty = new DirtyManager();
+        TaxEditor editor = new TaxEditor(dirty);
+
+        TaxInfo tax = new TaxInfo("tax-invalid", invalidName, null, null, null, 0.15, false, 1);
+        editor.writeValueEdit(tax);
+
+        assertFalse(editor.isValid(), "Tax with missing/blank name must fail validation");
+        assertFalse(editor.getBinder().getInvalidFields().isEmpty(), "Name field must be marked as invalid");
+        assertTrue(editor.getBinder().getInvalidFields().contains(editor.getNameField()),
+                "The invalid fields collection must contain m_jName component");
+    }
+
+    @Test
+    @DisplayName("Should track dirty state when user edits bound tax fields")
+    void shouldTrackDirtyStateWhenBoundFieldIsModified() {
+        DirtyManager dirty = new DirtyManager();
+        TaxEditor editor = new TaxEditor(dirty);
+
+        editor.writeValueInsert();
+        dirty.setDirty(false);
+        assertFalse(dirty.isDirty(), "Dirty flag should be cleared after manual reset");
+
+        editor.getNameField().setText("Eco Tax 5%");
+        assertTrue(dirty.isDirty(), "Dirty flag must be set when bound name field is edited");
+    }
+
+    @Test
+    @DisplayName("Should instantiate headlessly without active AppView or services")
+    void shouldInstantiateHeadlesslyWithoutServices() throws BasicException {
+        DirtyManager dirty = new DirtyManager();
+        TaxEditor editor = new TaxEditor(dirty);
+
+        assertNotNull(editor.getComponent(), "Component must be instantiated");
+        assertDoesNotThrow(editor::activate, "activate() on headless instance should not throw NPE");
+        assertDoesNotThrow(editor::refresh, "refresh() on headless instance should not throw NPE");
+
+        editor.writeValueInsert();
+        TaxInfo inserted = editor.createValue();
+        assertNotNull(inserted.getId(), "Insert state should generate an ID");
     }
 }

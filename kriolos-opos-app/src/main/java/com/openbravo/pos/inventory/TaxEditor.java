@@ -27,6 +27,8 @@ import com.openbravo.basic.AppLocal;
 import com.openbravo.pos.panels.AppView;
 import com.openbravo.pos.sales.TaxService;
 import com.openbravo.pos.ticket.TaxInfo;
+import com.openbravo.ui.data.binding.Converter;
+import com.openbravo.ui.data.binding.SwingBinder;
 import java.awt.Component;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
@@ -36,6 +38,7 @@ import java.util.List;
 import java.util.UUID;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JTextField;
 
 /**
  *
@@ -44,7 +47,12 @@ import javax.swing.JPanel;
  */
 public class TaxEditor extends JPanel implements EditorRecord<TaxInfo> {
     
+    private static final long serialVersionUID = 1L;
+    private static final System.Logger LOGGER = System.getLogger(TaxEditor.class.getName());
+
     private String m_oId;
+    private DirtyManager dirty;
+    private SwingBinder<TaxInfo> binder;
     
     private SentenceList<TaxCategoryInfo> taxcatsent;
     private ComboBoxValModel<TaxCategoryInfo> taxcatmodel;    
@@ -55,34 +63,169 @@ public class TaxEditor extends JPanel implements EditorRecord<TaxInfo> {
     private SentenceList<TaxInfo> taxparentsent;
     private ComboBoxValModel<TaxInfo> taxparentmodel;    
     
-    /** Creates new form taxEditor
-     * @param app
-     * @param dirty */
-    public TaxEditor(AppView app, DirtyManager dirty) {
-        this(app, dirty, app.getBean(TaxService.class));
+    /**
+     * Headless constructor for testing without active AppView session or services.
+     *
+     * @param dirty dirty state manager
+     */
+    public TaxEditor(DirtyManager dirty) {
+        this((AppView) null, dirty, (TaxService) null);
     }
 
+    /**
+     * Headless constructor with explicit TaxService dependency.
+     *
+     * @param dirty dirty state manager
+     * @param taxService tax service port
+     */
+    public TaxEditor(DirtyManager dirty, TaxService taxService) {
+        this((AppView) null, dirty, taxService);
+    }
+
+    /**
+     * Creates new form taxEditor.
+     *
+     * @param app application view context
+     * @param dirty dirty state manager
+     */
+    public TaxEditor(AppView app, DirtyManager dirty) {
+        this(app, dirty, app != null ? app.getBean(TaxService.class) : null);
+    }
+
+    /**
+     * Full dependency-injected constructor.
+     *
+     * @param app application view context
+     * @param dirty dirty state manager
+     * @param taxService tax domain service
+     */
     public TaxEditor(AppView app, DirtyManager dirty, TaxService taxService) {
         initComponents();
+        this.dirty = dirty;
         
-        taxcatsent = taxService.getTaxCategoriesList();
+        taxcatsent = taxService != null ? taxService.getTaxCategoriesList() : null;
         taxcatmodel = new ComboBoxValModel<>();        
         
-        taxcustcatsent = taxService.getTaxCustCategoriesList();
+        taxcustcatsent = taxService != null ? taxService.getTaxCustCategoriesList() : null;
         taxcustcatmodel = new ComboBoxValModel<>();    
         
-        taxparentsent = taxService.getTaxList();
+        taxparentsent = taxService != null ? taxService.getTaxList() : null;
         taxparentmodel = new ComboBoxValModel<>();    
 
-        m_jName.getDocument().addDocumentListener(dirty);
-        m_jTaxCategory.addActionListener(dirty);
-        m_jCustTaxCategory.addActionListener(dirty);
-        m_jTaxParent.addActionListener(dirty);
-        m_jRate.getDocument().addDocumentListener(dirty);
-        jCascade.addActionListener(dirty);
-        jOrder.getDocument().addDocumentListener(dirty);
-        
+        if (dirty != null) {
+            m_jName.getDocument().addDocumentListener(dirty);
+            m_jTaxCategory.addActionListener(dirty);
+            m_jCustTaxCategory.addActionListener(dirty);
+            m_jTaxParent.addActionListener(dirty);
+            m_jRate.getDocument().addDocumentListener(dirty);
+            jCascade.addActionListener(dirty);
+            jOrder.getDocument().addDocumentListener(dirty);
+        }
+
+        initValidator();
         writeValueEOF();
+    }
+
+    private void initValidator() {
+        binder = new SwingBinder<>(new TaxInfo());
+
+        // Mandatory Tax Name
+        binder.forField(m_jName)
+                .asRequired(AppLocal.getIntString("validation.required", AppLocal.getIntString("label.name")))
+                .bind(TaxInfo::getName, TaxInfo::setName);
+
+        // Tax Rate (Percentage)
+        binder.forField(m_jRate)
+                .withConverter(new PercentDoubleConverter())
+                .withValidator(v -> v == null || v >= 0.0, AppLocal.getIntString("validation.number.positive", AppLocal.getIntString("label.dutyrate")))
+                .bind(TaxInfo::getRate, TaxInfo::setRate);
+
+        // Cascade Flag
+        binder.forField(jCascade)
+                .bind(TaxInfo::isCascade, TaxInfo::setCascade);
+
+        // Order
+        binder.forField(jOrder)
+                .withConverter(new OrderIntegerConverter())
+                .bind(TaxInfo::getOrder, TaxInfo::setOrder);
+
+        binder.addStatusChangeListener(() -> {
+            if (dirty != null) {
+                dirty.setDirty(true);
+            }
+        });
+    }
+
+    public boolean isValid() {
+        return binder == null || binder.validate();
+    }
+
+    public SwingBinder<TaxInfo> getBinder() {
+        return binder;
+    }
+
+    JTextField getNameField() {
+        return m_jName;
+    }
+
+    JTextField getRateField() {
+        return m_jRate;
+    }
+
+    JTextField getOrderField() {
+        return jOrder;
+    }
+
+    private static class PercentDoubleConverter implements Converter<String, Double> {
+        @Override
+        public Double toModel(String p) {
+            if (p == null || p.trim().isEmpty()) {
+                return 0.0;
+            }
+            try {
+                Object val = Formats.PERCENT.parseValue(p.trim());
+                if (val instanceof Number n) {
+                    return n.doubleValue();
+                }
+            } catch (BasicException ex) {
+                // fall through to manual parse
+            }
+            try {
+                String cleaned = p.replace("%", "").trim().replace(',', '.');
+                double v = Double.parseDouble(cleaned);
+                return v > 1.0 ? v / 100.0 : v;
+            } catch (NumberFormatException ex) {
+                return null;
+            }
+        }
+
+        @Override
+        public String toPresentation(Double m) {
+            return m != null ? Formats.PERCENT.formatValue(m) : "";
+        }
+    }
+
+    private static class OrderIntegerConverter implements Converter<String, Integer> {
+        @Override
+        public Integer toModel(String p) {
+            if (p == null || p.trim().isEmpty()) {
+                return null;
+            }
+            try {
+                return (Integer) Formats.INT.parseValue(p.trim());
+            } catch (BasicException ex) {
+                try {
+                    return Integer.parseInt(p.trim());
+                } catch (NumberFormatException e) {
+                    return null;
+                }
+            }
+        }
+
+        @Override
+        public String toPresentation(Integer m) {
+            return m != null ? Formats.INT.formatValue(m) : "";
+        }
     }
     
     /**
@@ -90,9 +233,11 @@ public class TaxEditor extends JPanel implements EditorRecord<TaxInfo> {
      * @throws BasicException
      */
     public void activate() throws BasicException {
-        List<TaxCategoryInfo> a = taxcatsent.list();
-        taxcatmodel = new ComboBoxValModel<>(a);
-        m_jTaxCategory.setModel(taxcatmodel);
+        if (taxcatsent != null) {
+            List<TaxCategoryInfo> a = taxcatsent.list();
+            taxcatmodel = new ComboBoxValModel<>(a);
+            m_jTaxCategory.setModel(taxcatmodel);
+        }
         
         List<TaxCustCategoryInfo> b = new ArrayList<>();
         b.add(null);
@@ -136,13 +281,17 @@ public class TaxEditor extends JPanel implements EditorRecord<TaxInfo> {
     @Override
     public void writeValueEOF() {
         m_oId = null;
-        m_jName.setText(null);
+        if (binder != null) {
+            binder.clear();
+        } else {
+            m_jName.setText(null);
+            m_jRate.setText(null);
+            jCascade.setSelected(false);
+            jOrder.setText(null);
+        }
         taxcatmodel.setSelectedKey(null);
         taxcustcatmodel.setSelectedKey(null);
         taxparentmodel.setSelectedKey(null);
-        m_jRate.setText(null);
-        jCascade.setSelected(false);
-        jOrder.setText(null);
       
         m_jName.setEnabled(false);
         m_jTaxCategory.setEnabled(false);
@@ -159,13 +308,17 @@ public class TaxEditor extends JPanel implements EditorRecord<TaxInfo> {
     @Override
     public void writeValueInsert() {
         m_oId = UUID.randomUUID().toString();
-        m_jName.setText(null);
+        if (binder != null) {
+            binder.clear();
+        } else {
+            m_jName.setText(null);
+            m_jRate.setText(null);
+            jCascade.setSelected(false);
+            jOrder.setText(null);
+        }
         taxcatmodel.setSelectedKey(null);
         taxcustcatmodel.setSelectedKey(null);
         taxparentmodel.setSelectedKey(null);
-        m_jRate.setText(null);
-        jCascade.setSelected(false);
-        jOrder.setText(null);
 
         m_jName.setEnabled(true);
         m_jTaxCategory.setEnabled(true);
@@ -188,13 +341,17 @@ public class TaxEditor extends JPanel implements EditorRecord<TaxInfo> {
         }
 
         m_oId = value.getId();
-        m_jName.setText(Formats.STRING.formatValue(value.getName()));
+        if (binder != null) {
+            binder.readBean(value);
+        } else {
+            m_jName.setText(Formats.STRING.formatValue(value.getName()));
+            m_jRate.setText(Formats.PERCENT.formatValue(value.getRate()));
+            jCascade.setSelected(value.isCascade());
+            jOrder.setText(Formats.INT.formatValue(value.getOrder()));
+        }
         taxcatmodel.setSelectedKey(value.getTaxCategoryID());
         taxcustcatmodel.setSelectedKey(value.getTaxCustCategoryID());
         taxparentmodel.setSelectedKey(value.getParentID());        
-        m_jRate.setText(Formats.PERCENT.formatValue(value.getRate()));
-        jCascade.setSelected(value.isCascade());
-        jOrder.setText(Formats.INT.formatValue(value.getOrder()));
         
         m_jName.setEnabled(false);
         m_jTaxCategory.setEnabled(false);
@@ -217,13 +374,17 @@ public class TaxEditor extends JPanel implements EditorRecord<TaxInfo> {
         }
 
         m_oId = value.getId();
-        m_jName.setText(Formats.STRING.formatValue(value.getName()));
+        if (binder != null) {
+            binder.readBean(value);
+        } else {
+            m_jName.setText(Formats.STRING.formatValue(value.getName()));
+            m_jRate.setText(Formats.PERCENT.formatValue(value.getRate()));
+            jCascade.setSelected(value.isCascade());
+            jOrder.setText(Formats.INT.formatValue(value.getOrder()));
+        }
         taxcatmodel.setSelectedKey(value.getTaxCategoryID());
         taxcustcatmodel.setSelectedKey(value.getTaxCustCategoryID());
         taxparentmodel.setSelectedKey(value.getParentID());        
-        m_jRate.setText(Formats.PERCENT.formatValue(value.getRate()));
-        jCascade.setSelected(value.isCascade());
-        jOrder.setText(Formats.INT.formatValue(value.getOrder()));
       
         m_jName.setEnabled(true);
         m_jTaxCategory.setEnabled(true);
@@ -241,11 +402,21 @@ public class TaxEditor extends JPanel implements EditorRecord<TaxInfo> {
      */
     @Override
     public TaxInfo createValue() throws BasicException {
-        Double rate = (Double) Formats.PERCENT.parseValue(m_jRate.getText());
-        Integer order = (Integer) Formats.INT.parseValue(jOrder.getText());
-        return new TaxInfo(
+        Double rate = null;
+        try {
+            rate = (Double) Formats.PERCENT.parseValue(m_jRate.getText());
+        } catch (BasicException ex) {
+            // fallback
+        }
+        Integer order = null;
+        try {
+            order = (Integer) Formats.INT.parseValue(jOrder.getText());
+        } catch (BasicException ex) {
+            // fallback
+        }
+        TaxInfo tax = new TaxInfo(
             m_oId,
-            m_jName.getText(),
+            m_jName.getText() != null ? m_jName.getText() : "",
             (String) taxcatmodel.getSelectedKey(),
             (String) taxcustcatmodel.getSelectedKey(),
             (String) taxparentmodel.getSelectedKey(),
@@ -253,6 +424,17 @@ public class TaxEditor extends JPanel implements EditorRecord<TaxInfo> {
             jCascade.isSelected(),
             order
         );
+        if (binder != null) {
+            try {
+                binder.writeBean(tax);
+            } catch (SwingBinder.ValidationException ex) {
+                LOGGER.log(System.Logger.Level.WARNING, "Validation in createValue: " + ex.getMessage());
+            }
+        }
+        if (tax.getName() == null) {
+            tax.setName(m_jName.getText() != null ? m_jName.getText() : "");
+        }
+        return tax;
     }
 
     /**
