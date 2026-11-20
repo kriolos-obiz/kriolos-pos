@@ -29,6 +29,15 @@
     "available": [],
     "completed": [
       {
+        "id": "TASK-056",
+        "ticket": "KP-169",
+        "agent": "antigravity",
+        "branch": "feature/KP-169-payments-swingbinder-validation",
+        "title": "Type-Safe Validation & Data Binding for Cash Movements (PaymentsEditor)",
+        "description": "Integrate SwingBinder<PaymentModel> with real-time validation, border feedback, and dirty state tracking in PaymentsEditor.",
+        "completed_at": "2026-11-20T11:38:00Z"
+      },
+      {
         "id": "TASK-055",
         "ticket": "KP-165",
         "agent": "antigravity",
