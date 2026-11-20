@@ -16,29 +16,47 @@
 
 package com.openbravo.pos.epm;
 
+import com.openbravo.basic.AppLocal;
 import com.openbravo.basic.BasicException;
-import com.openbravo.data.loader.SentenceList;
 import com.openbravo.data.user.DirtyManager;
 import com.openbravo.data.user.EditorRecord;
-import com.openbravo.basic.AppLocal;
 import com.openbravo.pos.panels.AppView;
+import com.openbravo.ui.data.binding.SwingBinder;
 import java.awt.Component;
 import java.util.List;
 import java.util.UUID;
 
 /**
+ * Strongly typed editor panel for employee break configurations, supporting
+ * two-way Swing data binding, headless testing, and real-time validation.
  *
  * @author Ali Safdar and Aneeqa Baber
+ * @author KriolOS
  */
 public final class BreaksView extends javax.swing.JPanel implements EditorRecord<BreaksInfo> {
+
+    private static final long serialVersionUID = 1L;
 
     private String m_oId;
     private final ShiftService shiftService;
     private DirtyManager m_Dirty;
+    private SwingBinder<BreaksInfo> binder;
 
-    /** Creates new form BreaksView
+    /**
+     * Headless constructor for testing without AppView.
+     *
+     * @param dirty DirtyManager listener
+     */
+    public BreaksView(DirtyManager dirty) {
+        this(null, dirty, null);
+    }
+
+    /**
+     * Creates new form BreaksView
+     *
      * @param app
-     * @param dirty */
+     * @param dirty
+     */
     public BreaksView(AppView app, DirtyManager dirty) {
         this(app, dirty, null);
     }
@@ -46,16 +64,61 @@ public final class BreaksView extends javax.swing.JPanel implements EditorRecord
     public BreaksView(AppView app, DirtyManager dirty, ShiftService shiftService) {
         this.shiftService = shiftService != null ? shiftService : (app != null ? app.getBean(ShiftService.class) : null);
         initComponents();
-        m_Dirty = dirty;
-        m_jBreakName.getDocument().addDocumentListener(dirty);
-        m_jVisible.addActionListener(dirty);
-        m_jBreakDescription.getDocument().addDocumentListener(dirty);
+        this.m_Dirty = dirty;
+        if (dirty != null) {
+            m_jBreakName.getDocument().addDocumentListener(dirty);
+            m_jVisible.addActionListener(dirty);
+            m_jBreakDescription.getDocument().addDocumentListener(dirty);
+        }
+        initValidator();
         writeValueEOF();
     }
 
+    private void initValidator() {
+        binder = new SwingBinder<>(new BreaksInfo());
+
+        binder.forField(m_jBreakName)
+                .asRequired(AppLocal.getIntString("validation.required", AppLocal.getIntString("label.name")))
+                .bind(BreaksInfo::getName, BreaksInfo::setName);
+
+        binder.forField(m_jBreakDescription)
+                .bind(b -> b != null && b.getNotes() != null ? b.getNotes() : "", BreaksInfo::setNotes);
+
+        binder.forField(m_jVisible)
+                .bind(BreaksInfo::isVisible, BreaksInfo::setVisible);
+
+        binder.addStatusChangeListener(() -> {
+            if (m_Dirty != null) {
+                m_Dirty.setDirty(true);
+            }
+        });
+    }
+
+    public boolean isValid() {
+        return binder == null || binder.validate();
+    }
+
+    public boolean isDataValid() {
+        return isValid();
+    }
+
+    javax.swing.JTextField getBreakNameField() {
+        return m_jBreakName;
+    }
+
+    javax.swing.JTextArea getBreakDescriptionArea() {
+        return m_jBreakDescription;
+    }
+
+    javax.swing.JCheckBox getVisibleCheckBox() {
+        return m_jVisible;
+    }
+
     void activate() throws BasicException {
-        List<BreaksInfo> a = shiftService.getBreaksListAll();
-        a.add(0, null);
+        if (shiftService != null) {
+            List<BreaksInfo> a = shiftService.getBreaksListAll();
+            a.add(0, null);
+        }
     }
 
     /**
@@ -63,6 +126,9 @@ public final class BreaksView extends javax.swing.JPanel implements EditorRecord
      */
     @Override
     public void writeValueEOF() {
+        if (binder != null) {
+            binder.clear();
+        }
         m_oId = null;
         m_jBreakName.setText(null);
         m_jBreakDescription.setText(null);
@@ -77,6 +143,9 @@ public final class BreaksView extends javax.swing.JPanel implements EditorRecord
      */
     @Override
     public void writeValueInsert() {
+        if (binder != null) {
+            binder.clear();
+        }
         m_oId = null;
         m_jBreakName.setText(null);
         m_jBreakDescription.setText(null);
@@ -103,6 +172,9 @@ public final class BreaksView extends javax.swing.JPanel implements EditorRecord
         m_jBreakName.setEditable(true);
         m_jBreakDescription.setEnabled(true);
         m_jVisible.setEnabled(true);
+        if (binder != null) {
+            binder.readBean(breaks);
+        }
     }
 
     /**
@@ -122,6 +194,9 @@ public final class BreaksView extends javax.swing.JPanel implements EditorRecord
         m_jBreakName.setEditable(false);
         m_jBreakDescription.setEnabled(false);
         m_jVisible.setEnabled(false);
+        if (binder != null) {
+            binder.readBean(breaks);
+        }
     }
 
     /**
@@ -147,12 +222,20 @@ public final class BreaksView extends javax.swing.JPanel implements EditorRecord
      */
     @Override
     public BreaksInfo createValue() throws BasicException {
-        return new BreaksInfo(
+        BreaksInfo info = new BreaksInfo(
             m_oId == null ? UUID.randomUUID().toString() : m_oId,
             m_jBreakName.getText(),
             m_jBreakDescription.getText(),
             m_jVisible.isSelected()
         );
+        if (binder != null) {
+            try {
+                binder.writeBean(info);
+            } catch (SwingBinder.ValidationException ex) {
+                // validation state is surfaced by binder.validate() / isValid()
+            }
+        }
+        return info;
     }
     
     /** This method is called from within the constructor to

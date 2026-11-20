@@ -15,23 +15,29 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package com.openbravo.pos.epm;
 
+import com.openbravo.basic.AppLocal;
 import com.openbravo.basic.BasicException;
 import com.openbravo.beans.JCalendarPanel2;
 import com.openbravo.data.user.DirtyManager;
 import com.openbravo.data.user.EditorRecord;
 import com.openbravo.format.Formats;
-import com.openbravo.basic.AppLocal;
 import com.openbravo.pos.panels.AppView;
+import com.openbravo.ui.data.binding.SwingBinder;
 import java.awt.Component;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.UUID;
-import java.util.Calendar;
 
 /**
+ * Strongly typed editor panel for employee leave records, supporting
+ * two-way Swing data binding, headless testing, and real-time validation.
  *
  * @author Ali Safdar and Aneeqa Baber
+ * @author KriolOS
  */
 public final class LeavesView extends javax.swing.JPanel implements EditorRecord<LeavesInfo> {
+
+    private static final long serialVersionUID = 1L;
 
     private String leaveId;
     private String m_employeeid;
@@ -40,6 +46,16 @@ public final class LeavesView extends javax.swing.JPanel implements EditorRecord
 
     private DirtyManager m_Dirty;
     private ShiftService shiftService;
+    private SwingBinder<LeavesInfo> binder;
+
+    /**
+     * Headless constructor for testing without AppView.
+     *
+     * @param dirty DirtyManager listener
+     */
+    public LeavesView(DirtyManager dirty) {
+        this(null, dirty, null);
+    }
 
     /**
      * Creates new form LeavesView
@@ -55,13 +71,15 @@ public final class LeavesView extends javax.swing.JPanel implements EditorRecord
         this.shiftService = shiftService != null ? shiftService : (app != null ? app.getBean(ShiftService.class) : null);
         initComponents();
 
-        m_Dirty = dirty;
-        m_jEmployeeName.getDocument().addDocumentListener(dirty);
-        m_jStartDate.getDocument().addDocumentListener(dirty);
-        m_jEndDate.getDocument().addDocumentListener(dirty);
-        m_jLeaveNote.getDocument().addDocumentListener(dirty);
-        writeValueEOF();
+        this.m_Dirty = dirty;
+        if (dirty != null) {
+            m_jEmployeeName.getDocument().addDocumentListener(dirty);
+            m_jStartDate.getDocument().addDocumentListener(dirty);
+            m_jEndDate.getDocument().addDocumentListener(dirty);
+            m_jLeaveNote.getDocument().addDocumentListener(dirty);
+        }
         initValidator();
+        writeValueEOF();
     }
 
     @Deprecated
@@ -70,8 +88,65 @@ public final class LeavesView extends javax.swing.JPanel implements EditorRecord
     }
 
     private void initValidator() {
-        // Validation managed via com.openbravo.ui binding and validation framework
+        binder = new SwingBinder<>(new LeavesInfo());
+
+        binder.forField(m_jEmployeeName)
+                .asRequired(AppLocal.getIntString("validation.required", AppLocal.getIntString("label.epm.employee")))
+                .bind(LeavesInfo::getName, LeavesInfo::setName);
+
+        binder.forField(m_jStartDate)
+                .bind(
+                        l -> l != null && l.getStartDate() != null ? Formats.TIMESTAMP.formatValue(l.getStartDate()) : "",
+                        (l, s) -> l.setStartDate(s)
+                );
+
+        binder.forField(m_jEndDate)
+                .bind(
+                        l -> l != null && l.getEndDate() != null ? Formats.TIMESTAMP.formatValue(l.getEndDate()) : "",
+                        (l, s) -> l.setEndDate(s)
+                );
+
+        binder.forField(m_jLeaveNote)
+                .bind(
+                        l -> l != null && l.getNotes() != null ? l.getNotes() : "",
+                        LeavesInfo::setNotes
+                );
+
+        binder.addStatusChangeListener(() -> {
+            if (m_Dirty != null) {
+                m_Dirty.setDirty(true);
+            }
+        });
     }
+
+    public boolean isValid() {
+        return binder == null || binder.validate();
+    }
+
+    public boolean isDataValid() {
+        return isValid();
+    }
+
+    javax.swing.JTextField getEmployeeNameField() {
+        return m_jEmployeeName;
+    }
+
+    javax.swing.JTextField getStartDateField() {
+        return m_jStartDate;
+    }
+
+    javax.swing.JTextField getEndDateField() {
+        return m_jEndDate;
+    }
+
+    javax.swing.JTextArea getLeaveNoteArea() {
+        return m_jLeaveNote;
+    }
+
+    javax.swing.JButton getBtnEmployee() {
+        return btnEmployee;
+    }
+
     void activate() throws BasicException {
     }
 
@@ -80,7 +155,11 @@ public final class LeavesView extends javax.swing.JPanel implements EditorRecord
      */
     @Override
     public void writeValueEOF() {
+        if (binder != null) {
+            binder.clear();
+        }
         leaveId = null;
+        m_employeeid = null;
         m_jEmployeeName.setText(null);
         m_jStartDate.setText(null);
         m_jEndDate.setText(null);
@@ -96,7 +175,11 @@ public final class LeavesView extends javax.swing.JPanel implements EditorRecord
      */
     @Override
     public void writeValueInsert() {
+        if (binder != null) {
+            binder.clear();
+        }
         leaveId = null;
+        m_employeeid = null;
         m_jEmployeeName.setText(null);
         m_jStartDate.setText(null);
         m_jEndDate.setText(null);
@@ -127,6 +210,9 @@ public final class LeavesView extends javax.swing.JPanel implements EditorRecord
         m_jStartDate.setEnabled(true);
         m_jEndDate.setEnabled(true);
         m_jLeaveNote.setEnabled(true);
+        if (binder != null) {
+            binder.readBean(leaves);
+        }
     }
 
     /**
@@ -149,6 +235,9 @@ public final class LeavesView extends javax.swing.JPanel implements EditorRecord
         m_jStartDate.setEnabled(false);
         m_jEndDate.setEnabled(false);
         m_jLeaveNote.setEnabled(false);
+        if (binder != null) {
+            binder.readBean(leaves);
+        }
     }
 
     /**
@@ -186,7 +275,15 @@ public final class LeavesView extends javax.swing.JPanel implements EditorRecord
                 shiftService.blockEmployee(m_employeeid);
             }
         }
-        return new LeavesInfo(id, m_employeeid, name, startDate, endDate, notes);
+        LeavesInfo info = new LeavesInfo(id, m_employeeid, name, startDate, endDate, notes);
+        if (binder != null) {
+            try {
+                binder.writeBean(info);
+            } catch (SwingBinder.ValidationException ex) {
+                // validation state is surfaced by binder.validate() / isValid()
+            }
+        }
+        return info;
     }
 // TODO - rewrite IsValidEndDate using Apache commons or Calendar 
 

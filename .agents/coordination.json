@@ -29,6 +29,15 @@
     "available": [],
     "completed": [
       {
+        "id": "TASK-057",
+        "ticket": "KP-167",
+        "agent": "antigravity",
+        "branch": "feature/KP-167-epm-swingbinder-validation",
+        "title": "Type-Safe Validation & Two-Way Data Binding for EPM Views (BreaksView & LeavesView)",
+        "description": "Integrate SwingBinder with real-time field validation, headless constructors, and dirty state tracking in BreaksView and LeavesView.",
+        "completed_at": "2026-11-20T12:26:00Z"
+      },
+      {
         "id": "TASK-056",
         "ticket": "KP-169",
         "agent": "antigravity",
