@@ -27,6 +27,10 @@ public class AttributeInfo implements IKeyed {
     private String id;
     private String name;
 
+    public AttributeInfo() {
+        this(null, null);
+    }
+
     /** Creates new CategoryInfo
      * @param id
      * @param name */
@@ -50,6 +54,18 @@ public class AttributeInfo implements IKeyed {
      */
     public String getId() {
         return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     @Override

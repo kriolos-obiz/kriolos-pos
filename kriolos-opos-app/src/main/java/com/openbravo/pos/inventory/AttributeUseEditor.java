@@ -16,27 +16,29 @@
 
 package com.openbravo.pos.inventory;
 
+import com.openbravo.basic.AppLocal;
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.gui.ComboBoxValModel;
-import com.openbravo.data.loader.SentenceList;
 import com.openbravo.data.user.DirtyManager;
 import com.openbravo.data.user.EditorRecord;
 import com.openbravo.format.Formats;
-import com.openbravo.basic.AppLocal;
 import com.openbravo.pos.panels.AppView;
-import com.openbravo.pos.inventory.AttributeInfo;
-import com.openbravo.pos.inventory.AttributeService;
-import com.openbravo.pos.inventory.DataLogicAttribute;
+import com.openbravo.ui.data.binding.SwingBinder;
 import java.awt.Component;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
 /**
+ * Editor panel for associating attributes to attribute sets, supporting real-time
+ * validation, dirty state tracking, and headless testing via SwingBinder.
  *
  * @author adrianromero
+ * @author KriolOS
  */
 public class AttributeUseEditor extends javax.swing.JPanel implements EditorRecord {
+
+    private static final long serialVersionUID = 1L;
 
     private AttributeService attributeService;
     private ComboBoxValModel attributemodel;
@@ -45,6 +47,71 @@ public class AttributeUseEditor extends javax.swing.JPanel implements EditorReco
     private String attuseid;
     private String insertid;
 
+    private final DirtyManager m_Dirty;
+    private SwingBinder<AttributeUseModel> binder;
+
+    /**
+     * Mutable model adapting attribute use records for data binding.
+     */
+    public static final class AttributeUseModel {
+        private String id;
+        private String attributeSetId;
+        private String attributeId;
+        private String lineno;
+
+        public AttributeUseModel() {
+            this(null, null, null, null);
+        }
+
+        public AttributeUseModel(String id, String attributeSetId, String attributeId, String lineno) {
+            this.id = id;
+            this.attributeSetId = attributeSetId;
+            this.attributeId = attributeId;
+            this.lineno = lineno;
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        public void setId(String id) {
+            this.id = id;
+        }
+
+        public String getAttributeSetId() {
+            return attributeSetId;
+        }
+
+        public void setAttributeSetId(String attributeSetId) {
+            this.attributeSetId = attributeSetId;
+        }
+
+        public String getAttributeId() {
+            return attributeId;
+        }
+
+        public void setAttributeId(String attributeId) {
+            this.attributeId = attributeId;
+        }
+
+        public String getLineno() {
+            return lineno;
+        }
+
+        public void setLineno(String lineno) {
+            this.lineno = lineno;
+        }
+    }
+
+    /**
+     * Headless constructor for testing without live AppView.
+     *
+     * @param dirty DirtyManager listener
+     */
+    public AttributeUseEditor(DirtyManager dirty) {
+        this(null, dirty);
+    }
+
     /**
      * Creates new form AttributeSetEditor
      * 
@@ -52,17 +119,65 @@ public class AttributeUseEditor extends javax.swing.JPanel implements EditorReco
      * @param dirty
      */
     public AttributeUseEditor(AppView app, DirtyManager dirty) {
-
-        attributeService = app.getBean(AttributeService.class);
-        if (attributeService == null) {
-            attributeService = app.getBean(DataLogicAttribute.class);
+        this.m_Dirty = dirty;
+        if (app != null) {
+            attributeService = app.getBean(AttributeService.class);
+            if (attributeService == null) {
+                attributeService = app.getBean(DataLogicAttribute.class);
+            }
         }
         attributemodel = new ComboBoxValModel();
 
         initComponents();
 
-        jLineno.getDocument().addDocumentListener(dirty);
-        jAttribute.addActionListener(dirty);
+        if (dirty != null) {
+            jLineno.getDocument().addDocumentListener(dirty);
+            jAttribute.addActionListener(dirty);
+        }
+
+        initValidator();
+        writeValueEOF();
+    }
+
+    private void initValidator() {
+        binder = new SwingBinder<>(new AttributeUseModel());
+
+        binder.forField(jLineno)
+                .asRequired(AppLocal.getIntString("validation.required", AppLocal.getIntString("label.order")))
+                .withValidator(s -> {
+                    if (s == null || s.trim().isEmpty()) {
+                        return false;
+                    }
+                    try {
+                        Integer val = (Integer) Formats.INT.parseValue(s.trim());
+                        return val != null && val >= 0;
+                    } catch (Exception e) {
+                        return false;
+                    }
+                }, AppLocal.getIntString("validation.number.invalid", AppLocal.getIntString("label.order")))
+                .bind(AttributeUseModel::getLineno, AttributeUseModel::setLineno);
+
+        binder.addStatusChangeListener(() -> {
+            if (m_Dirty != null) {
+                m_Dirty.setDirty(true);
+            }
+        });
+    }
+
+    public boolean isValid() {
+        return binder == null || binder.validate();
+    }
+
+    public boolean isDataValid() {
+        return isValid();
+    }
+
+    javax.swing.JTextField getLinenoField() {
+        return jLineno;
+    }
+
+    javax.swing.JComboBox getAttributeCombo() {
+        return jAttribute;
     }
 
     /**
@@ -70,7 +185,6 @@ public class AttributeUseEditor extends javax.swing.JPanel implements EditorReco
      * @param insertid
      */
     public void setInsertId(String insertid) {
-
         this.insertid = insertid;
     }
 
@@ -79,7 +193,6 @@ public class AttributeUseEditor extends javax.swing.JPanel implements EditorReco
      * @throws BasicException
      */
     public void activate() throws BasicException {
-
         List<AttributeInfo> list = attributeService != null ? attributeService.getAttributeList() : Collections.emptyList();
         attributemodel = new ComboBoxValModel(list);
         jAttribute.setModel(attributemodel);
@@ -97,7 +210,9 @@ public class AttributeUseEditor extends javax.swing.JPanel implements EditorReco
      */
     @Override
     public void writeValueEOF() {
-
+        if (binder != null) {
+            binder.clear();
+        }
         id = null;
         attuseid = null;
         attributemodel.setSelectedKey(null);
@@ -112,7 +227,9 @@ public class AttributeUseEditor extends javax.swing.JPanel implements EditorReco
      */
     @Override
     public void writeValueInsert() {
-
+        if (binder != null) {
+            binder.clear();
+        }
         id = UUID.randomUUID().toString();
         attuseid = (String) insertid;
         attributemodel.setSelectedKey(null);
@@ -128,16 +245,22 @@ public class AttributeUseEditor extends javax.swing.JPanel implements EditorReco
      */
     @Override
     public void writeValueEdit(Object value) {
-
-        Object[] obj = (Object[]) value;
-
-        id = (String) obj[0];
-        attuseid = (String) obj[1];
-        attributemodel.setSelectedKey(obj[2]);
-        jLineno.setText(Formats.INT.formatValue((Integer) obj[3]));
+        if (value == null) {
+            writeValueEOF();
+            return;
+        }
+        if (value instanceof Object[] obj) {
+            id = (String) obj[0];
+            attuseid = (String) obj[1];
+            attributemodel.setSelectedKey(obj[2]);
+            jLineno.setText(Formats.INT.formatValue((Integer) obj[3]));
+        }
 
         jAttribute.setEnabled(true);
         jLineno.setEnabled(true);
+        if (binder != null) {
+            binder.readBean(new AttributeUseModel(id, attuseid, (String) attributemodel.getSelectedKey(), jLineno.getText()));
+        }
     }
 
     /**
@@ -146,16 +269,22 @@ public class AttributeUseEditor extends javax.swing.JPanel implements EditorReco
      */
     @Override
     public void writeValueDelete(Object value) {
-
-        Object[] obj = (Object[]) value;
-
-        id = (String) obj[0];
-        attuseid = (String) obj[1];
-        attributemodel.setSelectedKey(obj[2]);
-        jLineno.setText(Formats.INT.formatValue((Integer) obj[3]));
+        if (value == null) {
+            writeValueEOF();
+            return;
+        }
+        if (value instanceof Object[] obj) {
+            id = (String) obj[0];
+            attuseid = (String) obj[1];
+            attributemodel.setSelectedKey(obj[2]);
+            jLineno.setText(Formats.INT.formatValue((Integer) obj[3]));
+        }
 
         jAttribute.setEnabled(false);
         jLineno.setEnabled(false);
+        if (binder != null) {
+            binder.readBean(new AttributeUseModel(id, attuseid, (String) attributemodel.getSelectedKey(), jLineno.getText()));
+        }
     }
 
     /**
@@ -174,12 +303,25 @@ public class AttributeUseEditor extends javax.swing.JPanel implements EditorReco
      */
     @Override
     public Object createValue() throws BasicException {
+        AttributeUseModel model = new AttributeUseModel(id, attuseid, (String) attributemodel.getSelectedKey(), jLineno.getText());
+        if (binder != null) {
+            try {
+                binder.writeBean(model);
+            } catch (SwingBinder.ValidationException ex) {
+                // validation state is surfaced via isValid()
+            }
+        }
+
         Object[] value = new Object[5];
 
         value[0] = id;
         value[1] = attuseid;
         value[2] = attributemodel.getSelectedKey();
-        value[3] = Formats.INT.parseValue(jLineno.getText());
+        try {
+            value[3] = Formats.INT.parseValue(jLineno.getText());
+        } catch (BasicException ex) {
+            value[3] = null;
+        }
         value[4] = attributemodel.getSelectedText();
 
         return value;

@@ -27,6 +27,10 @@ public class AttributeSetInfo implements IKeyed {
     private String id;
     private String name;
 
+    public AttributeSetInfo() {
+        this(null, null);
+    }
+
     /**
      *
      * @param id
@@ -54,12 +58,20 @@ public class AttributeSetInfo implements IKeyed {
         return id;
     }
 
+    public void setId(String id) {
+        this.id = id;
+    }
+
     /**
      *
      * @return
      */
     public String getName() {
         return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     @Override
