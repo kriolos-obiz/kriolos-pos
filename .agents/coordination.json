@@ -29,6 +29,15 @@
     "available": [],
     "completed": [
       {
+        "id": "TASK-058",
+        "ticket": "KP-170",
+        "agent": "antigravity",
+        "branch": "feature/KP-170-stock-diary-swingbinder-validation",
+        "title": "Type-Safe Validation & Data Binding for Stock Diary (StockDiaryEditor)",
+        "description": "Integrate SwingBinder<StockDiaryModel> with real-time field validation, headless testing, and dirty state tracking in StockDiaryEditor.",
+        "completed_at": "2026-11-21T11:13:00Z"
+      },
+      {
         "id": "TASK-057",
         "ticket": "KP-167",
         "agent": "antigravity",

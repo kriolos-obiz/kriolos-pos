@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Unit test suite verifying type-safe lifecycle of StockDiaryEditor.
+ * Unit test suite verifying type-safe lifecycle, validation, and data binding of StockDiaryEditor.
  *
  * @author KriolOS
  */
@@ -108,5 +108,78 @@ class StockDiaryEditorTest {
         assertEquals(-1, result.reason());
         assertEquals(-10.0, result.units(), 0.001);
         assertEquals(20.0, result.price(), 0.001);
+    }
+
+    @Test
+    @DisplayName("Should validate mandatory product and units in StockDiaryEditor")
+    void shouldValidateMandatoryProductAndUnits() {
+        StockDiaryEditor editor = new StockDiaryEditor(new DirtyManager());
+        editor.writeValueInsert();
+
+        // 1. Initial insert state (product is empty, units is empty) -> invalid
+        assertFalse(editor.isValid());
+        assertFalse(editor.isDataValid());
+
+        // 2. Set product but leave units empty -> invalid
+        editor.getProductField().setText("Steel Bolt M8");
+        assertFalse(editor.isValid());
+
+        // 3. Set units to zero -> invalid
+        editor.getUnitsField().setText("0.0");
+        assertFalse(editor.isValid());
+
+        // 4. Set valid units -> valid
+        editor.getUnitsField().setText("25.0");
+        assertTrue(editor.isValid());
+        assertTrue(editor.isDataValid());
+    }
+
+    @Test
+    @DisplayName("Should track dirty state when StockDiaryEditor fields change")
+    void shouldTrackDirtyStateWhenFieldsChange() {
+        DirtyManager dirty = new DirtyManager();
+        StockDiaryEditor editor = new StockDiaryEditor(dirty);
+        editor.writeValueInsert();
+        dirty.setDirty(false);
+        assertFalse(dirty.isDirty());
+
+        // Modifying product triggers dirty
+        editor.getProductField().setText("Copper Wire");
+        assertTrue(dirty.isDirty());
+
+        // Reset and test units
+        dirty.setDirty(false);
+        assertFalse(dirty.isDirty());
+        editor.getUnitsField().setText("100.0");
+        assertTrue(dirty.isDirty());
+
+        // Reset and test price
+        dirty.setDirty(false);
+        assertFalse(dirty.isDirty());
+        editor.getPriceField().setText("5.25");
+        assertTrue(dirty.isDirty());
+    }
+
+    @Test
+    @DisplayName("Should safely handle null edit and delete in StockDiaryEditor")
+    void shouldSafelyHandleNullEditAndDelete() {
+        StockDiaryEditor editor = new StockDiaryEditor(new DirtyManager());
+        assertDoesNotThrow(() -> editor.writeValueEdit(null));
+        assertDoesNotThrow(() -> editor.writeValueDelete(null));
+    }
+
+    @Test
+    @DisplayName("Should expose component accessors for headless testing")
+    void shouldExposeComponentAccessors() {
+        StockDiaryEditor editor = new StockDiaryEditor(new DirtyManager());
+        assertNotNull(editor.getDateField());
+        assertNotNull(editor.getUnitsField());
+        assertNotNull(editor.getPriceField());
+        assertNotNull(editor.getProductField());
+        assertNotNull(editor.getReferenceField());
+        assertNotNull(editor.getCodebarField());
+        assertNotNull(editor.getReasonCombo());
+        assertNotNull(editor.getLocationCombo());
+        assertNotNull(editor.getComponent());
     }
 }
