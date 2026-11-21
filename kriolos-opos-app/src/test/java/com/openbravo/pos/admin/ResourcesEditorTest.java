@@ -9,12 +9,22 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Unit test suite verifying type-safe lifecycle of ResourcesView.
+ * Unit test suite verifying type-safe lifecycle, two-way data binding, and validation
+ * of ResourcesView.
  *
  * @author KriolOS
  */
 @DisplayName("Resources View Type-Safe Editor Test Suite")
 class ResourcesEditorTest {
+
+    @Test
+    @DisplayName("Should instantiate ResourcesView headlessly with DirtyManager")
+    void shouldInstantiateHeadlessWithoutAppView() {
+        DirtyManager dirty = new DirtyManager();
+        ResourcesView view = new ResourcesView(dirty);
+        assertNotNull(view);
+        assertNotNull(view.getComponent());
+    }
 
     @Test
     @DisplayName("Should handle ResourceInfo lifecycle type-safely without Object[] arrays")
@@ -64,5 +74,65 @@ class ResourcesEditorTest {
         assertNotNull(view.createValue().getId());
         view.writeValueDelete(null);
         assertNotNull(view.createValue().getId());
+    }
+
+    @Test
+    @DisplayName("Should validate mandatory resource name in ResourcesView")
+    void shouldValidateMandatoryResourceName() {
+        ResourcesView view = new ResourcesView(new DirtyManager());
+        view.writeValueInsert();
+
+        // 1. Initial insert with empty name -> invalid
+        view.getNameField().setText("");
+        assertFalse(view.isValid());
+        assertFalse(view.isDataValid());
+
+        // 2. Whitespace-only name -> invalid
+        view.getNameField().setText("   ");
+        assertFalse(view.isValid());
+
+        // 3. Valid name -> valid
+        view.getNameField().setText("Printer.Ticket");
+        assertTrue(view.isValid());
+        assertTrue(view.isDataValid());
+    }
+
+    @Test
+    @DisplayName("Should track dirty state when ResourcesView fields change")
+    void shouldTrackDirtyStateWhenFieldsChange() {
+        DirtyManager dirty = new DirtyManager();
+        ResourcesView view = new ResourcesView(dirty);
+        view.writeValueInsert();
+        dirty.setDirty(false);
+        assertFalse(dirty.isDirty());
+
+        // Changing name triggers dirty
+        view.getNameField().setText("payment.ticket");
+        assertTrue(dirty.isDirty());
+
+        // Reset and test syntax text area
+        dirty.setDirty(false);
+        assertFalse(dirty.isDirty());
+        view.getSyntaxTextArea().setText("<ticket><line>Total: 100</line></ticket>");
+        assertTrue(dirty.isDirty());
+    }
+
+    @Test
+    @DisplayName("Should safely handle null edit and delete in ResourcesView")
+    void shouldSafelyHandleNullEditAndDelete() {
+        ResourcesView view = new ResourcesView(new DirtyManager());
+        assertDoesNotThrow(() -> view.writeValueEdit(null));
+        assertDoesNotThrow(() -> view.writeValueDelete(null));
+    }
+
+    @Test
+    @DisplayName("Should expose component accessors for headless testing")
+    void shouldExposeComponentAccessors() {
+        ResourcesView view = new ResourcesView(new DirtyManager());
+        assertNotNull(view.getNameField());
+        assertNotNull(view.getTypeCombo());
+        assertNotNull(view.getSyntaxTextArea());
+        assertNotNull(view.getImageEditor());
+        assertNotNull(view.getComponent());
     }
 }

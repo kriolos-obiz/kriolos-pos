@@ -24,11 +24,13 @@ import com.openbravo.data.user.EditorRecord;
 import com.openbravo.format.Formats;
 import com.openbravo.basic.AppLocal;
 import com.openbravo.util.Base64Encoder;
+import com.openbravo.ui.data.binding.SwingBinder;
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
 import java.awt.Component;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.UUID;
@@ -41,8 +43,11 @@ import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rtextarea.RTextScrollPane;
 
 /**
+ * Strongly typed editor panel for application resources (templates, images, scripts),
+ * supporting two-way Swing data binding, headless testing, and real-time validation.
  *
  * @author adrianromero
+ * @author KriolOS
  */
 public final class ResourcesView extends JPanel implements EditorRecord<ResourceInfo> {
     
@@ -54,11 +59,14 @@ public final class ResourcesView extends JPanel implements EditorRecord<Resource
     
     private final RSyntaxTextArea m_RSyntaxTextArea;
     private final RTextScrollPane m_RTextScrollPane;
+    private final DirtyManager m_Dirty;
+    private SwingBinder<ResourceInfo> binder;
             
     /** Creates new form ResourcesEditor
      * @param dirty */
     public ResourcesView(DirtyManager dirty) {
         initComponents();
+        this.m_Dirty = dirty;
         
         JPanel cp = new JPanel(new BorderLayout());
         m_RSyntaxTextArea = new RSyntaxTextArea(20, 60);
@@ -75,12 +83,75 @@ public final class ResourcesView extends JPanel implements EditorRecord<Resource
         m_ResourceModel.add(ResourceType.BINARY);
         m_jType.setModel(m_ResourceModel);
         
-        m_jName.getDocument().addDocumentListener(dirty);
-        m_jType.addActionListener(dirty);
-        m_RSyntaxTextArea.getDocument().addDocumentListener(dirty);
-        m_jImage.addPropertyChangeListener("image", dirty);
+        if (dirty != null) {
+            m_jName.getDocument().addDocumentListener(dirty);
+            m_jType.addActionListener(dirty);
+            m_RSyntaxTextArea.getDocument().addDocumentListener(dirty);
+            m_jImage.addPropertyChangeListener("image", dirty);
+        }
         
+        initValidator();
         writeValueEOF();        
+    }
+
+    private void initValidator() {
+        binder = new SwingBinder<>(new ResourceInfo());
+
+        // Mandatory Resource Name
+        binder.forField(m_jName)
+                .asRequired(AppLocal.getIntString("validation.required", AppLocal.getIntString("label.resname")))
+                .bind(ResourceInfo::getName, ResourceInfo::setName);
+
+        // Content binding for text area
+        binder.forField(m_RSyntaxTextArea)
+                .bind(
+                        res -> res != null && res.getContent() != null && res.getRestype() == 0
+                                ? Formats.BYTEA.formatValue(res.getContent())
+                                : "",
+                        (res, text) -> {
+                            if (res != null && res.getRestype() == 0) {
+                                byte[] bytes = null;
+                                if (text != null && !text.trim().isEmpty()) {
+                                    try {
+                                        bytes = (byte[]) Formats.BYTEA.parseValue(text);
+                                    } catch (BasicException ex) {
+                                        bytes = text.getBytes(StandardCharsets.UTF_8);
+                                    }
+                                }
+                                res.setContent(bytes);
+                            }
+                        }
+                );
+
+        binder.addStatusChangeListener(() -> {
+            if (m_Dirty != null) {
+                m_Dirty.setDirty(true);
+            }
+        });
+    }
+
+    public boolean isValid() {
+        return binder == null || binder.validate();
+    }
+
+    public boolean isDataValid() {
+        return isValid();
+    }
+
+    javax.swing.JTextField getNameField() {
+        return m_jName;
+    }
+
+    javax.swing.JComboBox<ResourceType> getTypeCombo() {
+        return m_jType;
+    }
+
+    RSyntaxTextArea getSyntaxTextArea() {
+        return m_RSyntaxTextArea;
+    }
+
+    com.openbravo.data.gui.JImageEditor getImageEditor() {
+        return m_jImage;
     }
 
     /**
@@ -88,6 +159,9 @@ public final class ResourcesView extends JPanel implements EditorRecord<Resource
      */
     @Override
     public void writeValueEOF() {
+        if (binder != null) {
+            binder.clear();
+        }
         m_oId = null;
         m_jName.setText(null);
         m_ResourceModel.setSelectedItem(null);
@@ -108,6 +182,9 @@ public final class ResourcesView extends JPanel implements EditorRecord<Resource
      */
     @Override
     public void writeValueInsert() {
+        if (binder != null) {
+            binder.clear();
+        }
         m_oId = UUID.randomUUID().toString();
         m_jName.setText(null);
         m_ResourceModel.setSelectedItem(ResourceType.TEXT);
@@ -163,6 +240,9 @@ public final class ResourcesView extends JPanel implements EditorRecord<Resource
         m_jImage.setEnabled(false);
         m_jBtnReadScript.setEnabled(false);    
         m_RSyntaxTextArea.setEnabled(false);
+        if (binder != null) {
+            binder.readBean(resource);
+        }
     }
 
     /**
@@ -209,6 +289,9 @@ public final class ResourcesView extends JPanel implements EditorRecord<Resource
         
         m_jImage.setEnabled(true);
         m_RSyntaxTextArea.setEnabled(true);
+        if (binder != null) {
+            binder.readBean(resource);
+        }
     }
     
     /**
@@ -234,7 +317,16 @@ public final class ResourcesView extends JPanel implements EditorRecord<Resource
             content = null;
         }
 
-        return new ResourceInfo(id, name, type, content);
+        ResourceInfo resource = new ResourceInfo(id, name, type, content);
+        if (binder != null) {
+            try {
+                binder.writeBean(resource);
+            } catch (SwingBinder.ValidationException ex) {
+                // validation state is surfaced by binder.validate() / isValid()
+            }
+        }
+
+        return resource;
     }
     
     /**
