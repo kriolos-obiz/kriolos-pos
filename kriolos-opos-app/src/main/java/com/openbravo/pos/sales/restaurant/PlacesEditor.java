@@ -24,7 +24,7 @@ import com.openbravo.data.user.DirtyManager;
 import com.openbravo.data.user.EditorRecord;
 import com.openbravo.format.Formats;
 import com.openbravo.pos.sales.DataLogicSales;
-import com.openbravo.ui.data.binding.Converter;
+import com.openbravo.pos.util.FormatsIntegerConverter;
 import com.openbravo.ui.data.binding.SwingBinder;
 import java.awt.Component;
 import java.util.UUID;
@@ -99,13 +99,13 @@ public final class PlacesEditor extends JPanel implements EditorRecord<Place> {
 
         // Table X Coordinate
         binder.forField(m_jX)
-                .withConverter(new IntegerConverter())
+                .withConverter(new FormatsIntegerConverter())
                 .withValidator(v -> v == null || v >= 0, AppLocal.getIntString("validation.number.positive", "X"))
                 .bind(Place::getX, Place::setX);
 
         // Table Y Coordinate
         binder.forField(m_jY)
-                .withConverter(new IntegerConverter())
+                .withConverter(new FormatsIntegerConverter())
                 .withValidator(v -> v == null || v >= 0, AppLocal.getIntString("validation.number.positive", "Y"))
                 .bind(Place::getY, Place::setY);
 
@@ -326,30 +326,6 @@ public final class PlacesEditor extends JPanel implements EditorRecord<Place> {
         }
 
         return place;
-    }
-
-    private static class IntegerConverter implements Converter<String, Integer> {
-
-        @Override
-        public Integer toModel(String p) {
-            if (p == null || p.trim().isEmpty()) {
-                return 0;
-            }
-            try {
-                return (Integer) Formats.INT.parseValue(p.trim(), 0);
-            } catch (BasicException e) {
-                try {
-                    return Integer.parseInt(p.trim());
-                } catch (NumberFormatException nfe) {
-                    return -1;
-                }
-            }
-        }
-
-        @Override
-        public String toPresentation(Integer m) {
-            return m != null ? Formats.INT.formatValue(m) : "";
-        }
     }
     
     /**

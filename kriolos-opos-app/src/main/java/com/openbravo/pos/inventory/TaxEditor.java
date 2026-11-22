@@ -27,6 +27,8 @@ import com.openbravo.basic.AppLocal;
 import com.openbravo.pos.panels.AppView;
 import com.openbravo.pos.sales.TaxService;
 import com.openbravo.pos.ticket.TaxInfo;
+import com.openbravo.pos.util.FormatsIntegerConverter;
+import com.openbravo.pos.util.FormatsPercentConverter;
 import com.openbravo.ui.data.binding.Converter;
 import com.openbravo.ui.data.binding.SwingBinder;
 import java.awt.Component;
@@ -136,7 +138,7 @@ public class TaxEditor extends JPanel implements EditorRecord<TaxInfo> {
 
         // Tax Rate (Percentage)
         binder.forField(m_jRate)
-                .withConverter(new PercentDoubleConverter())
+                .withConverter(new FormatsPercentConverter())
                 .withValidator(v -> v == null || v >= 0.0, AppLocal.getIntString("validation.number.positive", AppLocal.getIntString("label.dutyrate")))
                 .bind(TaxInfo::getRate, TaxInfo::setRate);
 
@@ -146,7 +148,7 @@ public class TaxEditor extends JPanel implements EditorRecord<TaxInfo> {
 
         // Order
         binder.forField(jOrder)
-                .withConverter(new OrderIntegerConverter())
+                .withConverter(new FormatsIntegerConverter())
                 .bind(TaxInfo::getOrder, TaxInfo::setOrder);
 
         binder.addStatusChangeListener(() -> {
@@ -176,58 +178,6 @@ public class TaxEditor extends JPanel implements EditorRecord<TaxInfo> {
         return jOrder;
     }
 
-    private static class PercentDoubleConverter implements Converter<String, Double> {
-        @Override
-        public Double toModel(String p) {
-            if (p == null || p.trim().isEmpty()) {
-                return 0.0;
-            }
-            try {
-                Object val = Formats.PERCENT.parseValue(p.trim());
-                if (val instanceof Number n) {
-                    return n.doubleValue();
-                }
-            } catch (BasicException ex) {
-                // fall through to manual parse
-            }
-            try {
-                String cleaned = p.replace("%", "").trim().replace(',', '.');
-                double v = Double.parseDouble(cleaned);
-                return v > 1.0 ? v / 100.0 : v;
-            } catch (NumberFormatException ex) {
-                return null;
-            }
-        }
-
-        @Override
-        public String toPresentation(Double m) {
-            return m != null ? Formats.PERCENT.formatValue(m) : "";
-        }
-    }
-
-    private static class OrderIntegerConverter implements Converter<String, Integer> {
-        @Override
-        public Integer toModel(String p) {
-            if (p == null || p.trim().isEmpty()) {
-                return null;
-            }
-            try {
-                return (Integer) Formats.INT.parseValue(p.trim());
-            } catch (BasicException ex) {
-                try {
-                    return Integer.parseInt(p.trim());
-                } catch (NumberFormatException e) {
-                    return null;
-                }
-            }
-        }
-
-        @Override
-        public String toPresentation(Integer m) {
-            return m != null ? Formats.INT.formatValue(m) : "";
-        }
-    }
-    
     /**
      *
      * @throws BasicException

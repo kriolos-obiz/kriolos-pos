@@ -16,26 +16,31 @@
 
 package com.openbravo.pos.inventory;
 
+import com.openbravo.basic.AppLocal;
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.gui.MessageInf;
 import com.openbravo.data.user.DirtyManager;
 import com.openbravo.data.user.EditorRecord;
 import com.openbravo.format.Formats;
-import com.openbravo.basic.AppLocal;
-import com.openbravo.pos.panels.AppView;
 import com.openbravo.pos.catalog.CatalogService;
+import com.openbravo.pos.panels.AppView;
 import com.openbravo.pos.panels.JProductFinderPanel;
 import com.openbravo.pos.pim.DataLogicPIM;
 import com.openbravo.pos.ticket.ProductInfoExt;
+import com.openbravo.ui.data.binding.SwingBinder;
 import java.awt.Component;
-import java.awt.Toolkit;
 import java.util.UUID;
 
 /**
+ * Editor panel for auxiliary product relationships, supporting real-time
+ * validation, dirty state tracking, and headless testing via SwingBinder.
  *
  * @author jaroslawwozniak
+ * @author KriolOS
  */
 public class AuxiliarEditor extends javax.swing.JPanel implements EditorRecord {
+
+    private static final long serialVersionUID = 1L;
 
     private CatalogService catalogService;
     private DataLogicPIM dataLogicPIM;
@@ -46,30 +51,171 @@ public class AuxiliarEditor extends javax.swing.JPanel implements EditorRecord {
     private String name;
     private String productID;
     
-    //
     private AppView appView;
+    private final DirtyManager m_Dirty;
+    private SwingBinder<AuxiliarModel> binder;
 
-    /** Creates new form AuxiliarEditor
-     * @param app
-     * @param dirty */
+    /**
+     * Mutable model adapting auxiliary product relationships for data binding.
+     */
+    public static final class AuxiliarModel {
+        private String id;
+        private String productId;
+        private String auxiliarProductId;
+        private String reference;
+        private String barcode;
+        private String name;
+        private String productDisplay;
+
+        public AuxiliarModel() {
+            this(null, null, null, null, null, null, null);
+        }
+
+        public AuxiliarModel(String id, String productId, String auxiliarProductId,
+                             String reference, String barcode, String name, String productDisplay) {
+            this.id = id;
+            this.productId = productId;
+            this.auxiliarProductId = auxiliarProductId;
+            this.reference = reference;
+            this.barcode = barcode;
+            this.name = name;
+            this.productDisplay = productDisplay;
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        public void setId(String id) {
+            this.id = id;
+        }
+
+        public String getProductId() {
+            return productId;
+        }
+
+        public void setProductId(String productId) {
+            this.productId = productId;
+        }
+
+        public String getAuxiliarProductId() {
+            return auxiliarProductId;
+        }
+
+        public void setAuxiliarProductId(String auxiliarProductId) {
+            this.auxiliarProductId = auxiliarProductId;
+        }
+
+        public String getReference() {
+            return reference;
+        }
+
+        public void setReference(String reference) {
+            this.reference = reference;
+        }
+
+        public String getBarcode() {
+            return barcode;
+        }
+
+        public void setBarcode(String barcode) {
+            this.barcode = barcode;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public String getProductDisplay() {
+            return productDisplay;
+        }
+
+        public void setProductDisplay(String productDisplay) {
+            this.productDisplay = productDisplay;
+        }
+    }
+
+    /**
+     * Creates new form AuxiliarEditor for headless testing.
+     *
+     * @param dirty Dirty manager
+     */
+    public AuxiliarEditor(DirtyManager dirty) {
+        this(null, dirty);
+    }
+
+    /**
+     * Creates new form AuxiliarEditor.
+     *
+     * @param app App view
+     * @param dirty Dirty manager
+     */
     public AuxiliarEditor(AppView app, DirtyManager dirty) {
-           
         this.appView = app;
-
-        this.catalogService = app.getBean(CatalogService.class);
+        this.catalogService = (app != null) ? app.getBean(CatalogService.class) : null;
         this.dataLogicPIM = (catalogService instanceof DataLogicPIM) ? (DataLogicPIM) catalogService : null;
+        this.m_Dirty = dirty;
 
         initComponents();
-     
-        m_jProduct.getDocument().addDocumentListener(dirty);
+
+        if (dirty != null) {
+            m_jProduct.getDocument().addDocumentListener(dirty);
+            m_jReference.getDocument().addDocumentListener(dirty);
+            m_jBarcode.getDocument().addDocumentListener(dirty);
+        }
+
+        initValidator();
+        writeValueEOF();
     }
-    
+
+    private void initValidator() {
+        binder = new SwingBinder<>(new AuxiliarModel());
+
+        binder.forField(m_jProduct)
+                .asRequired(AppLocal.getIntString("validation.required", AppLocal.getIntString("label.prodname")))
+                .bind(AuxiliarModel::getProductDisplay, AuxiliarModel::setProductDisplay);
+
+        binder.addStatusChangeListener(() -> {
+            if (m_Dirty != null) {
+                m_Dirty.setDirty(true);
+            }
+        });
+    }
+
+    public boolean isValid() {
+        return binder == null || binder.validate();
+    }
+
+    public boolean isDataValid() {
+        return isValid();
+    }
+
+    javax.swing.JTextField getProductField() {
+        return m_jProduct;
+    }
+
+    javax.swing.JTextField getReferenceField() {
+        return m_jReference;
+    }
+
+    javax.swing.JTextField getBarcodeField() {
+        return m_jBarcode;
+    }
+
+    private AuxiliarModel toModel() {
+        return new AuxiliarModel(id, product, product2, m_jReference.getText(),
+                m_jBarcode.getText(), name, m_jProduct.getText());
+    }
+
     /**
      *
      * @param prod
      */
     public void setInsertProduct(ProductInfoExt prod) {
-        
         if (prod == null) {
             productID = null;
         } else {
@@ -89,7 +235,9 @@ public class AuxiliarEditor extends javax.swing.JPanel implements EditorRecord {
      */
     @Override
     public void writeValueEOF() {
-        
+        if (binder != null) {
+            binder.clear();
+        }
         id = null;
         product = null;
         product2 = null;
@@ -111,7 +259,9 @@ public class AuxiliarEditor extends javax.swing.JPanel implements EditorRecord {
      */
     @Override
     public void writeValueInsert() {
-        
+        if (binder != null) {
+            binder.clear();
+        }
         id = UUID.randomUUID().toString();
         product = productID;
         product2 = null;
@@ -134,15 +284,27 @@ public class AuxiliarEditor extends javax.swing.JPanel implements EditorRecord {
      */
     @Override
     public void writeValueEdit(Object value) {
-        Object[] obj = (Object[]) value;
-        
-        id = (String)obj[0];
-        product = (String)obj[1];
-        product2 = (String)obj[2];
-        name = (String)obj[5];
-        m_jReference.setText(Formats.STRING.formatValue((String)obj[3]));
-        m_jBarcode.setText(Formats.STRING.formatValue((String)obj[4]));
-        m_jProduct.setText(Formats.STRING.formatValue((String)obj[3]) + " - " + Formats.STRING.formatValue((String)obj[5]));        
+        if (value == null) {
+            writeValueEOF();
+            return;
+        }
+        if (value instanceof Object[] obj) {
+            id = (String) obj[0];
+            product = (String) obj[1];
+            product2 = (String) obj[2];
+            name = (String) obj[5];
+            m_jReference.setText(Formats.STRING.formatValue((String) obj[3]));
+            m_jBarcode.setText(Formats.STRING.formatValue((String) obj[4]));
+            m_jProduct.setText(Formats.STRING.formatValue((String) obj[3]) + " - " + Formats.STRING.formatValue((String) obj[5]));
+        } else if (value instanceof AuxiliarModel model) {
+            id = model.getId();
+            product = model.getProductId();
+            product2 = model.getAuxiliarProductId();
+            name = model.getName();
+            m_jReference.setText(model.getReference());
+            m_jBarcode.setText(model.getBarcode());
+            m_jProduct.setText(model.getProductDisplay());
+        }
 
         m_jReference.setEnabled(true);
         m_jBarcode.setEnabled(true);
@@ -150,6 +312,10 @@ public class AuxiliarEditor extends javax.swing.JPanel implements EditorRecord {
         m_jEnter1.setEnabled(true);
         m_jEnter2.setEnabled(true);
         m_jSearch.setEnabled(true);
+
+        if (binder != null) {
+            binder.readBean(toModel());
+        }
     }
 
     /**
@@ -158,23 +324,38 @@ public class AuxiliarEditor extends javax.swing.JPanel implements EditorRecord {
      */
     @Override
     public void writeValueDelete(Object value) {
-        Object[] obj = (Object[]) value;
-        
-        id = (String)obj[0];
-        product = (String)obj[1];
-        product2 = (String)obj[2];
-        name = (String)obj[5];
-        m_jReference.setText(Formats.STRING.formatValue((String)obj[3]));
-        m_jBarcode.setText(Formats.STRING.formatValue((String)obj[4]));
-        m_jProduct.setText(Formats.STRING.formatValue((String)obj[3]) + " - " + Formats.STRING.formatValue((String)obj[5]));        
+        if (value == null) {
+            writeValueEOF();
+            return;
+        }
+        if (value instanceof Object[] obj) {
+            id = (String) obj[0];
+            product = (String) obj[1];
+            product2 = (String) obj[2];
+            name = (String) obj[5];
+            m_jReference.setText(Formats.STRING.formatValue((String) obj[3]));
+            m_jBarcode.setText(Formats.STRING.formatValue((String) obj[4]));
+            m_jProduct.setText(Formats.STRING.formatValue((String) obj[3]) + " - " + Formats.STRING.formatValue((String) obj[5]));
+        } else if (value instanceof AuxiliarModel model) {
+            id = model.getId();
+            product = model.getProductId();
+            product2 = model.getAuxiliarProductId();
+            name = model.getName();
+            m_jReference.setText(model.getReference());
+            m_jBarcode.setText(model.getBarcode());
+            m_jProduct.setText(model.getProductDisplay());
+        }
 
-        
         m_jReference.setEnabled(false);
         m_jBarcode.setEnabled(false);
         m_jProduct.setEnabled(false);
         m_jEnter1.setEnabled(false);
         m_jEnter2.setEnabled(false);
-        m_jSearch.setEnabled(false);       
+        m_jSearch.setEnabled(false);
+
+        if (binder != null) {
+            binder.readBean(toModel());
+        }
     }
 
     /**
@@ -184,6 +365,13 @@ public class AuxiliarEditor extends javax.swing.JPanel implements EditorRecord {
      */
     @Override
     public Object createValue() throws BasicException {
+        if (binder != null) {
+            try {
+                binder.writeBean(toModel());
+            } catch (SwingBinder.ValidationException ex) {
+                // validation status surfaced via isValid()
+            }
+        }
         return new Object[] {
             id, 
             product, 
@@ -204,7 +392,6 @@ public class AuxiliarEditor extends javax.swing.JPanel implements EditorRecord {
     }
 
     private void assignProduct(ProductInfoExt prod) {
-
         if (m_jSearch.isEnabled()) {
             if (prod == null) {
                 product2 = null;
@@ -219,11 +406,16 @@ public class AuxiliarEditor extends javax.swing.JPanel implements EditorRecord {
                 m_jProduct.setText(prod.getReference() + " - " + prod.getName());
                 name = prod.getName();
             }
+            if (binder != null) {
+                binder.readBean(toModel());
+            }
         }
-
     }
 
     private void assignProductByCode() {
+        if (catalogService == null) {
+            return;
+        }
         try {
             ProductInfoExt prod = catalogService.getProductInfoByCode(m_jBarcode.getText());
             assignProduct(prod);
@@ -237,8 +429,10 @@ public class AuxiliarEditor extends javax.swing.JPanel implements EditorRecord {
         }
     }
 
-
     private void assignProductByReference() {
+        if (catalogService == null) {
+            return;
+        }
         try {
             ProductInfoExt prod = catalogService.getProductInfoByReference(m_jReference.getText());
             assignProduct(prod);
@@ -251,7 +445,7 @@ public class AuxiliarEditor extends javax.swing.JPanel implements EditorRecord {
             msg.show(this);
         }
     }
-    
+
     /** This method is called from within the constructor to
      * initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is
@@ -387,10 +581,10 @@ public class AuxiliarEditor extends javax.swing.JPanel implements EditorRecord {
     }// </editor-fold>//GEN-END:initComponents
 
     private void m_jSearchActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_m_jSearchActionPerformed
-        
-        assignProduct(JProductFinderPanel.showMessage(this, appView, JProductFinderPanel.PRODUCT_AUXILIAR));
-        
-}//GEN-LAST:event_m_jSearchActionPerformed
+        if (appView != null) {
+            assignProduct(JProductFinderPanel.showMessage(this, appView, JProductFinderPanel.PRODUCT_AUXILIAR));
+        }
+    }//GEN-LAST:event_m_jSearchActionPerformed
 
     private void m_jReferenceActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_m_jReferenceActionPerformed
         this.assignProductByReference();

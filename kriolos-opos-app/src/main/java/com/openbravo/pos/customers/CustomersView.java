@@ -26,6 +26,8 @@ import com.openbravo.pos.panels.AppView;
 import com.openbravo.pos.container.BeanFactoryException;
 import com.openbravo.pos.sales.DataLogicTax;
 import com.openbravo.pos.sales.TaxService;
+import com.openbravo.pos.util.FormatsCurrencyConverter;
+import com.openbravo.pos.util.FormatsDoubleConverter;
 import com.openbravo.ui.data.binding.Converter;
 import com.openbravo.ui.data.binding.EmailValidator;
 import com.openbravo.ui.data.binding.SwingBinder;
@@ -155,13 +157,13 @@ public final class CustomersView extends javax.swing.JPanel implements EditorRec
 
         // Max Debt (Currency format)
         binder.forField(txtMaxdebt)
-                .withConverter(new CurrencyDoubleConverter())
+                .withConverter(new FormatsCurrencyConverter())
                 .withValidator(v -> v == null || v >= 0.0, AppLocal.getIntString("validation.number.positive", AppLocal.getIntString("label.maxdebt")))
                 .bind(CustomerInfoExt::getMaxdebt, CustomerInfoExt::setMaxdebt);
 
         // Discount
         binder.forField(txtDiscount)
-                .withConverter(new DoubleFormatConverter())
+                .withConverter(new FormatsDoubleConverter())
                 .withValidator(v -> v == null || v >= 0.0, AppLocal.getIntString("validation.number.positive", AppLocal.getIntString("label.discount")))
                 .bind(CustomerInfoExt::getDiscount, CustomerInfoExt::setDiscount);
 
@@ -200,59 +202,6 @@ public final class CustomersView extends javax.swing.JPanel implements EditorRec
 
     public SwingBinder<CustomerInfoExt> getBinder() {
         return binder;
-    }
-
-    private static class CurrencyDoubleConverter implements Converter<String, Double> {
-        @Override
-        public Double toModel(String p) {
-            if (p == null || p.trim().isEmpty()) {
-                return null;
-            }
-            try {
-                return (Double) Formats.CURRENCY.parseValue(p.trim(), 0.0);
-            } catch (BasicException e) {
-                try {
-                    String cleaned = p.replaceAll("[^0-9.,\\-]", "").trim();
-                    if (cleaned.contains(",") && !cleaned.contains(".")) {
-                        cleaned = cleaned.replace(',', '.');
-                    } else if (cleaned.contains(",") && cleaned.contains(".")) {
-                        cleaned = cleaned.replace(",", "");
-                    }
-                    return cleaned.isEmpty() ? null : Double.parseDouble(cleaned);
-                } catch (Exception ignored) {
-                    return null;
-                }
-            }
-        }
-
-        @Override
-        public String toPresentation(Double m) {
-            return m != null ? Formats.CURRENCY.formatValue(m) : "";
-        }
-    }
-
-    private static class DoubleFormatConverter implements Converter<String, Double> {
-        @Override
-        public Double toModel(String p) {
-            if (p == null || p.trim().isEmpty()) {
-                return null;
-            }
-            try {
-                return (Double) Formats.DOUBLE.parseValue(p.trim(), 0.0);
-            } catch (BasicException e) {
-                try {
-                    String cleaned = p.replaceAll("[^0-9.,\\-]", "").trim().replace(',', '.');
-                    return cleaned.isEmpty() ? null : Double.parseDouble(cleaned);
-                } catch (Exception ignored) {
-                    return null;
-                }
-            }
-        }
-
-        @Override
-        public String toPresentation(Double m) {
-            return m != null ? Formats.DOUBLE.formatValue(m) : "";
-        }
     }
 
     private void init() {

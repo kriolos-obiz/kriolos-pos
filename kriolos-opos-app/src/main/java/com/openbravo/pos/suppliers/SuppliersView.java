@@ -24,6 +24,7 @@ import com.openbravo.basic.AppLocal;
 import com.openbravo.pos.panels.AppView;
 import com.openbravo.pos.container.BeanFactoryException;
 import com.openbravo.pos.inventory.MovementReason;
+import com.openbravo.pos.util.FormatsCurrencyConverter;
 import com.openbravo.ui.data.binding.Converter;
 import com.openbravo.ui.data.binding.EmailValidator;
 import com.openbravo.ui.data.binding.SwingBinder;
@@ -574,7 +575,7 @@ public final class SuppliersView extends javax.swing.JPanel implements EditorRec
 
         // Max Debt (Currency format)
         binder.forField(txtMaxdebt)
-                .withConverter(new CurrencyDoubleConverter())
+                .withConverter(new FormatsCurrencyConverter())
                 .withValidator(v -> v == null || v >= 0.0, AppLocal.getIntString("validation.number.positive", AppLocal.getIntString("label.maxdebt")))
                 .bind(SupplierInfo::getMaxdebt, SupplierInfo::setMaxdebt);
 
@@ -626,35 +627,6 @@ public final class SuppliersView extends javax.swing.JPanel implements EditorRec
 
     JTextField getMaxDebtField() {
         return txtMaxdebt;
-    }
-
-    private static class CurrencyDoubleConverter implements Converter<String, Double> {
-        @Override
-        public Double toModel(String p) {
-            if (p == null || p.trim().isEmpty()) {
-                return null;
-            }
-            try {
-                return (Double) Formats.CURRENCY.parseValue(p.trim(), 0.0);
-            } catch (BasicException e) {
-                try {
-                    String cleaned = p.replaceAll("[^0-9.,\\-]", "").trim();
-                    if (cleaned.contains(",") && !cleaned.contains(".")) {
-                        cleaned = cleaned.replace(',', '.');
-                    } else if (cleaned.contains(",") && cleaned.contains(".")) {
-                        cleaned = cleaned.replace(",", "");
-                    }
-                    return cleaned.isEmpty() ? null : Double.parseDouble(cleaned);
-                } catch (Exception ignored) {
-                    return null;
-                }
-            }
-        }
-
-        @Override
-        public String toPresentation(Double m) {
-            return m != null ? Formats.CURRENCY.formatValue(m) : "";
-        }
     }
 
     class TransactionTableModel extends AbstractTableModel {
