@@ -29,6 +29,15 @@
     "available": [],
     "completed": [
       {
+        "id": "TASK-062",
+        "ticket": "KP-173",
+        "agent": "antigravity",
+        "branch": "feature/KP-173-voucher-swingbinder-validation",
+        "title": "Type-Safe Validation & Data Binding for Voucher Management (VoucherEditor)",
+        "description": "Integrate SwingBinder with real-time field validation, headless testing, positive amount checks, dirty state tracking, and reusable FormatsDoubleConverter in VoucherEditor.",
+        "completed_at": "2026-11-22T23:24:00Z"
+      },
+      {
         "id": "TASK-061",
         "ticket": "KP-172",
         "agent": "antigravity",
