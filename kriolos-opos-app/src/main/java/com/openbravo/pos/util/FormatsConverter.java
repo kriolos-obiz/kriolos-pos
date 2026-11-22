@@ -43,7 +43,7 @@ public class FormatsConverter<T> implements Converter<String, T> {
         }
         try {
             return format.parseValue(presentationValue.trim());
-        } catch (BasicException e) {
+        } catch (Exception e) {
             return null;
         }
     }
