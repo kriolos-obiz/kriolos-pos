@@ -6,7 +6,7 @@
     <title>Legacy Architecture — DataLogic Scope &amp; Monolith Analysis :: KriolOS POS Documentation</title>
     <meta name="description" content="Architectural analysis of all 13 legacy DataLogic classes in KriolOS POS, documenting broad scope flaws, cross-domain contamination, target domain model, and decoupling roadmap.">
     <meta name="keywords" content="legacy architecture, datalogic, monolith, domain modeling, refactoring, openbravo, bounded context">
-    <meta name="generator" content="Antora 3.2.2">
+    <meta name="generator" content="Antora 3.2.3">
     <link rel="stylesheet" href="../../../_/css/site.css">
   </head>
   <body class="article">
@@ -2164,12 +2164,97 @@ customerDataLogic.init(sessionDB);</code></pre>
 <p><code>modern-java-conventions.md</code>: Strict ban on Hungarian prefixes (<code>m_sName</code>); standard JavaBean/record conventions; Java 17/21 idioms.</p>
 </li>
 <li>
-<p><code>javadoc-and-license.md</code>: Javadoc required for packages, classes, and methods; author strictly <code>@author KriolOS</code>; opportunistic removal of legacy file license headers when touching files.
-28: <strong>Next Decoupling Targets:</strong></p>
+<p><code>javadoc-and-license.md</code>: Javadoc required for packages, classes, and methods; author strictly <code>@author KriolOS</code>; opportunistic removal of legacy file license headers when touching files.</p>
 </li>
 </ul>
 </div>
 </li>
+</ul>
+</div>
+</li>
+<li>
+<p><strong>Java 17 Command Pattern Mandate &amp; Domain Type Safety Modernization (<code>KP-129</code> through <code>KP-138</code>) (Completed):</strong></p>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Command Pattern Enforcement:</strong> Systematically eliminated loose, multi-positional parameters from all domain service port mutation operations, replacing them with immutable Java 17 <code>record</code> commands (<code>&lt;Action&gt;&lt;Entity&gt;Command</code>) with invariant validation and defensive copying:</p>
+<div class="ulist">
+<ul>
+<li>
+<p><code>PlaceService</code>: Implemented <code>MoveCustomerCommand</code> (<code>com.openbravo.pos.sales.restaurant.MoveCustomerCommand</code>) validating <code>sourceTable</code>, <code>targetTable</code>, and <code>appUser</code>.</p>
+</li>
+<li>
+<p><code>InventoryService</code>: Implemented <code>CreateStockCommand</code> and <code>UpdateStockCommand</code> (<code>com.openbravo.pos.inventory.*</code>) validating <code>location</code>, <code>product</code>, <code>attributeSetInstanceId</code>, and numeric quantities.</p>
+</li>
+<li>
+<p><code>StockService</code>: Implemented <code>RecordStockMovementCommand</code> and <code>RevertStockMovementCommand</code> (<code>com.openbravo.pos.inventory.*</code>) encapsulating complex 9-parameter inventory diary and current balance updates with defensive date copying.</p>
+</li>
+<li>
+<p><code>TreasuryService</code>: Implemented <code>RecordPaymentMovementCommand</code> and <code>DeletePaymentMovementCommand</code> (<code>com.openbravo.pos.payment.*</code>) enforcing invariant validation for cash drawer ledger transactions.</p>
+</li>
+<li>
+<p><code>SupplierService</code>: Implemented <code>UpdateSupplierNotesCommand</code> and strengthened <code>SupplierCreateCommand</code> (<code>com.openbravo.pos.suppliers.*</code>) with compact constructors.</p>
+</li>
+<li>
+<p><code>TaxService</code>: Implemented <code>CreateTaxCategoryCommand</code>, <code>CreateTaxCustCategoryCommand</code>, and <code>CreateTaxCommand</code> (<code>com.openbravo.pos.sales.*</code>) validating tax rates, cascade flags, and application sequences.</p>
+</li>
+<li>
+<p><code>AuditService</code>: Implemented <code>RecordAuditLineRemovedCommand</code> and <code>RecordAuditTicketDeletedCommand</code> (<code>com.openbravo.pos.sales.*</code>) securing security void and ticket line removal auditing.</p>
+</li>
+<li>
+<p><code>CatalogService</code>: Implemented <code>CreateCategoryCommand</code> (<code>com.openbravo.pos.catalog.*</code>) enforcing clean category creation.</p>
+</li>
+<li>
+<p><code>ResourceService</code>: Implemented <code>SetResourceCommand</code> (<code>com.openbravo.pos.resources.*</code>) with defensive byte array copying and type categorization.</p>
+</li>
+<li>
+<p><code>CustomerService</code>: Enforced <code>CustomerDebtUpdateCommand</code> (<code>com.openbravo.pos.customers.*</code>) for credit account mutations.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><strong>Complete Raw Framework Type Eradication:</strong></p>
+<div class="ulist">
+<ul>
+<li>
+<p>Parameterized all service port declarations of <code>TableDefinition&lt;T&gt;</code>, <code>SaveProvider&lt;T&gt;</code>, and <code>SentenceList&lt;T&gt;</code> across all 29 domain service ports.</p>
+</li>
+<li>
+<p>Parameterized <code>CatalogService.getProductCatQBF()</code> to <code>SentenceList&lt;Object[]&gt;</code>.</p>
+</li>
+<li>
+<p>Parameterized <code>CustomerService.getCustomerSaveProvider()</code> to <code>SaveProvider&lt;Object[]&gt;</code>.</p>
+</li>
+<li>
+<p>Fully cleaned raw <code>TableDefinition</code> declarations across all domain services and UI panels (<code>JPanelFloors</code>, <code>JPanelPlaces</code>, <code>CategoriesPanel</code>, <code>UomPanel</code>, <code>LocationsPanel</code>, <code>PeoplePanel</code>, <code>RolesPanel</code>, <code>BreaksPanel</code>, <code>LeavesPanel</code>, <code>JNewSupplierPanel</code>, <code>SuppliersPanel</code>, <code>VoucherPanel</code>).</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><strong>In-Memory HSQLDB Persistence Contract Testing:</strong></p>
+<div class="ulist">
+<ul>
+<li>
+<p>Implemented full transactional contract test suites using in-memory HSQLDB in MySQL compatibility mode (<code>sql.syntax_mys=true</code>): <code>StockServiceTest</code>, <code>AuditServiceTest</code>, <code>ResourceServiceTest</code>, <code>SupplierServiceTest</code>, <code>TaxServiceTest</code>, <code>CatalogServiceTest</code>, and <code>InventoryServiceTest</code>.</p>
+</li>
+<li>
+<p>Verified table schema integrity, SQL sentence bindings, and dual-table atomic consistency without requiring external database dependencies.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><strong>Zero Breaking Changes:</strong> Maintained 100% binary and source backwards compatibility by retaining <code>@Deprecated</code> adapter default methods forwarding to record commands across all modified service interfaces.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><strong>Next Decoupling Targets:</strong></p>
+<div class="ulist">
+<ul>
 <li>
 <p>Modernize legacy UI panels calling <code>com.openbravo.data.*</code> persistence primitives to consume dedicated DataLogics directly rather than leaking through <code>CatalogService</code>.</p>
 </li>
