@@ -317,10 +317,19 @@ public class AttributeUseEditor extends javax.swing.JPanel implements EditorReco
         value[0] = id;
         value[1] = attuseid;
         value[2] = attributemodel.getSelectedKey();
-        try {
-            value[3] = Formats.INT.parseValue(jLineno.getText());
-        } catch (BasicException ex) {
+        String lineText = jLineno.getText();
+        if (lineText == null || lineText.trim().isEmpty()) {
             value[3] = null;
+        } else {
+            try {
+                value[3] = Formats.INT.parseValue(lineText.trim());
+            } catch (Exception ex) {
+                try {
+                    value[3] = Integer.parseInt(lineText.trim());
+                } catch (Exception nfe) {
+                    value[3] = null;
+                }
+            }
         }
         value[4] = attributemodel.getSelectedText();
 

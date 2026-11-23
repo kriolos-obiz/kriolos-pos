@@ -29,6 +29,15 @@
     "available": [],
     "completed": [
       {
+        "id": "TASK-067",
+        "ticket": "KP-178",
+        "agent": "antigravity",
+        "branch": "bugfix/KP-178-attribute-use-numberformat-resilience",
+        "title": "Harden Formats and AttributeUseEditor against NumberFormatException",
+        "description": "Hardened Formats.parseValue to catch NumberFormatException and ensure AttributeUseEditor safely handles blank/invalid line numbers during record insertion and createValue transitions.",
+        "completed_at": "2026-11-23T19:46:00Z"
+      },
+      {
         "id": "TASK-066",
         "ticket": "KP-177",
         "agent": "antigravity",
@@ -37,7 +46,6 @@
         "description": "Eliminated hardcoded absolute system paths from PosDialogPreScreenBaselineIT.java and migrated baseline export to portable relative workspace paths and configurable system/env properties.",
         "completed_at": "2026-11-23T16:55:00Z"
       },
-    "completed": [
       {
         "id": "TASK-065",
         "ticket": "KP-176",
