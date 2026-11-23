@@ -29,6 +29,15 @@
     "available": [],
     "completed": [
       {
+        "id": "TASK-064",
+        "ticket": "KP-175",
+        "agent": "antigravity",
+        "branch": "feature/KP-175-restaurant-reservations-swingbinder-validation",
+        "title": "Type-Safe Validation & Data Binding for Table Reservations (JTicketsBagRestaurantRes)",
+        "description": "Integrate SwingBinder with real-time field validation, headless testing, party size checks, dirty state tracking, and reusable FormatsIntegerConverter in JTicketsBagRestaurantRes.",
+        "completed_at": "2026-11-23T13:31:00Z"
+      },
+      {
         "id": "TASK-063",
         "ticket": "KP-174",
         "agent": "antigravity",

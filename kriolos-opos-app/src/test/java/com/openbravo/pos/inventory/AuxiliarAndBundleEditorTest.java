@@ -19,6 +19,7 @@ package com.openbravo.pos.inventory;
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.user.DirtyManager;
 import com.openbravo.format.Formats;
+import com.openbravo.pos.util.FormatsDoubleConverter;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

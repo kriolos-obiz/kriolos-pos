@@ -194,8 +194,8 @@ public class BundleEditor extends javax.swing.JPanel implements EditorRecord {
                 .bind(BundleModel::getProductDisplay, BundleModel::setProductDisplay);
 
         binder.forField(m_jQuantity)
-                .asRequired(AppLocal.getIntString("validation.required", "Quantity"))
                 .withConverter(new FormatsDoubleConverter())
+                .asRequired(AppLocal.getIntString("validation.required", "Quantity"))
                 .withValidator(qty -> qty != null && qty > 0.0, "Quantity must be greater than zero")
                 .bind(BundleModel::getQuantity, BundleModel::setQuantity);
 
@@ -230,15 +230,24 @@ public class BundleEditor extends javax.swing.JPanel implements EditorRecord {
         return m_jBarcode;
     }
 
-    private BundleModel toModel() {
-        Double qtyVal = null;
-        if (m_jQuantity.getText() != null && !m_jQuantity.getText().trim().isEmpty()) {
+    private static Double parseDouble(String text) {
+        if (text == null || text.trim().isEmpty()) {
+            return null;
+        }
+        String trimmed = text.trim();
+        try {
+            return (Double) Formats.DOUBLE.parseValue(trimmed);
+        } catch (Exception e) {
             try {
-                qtyVal = (Double) Formats.DOUBLE.parseValue(m_jQuantity.getText().trim());
-            } catch (BasicException ignored) {
-                qtyVal = null;
+                return Double.parseDouble(trimmed.replace(',', '.'));
+            } catch (Exception nfe) {
+                return null;
             }
         }
+    }
+
+    private BundleModel toModel() {
+        Double qtyVal = parseDouble(m_jQuantity.getText());
         return new BundleModel(id, product, productBundle, qtyVal, m_jReference.getText(),
                 m_jBarcode.getText(), name, m_jProduct.getText());
     }
@@ -399,7 +408,7 @@ public class BundleEditor extends javax.swing.JPanel implements EditorRecord {
             id, 
             product, 
             productBundle,
-            Formats.DOUBLE.parseValue(m_jQuantity.getText()),
+            parseDouble(m_jQuantity.getText()),
             m_jReference.getText(),
             m_jBarcode.getText(),
             name,

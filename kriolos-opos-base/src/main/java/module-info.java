@@ -18,7 +18,7 @@
 module kriolos.opos.base {
     requires java.base;
     requires transitive java.desktop;
-    requires java.sql;
+    requires transitive java.sql;
     requires java.sql.rowset;
     requires java.logging;
 
