@@ -59,7 +59,6 @@ public class PosDialogPreScreenBaselineIT {
 
     private static final Logger LOGGER = Logger.getLogger(PosDialogPreScreenBaselineIT.class.getName());
     private static final String BASELINE_DIR = "target/recordings/dialog_baseline_prescreen/screenshots";
-    private static final String ARTIFACTS_BASELINE_DIR = "/home/dev/.gemini/antigravity-ide/brain/0bd13745-dad9-4c13-8632-c74bdebc5ecb/screenshots/baseline";
 
     private Robot robot;
     private ScreenshotHelper screenshotHelper;
@@ -497,13 +496,16 @@ public class PosDialogPreScreenBaselineIT {
     private void copyToArtifactsBaseline(File sourceFile, String milestoneName) {
         if (sourceFile == null || !sourceFile.exists()) return;
         try {
-            Path targetDir = Path.of(ARTIFACTS_BASELINE_DIR);
-            Files.createDirectories(targetDir);
-            Path dest = targetDir.resolve(milestoneName + ".png");
-            Files.copy(sourceFile.toPath(), dest, StandardCopyOption.REPLACE_EXISTING);
-            LOGGER.log(Level.INFO, "Persisted baseline screenshot to: {0}", dest);
+            String artifactsBaselineDir = System.getProperty("automation.artifacts.dir", System.getenv("ARTIFACTS_DIR"));
+            if (artifactsBaselineDir != null && !artifactsBaselineDir.isBlank()) {
+                Path targetDir = Path.of(artifactsBaselineDir);
+                Files.createDirectories(targetDir);
+                Path dest = targetDir.resolve(milestoneName + ".png");
+                Files.copy(sourceFile.toPath(), dest, StandardCopyOption.REPLACE_EXISTING);
+                LOGGER.log(Level.INFO, "Persisted baseline screenshot to: {0}", dest);
+            }
 
-            Path wsDir = Path.of("/home/dev/PDEV/kriolos-obiz/kriolos-pos/modal-screenshots-baseline");
+            Path wsDir = Path.of("modal-screenshots-baseline");
             if (Files.exists(wsDir)) {
                 Files.copy(sourceFile.toPath(), wsDir.resolve(milestoneName + ".png"), StandardCopyOption.REPLACE_EXISTING);
                 LOGGER.log(Level.INFO, "Copied screenshot to workspace folder: {0}", wsDir.resolve(milestoneName + ".png"));

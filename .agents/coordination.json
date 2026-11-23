@@ -29,6 +29,16 @@
     "available": [],
     "completed": [
       {
+        "id": "TASK-066",
+        "ticket": "KP-177",
+        "agent": "antigravity",
+        "branch": "bugfix/KP-177-remove-absolute-system-paths",
+        "title": "Purge Hardcoded Absolute System Paths from Automation Suite",
+        "description": "Eliminated hardcoded absolute system paths from PosDialogPreScreenBaselineIT.java and migrated baseline export to portable relative workspace paths and configurable system/env properties.",
+        "completed_at": "2026-11-23T16:55:00Z"
+      },
+    "completed": [
+      {
         "id": "TASK-065",
         "ticket": "KP-176",
         "agent": "antigravity",
