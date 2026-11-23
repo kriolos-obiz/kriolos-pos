@@ -26,6 +26,7 @@ import com.openbravo.pos.admin.AppUser;
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.loader.TableDefinition;
 import com.openbravo.pos.admin.ResourceInfo;
+import com.openbravo.pos.resources.SetResourceCommand;
 import java.awt.image.BufferedImage;
 import java.lang.reflect.Proxy;
 import java.util.Date;
@@ -153,6 +154,10 @@ class SystemServiceTest {
             }
 
             @Override
+            public void setResource(SetResourceCommand command) {
+            }
+
+            @Override
             public void setResource(String sName, int iType, byte[] data) {
             }
 
@@ -269,6 +274,7 @@ class SystemServiceTest {
             @Override public byte[] getResourceAsBinary(String sName) { return null; }
             @Override public java.awt.image.BufferedImage getResourceAsImage(String sName) { return null; }
             @Override public java.util.Properties getResourceAsProperties(String sName) { return null; }
+            @Override public void setResource(SetResourceCommand command) {}
             @Override public void setResource(String name, int type, byte[] data) {}
             @Override public void setResourceAsBinary(String sName, byte[] data) {}
             @Override public void setResourceAsProperties(String sName, java.util.Properties p) {}

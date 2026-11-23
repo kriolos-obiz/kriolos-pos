@@ -83,22 +83,30 @@ public class DataLogicPresenceManagement extends BeanFactoryDataSingle implement
             }
         };
 
-        tbreaks = new TableDefinition(s
+        tbreaks = new TableDefinition<>(s
             , "breaks"
             , new String[] { "ID", "NAME", "NOTES", "VISIBLE"}
             , new String[] { "ID", AppLocal.getIntString("label.epm.employee"), AppLocal.getIntString("label.epm.notes"), "VISIBLE"}
             , new Datas[] { Datas.STRING, Datas.STRING, Datas.STRING, Datas.BOOLEAN}
             , new Formats[] { Formats.STRING, Formats.STRING, Formats.STRING, Formats.BOOLEAN}
             , new int[] {0}
+            , BreaksInfo.getSerializerRead()
+            , BreaksInfo.getSerializerInsert()
+            , BreaksInfo.getSerializerUpdate()
+            , BreaksInfo.getSerializerDelete()
         );
 
-        tleaves = new TableDefinition(s
+        tleaves = new TableDefinition<>(s
             , "leaves"
             , new String[] { "ID", "PPLID", "NAME", "STARTDATE", "ENDDATE", "NOTES"}
             , new String[] { "ID", AppLocal.getIntString("label.epm.employee.id"), AppLocal.getIntString("label.epm.employee"), AppLocal.getIntString("label.StartDate"), AppLocal.getIntString("label.EndDate"), AppLocal.getIntString("label.notes")}
             , new Datas[] { Datas.STRING, Datas.STRING, Datas.STRING, Datas.TIMESTAMP, Datas.TIMESTAMP, Datas.STRING}
             , new Formats[] { Formats.STRING, Formats.STRING, Formats.STRING, Formats.TIMESTAMP, Formats.TIMESTAMP, Formats.STRING}
             , new int[] {0}
+            , LeavesInfo.getSerializerRead()
+            , LeavesInfo.getSerializerInsert()
+            , LeavesInfo.getSerializerUpdate()
+            , LeavesInfo.getSerializerDelete()
         );
 
         m_breaksvisible = new StaticSentence(s

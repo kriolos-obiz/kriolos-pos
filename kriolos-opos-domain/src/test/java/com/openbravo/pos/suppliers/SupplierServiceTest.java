@@ -92,12 +92,12 @@ class SupplierServiceTest {
             }
 
             @Override
-            public int updateSupplierExt(SupplierInfoExt supplier) throws BasicException {
+            public int updateSupplierNotes(UpdateSupplierNotesCommand command) throws BasicException {
                 return 1;
             }
 
             @Override
-            public TableDefinition getTableSuppliers() {
+            public TableDefinition<SupplierInfo> getTableSuppliers() {
                 return null;
             }
 
@@ -108,9 +108,11 @@ class SupplierServiceTest {
         };
 
         SupplierInfoExt ext = service.loadSupplierExt("s1");
+        ext.setNotes("Test Notes");
         assertNotNull(ext);
         assertEquals("s1", ext.getId());
         assertEquals("Test Supplier", ext.getName());
+        assertEquals(1, service.updateSupplierNotes(new UpdateSupplierNotesCommand("s1", "Test Notes")));
         assertEquals(1, service.updateSupplierExt(ext));
         assertTrue(service.getSupplierListAll().isEmpty());
         assertTrue(service.getSuppliersTransactionList("s1").isEmpty());
@@ -161,6 +163,96 @@ class SupplierServiceTest {
                     assertFalse(result.next());
                 }
             }
+        } finally {
+            session.close();
+        }
+    }
+
+    @Test
+    @DisplayName("SupplierCreateCommand validates invariants and trims string fields")
+    void testSupplierCreateCommandInvariants() {
+        assertThrows(NullPointerException.class, () -> new SupplierCreateCommand(null, "Name", "KEY", true));
+        assertThrows(IllegalArgumentException.class, () -> new SupplierCreateCommand("   ", "Name", "KEY", true));
+        assertThrows(NullPointerException.class, () -> new SupplierCreateCommand("id", null, "KEY", true));
+        assertThrows(IllegalArgumentException.class, () -> new SupplierCreateCommand("id", "  ", "KEY", true));
+        assertThrows(NullPointerException.class, () -> new SupplierCreateCommand("id", "Name", null, true));
+        assertThrows(IllegalArgumentException.class, () -> new SupplierCreateCommand("id", "Name", "  ", true));
+
+        SupplierCreateCommand cmd = SupplierCreateCommand.of("  id-1  ", "  Supplier One  ", "  SUP-01  ", false);
+        assertEquals("id-1", cmd.id());
+        assertEquals("Supplier One", cmd.name());
+        assertEquals("SUP-01", cmd.searchKey());
+        assertFalse(cmd.visible());
+    }
+
+    @Test
+    @DisplayName("UpdateSupplierNotesCommand validates invariants and normalizes notes")
+    void testUpdateSupplierNotesCommandInvariants() {
+        assertThrows(NullPointerException.class, () -> new UpdateSupplierNotesCommand(null, "Notes"));
+        assertThrows(IllegalArgumentException.class, () -> new UpdateSupplierNotesCommand("   ", "Notes"));
+
+        UpdateSupplierNotesCommand cmdNullNotes = UpdateSupplierNotesCommand.of("  supp-123  ", null);
+        assertEquals("supp-123", cmdNullNotes.supplierId());
+        assertEquals("", cmdNullNotes.notes());
+
+        UpdateSupplierNotesCommand cmdWithNotes = new UpdateSupplierNotesCommand("supp-456", "Preferred supplier");
+        assertEquals("supp-456", cmdWithNotes.supplierId());
+        assertEquals("Preferred supplier", cmdWithNotes.notes());
+    }
+
+    @Test
+    @DisplayName("updateSupplierNotes persists notes update and returns affected rows count")
+    @SuppressWarnings("deprecation")
+    void testUpdateSupplierNotesPersistsNotesAndReturnsCount() throws Exception {
+        String databaseName = "supplier_notes_" + UUID.randomUUID().toString().replace("-", "");
+        Session session = new Session("jdbc:hsqldb:mem:" + databaseName + ";sql.syntax_mys=true", "SA", "");
+        try {
+            try (Statement statement = session.getConnection().createStatement()) {
+                statement.executeUpdate("CREATE TABLE suppliers ("
+                        + "ID VARCHAR(36) PRIMARY KEY, "
+                        + "NAME VARCHAR(255) NOT NULL, "
+                        + "SEARCHKEY VARCHAR(255) NOT NULL, "
+                        + "VISIBLE BOOLEAN NOT NULL, "
+                        + "NOTES VARCHAR(255))");
+                statement.executeUpdate("INSERT INTO suppliers (ID, NAME, SEARCHKEY, VISIBLE, NOTES) "
+                        + "VALUES ('s-1', 'Local Dairy', 'DAIRY-01', TRUE, NULL)");
+            }
+
+            DataLogicSuppliers service = new DataLogicSuppliers();
+            service.init(session);
+
+            int updated = service.updateSupplierNotes(new UpdateSupplierNotesCommand("s-1", "Updated note for dairy"));
+            assertEquals(1, updated, "Should update 1 row");
+
+            try (PreparedStatement query = session.getConnection().prepareStatement(
+                    "SELECT NOTES FROM suppliers WHERE ID = ?")) {
+                query.setString(1, "s-1");
+                try (ResultSet result = query.executeQuery()) {
+                    assertTrue(result.next());
+                    assertEquals("Updated note for dairy", result.getString("NOTES"));
+                    assertFalse(result.next());
+                }
+            }
+
+            // Verify deprecated adapter delegates to updateSupplierNotes
+            SupplierInfoExt ext = new SupplierInfoExt("s-1");
+            ext.setNotes("Note through deprecated adapter");
+            int updatedExt = service.updateSupplierExt(ext);
+            assertEquals(1, updatedExt, "Adapter should update 1 row");
+
+            try (PreparedStatement query = session.getConnection().prepareStatement(
+                    "SELECT NOTES FROM suppliers WHERE ID = ?")) {
+                query.setString(1, "s-1");
+                try (ResultSet result = query.executeQuery()) {
+                    assertTrue(result.next());
+                    assertEquals("Note through deprecated adapter", result.getString("NOTES"));
+                    assertFalse(result.next());
+                }
+            }
+
+            // Verify non-existent supplier returns 0 affected rows
+            int nonExistent = service.updateSupplierNotes(new UpdateSupplierNotesCommand("s-unknown", "None"));
+            assertEquals(0, nonExistent, "Non-existent supplier update should affect 0 rows");
         } finally {
             session.close();
         }

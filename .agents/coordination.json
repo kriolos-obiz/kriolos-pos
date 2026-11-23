@@ -1,10 +1,420 @@
 {
-  "protocol_version": "1.0",
+  "protocol_version": "2.0",
+  "coordinator": {
+    "lead_agent": "antigravity",
+    "role": "Lead Software Architect & Scrum Master",
+    "status": "active",
+    "responsibilities": [
+      "System architecture integrity, modular monolith boundaries, and clean code enforcement",
+      "Lock arbitration, task assignment, and conflict avoidance across AI agents",
+      "PR & commit review and verification against Java 17 LTS standards",
+      "Maven reactor build and test gatekeeping (zero failure tolerance)"
+    ]
+  },
+  "governance_and_rules": {
+    "coordination_mandate": "All AI agents (e.g., GitHub Copilot, Gemini, secondary assistants) collaborating in this repository MUST operate strictly under the direction and architecture standards established by 'antigravity'. Read .agents/EPIC_TYPESAFE.md for design patterns.",
+    "agent_execution_rules": [
+      "1. LOCK CHECK MANDATE: Inspect 'active_locks' before reading or modifying any files. Never touch any file or package locked by another agent.",
+      "2. TASK CLAIM PROTOCOL: To claim an available task, move it from 'task_queue.available' to 'task_queue.in_progress', set your 'agent' identifier, and add all files/directories you intend to modify into 'active_locks' in this JSON file before changing code.",
+      "3. FEATURE BRANCHING: Always branch from the latest commit on 'develop' using the naming format 'feature/KP-<id>-<short-description>'. Never commit directly to 'develop' or 'main'.",
+      "4. CONVENTIONAL COMMITS: Every commit message must strictly adhere to Conventional Commits v1.0.0 (e.g. 'feat(scope): short description in English', 'test(scope): ...', 'refactor(scope): ...').",
+      "5. ZERO REMOTE PUSH MANDATE: Do NOT push any branch to 'origin' unless the human user explicitly instructs you to do so.",
+      "6. MANDATORY TEST VERIFICATION: Before completing your task, run: 'export JAVA_HOME=/home/dev/.sdkman/candidates/java/17.0.12-tem; export PATH=$JAVA_HOME/bin:$PATH; ./mvnw test -pl <target-modules>' and ensure 100% test pass rate.",
+      "7. RELEASE LOCKS ON COMPLETION: Once verified and committed locally on your feature branch, release your paths from 'active_locks', move the task to 'task_queue.completed' with a timestamp, and notify the user and Lead Architect."
+    ]
+  },
   "active_locks": [],
   "task_queue": {
     "in_progress": [],
     "available": [],
     "completed": [
+      {
+        "id": "TASK-067",
+        "ticket": "KP-178",
+        "agent": "antigravity",
+        "branch": "bugfix/KP-178-attribute-use-numberformat-resilience",
+        "title": "Harden Formats and AttributeUseEditor against NumberFormatException",
+        "description": "Hardened Formats.parseValue to catch NumberFormatException and ensure AttributeUseEditor safely handles blank/invalid line numbers during record insertion and createValue transitions.",
+        "completed_at": "2026-11-23T19:46:00Z"
+      },
+      {
+        "id": "TASK-066",
+        "ticket": "KP-177",
+        "agent": "antigravity",
+        "branch": "bugfix/KP-177-remove-absolute-system-paths",
+        "title": "Purge Hardcoded Absolute System Paths from Automation Suite",
+        "description": "Eliminated hardcoded absolute system paths from PosDialogPreScreenBaselineIT.java and migrated baseline export to portable relative workspace paths and configurable system/env properties.",
+        "completed_at": "2026-11-23T16:55:00Z"
+      },
+      {
+        "id": "TASK-065",
+        "ticket": "KP-176",
+        "agent": "antigravity",
+        "branch": "feature/KP-176-automation-junit5-assertions",
+        "title": "Decouple Automation Suite from assertj-core and Standardize on JUnit 5",
+        "description": "Remove explicit assertj-core dependency and migrate PosMessageDialogIT, PosInstanceManagerIT, PosDialogPreScreenBaselineIT, and PosDatabaseLockIT to native JUnit 5 assertions and modern AssertJ-Swing 4.0.3.",
+        "completed_at": "2026-11-23T15:55:00Z"
+      },
+      {
+        "id": "TASK-064",
+        "ticket": "KP-175",
+        "agent": "antigravity",
+        "branch": "feature/KP-175-restaurant-reservations-swingbinder-validation",
+        "title": "Type-Safe Validation & Data Binding for Table Reservations (JTicketsBagRestaurantRes)",
+        "description": "Integrate SwingBinder with real-time field validation, headless testing, party size checks, dirty state tracking, and reusable FormatsIntegerConverter in JTicketsBagRestaurantRes.",
+        "completed_at": "2026-11-23T13:31:00Z"
+      },
+      {
+        "id": "TASK-063",
+        "ticket": "KP-174",
+        "agent": "antigravity",
+        "branch": "feature/KP-174-products-warehouse-swingbinder-validation",
+        "title": "Type-Safe Validation & Data Binding for Warehouse Stock Limits (ProductsWarehouseEditor)",
+        "description": "Integrate SwingBinder with real-time field validation, headless testing, minimum and maximum stock quantity checks, and FormatsDoubleConverter in ProductsWarehouseEditor.",
+        "completed_at": "2026-11-22T23:46:00Z"
+      },
+      {
+        "id": "TASK-062",
+        "ticket": "KP-173",
+        "agent": "antigravity",
+        "branch": "feature/KP-173-voucher-swingbinder-validation",
+        "title": "Type-Safe Validation & Data Binding for Voucher Management (VoucherEditor)",
+        "description": "Integrate SwingBinder with real-time field validation, headless testing, positive amount checks, dirty state tracking, and reusable FormatsDoubleConverter in VoucherEditor.",
+        "completed_at": "2026-11-22T23:24:00Z"
+      },
+      {
+        "id": "TASK-061",
+        "ticket": "KP-172",
+        "agent": "antigravity",
+        "branch": "feature/KP-172-auxiliar-bundle-swingbinder-validation",
+        "title": "Type-Safe Validation & Data Binding for Auxiliary & Bundle Panels (AuxiliarEditor & BundleEditor) and Reusable Formats Converters",
+        "description": "Integrate SwingBinder with real-time field validation, headless testing, positive quantity checks, dirty state tracking, and reusable FormatsConverter suite in com.openbravo.pos.util across AuxiliarEditor, BundleEditor, CustomersView, SuppliersView, TaxEditor, and PlacesEditor.",
+        "completed_at": "2026-11-22T21:11:00Z"
+      },
+      {
+        "id": "TASK-060",
+        "ticket": "KP-171",
+        "agent": "antigravity",
+        "branch": "feature/KP-171-attributes-swingbinder-validation",
+        "title": "Type-Safe Validation & Data Binding for Attributes Family (Attributes, Values, Sets, Use)",
+        "description": "Integrate SwingBinder with real-time field validation, headless testing, and dirty state tracking across AttributesEditor, AttributeValuesEditor, AttributeSetsEditor, and AttributeUseEditor.",
+        "completed_at": "2026-11-21T20:42:00Z"
+      },
+      {
+        "id": "TASK-059",
+        "ticket": "KP-168",
+        "agent": "antigravity",
+        "branch": "feature/KP-168-resources-swingbinder-validation",
+        "title": "Type-Safe Validation & Two-Way Data Binding for Resources (ResourcesView)",
+        "description": "Integrate SwingBinder<ResourceInfo> with real-time field validation, headless constructor, and dirty state tracking in ResourcesView.",
+        "completed_at": "2026-11-21T14:34:00Z"
+      },
+      {
+        "id": "TASK-058",
+        "ticket": "KP-170",
+        "agent": "antigravity",
+        "branch": "feature/KP-170-stock-diary-swingbinder-validation",
+        "title": "Type-Safe Validation & Data Binding for Stock Diary (StockDiaryEditor)",
+        "description": "Integrate SwingBinder<StockDiaryModel> with real-time field validation, headless testing, and dirty state tracking in StockDiaryEditor.",
+        "completed_at": "2026-11-21T11:13:00Z"
+      },
+      {
+        "id": "TASK-057",
+        "ticket": "KP-167",
+        "agent": "antigravity",
+        "branch": "feature/KP-167-epm-swingbinder-validation",
+        "title": "Type-Safe Validation & Two-Way Data Binding for EPM Views (BreaksView & LeavesView)",
+        "description": "Integrate SwingBinder with real-time field validation, headless constructors, and dirty state tracking in BreaksView and LeavesView.",
+        "completed_at": "2026-11-20T12:26:00Z"
+      },
+      {
+        "id": "TASK-056",
+        "ticket": "KP-169",
+        "agent": "antigravity",
+        "branch": "feature/KP-169-payments-swingbinder-validation",
+        "title": "Type-Safe Validation & Data Binding for Cash Movements (PaymentsEditor)",
+        "description": "Integrate SwingBinder<PaymentModel> with real-time validation, border feedback, and dirty state tracking in PaymentsEditor.",
+        "completed_at": "2026-11-20T11:38:00Z"
+      },
+      {
+        "id": "TASK-055",
+        "ticket": "KP-165",
+        "agent": "antigravity",
+        "branch": "feature/KP-165-people-swingbinder-validation",
+        "title": "Type-Safe Validation & Two-Way Data Binding for Users (PeopleView)",
+        "description": "Integrate SwingBinder<PeopleInfo> with real-time field validation, headless constructor, and dirty state tracking in PeopleView.",
+        "completed_at": "2026-11-18T19:56:00Z"
+      },
+      {
+        "id": "TASK-054",
+        "ticket": "KP-164",
+        "agent": "antigravity",
+        "branch": "feature/KP-164-roles-swingbinder-validation",
+        "title": "Type-Safe Validation & Two-Way Data Binding for Roles (RolesView)",
+        "description": "Integrate SwingBinder<RoleInfo> with real-time field validation, headless constructor, and dirty state tracking in RolesView.",
+        "completed_at": "2026-11-18T17:17:00Z"
+      },
+      {
+        "id": "TASK-053",
+        "ticket": "KP-163",
+        "agent": "antigravity",
+        "branch": "feature/KP-163-uom-swingbinder-validation",
+        "title": "Type-Safe Validation & Two-Way Data Binding for Units of Measure (UomEditor)",
+        "description": "Integrate SwingBinder<UomInfo> with real-time field validation, headless constructor, and dirty state tracking in UomEditor.",
+        "completed_at": "2026-11-18T16:38:00Z"
+      },
+      {
+        "id": "TASK-052",
+        "ticket": "KP-162",
+        "agent": "antigravity",
+        "branch": "feature/KP-162-taxes-swingbinder-validation",
+        "title": "Type-Safe Validation & Two-Way Data Binding for Taxes (TaxEditor)",
+        "description": "Integrate SwingBinder<TaxInfo> with real-time field validation, headless constructors, rate converters, and dirty state tracking in TaxEditor.",
+        "completed_at": "2026-11-18T12:11:00Z"
+      },
+      {
+        "id": "TASK-051",
+        "ticket": "KP-161",
+        "agent": "antigravity",
+        "branch": "feature/KP-161-tax-categories-swingbinder-validation",
+        "title": "Type-Safe Validation & Two-Way Data Binding for Tax Categories & Customer Tax Categories",
+        "description": "Integrate SwingBinder with real-time field validation, headless lifecycle, and dirty state tracking in TaxCategoriesEditor and TaxCustCategoriesEditor.",
+        "completed_at": "2026-11-17T23:25:00Z"
+      },
+      {
+        "id": "TASK-050",
+        "ticket": "KP-160",
+        "agent": "antigravity",
+        "branch": "feature/KP-160-categories-swingbinder-validation",
+        "title": "Type-Safe Validation & Two-Way Data Binding for Product Categories (CategoriesEditor)",
+        "description": "Integrate SwingBinder<CategoryInfo> with real-time field validation, headless constructor, image binding, and dirty state tracking in CategoriesEditor.",
+        "completed_at": "2026-11-17T13:45:00Z"
+      },
+      {
+        "id": "TASK-049",
+        "ticket": "KP-159",
+        "agent": "antigravity",
+        "branch": "feature/KP-159-suppliers-swingbinder-validation",
+        "title": "Type-Safe Validation & Two-Way Data Binding for Suppliers (SuppliersView)",
+        "description": "Integrate SwingBinder<SupplierInfo> with real-time field validation, email validation, max debt parsing, and dirty state tracking in SuppliersView.",
+        "completed_at": "2026-11-16T22:52:00Z"
+      },
+      {
+        "id": "TASK-048",
+        "ticket": "KP-158",
+        "agent": "antigravity",
+        "branch": "feature/KP-158-floors-swingbinder-validation",
+        "title": "Type-Safe Validation & Two-Way Data Binding for Restaurant Floors (FloorsEditor)",
+        "description": "Integrate SwingBinder<FloorsInfo> with real-time field validation, image state management, and dirty state tracking in FloorsEditor.",
+        "completed_at": "2026-11-13T23:34:30Z"
+      },
+      {
+        "id": "TASK-047",
+        "ticket": "KP-157",
+        "agent": "antigravity",
+        "branch": "feature/KP-157-places-swingbinder-validation",
+        "title": "Type-Safe Validation & Two-Way Data Binding for Restaurant Tables (PlacesEditor)",
+        "description": "Integrate SwingBinder<Place> with real-time field validation, coordinate parsing, and dirty state management in PlacesEditor.",
+        "completed_at": "2026-11-13T23:10:45Z"
+      },
+      {
+        "id": "TASK-046",
+        "ticket": "KP-156",
+        "agent": "antigravity",
+        "branch": "feature/KP-156-locations-swingbinder-validation",
+        "title": "Type-Safe Validation & Two-Way Data Binding for Warehouse Locations (LocationsView)",
+        "description": "Integrate SwingBinder<LocationInfo> with real-time field validation, error feedback, and dirty state management in LocationsView.",
+        "completed_at": "2026-11-13T22:00:30Z"
+      },
+      {
+        "id": "TASK-045",
+        "ticket": "KP-155",
+        "agent": "antigravity",
+        "branch": "feature/KP-155-typesafe-stock-diary",
+        "title": "Type-Safe Stock Diary & Inventory Movements Vertical Pipeline",
+        "description": "Modernize StockDiaryEditor, StockDiaryPanel, DataLogicInventory, and StockService to use typed SaveProvider<StockDiaryInfo> with typed EditorRecord implementations, eliminating Object[] mapping.",
+        "completed_at": "2026-11-12T21:45:30Z"
+      },
+      {
+        "id": "TASK-044",
+        "ticket": "KP-154",
+        "agent": "antigravity",
+        "branch": "feature/KP-154-typesafe-payments",
+        "title": "Type-Safe Treasury & Cash Drawer Payments Vertical Pipeline",
+        "description": "Modernize PaymentsEditor, JPanelPayments, DataLogicPayments, and TreasuryService to use typed SaveProvider<PaymentMovement> with typed EditorRecord implementations, eliminating Object[] mapping.",
+        "completed_at": "2026-11-12T18:55:30Z"
+      },
+      {
+        "id": "TASK-043",
+        "ticket": "KP-153",
+        "agent": "antigravity",
+        "branch": "feature/KP-153-customers-swing-binder",
+        "title": "SwingBinder Binding and Validation in CustomersView",
+        "description": "Implement modern SwingBinder two-way data binding, converters, and real-time field validators in CustomersView.",
+        "completed_at": "2026-11-12T06:21:00Z"
+      },
+      {
+        "id": "TASK-042",
+        "ticket": "KP-152",
+        "agent": "antigravity",
+        "branch": "feature/KP-152-typesafe-customers",
+        "title": "Type-Safe Customers Vertical Pipeline",
+        "description": "Modernize CustomersPanel, CustomersView, JNewCustomerPanel, CustomerService, and DataLogicCustomers to use TableDefinition<CustomerInfoExt> with typed EditorRecord implementations, removing Object[] mapping.",
+        "completed_at": "2026-11-12T04:24:00Z"
+      },
+      {
+        "id": "TASK-041",
+        "ticket": "KP-150",
+        "agent": "antigravity",
+        "branch": "feature/KP-150-typesafe-taxes",
+        "title": "Type-Safe Taxes Vertical Pipeline",
+        "description": "Modernize TaxEditor, TaxPanel, DataLogicTax, and TaxService to use TableDefinition<TaxInfo> with typed EditorRecord implementations, removing Object[] mapping.",
+        "completed_at": "2026-11-12T03:04:00Z"
+      },
+      {
+        "id": "TASK-040",
+        "ticket": "KP-149",
+        "agent": "antigravity",
+        "branch": "feature/KP-149-typesafe-resources",
+        "title": "Type-Safe Resources Vertical Pipeline",
+        "description": "Modernize ResourcesPanel, ResourcesView, DataLogicSystem, and ResourceService to use TableDefinition<ResourceInfo> with typed EditorRecord implementations, removing Object[] mapping.",
+        "completed_at": "2026-11-11T03:53:00Z"
+      },
+      {
+        "id": "TASK-039",
+        "ticket": "KP-151",
+        "agent": "antigravity",
+        "branch": "feature/KP-151-people-transaction-commit",
+        "title": "Transaction Commit and Default Visibility for People Pipeline",
+        "description": "Wrap DefaultSaveProvider DML operations in Transaction, restore connection autoCommit in DBMigrator, and default user visibility to true.",
+        "completed_at": "2026-11-10T12:11:00Z"
+      },
+      {
+        "id": "TASK-038",
+        "ticket": "KP-148",
+        "agent": "antigravity",
+        "branch": "feature/KP-148-typesafe-people",
+        "title": "Type-Safe Users & People Vertical Pipeline",
+        "description": "Modernize PeoplePanel, PeopleView, DataLogicAdmin, and PeopleService to use TableDefinition<PeopleInfo> with typed EditorRecord implementations, removing Object[] mapping.",
+        "completed_at": "2026-11-08T04:30:00Z"
+      },
+      {
+        "id": "TASK-037",
+        "ticket": "KP-147",
+        "agent": "antigravity",
+        "branch": "feature/KP-147-typesafe-categories",
+        "title": "Type-Safe Product Categories Vertical Pipeline",
+        "description": "Modernize CategoriesPanel, CategoriesEditor, DataLogicCategories, and CatalogService to use TableDefinition<CategoryInfo> with typed EditorRecord implementations, removing Object[] mapping.",
+        "completed_at": "2026-11-07T23:25:30Z"
+      },
+      {
+        "id": "TASK-036",
+        "ticket": "KP-146",
+        "agent": "antigravity",
+        "branch": "feature/KP-146-typesafe-locations",
+        "title": "Type-Safe Locations (Warehouses) Vertical Pipeline",
+        "description": "Modernize LocationsPanel, LocationsView, DataLogicInventory, and InventoryService to use TableDefinition<LocationInfo> with typed EditorRecord implementations, removing Object[] mapping.",
+        "completed_at": "2026-11-07T21:36:00Z"
+      },
+      {
+        "id": "TASK-034",
+        "agent": "antigravity",
+        "ticket": "KP-144",
+        "description": "KP-144: Implement end-to-end type-safe pipeline for Roles and Security with TableDefinition and EditorRecord",
+        "completed_at": "2026-11-07T16:28:00Z"
+      },
+      {
+        "id": "TASK-033",
+        "agent": "antigravity",
+        "ticket": "KP-143",
+        "description": "KP-143: Implement end-to-end type-safe pipeline for Suppliers with TableDefinition and EditorRecord",
+        "completed_at": "2026-11-07T06:51:00Z"
+      },
+      {
+        "id": "TASK-032",
+        "agent": "antigravity",
+        "ticket": "KP-142",
+        "description": "KP-142: Implement end-to-end type-safe pipeline for Hospitality floors and places with TableDefinition and EditorRecord",
+        "completed_at": "2026-11-07T06:17:00Z"
+      },
+      {
+        "id": "TASK-031",
+        "agent": "antigravity",
+        "description": "KP-141: Implement end-to-end type-safe pipeline for Tax Categories and Customer Tax Categories",
+        "completed_at": "2026-11-07T06:02:00Z"
+      },
+      {
+        "id": "TASK-030",
+        "agent": "antigravity",
+        "description": "KP-140: Implement end-to-end type-safe pipeline for UOM, generic DefaultSaveProvider, and typed TableDefinition",
+        "completed_at": "2026-11-07T05:39:00Z"
+      },
+      {
+        "id": "TASK-029",
+        "agent": "antigravity",
+        "description": "KP-139: Document domain command pattern mandate and generic type safety modernization",
+        "completed_at": "2026-11-07T04:58:00Z"
+      },
+      {
+        "id": "TASK-028",
+        "agent": "antigravity",
+        "description": "KP-138: Modernize CustomerService generics and ResourceService with SetResourceCommand",
+        "completed_at": "2026-11-07T04:52:45Z"
+      },
+      {
+        "id": "TASK-027",
+        "agent": "antigravity",
+        "description": "KP-137: Modernize CatalogService with CreateCategoryCommand and parameterize getProductCatQBF()",
+        "completed_at": "2026-11-07T03:55:38Z"
+      },
+      {
+        "id": "TASK-026",
+        "agent": "antigravity",
+        "description": "KP-136: Modernize AuditService with RecordAuditLineRemovedCommand and RecordAuditTicketDeletedCommand",
+        "completed_at": "2026-11-06T22:42:45Z"
+      },
+      {
+        "id": "TASK-025",
+        "agent": "antigravity",
+        "description": "KP-135: Modernize StockService with RecordStockMovementCommand and RevertStockMovementCommand",
+        "completed_at": "2026-11-06T15:37:30Z"
+      },
+      {
+        "id": "TASK-024",
+        "agent": "antigravity",
+        "description": "KP-134: Modernize remaining TableDefinition usages across domain services and panels",
+        "completed_at": "2026-11-06T07:24:00Z"
+      },
+      {
+        "id": "TASK-023",
+        "agent": "antigravity",
+        "description": "KP-133: Modernize TaxService with tax commands and typed TableDefinition",
+        "completed_at": "2026-11-06T05:43:30Z"
+      },
+      {
+        "id": "TASK-022",
+        "agent": "antigravity",
+        "description": "KP-132: Modernize SupplierService with UpdateSupplierNotesCommand and typed TableDefinition",
+        "completed_at": "2026-11-06T05:19:30Z"
+      },
+      {
+        "id": "TASK-021",
+        "agent": "antigravity",
+        "description": "KP-131: Modernize TreasuryService with RecordPaymentMovementCommand and DeletePaymentMovementCommand",
+        "completed_at": "2026-11-05T16:04:00Z"
+      },
+      {
+        "id": "TASK-020",
+        "agent": "antigravity",
+        "description": "KP-130: Modernize InventoryService with CreateStockCommand and UpdateStockCommand",
+        "completed_at": "2026-11-05T05:39:45Z"
+      },
+      {
+        "id": "TASK-019",
+        "agent": "antigravity",
+        "description": "KP-129: Modernize PlaceService with MoveCustomerCommand and eliminate raw JDBC in PlaceServiceImpl",
+        "completed_at": "2026-11-05T05:05:49Z"
+      },
       {
         "id": "TASK-018",
         "agent": "antigravity",
@@ -112,6 +522,15 @@
         "agent": "copilot",
         "description": "Document parameterized tests as a first-class repository practice",
         "completed_at": "2026-11-04T19:32:00Z"
+      },
+      {
+        "id": "TASK-035",
+        "ticket": "KP-145",
+        "agent": "antigravity",
+        "branch": "feature/KP-145-typesafe-epm-breaks-leaves",
+        "title": "Type-Safe EPM Breaks & Leaves Vertical Pipeline",
+        "description": "Modernize BreaksPanel, BreaksView, LeavesPanel, LeavesView, and DataLogicPresenceManagement to use TableDefinition<BreaksInfo> and TableDefinition<LeavesInfo> with typed EditorRecord implementations, removing Object[] mapping.",
+        "completed_at": "2026-11-07T19:16:00Z"
       }
     ]
   }

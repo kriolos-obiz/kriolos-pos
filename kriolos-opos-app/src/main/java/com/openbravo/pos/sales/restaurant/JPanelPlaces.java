@@ -13,34 +13,36 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package com.openbravo.pos.sales.restaurant;
 
+import com.openbravo.basic.AppLocal;
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.gui.ListCellRendererBasic;
-import com.openbravo.data.loader.Datas;
 import com.openbravo.data.loader.TableDefinition;
 import com.openbravo.data.loader.Vectorer;
+import com.openbravo.data.user.DefaultSaveProvider;
 import com.openbravo.data.user.EditorRecord;
 import com.openbravo.data.user.ListProvider;
 import com.openbravo.data.user.ListProviderCreator;
-import com.openbravo.data.user.DefaultSaveProvider;
-import com.openbravo.format.Formats;
-import com.openbravo.basic.AppLocal;
 import com.openbravo.pos.panels.JPanelTable;
 import javax.swing.ListCellRenderer;
 
 /**
+ * Strongly typed maintenance panel for restaurant places/tables.
  *
  * @author adrianromero
+ * @author KriolOS
  */
 public class JPanelPlaces extends JPanelTable {
 
     private static final long serialVersionUID = 1L;
 
-    private TableDefinition tplaces;
+    private TableDefinition<Place> tplaces;
     private PlacesEditor jeditor;
 
-    public JPanelPlaces() {}
+    public JPanelPlaces() {
+    }
 
     @Override
     protected void init() {
@@ -50,27 +52,37 @@ public class JPanelPlaces extends JPanelTable {
     }
 
     @Override
-    public ListProvider getListProvider() {
-        return new ListProviderCreator(tplaces);
+    public ListProvider<Place> getListProvider() {
+        return new ListProviderCreator<>(tplaces);
     }
 
     @Override
-    public DefaultSaveProvider getSaveProvider() {
-        return new DefaultSaveProvider(tplaces);
+    public DefaultSaveProvider<Place> getSaveProvider() {
+        return new DefaultSaveProvider<>(tplaces);
     }
 
     @Override
-    public Vectorer getVectorer() {
-        return tplaces.getVectorerBasic(new int[]{1});
+    public Vectorer<Place> getVectorer() {
+        return new Vectorer<>() {
+            @Override
+            public String[] getHeaders() throws BasicException {
+                return new String[]{AppLocal.getIntString("label.name")};
+            }
+
+            @Override
+            public String[] getValues(Place obj) throws BasicException {
+                return new String[]{obj != null ? obj.getName() : ""};
+            }
+        };
     }
 
     @Override
-    public ListCellRenderer getListCellRenderer() {
-        return new ListCellRendererBasic(tplaces.getRenderStringBasic(new int[]{1}));
+    public ListCellRenderer<?> getListCellRenderer() {
+        return new ListCellRendererBasic(v -> v instanceof Place p ? p.getName() : (v != null ? v.toString() : ""));
     }
 
     @Override
-    public EditorRecord getEditor() {
+    public EditorRecord<Place> getEditor() {
         return jeditor;
     }
 

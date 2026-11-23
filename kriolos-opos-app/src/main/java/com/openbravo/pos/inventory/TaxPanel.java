@@ -24,19 +24,26 @@ import com.openbravo.data.loader.Vectorer;
 import com.openbravo.data.user.EditorRecord;
 import com.openbravo.data.user.ListProvider;
 import com.openbravo.data.user.ListProviderCreator;
-import com.openbravo.data.user.DefaultSaveProvider;
+import com.openbravo.data.user.SaveProvider;
+import com.openbravo.format.Formats;
 import com.openbravo.basic.AppLocal;
 import com.openbravo.pos.sales.TaxService;
 import com.openbravo.pos.panels.JPanelTable;
+import com.openbravo.pos.ticket.TaxInfo;
 import javax.swing.ListCellRenderer;
 
 /**
+ * Type-safe JPanelTable implementation for Taxes maintenance.
  *
  * @author adrianromero
+ * @author KriolOS
  */
 public class TaxPanel extends JPanelTable {
 
-    private TableDefinition ttaxes;
+    private static final long serialVersionUID = 1L;
+
+    private TaxService taxService;
+    private TableDefinition<TaxInfo> ttaxes;
     private TaxEditor jeditor;
     
     /** Creates a new instance of JPanelDuty */
@@ -48,7 +55,7 @@ public class TaxPanel extends JPanelTable {
      */
     @Override
     protected void init() {
-        TaxService taxService = app.getBean(TaxService.class);        
+        taxService = app.getBean(TaxService.class);        
         ttaxes = taxService.getTableTaxes();
         jeditor = new TaxEditor(app, dirty, taxService);
     }
@@ -69,8 +76,8 @@ public class TaxPanel extends JPanelTable {
      * @return
      */
     @Override
-    public ListProvider getListProvider() {
-        return new ListProviderCreator(ttaxes);
+    public ListProvider<TaxInfo> getListProvider() {
+        return new ListProviderCreator<>(ttaxes);
     }
     
     /**
@@ -78,8 +85,8 @@ public class TaxPanel extends JPanelTable {
      * @return
      */
     @Override
-    public DefaultSaveProvider getSaveProvider() {
-        return new DefaultSaveProvider(ttaxes);      
+    public SaveProvider<TaxInfo> getSaveProvider() {
+        return taxService.getTaxSaveProvider();      
     }
     
     /**
@@ -87,8 +94,26 @@ public class TaxPanel extends JPanelTable {
      * @return
      */
     @Override
-    public Vectorer getVectorer() {
-        return ttaxes.getVectorerBasic(new int[]{1, 5, 7});
+    public Vectorer<TaxInfo> getVectorer() {
+        return new Vectorer<>() {
+            @Override
+            public String[] getHeaders() throws BasicException {
+                return new String[]{
+                    AppLocal.getIntString("label.name"),
+                    AppLocal.getIntString("label.dutyrate"),
+                    AppLocal.getIntString("label.order")
+                };
+            }
+
+            @Override
+            public String[] getValues(TaxInfo t) throws BasicException {
+                return new String[]{
+                    t != null && t.getName() != null ? t.getName() : "",
+                    t != null ? Formats.PERCENT.formatValue(t.getRate()) : "",
+                    t != null && t.getOrder() != null ? Formats.INT.formatValue(t.getOrder()) : ""
+                };
+            }
+        };
     }
     
     /**
@@ -105,8 +130,8 @@ public class TaxPanel extends JPanelTable {
      * @return
      */
     @Override
-    public ListCellRenderer getListCellRenderer() {
-        return new ListCellRendererBasic(ttaxes.getRenderStringBasic(new int[]{1}));
+    public ListCellRenderer<?> getListCellRenderer() {
+        return new ListCellRendererBasic(v -> v instanceof TaxInfo t ? t.getName() : (v != null ? v.toString() : ""));
     }
     
     /**
@@ -114,7 +139,7 @@ public class TaxPanel extends JPanelTable {
      * @return
      */
     @Override
-    public EditorRecord getEditor() {
+    public EditorRecord<TaxInfo> getEditor() {
         return jeditor;
     }
         

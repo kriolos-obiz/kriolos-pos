@@ -16,32 +16,114 @@
 
 package com.openbravo.pos.inventory;
 
+import com.openbravo.basic.AppLocal;
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.user.DirtyManager;
 import com.openbravo.data.user.EditorRecord;
 import com.openbravo.format.Formats;
-import com.openbravo.basic.AppLocal;
+import com.openbravo.ui.data.binding.SwingBinder;
 import java.awt.Component;
 import java.util.UUID;
 
 /**
+ * Editor panel for product attribute values, supporting real-time validation,
+ * dirty state tracking, and headless testing via SwingBinder.
  *
  * @author adrian
+ * @author KriolOS
  */
 public class AttributeValuesEditor extends javax.swing.JPanel implements EditorRecord {
 
+    private static final long serialVersionUID = 1L;
+
     private String id;
     private String attid;
-
     private String insertid;
+
+    private final DirtyManager m_Dirty;
+    private SwingBinder<AttributeValueModel> binder;
+
+    /**
+     * Mutable model adapting attribute value records for data binding.
+     */
+    public static final class AttributeValueModel {
+        private String id;
+        private String attributeId;
+        private String value;
+
+        public AttributeValueModel() {
+            this(null, null, null);
+        }
+
+        public AttributeValueModel(String id, String attributeId, String value) {
+            this.id = id;
+            this.attributeId = attributeId;
+            this.value = value;
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        public void setId(String id) {
+            this.id = id;
+        }
+
+        public String getAttributeId() {
+            return attributeId;
+        }
+
+        public void setAttributeId(String attributeId) {
+            this.attributeId = attributeId;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        public void setValue(String value) {
+            this.value = value;
+        }
+    }
 
     /** Creates new form AttributesValuesEditor
      * @param dirty */
     public AttributeValuesEditor(DirtyManager dirty) {
-        
         initComponents();
+        this.m_Dirty = dirty;
 
-        jValue.getDocument().addDocumentListener(dirty);
+        if (dirty != null) {
+            jValue.getDocument().addDocumentListener(dirty);
+        }
+
+        initValidator();
+        writeValueEOF();
+    }
+
+    private void initValidator() {
+        binder = new SwingBinder<>(new AttributeValueModel());
+
+        binder.forField(jValue)
+                .asRequired(AppLocal.getIntString("validation.required", AppLocal.getIntString("label.value")))
+                .bind(AttributeValueModel::getValue, AttributeValueModel::setValue);
+
+        binder.addStatusChangeListener(() -> {
+            if (m_Dirty != null) {
+                m_Dirty.setDirty(true);
+            }
+        });
+    }
+
+    public boolean isValid() {
+        return binder == null || binder.validate();
+    }
+
+    public boolean isDataValid() {
+        return isValid();
+    }
+
+    javax.swing.JTextField getValueField() {
+        return jValue;
     }
 
     /**
@@ -49,7 +131,6 @@ public class AttributeValuesEditor extends javax.swing.JPanel implements EditorR
      * @param insertid
      */
     public void setInsertId(String insertid) {
-
         this.insertid = insertid;
     }
 
@@ -65,11 +146,12 @@ public class AttributeValuesEditor extends javax.swing.JPanel implements EditorR
      */
     @Override
     public void writeValueEOF() {
-
+        if (binder != null) {
+            binder.clear();
+        }
         id = null;
         attid = null;
         jValue.setText(null);
-
         jValue.setEnabled(false);
     }
 
@@ -78,11 +160,12 @@ public class AttributeValuesEditor extends javax.swing.JPanel implements EditorR
      */
     @Override
     public void writeValueInsert() {
-
+        if (binder != null) {
+            binder.clear();
+        }
         id = UUID.randomUUID().toString();
         attid = insertid;
         jValue.setText(null);
-
         jValue.setEnabled(true);
     }
 
@@ -92,14 +175,19 @@ public class AttributeValuesEditor extends javax.swing.JPanel implements EditorR
      */
     @Override
     public void writeValueEdit(Object value) {
-
-        Object[] obj = (Object[]) value;
-
-        id = (String)obj[0];
-        attid = (String)obj[1];
-        jValue.setText(Formats.STRING.formatValue((String)obj[2]));
-
+        if (value == null) {
+            writeValueEOF();
+            return;
+        }
+        if (value instanceof Object[] obj) {
+            id = (String) obj[0];
+            attid = (String) obj[1];
+            jValue.setText(Formats.STRING.formatValue((String) obj[2]));
+        }
         jValue.setEnabled(true);
+        if (binder != null) {
+            binder.readBean(new AttributeValueModel(id, attid, jValue.getText()));
+        }
     }
 
     /**
@@ -108,14 +196,19 @@ public class AttributeValuesEditor extends javax.swing.JPanel implements EditorR
      */
     @Override
     public void writeValueDelete(Object value) {
-
-        Object[] obj = (Object[]) value;
-
-        id = (String)obj[0];
-        attid = (String)obj[1];
-        jValue.setText(Formats.STRING.formatValue((String)obj[2]));
-
+        if (value == null) {
+            writeValueEOF();
+            return;
+        }
+        if (value instanceof Object[] obj) {
+            id = (String) obj[0];
+            attid = (String) obj[1];
+            jValue.setText(Formats.STRING.formatValue((String) obj[2]));
+        }
         jValue.setEnabled(false);
+        if (binder != null) {
+            binder.readBean(new AttributeValueModel(id, attid, jValue.getText()));
+        }
     }
 
     /**
@@ -134,6 +227,14 @@ public class AttributeValuesEditor extends javax.swing.JPanel implements EditorR
      */
     @Override
     public Object createValue() throws BasicException {
+        AttributeValueModel model = new AttributeValueModel(id, attid, jValue.getText());
+        if (binder != null) {
+            try {
+                binder.writeBean(model);
+            } catch (SwingBinder.ValidationException ex) {
+                // validation status surfaced via isValid()
+            }
+        }
         return new Object[] {
             id,
             attid,

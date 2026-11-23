@@ -141,6 +141,8 @@ public final class PreparedSentenceDataWrite implements DataWrite {
             } else if (value instanceof BufferedImage) {
                 byte[] ba = ImageUtils.writeImage((BufferedImage) value);
                 this.setBytes(paramIndex, ba);
+            } else if (JdbcTypeValidator.isJdbcSupported(value)) {
+                 this.m_ps.setObject(paramIndex, value);
             } else  {
                 byte[] ba = ImageUtils.writeSerializable(value);
                 this.setBytes(paramIndex, ba);

@@ -29,6 +29,7 @@ import com.openbravo.data.loader.*;
 import com.openbravo.data.user.DefaultSaveProvider;
 import com.openbravo.data.user.SaveProvider;
 import com.openbravo.pos.catalog.CatalogService;
+import com.openbravo.pos.catalog.CreateCategoryCommand;
 import com.openbravo.pos.inventory.DataLogicInventory;
 import com.openbravo.pos.inventory.TaxCategoryInfo;
 import com.openbravo.pos.pim.DataLogicPIM;
@@ -565,7 +566,7 @@ public class JPanelCSVImport extends JPanel implements JPanelView {
             String newCategoryId = UUID.randomUUID().toString();
 
             try {
-                catalogService.createCategory(newCategoryId, Category, true);
+                catalogService.createCategory(CreateCategoryCommand.of(newCategoryId, Category, true));
 
                 cat_list = new HashMap<>();
                 for (Object category : taxCategoryInfos) {

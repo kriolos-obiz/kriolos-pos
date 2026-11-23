@@ -16,13 +16,19 @@
 
 package com.openbravo.pos.inventory;
 
+import com.openbravo.basic.BasicException;
+import com.openbravo.data.loader.DataRead;
+import com.openbravo.data.loader.DataWrite;
 import com.openbravo.data.loader.IKeyed;
+import com.openbravo.data.loader.SerializerRead;
+import com.openbravo.data.loader.SerializerWrite;
 import java.io.Serializable;
 
 /**
+ * Tax Category domain model.
  *
- * @author  adrianromero
- * @version 
+ * @author adrianromero
+ * @author KriolOS
  */
 public class TaxCategoryInfo implements Serializable, IKeyed {
     
@@ -31,52 +37,41 @@ public class TaxCategoryInfo implements Serializable, IKeyed {
     private String m_sName;
        
     /**
+     * Constructs a new TaxCategoryInfo.
      *
-     * @param sID
-     * @param sName
+     * @param sID identifier
+     * @param sName display name
      */
     public TaxCategoryInfo(String sID, String sName) {
         m_sID = sID;
         m_sName = sName;      
     }
     
-    /**
-     *
-     * @return
-     */
     @Override
     public Object getKey() {
         return m_sID;
     }
     
-    /**
-     *
-     * @param sID
-     */
     public void setID(String sID) {
         m_sID = sID;
     }
     
-    /**
-     *
-     * @return
-     */
     public String getID() {
         return m_sID;
     }
 
-    /**
-     *
-     * @return
-     */
+    public void setId(String id) {
+        m_sID = id;
+    }
+
+    public String getId() {
+        return m_sID;
+    }
+
     public String getName() {
         return m_sName;
     }
     
-    /**
-     *
-     * @param sName
-     */
     public void setName(String sName) {
         m_sName = sName;
     }
@@ -84,5 +79,53 @@ public class TaxCategoryInfo implements Serializable, IKeyed {
     @Override
     public String toString(){
         return m_sName;
+    }
+
+    /**
+     * Returns a {@link SerializerRead} for deserializing TaxCategoryInfo from JDBC result sets.
+     *
+     * @return row serializer for {@link TaxCategoryInfo}
+     */
+    public static SerializerRead<TaxCategoryInfo> getSerializerRead() {
+        return (DataRead dr) -> new TaxCategoryInfo(dr.getString(1), dr.getString(2));
+    }
+
+    /**
+     * Returns a {@link SerializerWrite} for inserting TaxCategoryInfo records.
+     * Binding: 1: ID, 2: NAME
+     *
+     * @return serializer for INSERT statement
+     */
+    public static SerializerWrite<TaxCategoryInfo> getSerializerInsert() {
+        return (DataWrite dp, TaxCategoryInfo info) -> {
+            dp.setString(1, info.getID());
+            dp.setString(2, info.getName());
+        };
+    }
+
+    /**
+     * Returns a {@link SerializerWrite} for updating TaxCategoryInfo records.
+     * Binding: 1: ID, 2: NAME, 3: ID (WHERE id = ?)
+     *
+     * @return serializer for UPDATE statement
+     */
+    public static SerializerWrite<TaxCategoryInfo> getSerializerUpdate() {
+        return (DataWrite dp, TaxCategoryInfo info) -> {
+            dp.setString(1, info.getID());
+            dp.setString(2, info.getName());
+            dp.setString(3, info.getID());
+        };
+    }
+
+    /**
+     * Returns a {@link SerializerWrite} for deleting TaxCategoryInfo records.
+     * Binding: 1: ID (WHERE id = ?)
+     *
+     * @return serializer for DELETE statement
+     */
+    public static SerializerWrite<TaxCategoryInfo> getSerializerDelete() {
+        return (DataWrite dp, TaxCategoryInfo info) -> {
+            dp.setString(1, info.getID());
+        };
     }
 }

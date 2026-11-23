@@ -16,30 +16,68 @@
 
 package com.openbravo.pos.inventory;
 
+import com.openbravo.basic.AppLocal;
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.user.DirtyManager;
 import com.openbravo.data.user.EditorRecord;
 import com.openbravo.format.Formats;
-import com.openbravo.basic.AppLocal;
+import com.openbravo.ui.data.binding.SwingBinder;
 import java.awt.Component;
 import java.util.UUID;
 
 /**
+ * Editor panel for product attributes, supporting real-time validation,
+ * dirty state tracking, and headless testing via SwingBinder.
  *
  * @author  adrian
+ * @author  KriolOS
  */
 public final class AttributesEditor extends javax.swing.JPanel implements EditorRecord {
 
+    private static final long serialVersionUID = 1L;
+
     private String id;
+    private final DirtyManager m_Dirty;
+    private SwingBinder<AttributeInfo> binder;
         
     /** Creates new form AttributesEditor
      * @param dirty */
     public AttributesEditor(DirtyManager dirty) {
         initComponents();
+        this.m_Dirty = dirty;
         
-        m_jName.getDocument().addDocumentListener(dirty);
+        if (dirty != null) {
+            m_jName.getDocument().addDocumentListener(dirty);
+        }
         
+        initValidator();
         writeValueEOF();
+    }
+
+    private void initValidator() {
+        binder = new SwingBinder<>(new AttributeInfo());
+
+        binder.forField(m_jName)
+                .asRequired(AppLocal.getIntString("validation.required", AppLocal.getIntString("label.name")))
+                .bind(AttributeInfo::getName, AttributeInfo::setName);
+
+        binder.addStatusChangeListener(() -> {
+            if (m_Dirty != null) {
+                m_Dirty.setDirty(true);
+            }
+        });
+    }
+
+    public boolean isValid() {
+        return binder == null || binder.validate();
+    }
+
+    public boolean isDataValid() {
+        return isValid();
+    }
+
+    javax.swing.JTextField getNameField() {
+        return m_jName;
     }
 
     /**
@@ -47,6 +85,9 @@ public final class AttributesEditor extends javax.swing.JPanel implements Editor
      */
     @Override
     public void writeValueEOF() {
+        if (binder != null) {
+            binder.clear();
+        }
         id = null;
         m_jName.setText(null);
         m_jName.setEnabled(false);
@@ -57,6 +98,9 @@ public final class AttributesEditor extends javax.swing.JPanel implements Editor
      */
     @Override
     public void writeValueInsert() {
+        if (binder != null) {
+            binder.clear();
+        }
         id = UUID.randomUUID().toString();
         m_jName.setText(null);
         m_jName.setEnabled(true);
@@ -68,11 +112,21 @@ public final class AttributesEditor extends javax.swing.JPanel implements Editor
      */
     @Override
     public void writeValueDelete(Object value) {
-
-        Object[] attr = (Object[]) value;
-        id = (String)attr[0];
-        m_jName.setText(Formats.STRING.formatValue((String)attr[1]));
+        if (value == null) {
+            writeValueEOF();
+            return;
+        }
+        if (value instanceof Object[] attr) {
+            id = (String) attr[0];
+            m_jName.setText(Formats.STRING.formatValue((String) attr[1]));
+        } else if (value instanceof AttributeInfo info) {
+            id = info.getId();
+            m_jName.setText(info.getName());
+        }
         m_jName.setEnabled(false);
+        if (binder != null) {
+            binder.readBean(new AttributeInfo(id, m_jName.getText()));
+        }
     }    
 
     /**
@@ -81,11 +135,21 @@ public final class AttributesEditor extends javax.swing.JPanel implements Editor
      */
     @Override
     public void writeValueEdit(Object value) {
-
-        Object[] attr = (Object[]) value;
-        id = (String)attr[0];
-        m_jName.setText(Formats.STRING.formatValue((String)attr[1]));
+        if (value == null) {
+            writeValueEOF();
+            return;
+        }
+        if (value instanceof Object[] attr) {
+            id = (String) attr[0];
+            m_jName.setText(Formats.STRING.formatValue((String) attr[1]));
+        } else if (value instanceof AttributeInfo info) {
+            id = info.getId();
+            m_jName.setText(info.getName());
+        }
         m_jName.setEnabled(true);
+        if (binder != null) {
+            binder.readBean(new AttributeInfo(id, m_jName.getText()));
+        }
     }
 
     /**
@@ -95,12 +159,17 @@ public final class AttributesEditor extends javax.swing.JPanel implements Editor
      */
     @Override
     public Object createValue() throws BasicException {
-        
+        AttributeInfo info = new AttributeInfo(id, m_jName.getText());
+        if (binder != null) {
+            try {
+                binder.writeBean(info);
+            } catch (SwingBinder.ValidationException ex) {
+                // validation status surfaced via isValid()
+            }
+        }
         Object[] attr = new Object[2];
-
         attr[0] = id;
         attr[1] = m_jName.getText();
-
         return attr;
     }
 

@@ -264,7 +264,7 @@ public abstract class Formats<T> {
         } else {
             try {
                 return parseValueInt(value);
-            } catch (ParseException e) {
+            } catch (ParseException | NumberFormatException e) {
                 throw new BasicException("Exception parsing value: " + value, e);
             }
         }

@@ -21,6 +21,7 @@ import com.openbravo.data.user.DirtyManager;
 import com.openbravo.data.user.EditorRecord;
 import com.openbravo.format.Formats;
 import com.openbravo.basic.AppLocal;
+import com.openbravo.ui.data.binding.SwingBinder;
 import java.awt.Component;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
@@ -28,99 +29,138 @@ import java.awt.datatransfer.StringSelection;
 import java.util.UUID;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JTextField;
 
 /**
+ * Strongly typed editor component for TaxCategory records.
  *
  * @author JG uniCenta
+ * @author KriolOS
  */
-public final class TaxCategoriesEditor extends JPanel implements EditorRecord {
+public final class TaxCategoriesEditor extends JPanel implements EditorRecord<TaxCategoryInfo> {
     
+    private static final long serialVersionUID = 1L;
+    private static final System.Logger LOGGER = System.getLogger(TaxCategoriesEditor.class.getName());
+
     private String m_oId;
+    private DirtyManager dirty;
+    private SwingBinder<TaxCategoryInfo> binder;
     
-    /** Creates new form taxEditor
-     * @param dirty */
+    /**
+     * Creates new form TaxCategoriesEditor.
+     *
+     * @param dirty dirty state listener
+     */
     public TaxCategoriesEditor(DirtyManager dirty) {
         initComponents();
-
-        m_jName.getDocument().addDocumentListener(dirty);
-        
+        this.dirty = dirty;
+        if (dirty != null) {
+            m_jName.getDocument().addDocumentListener(dirty);
+        }
+        initValidator();
         writeValueEOF();
     }
 
-    /**
-     *
-     */
+    private void initValidator() {
+        binder = new SwingBinder<>(new TaxCategoryInfo(null, null));
+
+        // Mandatory Tax Category Name
+        binder.forField(m_jName)
+                .asRequired(AppLocal.getIntString("validation.required", AppLocal.getIntString("label.name")))
+                .bind(TaxCategoryInfo::getName, TaxCategoryInfo::setName);
+
+        binder.addStatusChangeListener(() -> {
+            if (dirty != null) {
+                dirty.setDirty(true);
+            }
+        });
+    }
+
+    public boolean isValid() {
+        return binder == null || binder.validate();
+    }
+
+    public SwingBinder<TaxCategoryInfo> getBinder() {
+        return binder;
+    }
+
+    JTextField getNameField() {
+        return m_jName;
+    }
+
     @Override
     public void writeValueEOF() {
         m_oId = null;
-        m_jName.setText(null);
+        if (binder != null) {
+            binder.clear();
+        } else {
+            m_jName.setText(null);
+        }
         m_jName.setEnabled(false);
     }
 
-    /**
-     *
-     */
     @Override
     public void writeValueInsert() {
         m_oId = UUID.randomUUID().toString();
-        m_jName.setText(null);
+        if (binder != null) {
+            binder.clear();
+        } else {
+            m_jName.setText(null);
+        }
         m_jName.setEnabled(true);
     }
 
-    /**
-     *
-     * @param value
-     */
     @Override
-    public void writeValueDelete(Object value) {
-
-        Object[] taxcustcat = (Object[]) value;
-        m_oId = (String)taxcustcat[0];
-        m_jName.setText(Formats.STRING.formatValue((String)taxcustcat[1]));
+    public void writeValueDelete(TaxCategoryInfo value) {
+        if (value == null) {
+            writeValueEOF();
+            return;
+        }
+        m_oId = value.getID();
+        if (binder != null) {
+            binder.readBean(value);
+        } else {
+            m_jName.setText(Formats.STRING.formatValue(value.getName()));
+        }
         m_jName.setEnabled(false);
     }    
 
-    /**
-     *
-     * @param value
-     */
     @Override
-    public void writeValueEdit(Object value) {
-
-        Object[] taxcustcat = (Object[]) value;
-        m_oId = (String)taxcustcat[0];
-        m_jName.setText(Formats.STRING.formatValue((String)taxcustcat[1]));
+    public void writeValueEdit(TaxCategoryInfo value) {
+        if (value == null) {
+            writeValueEOF();
+            return;
+        }
+        m_oId = value.getID();
+        if (binder != null) {
+            binder.readBean(value);
+        } else {
+            m_jName.setText(Formats.STRING.formatValue(value.getName()));
+        }
         m_jName.setEnabled(true);
     }
 
-    /**
-     *
-     * @return
-     * @throws BasicException
-     */
     @Override
-    public Object createValue() throws BasicException {
-        
-        Object[] taxcustcat = new Object[2];
-
-        taxcustcat[0] = m_oId;
-        taxcustcat[1] = m_jName.getText();
-
-        return taxcustcat;
+    public TaxCategoryInfo createValue() throws BasicException {
+        TaxCategoryInfo cat = new TaxCategoryInfo(m_oId, m_jName.getText());
+        if (binder != null) {
+            try {
+                binder.writeBean(cat);
+            } catch (SwingBinder.ValidationException ex) {
+                LOGGER.log(System.Logger.Level.WARNING, "Validation in createValue: " + ex.getMessage());
+            }
+        }
+        if (cat.getName() == null) {
+            cat.setName(m_jName.getText() != null ? m_jName.getText() : "");
+        }
+        return cat;
     }
 
-    /**
-     *
-     * @return
-     */
     @Override
     public Component getComponent() {
         return this;
     }
     
-    /**
-     *
-     */
     @Override
     public void refresh() {
     }
@@ -173,9 +213,8 @@ public final class TaxCategoriesEditor extends JPanel implements EditorRecord {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jLabel2MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jLabel2MouseClicked
-
-        if (evt.getClickCount() == 2) {
-            String uuidString = m_oId.toString();
+        if (evt.getClickCount() == 2 && m_oId != null) {
+            String uuidString = m_oId;
             StringSelection stringSelection = new StringSelection(uuidString);
             Clipboard clpbrd = Toolkit.getDefaultToolkit().getSystemClipboard();
             clpbrd.setContents(stringSelection, null);
@@ -185,10 +224,8 @@ public final class TaxCategoriesEditor extends JPanel implements EditorRecord {
         }
     }//GEN-LAST:event_jLabel2MouseClicked
 
-
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel jLabel2;
     private javax.swing.JTextField m_jName;
     // End of variables declaration//GEN-END:variables
-
 }

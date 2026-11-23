@@ -19,6 +19,7 @@ package com.openbravo.pos.sales;
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.loader.SentenceList;
 import com.openbravo.data.loader.TableDefinition;
+import com.openbravo.data.user.SaveProvider;
 import com.openbravo.pos.inventory.TaxCategoryInfo;
 import com.openbravo.pos.inventory.TaxCustCategoryInfo;
 import com.openbravo.pos.ticket.TaxInfo;
@@ -43,10 +44,38 @@ public interface TaxService {
 
     SentenceList<TaxCategoryInfo> getTaxCategoryInfoList();
 
-    TableDefinition getTableTaxes();
+    /**
+     * Creates a product tax category from a typed command.
+     *
+     * @param command create tax category command
+     * @throws BasicException on persistence error
+     */
+    void createTaxCategory(CreateTaxCategoryCommand command) throws BasicException;
 
-    TableDefinition getTableTaxCustCategories();
+    /**
+     * Creates a customer tax category from a typed command.
+     *
+     * @param command create customer tax category command
+     * @throws BasicException on persistence error
+     */
+    void createTaxCustCategory(CreateTaxCustCategoryCommand command) throws BasicException;
 
-    TableDefinition getTableTaxCategories();
+    /**
+     * Creates a tax definition from a typed command.
+     *
+     * @param command create tax command
+     * @throws BasicException on persistence error
+     */
+    void createTax(CreateTaxCommand command) throws BasicException;
+
+    TableDefinition<TaxInfo> getTableTaxes();
+
+    default SaveProvider<TaxInfo> getTaxSaveProvider() {
+        return null;
+    }
+
+    TableDefinition<TaxCustCategoryInfo> getTableTaxCustCategories();
+
+    TableDefinition<TaxCategoryInfo> getTableTaxCategories();
 }
 

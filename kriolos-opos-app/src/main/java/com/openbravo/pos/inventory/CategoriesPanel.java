@@ -16,6 +16,7 @@
 
 package com.openbravo.pos.inventory;
 
+import com.openbravo.basic.BasicException;
 import com.openbravo.data.gui.ListCellRendererBasic;
 import com.openbravo.data.loader.ComparatorCreator;
 import com.openbravo.data.loader.TableDefinition;
@@ -23,21 +24,24 @@ import com.openbravo.data.loader.Vectorer;
 import com.openbravo.data.user.EditorRecord;
 import com.openbravo.data.user.ListProvider;
 import com.openbravo.data.user.ListProviderCreator;
+import com.openbravo.data.user.SaveProvider;
 import com.openbravo.data.user.DefaultSaveProvider;
 import com.openbravo.basic.AppLocal;
 import com.openbravo.pos.panels.JPanelTable;
 import com.openbravo.pos.catalog.CatalogService;
+import com.openbravo.pos.pim.CategoryInfo;
 import javax.swing.ListCellRenderer;
 
 /**
  *
  * @author adrianromero
+ * @author KriolOS
  */
 public class CategoriesPanel extends JPanelTable {
 
     private static final long serialVersionUID = 1L;
     
-    private TableDefinition tcategories;
+    private TableDefinition<CategoryInfo> tcategories;
     private CategoriesEditor jeditor;
     
     /** Creates a new instance of JPanelCategories */
@@ -59,8 +63,8 @@ public class CategoriesPanel extends JPanelTable {
      * @return
      */
     @Override
-    public ListProvider getListProvider() {
-        return new ListProviderCreator(tcategories);
+    public ListProvider<CategoryInfo> getListProvider() {
+        return new ListProviderCreator<>(tcategories);
     }
     
     /**
@@ -68,8 +72,8 @@ public class CategoriesPanel extends JPanelTable {
      * @return
      */
     @Override
-    public DefaultSaveProvider getSaveProvider() {
-        return new DefaultSaveProvider(tcategories);      
+    public SaveProvider<CategoryInfo> getSaveProvider() {
+        return new DefaultSaveProvider<>(tcategories);      
     }
     
     /**
@@ -77,8 +81,18 @@ public class CategoriesPanel extends JPanelTable {
      * @return
      */
     @Override
-    public Vectorer getVectorer() {
-        return tcategories.getVectorerBasic(new int[]{1});
+    public Vectorer<CategoryInfo> getVectorer() {
+        return new Vectorer<>() {
+            @Override
+            public String[] getHeaders() throws BasicException {
+                return new String[]{AppLocal.getIntString("label.name")};
+            }
+
+            @Override
+            public String[] getValues(CategoryInfo cat) throws BasicException {
+                return new String[]{cat != null && cat.getName() != null ? cat.getName() : ""};
+            }
+        };
     }
     
     /**
@@ -95,8 +109,8 @@ public class CategoriesPanel extends JPanelTable {
      * @return
      */
     @Override
-    public ListCellRenderer getListCellRenderer() {
-        return new ListCellRendererBasic(tcategories.getRenderStringBasic(new int[]{1}));
+    public ListCellRenderer<?> getListCellRenderer() {
+        return new ListCellRendererBasic(v -> v instanceof CategoryInfo cat ? cat.getName() : (v != null ? v.toString() : ""));
     }
     
     /**
@@ -104,7 +118,7 @@ public class CategoriesPanel extends JPanelTable {
      * @return
      */
     @Override
-    public EditorRecord getEditor() {
+    public EditorRecord<CategoryInfo> getEditor() {
         return jeditor;
     }
     

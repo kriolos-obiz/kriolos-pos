@@ -16,35 +16,34 @@
 
 package com.openbravo.pos.sales.restaurant;
 
+import com.openbravo.basic.AppLocal;
+import com.openbravo.basic.BasicException;
 import com.openbravo.data.gui.ListCellRendererBasic;
-import com.openbravo.data.loader.Datas;
 import com.openbravo.data.loader.TableDefinition;
 import com.openbravo.data.loader.Vectorer;
+import com.openbravo.data.user.DefaultSaveProvider;
 import com.openbravo.data.user.EditorRecord;
 import com.openbravo.data.user.ListProvider;
 import com.openbravo.data.user.ListProviderCreator;
-import com.openbravo.data.user.DefaultSaveProvider;
-import com.openbravo.format.Formats;
-import com.openbravo.basic.AppLocal;
 import com.openbravo.pos.panels.JPanelTable;
 import javax.swing.ListCellRenderer;
 
 /**
+ * Strongly typed maintenance panel for restaurant floors.
  *
  * @author adrianromero
+ * @author KriolOS
  */
 public class JPanelFloors extends JPanelTable {
     
-    private TableDefinition tfloors;
+    private static final long serialVersionUID = 1L;
+
+    private TableDefinition<FloorsInfo> tfloors;
     private FloorsEditor jeditor;
     
-    /** Creates a new instance of JPanelFloors */
     public JPanelFloors() {
     }
     
-    /**
-     *
-     */
     @Override
     protected void init() {
         RestaurantService restaurantService = app.getBean(RestaurantService.class);
@@ -52,55 +51,41 @@ public class JPanelFloors extends JPanelTable {
         jeditor = new FloorsEditor(dirty); 
     }
     
-    /**
-     *
-     * @return
-     */
     @Override
-    public ListProvider getListProvider() {
-        return new ListProviderCreator(tfloors);
+    public ListProvider<FloorsInfo> getListProvider() {
+        return new ListProviderCreator<>(tfloors);
     }
     
-    /**
-     *
-     * @return
-     */
     @Override
-    public Vectorer getVectorer() {
-        return tfloors.getVectorerBasic(new int[]{1});
+    public Vectorer<FloorsInfo> getVectorer() {
+        return new Vectorer<>() {
+            @Override
+            public String[] getHeaders() throws BasicException {
+                return new String[]{AppLocal.getIntString("label.name")};
+            }
+
+            @Override
+            public String[] getValues(FloorsInfo obj) throws BasicException {
+                return new String[]{obj != null ? obj.getName() : ""};
+            }
+        };
     }
     
-    /**
-     *
-     * @return
-     */
     @Override
-    public ListCellRenderer getListCellRenderer() {
-        return new ListCellRendererBasic(tfloors.getRenderStringBasic(new int[]{1}));
+    public ListCellRenderer<?> getListCellRenderer() {
+        return new ListCellRendererBasic(v -> v instanceof FloorsInfo f ? f.getName() : (v != null ? v.toString() : ""));
     }
     
-    /**
-     *
-     * @return
-     */
     @Override
-    public DefaultSaveProvider getSaveProvider() {
-        return new DefaultSaveProvider(tfloors);      
+    public DefaultSaveProvider<FloorsInfo> getSaveProvider() {
+        return new DefaultSaveProvider<>(tfloors);      
     }
     
-    /**
-     *
-     * @return
-     */
     @Override
-    public EditorRecord getEditor() {
+    public EditorRecord<FloorsInfo> getEditor() {
         return jeditor;
     }
     
-    /**
-     *
-     * @return
-     */
     @Override
     public String getTitle() {
         return AppLocal.getIntString("Menu.Floors");

@@ -484,7 +484,28 @@ To transform the legacy monolith into clean, modular components, the 13 `DataLog
      ** `domain-driven-design.md`: Services receive and return domain models (never raw `Object` or `Object[]`, and never `com.openbravo.data.*` primitives like `Sentence`, `Row`, `TableDefinition`, `SaveProvider`); multi-parameter methods must define records; eliminate magic strings/numbers; DataLogics must be type-safe.
      ** `modern-java-conventions.md`: Strict ban on Hungarian prefixes (`m_sName`); standard JavaBean/record conventions; Java 17/21 idioms.
      ** `javadoc-and-license.md`: Javadoc required for packages, classes, and methods; author strictly `@author KriolOS`; opportunistic removal of legacy file license headers when touching files.
-28: **Next Decoupling Targets:**
+28. **Java 17 Command Pattern Mandate & Domain Type Safety Modernization (`KP-129` through `KP-138`) (Completed):**
+   * **Command Pattern Enforcement:** Systematically eliminated loose, multi-positional parameters from all domain service port mutation operations, replacing them with immutable Java 17 `record` commands (`<Action><Entity>Command`) with invariant validation and defensive copying:
+     ** `PlaceService`: Implemented `MoveCustomerCommand` (`com.openbravo.pos.sales.restaurant.MoveCustomerCommand`) validating `sourceTable`, `targetTable`, and `appUser`.
+     ** `InventoryService`: Implemented `CreateStockCommand` and `UpdateStockCommand` (`com.openbravo.pos.inventory.*`) validating `location`, `product`, `attributeSetInstanceId`, and numeric quantities.
+     ** `StockService`: Implemented `RecordStockMovementCommand` and `RevertStockMovementCommand` (`com.openbravo.pos.inventory.*`) encapsulating complex 9-parameter inventory diary and current balance updates with defensive date copying.
+     ** `TreasuryService`: Implemented `RecordPaymentMovementCommand` and `DeletePaymentMovementCommand` (`com.openbravo.pos.payment.*`) enforcing invariant validation for cash drawer ledger transactions.
+     ** `SupplierService`: Implemented `UpdateSupplierNotesCommand` and strengthened `SupplierCreateCommand` (`com.openbravo.pos.suppliers.*`) with compact constructors.
+     ** `TaxService`: Implemented `CreateTaxCategoryCommand`, `CreateTaxCustCategoryCommand`, and `CreateTaxCommand` (`com.openbravo.pos.sales.*`) validating tax rates, cascade flags, and application sequences.
+     ** `AuditService`: Implemented `RecordAuditLineRemovedCommand` and `RecordAuditTicketDeletedCommand` (`com.openbravo.pos.sales.*`) securing security void and ticket line removal auditing.
+     ** `CatalogService`: Implemented `CreateCategoryCommand` (`com.openbravo.pos.catalog.*`) enforcing clean category creation.
+     ** `ResourceService`: Implemented `SetResourceCommand` (`com.openbravo.pos.resources.*`) with defensive byte array copying and type categorization.
+     ** `CustomerService`: Enforced `CustomerDebtUpdateCommand` (`com.openbravo.pos.customers.*`) for credit account mutations.
+   * **Complete Raw Framework Type Eradication:**
+     ** Parameterized all service port declarations of `TableDefinition<T>`, `SaveProvider<T>`, and `SentenceList<T>` across all 29 domain service ports.
+     ** Parameterized `CatalogService.getProductCatQBF()` to `SentenceList<Object[]>`.
+     ** Parameterized `CustomerService.getCustomerSaveProvider()` to `SaveProvider<Object[]>`.
+     ** Fully cleaned raw `TableDefinition` declarations across all domain services and UI panels (`JPanelFloors`, `JPanelPlaces`, `CategoriesPanel`, `UomPanel`, `LocationsPanel`, `PeoplePanel`, `RolesPanel`, `BreaksPanel`, `LeavesPanel`, `JNewSupplierPanel`, `SuppliersPanel`, `VoucherPanel`).
+   * **In-Memory HSQLDB Persistence Contract Testing:**
+     ** Implemented full transactional contract test suites using in-memory HSQLDB in MySQL compatibility mode (`sql.syntax_mys=true`): `StockServiceTest`, `AuditServiceTest`, `ResourceServiceTest`, `SupplierServiceTest`, `TaxServiceTest`, `CatalogServiceTest`, and `InventoryServiceTest`.
+     ** Verified table schema integrity, SQL sentence bindings, and dual-table atomic consistency without requiring external database dependencies.
+   * **Zero Breaking Changes:** Maintained 100% binary and source backwards compatibility by retaining `@Deprecated` adapter default methods forwarding to record commands across all modified service interfaces.
+29. **Next Decoupling Targets:**
    * Modernize legacy UI panels calling `com.openbravo.data.*` persistence primitives to consume dedicated DataLogics directly rather than leaking through `CatalogService`.
    * Continue replacing `Object[]` parameter arrays in remaining DataLogics with Java records.
 

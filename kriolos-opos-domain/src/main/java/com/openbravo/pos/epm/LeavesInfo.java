@@ -16,146 +16,210 @@
 
 package com.openbravo.pos.epm;
 
+import com.openbravo.basic.BasicException;
+import com.openbravo.data.loader.DataRead;
+import com.openbravo.data.loader.DataWrite;
 import com.openbravo.data.loader.IKeyed;
+import com.openbravo.data.loader.SerializerRead;
+import com.openbravo.data.loader.SerializerWrite;
+import com.openbravo.format.Formats;
+import java.io.Serializable;
+import java.util.Date;
 
 /**
+ * Domain entity representing an employee leave record.
  *
- * @author  Ali Safdar and Aneeqa Baber
+ * @author Ali Safdar and Aneeqa Baber
+ * @author KriolOS
  */
-public class LeavesInfo implements IKeyed {
+public class LeavesInfo implements Serializable, IKeyed {
 
     private static final long serialVersionUID = 8936482715929L;
+
     private String m_sID;
+    private String m_sPplId;
     private String m_sName;
-    private String m_sEmployeeID;
-    private String m_sStartDate;
-    private String m_sEndDate;
+    private Date m_dStartDate;
+    private Date m_dEndDate;
     private String m_sNotes;
 
+    public LeavesInfo() {
+        this(null, null, null, (Date) null, (Date) null, null);
+    }
 
-    /** Creates new LeavesInfo
-     * @param id
-     * @param name
-     * @param notes
-     * @param startdate
-     * @param employeeid
-     * @param enddate */
-    public LeavesInfo(String id, String name, String employeeid, String startdate, String enddate, String notes) {
-        m_sID = id;
-        m_sName = name;
-        m_sEmployeeID = employeeid;
-        m_sStartDate = startdate;
-        m_sEndDate = enddate;
-        m_sNotes = notes;
+    public LeavesInfo(String id, String pplid, String name, Date startDate, Date endDate, String notes) {
+        this.m_sID = id;
+        this.m_sPplId = pplid;
+        this.m_sName = name;
+        this.m_dStartDate = startDate;
+        this.m_dEndDate = endDate;
+        this.m_sNotes = notes;
+    }
+
+    private static Date parseDateSafe(String dateStr) {
+        if (dateStr == null || dateStr.trim().isEmpty()) {
+            return null;
+        }
+        try {
+            return (Date) Formats.TIMESTAMP.parseValue(dateStr);
+        } catch (BasicException e) {
+            return null;
+        }
     }
 
     /**
-     *
-     * @return
+     * Backwards-compatible constructor supporting string-formatted dates.
      */
+    public LeavesInfo(String id, String name, String employeeid, String startdate, String enddate, String notes) {
+        this.m_sID = id;
+        this.m_sName = name;
+        this.m_sPplId = employeeid;
+        this.m_dStartDate = parseDateSafe(startdate);
+        this.m_dEndDate = parseDateSafe(enddate);
+        this.m_sNotes = notes;
+    }
+
     @Override
     public Object getKey() {
         return m_sID;
     }
 
-    /**
-     *
-     * @param sID
-     */
     public void setID(String sID) {
         m_sID = sID;
     }
 
-    /**
-     *
-     * @return
-     */
     public String getID() {
         return m_sID;
     }
 
-    /**
-     *
-     * @return
-     */
+    public String getId() {
+        return m_sID;
+    }
+
+    public void setId(String id) {
+        this.m_sID = id;
+    }
+
+    public String getPplId() {
+        return m_sPplId;
+    }
+
+    public void setPplId(String pplId) {
+        this.m_sPplId = pplId;
+    }
+
+    public String getEmployeeID() {
+        return m_sPplId;
+    }
+
+    public void setEmployeeID(String employeeID) {
+        this.m_sPplId = employeeID;
+    }
+
     public String getName() {
         return m_sName;
     }
 
-    /**
-     *
-     * @param sName
-     */
     public void setName(String sName) {
         m_sName = sName;
     }
 
-    @Override
-    public String toString(){
-        return m_sName;
+    public Date getStartDate() {
+        return m_dStartDate;
     }
 
-    /**
-     *
-     * @return
-     */
-    public String getEmployeeID() {
-        return m_sEmployeeID;
+    public void setStartDate(Date startDate) {
+        this.m_dStartDate = startDate;
     }
 
-    /**
-     *
-     * @param EmployeeID
-     */
-    public void setEmployeeID(String EmployeeID) {
-        this.m_sEmployeeID = EmployeeID;
+    public void setStartDate(String startDate) {
+        this.m_dStartDate = parseDateSafe(startDate);
     }
 
-    /**
-     *
-     * @return
-     */
-    public String getStartDate() {
-        return m_sStartDate;
+    public Date getEndDate() {
+        return m_dEndDate;
     }
 
-    /**
-     *
-     * @param StartDate
-     */
-    public void setStartDate(String StartDate) {
-        this.m_sStartDate = StartDate;
+    public void setEndDate(Date endDate) {
+        this.m_dEndDate = endDate;
     }
 
-    /**
-     *
-     * @return
-     */
-    public String getEndDate() {
-        return m_sEndDate;
+    public void setEndDate(String endDate) {
+        this.m_dEndDate = parseDateSafe(endDate);
     }
 
-    /**
-     *
-     * @param EndDate
-     */
-    public void setEndDate(String EndDate) {
-        this.m_sEndDate = EndDate;
-    }
-
-    /**
-     *
-     * @return
-     */
     public String getNotes() {
         return m_sNotes;
     }
 
+    public void setNotes(String notes) {
+        this.m_sNotes = notes;
+    }
+
+    public String printStartDate() {
+        return Formats.TIMESTAMP.formatValue(m_dStartDate);
+    }
+
+    public String printEndDate() {
+        return Formats.TIMESTAMP.formatValue(m_dEndDate);
+    }
+
+    @Override
+    public String toString() {
+        return m_sName;
+    }
+
     /**
-     *
-     * @param Notes
+     * Serializer for reading LeavesInfo from JDBC queries.
+     * Columns: 1: ID, 2: PPLID, 3: NAME, 4: STARTDATE, 5: ENDDATE, 6: NOTES
      */
-    public void setNotes(String Notes) {
-        this.m_sNotes = Notes;
+    public static SerializerRead<LeavesInfo> getSerializerRead() {
+        return (DataRead dr) -> new LeavesInfo(
+                dr.getString(1),
+                dr.getString(2),
+                dr.getString(3),
+                dr.getTimestamp(4),
+                dr.getTimestamp(5),
+                dr.getString(6)
+        );
+    }
+
+    /**
+     * Serializer for inserting LeavesInfo.
+     */
+    public static SerializerWrite<LeavesInfo> getSerializerInsert() {
+        return (DataWrite dp, LeavesInfo leaf) -> {
+            dp.setString(1, leaf.getID());
+            dp.setString(2, leaf.getPplId());
+            dp.setString(3, leaf.getName());
+            dp.setTimestamp(4, leaf.getStartDate());
+            dp.setTimestamp(5, leaf.getEndDate());
+            dp.setString(6, leaf.getNotes());
+        };
+    }
+
+    /**
+     * Serializer for updating LeavesInfo.
+     * Columns: 1: ID, 2: PPLID, 3: NAME, 4: STARTDATE, 5: ENDDATE, 6: NOTES, 7: ID (WHERE id = ?)
+     */
+    public static SerializerWrite<LeavesInfo> getSerializerUpdate() {
+        return (DataWrite dp, LeavesInfo leaf) -> {
+            dp.setString(1, leaf.getID());
+            dp.setString(2, leaf.getPplId());
+            dp.setString(3, leaf.getName());
+            dp.setTimestamp(4, leaf.getStartDate());
+            dp.setTimestamp(5, leaf.getEndDate());
+            dp.setString(6, leaf.getNotes());
+            dp.setString(7, leaf.getID());
+        };
+    }
+
+    /**
+     * Serializer for deleting LeavesInfo by ID.
+     */
+    public static SerializerWrite<LeavesInfo> getSerializerDelete() {
+        return (DataWrite dp, LeavesInfo leaf) -> {
+            dp.setString(1, leaf.getID());
+        };
     }
 }

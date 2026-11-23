@@ -18,16 +18,20 @@ package com.openbravo.pos.inventory;
 
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.loader.DataRead;
+import com.openbravo.data.loader.DataWrite;
 import com.openbravo.data.loader.IKeyed;
 import com.openbravo.data.loader.SerializableRead;
+import com.openbravo.data.loader.SerializerRead;
+import com.openbravo.data.loader.SerializerWrite;
+import java.io.Serializable;
 
 /**
+ * Domain entity representing an inventory warehouse/location record.
  *
  * @author adrianromero
- * Created on February 13, 2007, 10:13 AM
- *
+ * @author KriolOS
  */
-public class LocationInfo implements SerializableRead, IKeyed {
+public class LocationInfo implements SerializableRead, Serializable, IKeyed {
     
     private static final long serialVersionUID = 9032683595230L;
     private String m_sID;
@@ -36,15 +40,24 @@ public class LocationInfo implements SerializableRead, IKeyed {
     
     /** Creates a new instance of LocationInfo */
     public LocationInfo() {
-        m_sID = null;
-        m_sName = null;
-        m_sAddress = null;
+        this(null, null, null);
+    }
+
+    public LocationInfo(String id, String name) {
+        this(id, name, null);
+    }
+
+    public LocationInfo(String id, String name, String address) {
+        this.m_sID = id;
+        this.m_sName = name;
+        this.m_sAddress = address;
     }
     
     /**
      *
      * @return
      */
+    @Override
     public Object getKey() {
         return m_sID;
     }
@@ -54,10 +67,19 @@ public class LocationInfo implements SerializableRead, IKeyed {
      * @param dr
      * @throws BasicException
      */
+    @Override
     public void readValues(DataRead dr) throws BasicException {
         m_sID = dr.getString(1);
         m_sName = dr.getString(2);
         m_sAddress = dr.getString(3);
+    }
+
+    public String getId() {
+        return m_sID;
+    }
+
+    public void setId(String id) {
+        this.m_sID = id;
     }
 
     /**
@@ -108,7 +130,54 @@ public class LocationInfo implements SerializableRead, IKeyed {
         m_sAddress = sAddress;
     } 
     
+    @Override
     public String toString(){
         return m_sName;
-    }    
+    }
+
+    /**
+     * Serializer for reading LocationInfo from JDBC queries.
+     * Columns: 1: ID, 2: NAME, 3: ADDRESS
+     */
+    public static SerializerRead<LocationInfo> getSerializerRead() {
+        return (DataRead dr) -> new LocationInfo(
+                dr.getString(1),
+                dr.getString(2),
+                dr.getString(3)
+        );
+    }
+
+    /**
+     * Serializer for inserting LocationInfo.
+     */
+    public static SerializerWrite<LocationInfo> getSerializerInsert() {
+        return (DataWrite dp, LocationInfo loc) -> {
+            dp.setString(1, loc.getId());
+            dp.setString(2, loc.getName());
+            dp.setString(3, loc.getAddress());
+        };
+    }
+
+    /**
+     * Serializer for updating LocationInfo.
+     * Columns: 1: ID, 2: NAME, 3: ADDRESS, 4: ID (WHERE id = ?)
+     */
+    public static SerializerWrite<LocationInfo> getSerializerUpdate() {
+        return (DataWrite dp, LocationInfo loc) -> {
+            dp.setString(1, loc.getId());
+            dp.setString(2, loc.getName());
+            dp.setString(3, loc.getAddress());
+            dp.setString(4, loc.getId());
+        };
+    }
+
+    /**
+     * Serializer for deleting LocationInfo by ID.
+     */
+    public static SerializerWrite<LocationInfo> getSerializerDelete() {
+        return (DataWrite dp, LocationInfo loc) -> {
+            dp.setString(1, loc.getId());
+        };
+    }
 }
+

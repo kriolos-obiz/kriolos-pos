@@ -36,7 +36,7 @@ import javax.swing.ListCellRenderer;
 public class PeoplePanel extends JPanelTable {
     
     private PeopleService peopleService;
-    private TableDefinition tpeople;
+    private TableDefinition<PeopleInfo> tpeople;
     private PeopleView jeditor;
     
     /** Creates a new instance of JPanelPeople */
@@ -58,8 +58,8 @@ public class PeoplePanel extends JPanelTable {
      * @return
      */
     @Override
-    public ListProvider getListProvider() {
-        return new ListProviderCreator(tpeople);
+    public ListProvider<PeopleInfo> getListProvider() {
+        return new ListProviderCreator<>(tpeople);
     }
     
     /**
@@ -67,9 +67,8 @@ public class PeoplePanel extends JPanelTable {
      * @return
      */
     @Override
-    public SaveProvider getSaveProvider() {
+    public SaveProvider<PeopleInfo> getSaveProvider() {
         return peopleService.getPeopleSaveProvider();
-        //return new DefaultSaveProvider(tpeople);        
     }
     
     /**
@@ -77,8 +76,18 @@ public class PeoplePanel extends JPanelTable {
      * @return
      */
     @Override
-    public Vectorer getVectorer() {
-        return tpeople.getVectorerBasic(new int[]{1});
+    public Vectorer<PeopleInfo> getVectorer() {
+        return new Vectorer<>() {
+            @Override
+            public String[] getHeaders() throws BasicException {
+                return new String[]{AppLocal.getIntString("label.peoplename")};
+            }
+
+            @Override
+            public String[] getValues(PeopleInfo p) throws BasicException {
+                return new String[]{p != null && p.getName() != null ? p.getName() : ""};
+            }
+        };
     }
     
     /**
@@ -95,8 +104,8 @@ public class PeoplePanel extends JPanelTable {
      * @return
      */
     @Override
-    public ListCellRenderer getListCellRenderer() {
-        return new ListCellRendererBasic(tpeople.getRenderStringBasic(new int[]{1}));
+    public ListCellRenderer<?> getListCellRenderer() {
+        return new ListCellRendererBasic(v -> v instanceof PeopleInfo p ? p.getName() : (v != null ? v.toString() : ""));
     }
     
     /**
@@ -104,7 +113,7 @@ public class PeoplePanel extends JPanelTable {
      * @return
      */
     @Override
-    public EditorRecord getEditor() {
+    public EditorRecord<PeopleInfo> getEditor() {
         return jeditor;
     }
     

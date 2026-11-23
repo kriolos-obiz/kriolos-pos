@@ -24,6 +24,10 @@ import com.openbravo.basic.AppLocal;
 import com.openbravo.pos.panels.AppView;
 import com.openbravo.pos.container.BeanFactoryException;
 import com.openbravo.pos.inventory.MovementReason;
+import com.openbravo.pos.util.FormatsCurrencyConverter;
+import com.openbravo.ui.data.binding.Converter;
+import com.openbravo.ui.data.binding.EmailValidator;
+import com.openbravo.ui.data.binding.SwingBinder;
 import java.awt.Component;
 import java.awt.Desktop;
 import java.awt.Font;
@@ -41,35 +45,70 @@ import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JOptionPane;
+import javax.swing.JTextField;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.JTableHeader;
 
 /**
  *
  * @author Jack Gerrard
+ * @author KriolOS
  */
-public final class SuppliersView extends javax.swing.JPanel implements EditorRecord {
+public final class SuppliersView extends javax.swing.JPanel implements EditorRecord<SupplierInfo> {
 
     private static final Logger LOGGER = Logger.getLogger(SuppliersView.class.getName());
     private static final long serialVersionUID = 1L;
     private String m_oId;
 
     private SupplierService dlSuppliers;
+    private DirtyManager m_Dirty;
+    private SwingBinder<SupplierInfo> binder;
 
     private AppView appView;
     private SupplierInfo supplierInfo;
 
     /**
+     * Headless constructor for testing without active AppView session.
+     *
+     * @param dirty dirty state manager
+     */
+    public SuppliersView(DirtyManager dirty) {
+        this((SupplierService) null, dirty);
+    }
+
+    /**
+     * Constructor accepting specific SupplierService and dirty manager.
+     *
+     * @param supplierService supplier service port
+     * @param dirty dirty state manager
+     */
+    public SuppliersView(SupplierService supplierService, DirtyManager dirty) {
+        this(null, dirty, supplierService);
+    }
+
+    /**
      * Creates new form SuppliersView
      *
-     * @param app
-     * @param dirty
+     * @param app application view
+     * @param dirty dirty state manager
      */
     public SuppliersView(AppView app, DirtyManager dirty) {
+        this(app, dirty, app != null ? app.getBean(SupplierService.class) : null);
+    }
+
+    /**
+     * Full constructor with explicit dependency injection.
+     *
+     * @param app application view
+     * @param dirty dirty state manager
+     * @param supplierService supplier domain service
+     */
+    public SuppliersView(AppView app, DirtyManager dirty, SupplierService supplierService) {
         super();
         try {
             setAppView(app);
-            dlSuppliers = app.getBean(SupplierService.class);
+            this.dlSuppliers = supplierService != null ? supplierService : (app != null ? app.getBean(SupplierService.class) : null);
+            this.m_Dirty = dirty;
 
             initComponents();
             
@@ -130,28 +169,35 @@ public final class SuppliersView extends javax.swing.JPanel implements EditorRec
     @Override
     public void writeValueEOF() {
         m_oId = null;
-        m_jTaxID.setText(null);
-        m_jVATID.setText(null);
-        m_jSearchkey.setText(null);
-        m_jName.setText(null);
-        m_jNotes.setText(null);
-        txtMaxdebt.setText(null);
+        if (binder != null) {
+            binder.clear();
+        } else {
+            m_jTaxID.setText(null);
+            m_jVATID.setText(null);
+            m_jSearchkey.setText(null);
+            m_jName.setText(null);
+            m_jNotes.setText(null);
+            txtMaxdebt.setText(null);
+            txtCurdebt.setText(null);
+            txtCurdate.setText(null);
+            m_jVisible.setSelected(false);
+
+            txtFirstName.setText(null);
+            txtLastName.setText(null);
+            txtEmail.setText(null);
+            txtPhone.setText(null);
+            txtPhone2.setText(null);
+            txtFax.setText(null);
+            txtAddress.setText(null);
+            txtAddress2.setText(null);
+            txtPostal.setText(null);
+            txtCity.setText(null);
+            txtRegion.setText(null);
+            txtCountry.setText(null);
+        }
         txtCurdebt.setText(null);
         txtCurdate.setText(null);
         m_jVisible.setSelected(false);
-
-        txtFirstName.setText(null);
-        txtLastName.setText(null);
-        txtEmail.setText(null);
-        txtPhone.setText(null);
-        txtPhone2.setText(null);
-        txtFax.setText(null);
-        txtAddress.setText(null);
-        txtAddress2.setText(null);
-        txtPostal.setText(null);
-        txtCity.setText(null);
-        txtRegion.setText(null);
-        txtCountry.setText(null);
 
         m_jTaxID.setEnabled(false);
         m_jVATID.setEnabled(false);
@@ -185,30 +231,36 @@ public final class SuppliersView extends javax.swing.JPanel implements EditorRec
 
     @Override
     public void writeValueInsert() {
-        m_oId = null;
-        m_jTaxID.setText(null);
-        m_jVATID.setText(null);
-        m_jSearchkey.setText(null);
-        m_jName.setText(null);
-        txtMaxdebt.setText(null);
+        m_oId = UUID.randomUUID().toString();
+        if (binder != null) {
+            binder.clear();
+        } else {
+            m_jTaxID.setText(null);
+            m_jVATID.setText(null);
+            m_jSearchkey.setText(null);
+            m_jName.setText(null);
+            txtMaxdebt.setText(null);
+            txtCurdebt.setText(null);
+            txtCurdate.setText(null);
+
+            txtFirstName.setText(null);
+            txtLastName.setText(null);
+            txtPhone.setText(null);
+            txtPhone2.setText(null);
+            txtEmail.setText(null);
+
+            txtFax.setText(null);
+            txtAddress.setText(null);
+            txtAddress2.setText(null);
+            txtPostal.setText(null);
+            txtCity.setText(null);
+            txtRegion.setText(null);
+            txtCountry.setText(null);
+
+            m_jNotes.setText(null);
+        }
         txtCurdebt.setText(null);
         txtCurdate.setText(null);
-
-        txtFirstName.setText(null);
-        txtLastName.setText(null);
-        txtPhone.setText(null);
-        txtPhone2.setText(null);
-        txtEmail.setText(null);
-
-        txtFax.setText(null);
-        txtAddress.setText(null);
-        txtAddress2.setText(null);
-        txtPostal.setText(null);
-        txtCity.setText(null);
-        txtRegion.setText(null);
-        txtCountry.setText(null);
-
-        m_jNotes.setText(null);
         m_jVisible.setSelected(true);
 
         m_jTaxID.setEnabled(true);
@@ -248,7 +300,7 @@ public final class SuppliersView extends javax.swing.JPanel implements EditorRec
      * @param value
      */
     @Override
-    public void writeValueDelete(Object value) {
+    public void writeValueDelete(SupplierInfo value) {
 
         setValues(value);
 
@@ -286,35 +338,44 @@ public final class SuppliersView extends javax.swing.JPanel implements EditorRec
 
     }
     
-    private void setValues(Object value){
-    Object[] supplier = (Object[]) value;
-        m_oId = (String)supplier[0];
-        m_jSearchkey.setText((String) supplier[1]);
-        m_jTaxID.setText((String) supplier[2]);
-        m_jName.setText((String) supplier[3]);
-        txtMaxdebt.setText(Formats.CURRENCY.formatValue((Double)supplier[4]));
+    private void setValues(SupplierInfo supplier) {
+        if (supplier == null) {
+            writeValueEOF();
+            return;
+        }
 
-        txtAddress.setText(Formats.STRING.formatValue((String)supplier[5]));
-        txtAddress2.setText(Formats.STRING.formatValue((String)supplier[6]));
-        txtPostal.setText(Formats.STRING.formatValue((String)supplier[7]));
-        txtCity.setText(Formats.STRING.formatValue((String)supplier[8]));
-        txtRegion.setText(Formats.STRING.formatValue((String)supplier[9]));
-        txtCountry.setText(Formats.STRING.formatValue((String)supplier[10]));
+        m_oId = supplier.getId();
+        if (binder != null) {
+            binder.readBean(supplier);
+        } else {
+            m_jSearchkey.setText(supplier.getSearchkey());
+            m_jTaxID.setText(supplier.getTaxid());
+            m_jName.setText(supplier.getName());
+            txtMaxdebt.setText(Formats.CURRENCY.formatValue(supplier.getMaxdebt()));
 
-        txtFirstName.setText(Formats.STRING.formatValue((String)supplier[11]));
-        txtLastName.setText(Formats.STRING.formatValue((String)supplier[12]));
-        txtEmail.setText(Formats.STRING.formatValue((String)supplier[13]));
-        txtPhone.setText(Formats.STRING.formatValue((String)supplier[14]));
-        txtPhone2.setText(Formats.STRING.formatValue((String)supplier[15]));
-        txtFax.setText(Formats.STRING.formatValue((String)supplier[16]));
+            txtAddress.setText(Formats.STRING.formatValue(supplier.getAddress()));
+            txtAddress2.setText(Formats.STRING.formatValue(supplier.getAddress2()));
+            txtPostal.setText(Formats.STRING.formatValue(supplier.getPostal()));
+            txtCity.setText(Formats.STRING.formatValue(supplier.getCity()));
+            txtRegion.setText(Formats.STRING.formatValue(supplier.getRegion()));
+            txtCountry.setText(Formats.STRING.formatValue(supplier.getCountry()));
 
-        m_jNotes.setText((String) supplier[17]);
-        m_jVisible.setSelected(((Boolean) supplier[18]));
+            txtFirstName.setText(Formats.STRING.formatValue(supplier.getFirstname()));
+            txtLastName.setText(Formats.STRING.formatValue(supplier.getLastname()));
+            txtEmail.setText(Formats.STRING.formatValue(supplier.getEmail()));
+            txtPhone.setText(Formats.STRING.formatValue(supplier.getPhone()));
+            txtPhone2.setText(Formats.STRING.formatValue(supplier.getPhone2()));
+            txtFax.setText(Formats.STRING.formatValue(supplier.getFax()));
 
-        txtCurdate.setText(Formats.TIMESTAMP.formatValue((Date)supplier[19]));
-        txtCurdebt.setText(Formats.CURRENCY.formatValue((Double)supplier[20]));
+            m_jNotes.setText(supplier.getNotes());
+            m_jVisible.setSelected(supplier.isVisible());
 
-        m_jVATID.setText((String) supplier[21]);
+            m_jVATID.setText(supplier.getVatid());
+        }
+
+        txtCurdate.setText(Formats.TIMESTAMP.formatValue(supplier.getCurdate()));
+        txtCurdebt.setText(Formats.CURRENCY.formatValue(supplier.getCurdebt()));
+        m_jVATID.setText(supplier.getVatid());
     }
 
     /**
@@ -323,7 +384,7 @@ public final class SuppliersView extends javax.swing.JPanel implements EditorRec
      * @param value
      */
     @Override
-    public void writeValueEdit(Object value) {
+    public void writeValueEdit(SupplierInfo value) {
         
         setValues(value);
 
@@ -390,34 +451,75 @@ public final class SuppliersView extends javax.swing.JPanel implements EditorRec
      * @throws BasicException
      */
     @Override
-    public Object createValue() throws BasicException {
-        
-        
-        Object[] supplier = new Object[23];
-        supplier[0] = m_oId == null ? UUID.randomUUID().toString() : m_oId;
-        supplier[1] = m_jSearchkey.getText();
-        supplier[2] = m_jTaxID.getText();
-        supplier[3] = m_jName.getText();
-        supplier[4] = Formats.CURRENCY.parseValue(txtMaxdebt.getText(), 0.0);
-        supplier[5] = Formats.STRING.parseValue(txtAddress.getText());
-        supplier[6] = Formats.STRING.parseValue(txtAddress2.getText());
-        supplier[7] = Formats.STRING.parseValue(txtPostal.getText());
-        supplier[8] = Formats.STRING.parseValue(txtCity.getText());
-        supplier[9] = Formats.STRING.parseValue(txtRegion.getText());
-        supplier[10] = Formats.STRING.parseValue(txtCountry.getText());
-        supplier[11] = Formats.STRING.parseValue(txtFirstName.getText());
-        supplier[12] = Formats.STRING.parseValue(txtLastName.getText());
-        supplier[13] = Formats.STRING.parseValue(txtEmail.getText());
-        supplier[14] = Formats.STRING.parseValue(txtPhone.getText());
-        supplier[15] = Formats.STRING.parseValue(txtPhone2.getText());
-        supplier[16] = Formats.STRING.parseValue(txtFax.getText());
-        supplier[17] = m_jNotes.getText();
-        supplier[18] = m_jVisible.isSelected();
-        supplier[19] = Formats.TIMESTAMP.parseValue(txtCurdate.getText());
-        supplier[20] = Formats.CURRENCY.parseValue(txtCurdebt.getText());
-        supplier[21] = m_jVATID.getText();
+    public SupplierInfo createValue() throws BasicException {
 
-        supplier[22] = (Object) getAppView();
+        SupplierInfo supplier = new SupplierInfo(m_oId == null ? UUID.randomUUID().toString() : m_oId);
+
+        if (binder != null) {
+            try {
+                binder.writeBean(supplier);
+            } catch (SwingBinder.ValidationException ex) {
+                LOGGER.log(Level.WARNING, "Validation in createValue: " + ex.getMessage());
+            }
+        }
+
+        if (supplier.getName() == null || supplier.getName().isEmpty()) {
+            supplier.setName(m_jName.getText());
+        }
+        if (supplier.getSearchkey() == null) {
+            supplier.setSearchkey(m_jSearchkey.getText());
+        }
+        if (supplier.getTaxid() == null) {
+            supplier.setTaxid(m_jTaxID.getText());
+        }
+        if (supplier.getVatid() == null) {
+            supplier.setVatid(m_jVATID.getText());
+        }
+        if (supplier.getMaxdebt() == null) {
+            supplier.setMaxdebt(Formats.CURRENCY.parseValue(txtMaxdebt.getText(), 0.0));
+        }
+        if (supplier.getAddress() == null) {
+            supplier.setAddress(Formats.STRING.parseValue(txtAddress.getText()));
+        }
+        if (supplier.getAddress2() == null) {
+            supplier.setAddress2(Formats.STRING.parseValue(txtAddress2.getText()));
+        }
+        if (supplier.getPostal() == null) {
+            supplier.setPostal(Formats.STRING.parseValue(txtPostal.getText()));
+        }
+        if (supplier.getCity() == null) {
+            supplier.setCity(Formats.STRING.parseValue(txtCity.getText()));
+        }
+        if (supplier.getRegion() == null) {
+            supplier.setRegion(Formats.STRING.parseValue(txtRegion.getText()));
+        }
+        if (supplier.getCountry() == null) {
+            supplier.setCountry(Formats.STRING.parseValue(txtCountry.getText()));
+        }
+        if (supplier.getFirstname() == null) {
+            supplier.setFirstname(Formats.STRING.parseValue(txtFirstName.getText()));
+        }
+        if (supplier.getLastname() == null) {
+            supplier.setLastname(Formats.STRING.parseValue(txtLastName.getText()));
+        }
+        if (supplier.getEmail() == null) {
+            supplier.setEmail(Formats.STRING.parseValue(txtEmail.getText()));
+        }
+        if (supplier.getPhone() == null) {
+            supplier.setPhone(Formats.STRING.parseValue(txtPhone.getText()));
+        }
+        if (supplier.getPhone2() == null) {
+            supplier.setPhone2(Formats.STRING.parseValue(txtPhone2.getText()));
+        }
+        if (supplier.getFax() == null) {
+            supplier.setFax(Formats.STRING.parseValue(txtFax.getText()));
+        }
+        if (supplier.getNotes() == null) {
+            supplier.setNotes(m_jNotes.getText());
+        }
+        supplier.setVisible(m_jVisible.isSelected());
+        supplier.setCurdate(Formats.TIMESTAMP.parseValue(txtCurdate.getText()));
+        supplier.setCurdebt(Formats.CURRENCY.parseValue(txtCurdebt.getText()));
 
         repaint();
         refresh();
@@ -441,15 +543,16 @@ public final class SuppliersView extends javax.swing.JPanel implements EditorRec
     private List<SupplierTransaction> getTransactionOfName(String sId) {
         List<SupplierTransaction> supplierList = new ArrayList<>();
         try {
-            supplierList = dlSuppliers.getSuppliersTransactionList(sId);
+            if (dlSuppliers != null) {
+                supplierList = dlSuppliers.getSuppliersTransactionList(sId);
 
-            for (SupplierTransaction supplierTransaction : supplierList) {
-                String supplierId = supplierTransaction.getSupplierId();
-                if (!supplierId.equals(sId)) {
-                    supplierList.remove(supplierTransaction);
+                for (SupplierTransaction supplierTransaction : supplierList) {
+                    String supplierId = supplierTransaction.getSupplierId();
+                    if (!supplierId.equals(sId)) {
+                        supplierList.remove(supplierTransaction);
+                    }
                 }
             }
-
         } catch (BasicException ex) {
             LOGGER.log(Level.SEVERE, null, ex);
         }
@@ -458,7 +561,72 @@ public final class SuppliersView extends javax.swing.JPanel implements EditorRec
     }
 
     private void initValidator() {
-        // Validation managed via com.openbravo.ui binding and validation framework
+        binder = new SwingBinder<>(new SupplierInfo());
+
+        // Mandatory Supplier Name
+        binder.forField(m_jName)
+                .asRequired(AppLocal.getIntString("validation.required", AppLocal.getIntString("label.name")))
+                .bind(SupplierInfo::getName, SupplierInfo::setName);
+
+        // Optional valid Email Address
+        binder.forField(txtEmail)
+                .withValidator(new EmailValidator(AppLocal.getIntString("validation.email.invalid")))
+                .bind(SupplierInfo::getEmail, SupplierInfo::setEmail);
+
+        // Max Debt (Currency format)
+        binder.forField(txtMaxdebt)
+                .withConverter(new FormatsCurrencyConverter())
+                .withValidator(v -> v == null || v >= 0.0, AppLocal.getIntString("validation.number.positive", AppLocal.getIntString("label.maxdebt")))
+                .bind(SupplierInfo::getMaxdebt, SupplierInfo::setMaxdebt);
+
+        // Contact & Identification
+        binder.forField(m_jSearchkey).bind(SupplierInfo::getSearchkey, SupplierInfo::setSearchkey);
+        binder.forField(m_jTaxID).bind(SupplierInfo::getTaxid, SupplierInfo::setTaxid);
+        binder.forField(m_jVATID).bind(SupplierInfo::getVatid, SupplierInfo::setVatid);
+
+        binder.forField(txtFirstName).bind(SupplierInfo::getFirstname, SupplierInfo::setFirstname);
+        binder.forField(txtLastName).bind(SupplierInfo::getLastname, SupplierInfo::setLastname);
+        binder.forField(txtPhone).bind(SupplierInfo::getPhone, SupplierInfo::setPhone);
+        binder.forField(txtPhone2).bind(SupplierInfo::getPhone2, SupplierInfo::setPhone2);
+        binder.forField(txtFax).bind(SupplierInfo::getFax, SupplierInfo::setFax);
+
+        // Address fields
+        binder.forField(txtAddress).bind(SupplierInfo::getAddress, SupplierInfo::setAddress);
+        binder.forField(txtAddress2).bind(SupplierInfo::getAddress2, SupplierInfo::setAddress2);
+        binder.forField(txtPostal).bind(SupplierInfo::getPostal, SupplierInfo::setPostal);
+        binder.forField(txtCity).bind(SupplierInfo::getCity, SupplierInfo::setCity);
+        binder.forField(txtRegion).bind(SupplierInfo::getRegion, SupplierInfo::setRegion);
+        binder.forField(txtCountry).bind(SupplierInfo::getCountry, SupplierInfo::setCountry);
+
+        // Notes & flags
+        binder.forField(m_jNotes).bind(SupplierInfo::getNotes, SupplierInfo::setNotes);
+        binder.forField(m_jVisible).bind(SupplierInfo::isVisible, SupplierInfo::setVisible);
+
+        binder.addStatusChangeListener(() -> {
+            if (m_Dirty != null) {
+                m_Dirty.setDirty(true);
+            }
+        });
+    }
+
+    public boolean isValid() {
+        return binder == null || binder.validate();
+    }
+
+    public SwingBinder<SupplierInfo> getBinder() {
+        return binder;
+    }
+
+    JTextField getNameField() {
+        return m_jName;
+    }
+
+    JTextField getEmailField() {
+        return txtEmail;
+    }
+
+    JTextField getMaxDebtField() {
+        return txtMaxdebt;
     }
 
     class TransactionTableModel extends AbstractTableModel {

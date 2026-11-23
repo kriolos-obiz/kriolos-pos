@@ -155,15 +155,19 @@ public class DataLogicInventory extends BeanFactoryDataSingle implements StockSe
         return list != null ? list : Collections.emptyList();
     }
 
-    public final TableDefinition getTableLocations() {
-        return new TableDefinition(sessionDB,
+    public final TableDefinition<LocationInfo> getTableLocations() {
+        return new TableDefinition<>(sessionDB,
                 "locations",
                 new String[]{"ID", "NAME", "ADDRESS"},
                 new String[]{"ID", AppLocal.getIntString("label.locationname"),
                     AppLocal.getIntString("label.locationaddress")},
                 new Datas[]{Datas.STRING, Datas.STRING, Datas.STRING},
                 new Formats[]{Formats.STRING, Formats.STRING, Formats.STRING},
-                new int[]{0});
+                new int[]{0},
+                LocationInfo.getSerializerRead(),
+                LocationInfo.getSerializerInsert(),
+                LocationInfo.getSerializerUpdate(),
+                LocationInfo.getSerializerDelete());
     }
 
     public final ProductStock getProductStockState(String pId, String location) throws BasicException {
@@ -245,6 +249,15 @@ public class DataLogicInventory extends BeanFactoryDataSingle implements StockSe
                         new SerializerWriteBasicExt(STOCK_DIARY_DATAS,
                                 new int[]{0, 1, 2, 3, 4, 5, 6, 7, 8}))
                         .exec(params);
+            }
+
+            @Override
+            public int execInTransaction(Object params) throws BasicException {
+                if (params instanceof StockDiaryInfo diary) {
+                    recordStockMovement(diary);
+                    return 1;
+                }
+                return super.execInTransaction(params);
             }
         };
     }
@@ -339,6 +352,15 @@ public class DataLogicInventory extends BeanFactoryDataSingle implements StockSe
                         "DELETE FROM stockdiary WHERE ID = ?",
                         new SerializerWriteBasicExt(STOCK_DIARY_DATAS, new int[]{0}))
                         .exec(params);
+            }
+
+            @Override
+            public int execInTransaction(Object params) throws BasicException {
+                if (params instanceof StockDiaryInfo diary) {
+                    revertStockMovement(diary);
+                    return 1;
+                }
+                return super.execInTransaction(params);
             }
         };
     }
@@ -468,20 +490,58 @@ public class DataLogicInventory extends BeanFactoryDataSingle implements StockSe
     }
 
     @Override
+    public void createStock(CreateStockCommand command) throws BasicException {
+        if (command != null) {
+            addStockEntry(command.locationId(), command.productId(), command.attributeSetInstanceId(), command.units());
+        }
+    }
+
+    @Override
     public void createStock(String locationId, String productId, double units) throws BasicException {
-        addStockEntry(locationId, productId, units);
+        createStock(CreateStockCommand.of(locationId, productId, units));
+    }
+
+    @Override
+    public void updateStock(UpdateStockCommand command) throws BasicException {
+        if (command == null) {
+            return;
+        }
+        if (command.attributeSetInstanceId() == null) {
+            PreparedSentence sentence = new PreparedSentence(sessionDB,
+                    "UPDATE stockcurrent SET UNITS = ? WHERE LOCATION = ? AND PRODUCT = ?",
+                    new SerializerWriteBasicExt(new Datas[]{Datas.DOUBLE, Datas.STRING, Datas.STRING},
+                            new int[]{0, 1, 2}));
+            sentence.exec(new Object[]{command.units(), command.locationId(), command.productId()});
+        } else {
+            PreparedSentence sentence = new PreparedSentence(sessionDB,
+                    "UPDATE stockcurrent SET UNITS = ? WHERE LOCATION = ? AND PRODUCT = ? AND ATTRIBUTESETINSTANCE_ID = ?",
+                    new SerializerWriteBasic(new Datas[]{Datas.DOUBLE, Datas.STRING, Datas.STRING, Datas.STRING}));
+            sentence.exec(new Object[]{command.units(), command.locationId(), command.productId(), command.attributeSetInstanceId()});
+        }
     }
 
     @Override
     public void updateStock(String locationId, String productId, double units) throws BasicException {
-        PreparedSentence sentence = new PreparedSentence(sessionDB,
-                "UPDATE stockcurrent SET UNITS = ? WHERE LOCATION = ? AND PRODUCT = ?",
-                new SerializerWriteBasicExt(new Datas[]{Datas.DOUBLE, Datas.STRING, Datas.STRING},
-                        new int[]{0, 1, 2}));
-        sentence.exec(new Object[]{units, locationId, productId});
+        updateStock(UpdateStockCommand.of(locationId, productId, units));
     }
 
     @Override
+    public void recordStockMovement(RecordStockMovementCommand command) throws BasicException {
+        getStockDiaryInsert().exec(new Object[]{
+            command.id(),
+            command.date(),
+            command.reasonKey(),
+            command.location(),
+            command.productId(),
+            command.attSetInstId(),
+            command.units(),
+            command.price(),
+            command.appUser()
+        });
+    }
+
+    @Override
+    @Deprecated
     public void recordStockMovement(
             String id,
             Date date,
@@ -493,20 +553,25 @@ public class DataLogicInventory extends BeanFactoryDataSingle implements StockSe
             double price,
             String appUser
     ) throws BasicException {
-        getStockDiaryInsert().exec(new Object[]{
-            id,
-            date,
-            reasonKey,
-            location,
-            productId,
-            attSetInstId,
-            units,
-            price,
-            appUser
+        recordStockMovement(RecordStockMovementCommand.of(
+                id, date, reasonKey, location, productId, attSetInstId, units, price, appUser));
+    }
+
+    @Override
+    public void revertStockMovement(RevertStockMovementCommand command) throws BasicException {
+        getStockDiaryDelete().exec(new Object[]{
+            command.diaryId(),
+            null,
+            null,
+            command.location(),
+            command.productId(),
+            command.attSetInstId(),
+            command.units()
         });
     }
 
     @Override
+    @Deprecated
     public void revertStockMovement(
             String diaryId,
             String location,
@@ -514,20 +579,45 @@ public class DataLogicInventory extends BeanFactoryDataSingle implements StockSe
             String attSetInstId,
             double units
     ) throws BasicException {
-        getStockDiaryDelete().exec(new Object[]{
-            diaryId,
-            null,
-            null,
-            location,
-            productId,
-            attSetInstId,
-            units
-        });
+        revertStockMovement(RevertStockMovementCommand.of(
+                diaryId, location, productId, attSetInstId, units));
     }
 
     @Override
-    public SaveProvider getStockDiarySaveProvider() {
-        return new DefaultSaveProvider(null, getStockDiaryInsert(), getStockDiaryDelete());
+    public SaveProvider<StockDiaryInfo> getStockDiarySaveProvider() {
+        return new SaveProvider<StockDiaryInfo>() {
+            @Override
+            public boolean canInsert() {
+                return true;
+            }
+
+            @Override
+            public int insertData(StockDiaryInfo value) throws BasicException {
+                recordStockMovement(value);
+                return 1;
+            }
+
+            @Override
+            public boolean canDelete() {
+                return true;
+            }
+
+            @Override
+            public int deleteData(StockDiaryInfo value) throws BasicException {
+                revertStockMovement(value);
+                return 1;
+            }
+
+            @Override
+            public boolean canUpdate() {
+                return false;
+            }
+
+            @Override
+            public int updateData(StockDiaryInfo value) {
+                throw new UnsupportedOperationException("Stock diary entries are immutable audit records.");
+            }
+        };
     }
 
     @Override

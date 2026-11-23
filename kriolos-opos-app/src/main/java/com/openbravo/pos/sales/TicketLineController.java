@@ -123,13 +123,13 @@ public class TicketLineController {
         if (app != null && app.getAppUserView() != null && app.getAppUserView().getUser() != null) {
             try {
                 if (auditService != null) {
-                    auditService.addTicketLineRemoved(
+                    auditService.recordLineRemoved(RecordAuditLineRemovedCommand.of(
                             app.getAppUserView().getUser().getName(),
                             ticketID,
                             ticketLine.getProductID(),
                             ticketLine.getProductName(),
                             ticketLine.getMultiply()
-                    );
+                    ));
                 } else if (dlSales != null) {
                     dlSales.addTicketLineRemoved(
                             app.getAppUserView().getUser().getName(),

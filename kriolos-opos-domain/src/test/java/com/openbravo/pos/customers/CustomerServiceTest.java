@@ -170,7 +170,7 @@ class CustomerServiceTest {
             }
 
             @Override
-            public TableDefinition getTableCustomers() {
+            public TableDefinition<CustomerInfoExt> getTableCustomers() {
                 return null;
             }
 
@@ -180,7 +180,7 @@ class CustomerServiceTest {
             }
 
             @Override
-            public SaveProvider getCustomerSaveProvider() {
+            public SaveProvider<CustomerInfoExt> getCustomerSaveProvider() {
                 return null;
             }
 

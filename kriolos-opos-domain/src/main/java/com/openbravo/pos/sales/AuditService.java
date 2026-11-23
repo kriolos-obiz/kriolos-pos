@@ -23,11 +23,49 @@ import java.util.Date;
  */
 public interface AuditService {
 
-    void addTicketLineRemoved(String username, String ticketId, String productId, String productName, double quantity);
+    /**
+     * Records an audit log entry for a removed ticket line.
+     *
+     * @param command The validated command containing line removal audit details
+     */
+    void recordLineRemoved(RecordAuditLineRemovedCommand command);
 
-    void addTicketLineRemoved(String username, String ticketId, String productId, String productName, double quantity, Date date);
+    /**
+     * Records an audit log entry for a voided/deleted ticket.
+     *
+     * @param command The validated command containing ticket deletion audit details
+     */
+    void recordTicketDeleted(RecordAuditTicketDeletedCommand command);
 
-    void addTicketDeleted(String username);
+    /**
+     * @deprecated Use {@link #recordLineRemoved(RecordAuditLineRemovedCommand)} instead.
+     */
+    @Deprecated
+    default void addTicketLineRemoved(String username, String ticketId, String productId, String productName, double quantity) {
+        recordLineRemoved(RecordAuditLineRemovedCommand.of(username, ticketId, productId, productName, quantity));
+    }
 
-    void addTicketDeleted(String username, Date date);
+    /**
+     * @deprecated Use {@link #recordLineRemoved(RecordAuditLineRemovedCommand)} instead.
+     */
+    @Deprecated
+    default void addTicketLineRemoved(String username, String ticketId, String productId, String productName, double quantity, Date date) {
+        recordLineRemoved(RecordAuditLineRemovedCommand.of(username, ticketId, productId, productName, quantity, date));
+    }
+
+    /**
+     * @deprecated Use {@link #recordTicketDeleted(RecordAuditTicketDeletedCommand)} instead.
+     */
+    @Deprecated
+    default void addTicketDeleted(String username) {
+        recordTicketDeleted(RecordAuditTicketDeletedCommand.of(username));
+    }
+
+    /**
+     * @deprecated Use {@link #recordTicketDeleted(RecordAuditTicketDeletedCommand)} instead.
+     */
+    @Deprecated
+    default void addTicketDeleted(String username, Date date) {
+        recordTicketDeleted(RecordAuditTicketDeletedCommand.of(username, date));
+    }
 }

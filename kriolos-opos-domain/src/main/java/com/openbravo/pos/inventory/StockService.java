@@ -50,7 +50,31 @@ public interface StockService extends InventoryService {
      * @param appUser      user performing the operation
      * @throws BasicException on persistence error
      */
-    void recordStockMovement(
+    /**
+     * Records a stock movement ledger entry and adjusts current stock balances.
+     *
+     * @param command the stock movement command
+     * @throws BasicException on persistence error
+     */
+    void recordStockMovement(RecordStockMovementCommand command) throws BasicException;
+
+    /**
+     * Records a stock movement ledger entry and adjusts current stock balances.
+     *
+     * @param id           unique movement UUID
+     * @param date         timestamp of movement
+     * @param reasonKey    movement reason identifier (e.g. sale, refund, break)
+     * @param location     warehouse location ID
+     * @param productId    product ID
+     * @param attSetInstId attribute set instance ID (optional)
+     * @param units        units moved (positive or negative)
+     * @param price        unit cost/price
+     * @param appUser      user performing the operation
+     * @throws BasicException on persistence error
+     * @deprecated Use {@link #recordStockMovement(RecordStockMovementCommand)}.
+     */
+    @Deprecated
+    default void recordStockMovement(
             String id,
             Date date,
             int reasonKey,
@@ -60,7 +84,18 @@ public interface StockService extends InventoryService {
             double units,
             double price,
             String appUser
-    ) throws BasicException;
+    ) throws BasicException {
+        recordStockMovement(RecordStockMovementCommand.of(
+                id, date, reasonKey, location, productId, attSetInstId, units, price, appUser));
+    }
+
+    /**
+     * Reverts a stock movement by diary entry ID and adjusts current stock balances.
+     *
+     * @param command the stock movement reversion command
+     * @throws BasicException on persistence error
+     */
+    void revertStockMovement(RevertStockMovementCommand command) throws BasicException;
 
     /**
      * Reverts a stock movement by diary entry ID and adjusts current stock balances.
@@ -71,14 +106,19 @@ public interface StockService extends InventoryService {
      * @param attSetInstId attribute set instance ID (optional)
      * @param units        units to subtract from current stock
      * @throws BasicException on persistence error
+     * @deprecated Use {@link #revertStockMovement(RevertStockMovementCommand)}.
      */
-    void revertStockMovement(
+    @Deprecated
+    default void revertStockMovement(
             String diaryId,
             String location,
             String productId,
             String attSetInstId,
             double units
-    ) throws BasicException;
+    ) throws BasicException {
+        revertStockMovement(RevertStockMovementCommand.of(
+                diaryId, location, productId, attSetInstId, units));
+    }
 
     /**
      * Persists a structured stock movement transaction into the stock diary.
@@ -117,11 +157,51 @@ public interface StockService extends InventoryService {
     }
 
     /**
+     * Records a stock movement in the stock diary ledger using domain record {@link StockDiaryInfo}.
+     *
+     * @param diary the stock diary record
+     * @throws BasicException on persistence error
+     */
+    default void recordStockMovement(StockDiaryInfo diary) throws BasicException {
+        if (diary != null) {
+            recordStockMovement(new RecordStockMovementCommand(
+                    diary.id(),
+                    diary.date(),
+                    diary.reason(),
+                    diary.locationId(),
+                    diary.productId(),
+                    diary.attributeSetInstanceId(),
+                    diary.units(),
+                    diary.price(),
+                    diary.appUser()
+            ));
+        }
+    }
+
+    /**
+     * Reverts a stock movement and adjusts inventory balances using domain record {@link StockDiaryInfo}.
+     *
+     * @param diary the stock diary record to revert
+     * @throws BasicException on persistence error
+     */
+    default void revertStockMovement(StockDiaryInfo diary) throws BasicException {
+        if (diary != null) {
+            revertStockMovement(new RevertStockMovementCommand(
+                    diary.id(),
+                    diary.locationId(),
+                    diary.productId(),
+                    diary.attributeSetInstanceId(),
+                    diary.units()
+            ));
+        }
+    }
+
+    /**
      * Returns the record save provider for stock diary movements (insert and delete).
      *
      * @return SaveProvider for stock diary records
      */
-    SaveProvider getStockDiarySaveProvider();
+    SaveProvider<StockDiaryInfo> getStockDiarySaveProvider();
 
     /**
      * Returns the current stock units for a specific warehouse, product, and attribute instance.

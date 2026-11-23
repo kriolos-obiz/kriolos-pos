@@ -16,125 +16,177 @@
 
 package com.openbravo.pos.sales.restaurant;
 
+import com.openbravo.basic.AppLocal;
 import com.openbravo.basic.BasicException;
+import com.openbravo.data.gui.JImageEditor;
 import com.openbravo.data.user.DirtyManager;
 import com.openbravo.data.user.EditorRecord;
 import com.openbravo.format.Formats;
-import com.openbravo.basic.AppLocal;
+import com.openbravo.ui.data.binding.SwingBinder;
 import java.awt.Component;
 import java.awt.image.BufferedImage;
 import java.util.UUID;
 import javax.swing.JPanel;
-
+import javax.swing.JTextField;
 
 /**
+ * Strongly typed editor component for restaurant Floor records,
+ * supporting two-way Swing data binding and real-time validation.
  *
  * @author adrianromero
+ * @author KriolOS
  */
-public final class FloorsEditor extends JPanel implements EditorRecord {
+public final class FloorsEditor extends JPanel implements EditorRecord<FloorsInfo> {
     
-//    private DirtyManager m_Dirty = new DirtyManager();    
+    private static final System.Logger LOGGER = System.getLogger(FloorsEditor.class.getName());
+    private static final long serialVersionUID = 1L;
+
     private String m_sID;
-    
-    /** Creates new form FloorsEditor
-     * @param dirty */
+    private DirtyManager dirty;
+    private SwingBinder<FloorsInfo> binder;
+
+    /**
+     * Creates new form FloorsEditor.
+     *
+     * @param dirty dirty state listener
+     */
     public FloorsEditor(DirtyManager dirty) {
+        this.dirty = dirty;
         initComponents();
          
         m_jName.getDocument().addDocumentListener(dirty);
         m_jImage.addPropertyChangeListener("image", dirty);
         
+        initValidator();
         writeValueEOF();
     }
 
-    /**
-     *
-     */
+    private void initValidator() {
+        binder = new SwingBinder<>(new FloorsInfo());
+
+        // Mandatory Floor Name
+        binder.forField(m_jName)
+                .asRequired(AppLocal.getIntString("validation.required", AppLocal.getIntString("Label.Name")))
+                .bind(FloorsInfo::getName, FloorsInfo::setName);
+
+        binder.addStatusChangeListener(() -> {
+            if (dirty != null) {
+                dirty.setDirty(true);
+            }
+        });
+    }
+
+    public boolean isValid() {
+        return binder == null || binder.validate();
+    }
+
+    public SwingBinder<FloorsInfo> getBinder() {
+        return binder;
+    }
+
+    JTextField getNameField() {
+        return m_jName;
+    }
+
+    JImageEditor getImageEditor() {
+        return m_jImage;
+    }
+
     @Override
     public void writeValueEOF() {
-        
         m_sID = null;
-        m_jName.setText(null);
+        if (binder != null) {
+            binder.clear();
+        } else {
+            m_jName.setText(null);
+        }
         m_jImage.setImage(null);
 
         m_jName.setEnabled(false);
         m_jImage.setEnabled(false);
     }  
 
-    /**
-     *
-     */
     @Override
     public void writeValueInsert() {
-        
         m_sID = UUID.randomUUID().toString(); 
-        m_jName.setText(null);
+        if (binder != null) {
+            binder.clear();
+        } else {
+            m_jName.setText(null);
+        }
         m_jImage.setImage(null);
 
         m_jName.setEnabled(true);
         m_jImage.setEnabled(true);
     }
 
-    /**
-     *
-     * @param value
-     */
     @Override
-    public void writeValueDelete(Object value) {
-        
-        Object[] floor = (Object[]) value;
-        m_sID = Formats.STRING.formatValue((String)floor[0]);
-        m_jName.setText(Formats.STRING.formatValue((String)floor[1]));
-        m_jImage.setImage((BufferedImage) floor[2]);
+    public void writeValueDelete(FloorsInfo floor) {
+        if (floor == null) {
+            writeValueEOF();
+            return;
+        }
+        m_sID = floor.getID();
+        if (binder != null) {
+            binder.readBean(floor);
+        } else {
+            m_jName.setText(Formats.STRING.formatValue(floor.getName()));
+        }
+        m_jImage.setImage(floor.getImage());
 
         m_jName.setEnabled(false);
         m_jImage.setEnabled(false);
     }    
 
-    /**
-     *
-     * @param value
-     */
     @Override
-    public void writeValueEdit(Object value) {
-        
-        Object[] floor = (Object[]) value;
-        m_sID = Formats.STRING.formatValue((String)floor[0]);
-        m_jName.setText(Formats.STRING.formatValue((String)floor[1]));
-        m_jImage.setImage((BufferedImage) floor[2]);
+    public void writeValueEdit(FloorsInfo floor) {
+        if (floor == null) {
+            writeValueEOF();
+            return;
+        }
+        m_sID = floor.getID();
+        if (binder != null) {
+            binder.readBean(floor);
+        } else {
+            m_jName.setText(Formats.STRING.formatValue(floor.getName()));
+        }
+        m_jImage.setImage(floor.getImage());
 
         m_jName.setEnabled(true);
         m_jImage.setEnabled(true);
     }
 
-    /**
-     *
-     * @return
-     * @throws BasicException
-     */
     @Override
-    public Object createValue() throws BasicException {
-        
-        Object[] floor = new Object[3];
+    public FloorsInfo createValue() throws BasicException {
+        FloorsInfo floor = new FloorsInfo(
+                m_sID,
+                m_jName.getText(),
+                (BufferedImage) m_jImage.getImage()
+        );
 
-        floor[0] = m_sID;
-        floor[1] = m_jName.getText();
-        floor[2] = m_jImage.getImage();
+        if (binder != null) {
+            try {
+                binder.writeBean(floor);
+            } catch (SwingBinder.ValidationException ex) {
+                LOGGER.log(System.Logger.Level.WARNING, "Validation in createValue: " + ex.getMessage());
+            }
+        }
+
+        if (floor.getName() == null) {
+            floor.setName(m_jName.getText());
+        }
+        if (floor.getImage() == null && m_jImage.getImage() != null) {
+            floor.setImage((BufferedImage) m_jImage.getImage());
+        }
+
         return floor;
     }
 
-    /**
-     *
-     * @return
-     */
     @Override
     public Component getComponent() {
         return this;
     }
     
-    /**
-     *
-     */
     @Override
     public void refresh() {
     }
@@ -144,49 +196,51 @@ public final class FloorsEditor extends JPanel implements EditorRecord {
      * WARNING: Do NOT modify this code. The content of this method is
      * always regenerated by the Form Editor.
      */
-    
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        jPanel1 = new javax.swing.JPanel();
-        jLabel3 = new javax.swing.JLabel();
         m_jName = new javax.swing.JTextField();
-        jPanel3 = new javax.swing.JPanel();
+        jLabel2 = new javax.swing.JLabel();
         m_jImage = new com.openbravo.data.gui.JImageEditor();
 
-        setMinimumSize(new java.awt.Dimension(91, 125));
-        setLayout(new java.awt.BorderLayout());
+        setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
 
-        jPanel1.setPreferredSize(new java.awt.Dimension(150, 64));
-        jPanel1.setLayout(null);
+        m_jName.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
 
-        jLabel3.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
-        jLabel3.setText(AppLocal.getIntString("label.name")); // NOI18N
-        jLabel3.setPreferredSize(new java.awt.Dimension(110, 30));
-        jPanel1.add(jLabel3);
-        jLabel3.setBounds(20, 20, 110, 30);
+        jLabel2.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
+        jLabel2.setText(AppLocal.getIntString("Label.Name")); // NOI18N
 
-        m_jName.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
-        m_jName.setPreferredSize(new java.awt.Dimension(250, 30));
-        jPanel1.add(m_jName);
-        m_jName.setBounds(130, 20, 250, 30);
+        m_jImage.setMaxDimensions(new java.awt.Dimension(640, 480));
 
-        add(jPanel1, java.awt.BorderLayout.NORTH);
-
-        jPanel3.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 5, 0, 0));
-        jPanel3.setLayout(new java.awt.BorderLayout());
-
-        m_jImage.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
-        jPanel3.add(m_jImage, java.awt.BorderLayout.CENTER);
-
-        add(jPanel3, java.awt.BorderLayout.CENTER);
+        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
+        this.setLayout(layout);
+        layout.setHorizontalGroup(
+            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(layout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 80, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(m_jName, javax.swing.GroupLayout.PREFERRED_SIZE, 200, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(m_jImage, javax.swing.GroupLayout.PREFERRED_SIZE, 350, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(19, Short.MAX_VALUE))
+        );
+        layout.setVerticalGroup(
+            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(layout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel2)
+                    .addComponent(m_jName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(m_jImage, javax.swing.GroupLayout.PREFERRED_SIZE, 226, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(31, Short.MAX_VALUE))
+        );
     }// </editor-fold>//GEN-END:initComponents
     
-    
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JLabel jLabel3;
-    private javax.swing.JPanel jPanel1;
-    private javax.swing.JPanel jPanel3;
+    private javax.swing.JLabel jLabel2;
     private com.openbravo.data.gui.JImageEditor m_jImage;
     private javax.swing.JTextField m_jName;
     // End of variables declaration//GEN-END:variables

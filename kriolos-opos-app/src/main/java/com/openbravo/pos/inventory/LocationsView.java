@@ -16,36 +16,79 @@
 
 package com.openbravo.pos.inventory;
 
+import com.openbravo.basic.AppLocal;
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.user.DirtyManager;
 import com.openbravo.data.user.EditorRecord;
-import com.openbravo.format.Formats;
-import com.openbravo.basic.AppLocal;
+import com.openbravo.ui.data.binding.SwingBinder;
 import java.awt.Component;
-import java.awt.datatransfer.StringSelection;
-import java.util.UUID;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
+import java.util.UUID;
 import javax.swing.JOptionPane;
+import javax.swing.JTextField;
 
 /**
  *
  * @author adrianromero
+ * @author KriolOS
  */
-public final class LocationsView extends javax.swing.JPanel implements EditorRecord {
+public final class LocationsView extends javax.swing.JPanel implements EditorRecord<LocationInfo> {
     
-    // private DirtyManager m_Dirty = new DirtyManager();    
+    private static final System.Logger LOGGER = System.getLogger(LocationsView.class.getName());
+    private static final long serialVersionUID = 1L;
+
     private String m_sID;
-    
+    private DirtyManager m_Dirty;
+    private SwingBinder<LocationInfo> binder;
+
     /** Creates new form LocationsEditor
      * @param dirty */
     public LocationsView(DirtyManager dirty) {
+        this.m_Dirty = dirty;
         initComponents();
         
         m_jName.getDocument().addDocumentListener(dirty);
         m_jAddress.getDocument().addDocumentListener(dirty);
         
+        initValidator();
         writeValueEOF();    
+    }
+
+    private void initValidator() {
+        binder = new SwingBinder<>(new LocationInfo());
+
+        // Mandatory Location Name
+        binder.forField(m_jName)
+                .asRequired(AppLocal.getIntString("validation.required", AppLocal.getIntString("label.locationname")))
+                .bind(LocationInfo::getName, LocationInfo::setName);
+
+        // Optional Location Address
+        binder.forField(m_jAddress)
+                .bind(LocationInfo::getAddress, LocationInfo::setAddress);
+
+        binder.addStatusChangeListener(() -> {
+            if (m_Dirty != null) {
+                m_Dirty.setDirty(true);
+            }
+        });
+    }
+
+    public boolean isValid() {
+        return binder == null || binder.validate();
+    }
+
+    public SwingBinder<LocationInfo> getBinder() {
+        return binder;
+    }
+
+    JTextField getNameField() {
+        return m_jName;
+    }
+
+    JTextField getAddressField() {
+        return m_jAddress;
     }
 
     /**
@@ -53,10 +96,13 @@ public final class LocationsView extends javax.swing.JPanel implements EditorRec
      */
     @Override
     public void writeValueEOF() {
-        
         m_sID = null;
-        m_jName.setText(null);
-        m_jAddress.setText(null);
+        if (binder != null) {
+            binder.clear();
+        } else {
+            m_jName.setText(null);
+            m_jAddress.setText(null);
+        }
 
         m_jName.setEnabled(false);
         m_jAddress.setEnabled(false);
@@ -67,10 +113,13 @@ public final class LocationsView extends javax.swing.JPanel implements EditorRec
      */
     @Override
     public void writeValueInsert() {
-        
         m_sID = UUID.randomUUID().toString(); 
-        m_jName.setText(null);
-        m_jAddress.setText(null);
+        if (binder != null) {
+            binder.clear();
+        } else {
+            m_jName.setText(null);
+            m_jAddress.setText(null);
+        }
 
         m_jName.setEnabled(true);
         m_jAddress.setEnabled(true);
@@ -78,15 +127,21 @@ public final class LocationsView extends javax.swing.JPanel implements EditorRec
 
     /**
      *
-     * @param value
+     * @param location
      */
     @Override
-    public void writeValueDelete(Object value) {
-        
-        Object[] location = (Object[]) value;
-        m_sID = Formats.STRING.formatValue((String)location[0]);
-        m_jName.setText(Formats.STRING.formatValue((String)location[1]));
-        m_jAddress.setText(Formats.STRING.formatValue((String)location[2]));
+    public void writeValueDelete(LocationInfo location) {
+        if (location == null) {
+            writeValueEOF();
+            return;
+        }
+        m_sID = location.getId();
+        if (binder != null) {
+            binder.readBean(location);
+        } else {
+            m_jName.setText(location.getName());
+            m_jAddress.setText(location.getAddress());
+        }
 
         m_jName.setEnabled(false);
         m_jAddress.setEnabled(false);
@@ -94,15 +149,21 @@ public final class LocationsView extends javax.swing.JPanel implements EditorRec
 
     /**
      *
-     * @param value
+     * @param location
      */
     @Override
-    public void writeValueEdit(Object value) {
-        
-        Object[] location = (Object[]) value;
-        m_sID = Formats.STRING.formatValue((String)location[0]);
-        m_jName.setText(Formats.STRING.formatValue((String)location[1]));
-        m_jAddress.setText(Formats.STRING.formatValue((String)location[2]));
+    public void writeValueEdit(LocationInfo location) {
+        if (location == null) {
+            writeValueEOF();
+            return;
+        }
+        m_sID = location.getId();
+        if (binder != null) {
+            binder.readBean(location);
+        } else {
+            m_jName.setText(location.getName());
+            m_jAddress.setText(location.getAddress());
+        }
 
         m_jName.setEnabled(true);
         m_jAddress.setEnabled(true);
@@ -114,11 +175,28 @@ public final class LocationsView extends javax.swing.JPanel implements EditorRec
      * @throws BasicException
      */
     @Override
-    public Object createValue() throws BasicException {
-        Object[] location = new Object[3];
-        location[0] = m_sID;
-        location[1] = m_jName.getText();
-        location[2] = m_jAddress.getText();
+    public LocationInfo createValue() throws BasicException {
+        LocationInfo location = new LocationInfo(
+                m_sID == null ? UUID.randomUUID().toString() : m_sID,
+                m_jName.getText(),
+                m_jAddress.getText()
+        );
+
+        if (binder != null) {
+            try {
+                binder.writeBean(location);
+            } catch (SwingBinder.ValidationException ex) {
+                LOGGER.log(System.Logger.Level.WARNING, "Validation in createValue: " + ex.getMessage());
+            }
+        }
+
+        if (location.getName() == null) {
+            location.setName(m_jName.getText());
+        }
+        if (location.getAddress() == null) {
+            location.setAddress(m_jAddress.getText());
+        }
+
         return location;
     }
 

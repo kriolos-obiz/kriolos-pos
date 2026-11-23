@@ -2,9 +2,10 @@ package com.openbravo.ui.data.binding;
 
 import javax.swing.*;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
@@ -19,10 +20,10 @@ import java.util.function.Function;
 public class SwingBinder<B> {
 
     private B bean;
-    private final List<Runnable> statusChangeListeners = new ArrayList<>();
-    private final List<BindingLifecycle<B>> bindings = new ArrayList<>();
-    private final Map<JComponent, Boolean> validationMap = new HashMap<>();
-    private boolean isDirty = false;
+    private final List<Runnable> statusChangeListeners = new CopyOnWriteArrayList<>();
+    private final List<BindingLifecycle<B>> bindings = new CopyOnWriteArrayList<>();
+    private final Map<JComponent, Boolean> validationMap = new ConcurrentHashMap<>();
+    private volatile boolean isDirty = false;
 
     public SwingBinder(B bean) {
         this.bean = bean;

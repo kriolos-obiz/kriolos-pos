@@ -18,32 +18,57 @@ package com.openbravo.pos.sales.restaurant;
 
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.loader.DataRead;
+import com.openbravo.data.loader.DataWrite;
 import com.openbravo.data.loader.IKeyed;
+import com.openbravo.data.loader.ImageUtils;
 import com.openbravo.data.loader.SerializableRead;
+import com.openbravo.data.loader.SerializerRead;
+import com.openbravo.data.loader.SerializerWrite;
+import java.awt.image.BufferedImage;
+import java.io.Serializable;
 
 /**
+ * Floor metadata and layout model for restaurant hospitality management.
  *
  * @author adrianromero
- * Created on 26 de febrero de 2007, 23:49
- *
+ * @author KriolOS
  */
-public class FloorsInfo implements SerializableRead, IKeyed {
+public class FloorsInfo implements SerializableRead, Serializable, IKeyed {
     
     private static final long serialVersionUID = 8906929819402L;
     
     private String id;
     private String name;
+    private BufferedImage image;
     
     /** Creates a new instance of FloorsInfo */
     public FloorsInfo() {
-        id = null;
-        name = null;
+        this(null, null, null);
+    }
+
+    /**
+     * Constructs a FloorsInfo with id and name.
+     *
+     * @param id floor identifier
+     * @param name floor display name
+     */
+    public FloorsInfo(String id, String name) {
+        this(id, name, null);
+    }
+
+    /**
+     * Constructs a FloorsInfo with id, name, and floor layout image.
+     *
+     * @param id floor identifier
+     * @param name floor display name
+     * @param image floor layout image
+     */
+    public FloorsInfo(String id, String name, BufferedImage image) {
+        this.id = id;
+        this.name = name;
+        this.image = image;
     }
    
-    /**
-     *
-     * @return
-     */
     @Override
     public Object getKey() {
         return id;
@@ -63,6 +88,14 @@ public class FloorsInfo implements SerializableRead, IKeyed {
         return id;
     }
 
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getId() {
+        return id;
+    }
+
     public String getName() {
         return name;
     }
@@ -70,9 +103,67 @@ public class FloorsInfo implements SerializableRead, IKeyed {
     public void setName(String sName) {
         name = sName;
     } 
+
+    public BufferedImage getImage() {
+        return image;
+    }
+
+    public void setImage(BufferedImage image) {
+        this.image = image;
+    }
     
     @Override
-    public String toString(){
+    public String toString() {
         return name;
-    }       
+    }
+
+    /**
+     * Returns a {@link SerializerRead} for deserializing FloorsInfo from JDBC queries.
+     *
+     * @return row serializer for {@link FloorsInfo}
+     */
+    public static SerializerRead<FloorsInfo> getSerializerRead() {
+        return (DataRead dr) -> new FloorsInfo(dr.getString(1), dr.getString(2), ImageUtils.readImage(dr.getBytes(3)));
+    }
+
+    /**
+     * Returns a {@link SerializerWrite} for inserting FloorsInfo records.
+     * Binding: 1: ID, 2: NAME, 3: IMAGE
+     *
+     * @return serializer for INSERT statement
+     */
+    public static SerializerWrite<FloorsInfo> getSerializerInsert() {
+        return (DataWrite dp, FloorsInfo info) -> {
+            dp.setString(1, info.getID());
+            dp.setString(2, info.getName());
+            dp.setBytes(3, ImageUtils.writeImage(info.getImage()));
+        };
+    }
+
+    /**
+     * Returns a {@link SerializerWrite} for updating FloorsInfo records.
+     * Binding: 1: ID, 2: NAME, 3: IMAGE, 4: ID (WHERE id = ?)
+     *
+     * @return serializer for UPDATE statement
+     */
+    public static SerializerWrite<FloorsInfo> getSerializerUpdate() {
+        return (DataWrite dp, FloorsInfo info) -> {
+            dp.setString(1, info.getID());
+            dp.setString(2, info.getName());
+            dp.setBytes(3, ImageUtils.writeImage(info.getImage()));
+            dp.setString(4, info.getID());
+        };
+    }
+
+    /**
+     * Returns a {@link SerializerWrite} for deleting FloorsInfo records.
+     * Binding: 1: ID (WHERE id = ?)
+     *
+     * @return serializer for DELETE statement
+     */
+    public static SerializerWrite<FloorsInfo> getSerializerDelete() {
+        return (DataWrite dp, FloorsInfo info) -> {
+            dp.setString(1, info.getID());
+        };
+    }
 }

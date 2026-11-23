@@ -227,7 +227,7 @@ public class RestaurantMapController {
         }
 
         if (Boolean.TRUE.equals(placeService.getTableMovedFlag(ticket.getId()))) {
-            placeService.moveCustomer(tableName, ticket.getId());
+            placeService.moveCustomer(MoveCustomerCommand.of(tableName, ticket.getId()));
         }
     }
 

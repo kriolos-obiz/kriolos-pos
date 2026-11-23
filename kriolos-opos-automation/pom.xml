@@ -29,6 +29,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     <name>Kriolos.POS.Automation</name>
     <description>Automated UI Testing, Screen Recording, and Milestone Screenshot Suite for KriolOS POS Swing Application</description>
 
+    <repositories>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
     <dependencies>
         <!-- Application Under Test -->
         <dependency>
@@ -37,11 +46,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             <version>${project.version}</version>
         </dependency>
 
-        <!-- AssertJ Swing for UI Automation & Component Discovery -->
+        <!-- Modern AssertJ Swing for UI Automation & Component Discovery (JDK 17+ / Modern JDK Compatible) -->
         <dependency>
-            <groupId>org.assertj</groupId>
+            <groupId>com.github.ingokegel.assertj-swing</groupId>
             <artifactId>assertj-swing</artifactId>
-            <version>3.17.1</version>
+            <version>4.0.3</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.github.ingokegel.assertj-swing</groupId>
+            <artifactId>assertj-swing-junit-jupiter</artifactId>
+            <version>4.0.3</version>
             <scope>test</scope>
         </dependency>
 

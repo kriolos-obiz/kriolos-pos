@@ -37,7 +37,7 @@ public class DataLogicSuppliers extends BeanFactoryDataSingle implements Supplie
      * Main Method for supplier object
      */
     protected Session s;
-    private TableDefinition tsuppliers;
+    private TableDefinition<SupplierInfo> tsuppliers;
     private static final Datas[] supplierdatas = new Datas[]{
         Datas.STRING,
         Datas.STRING,
@@ -54,7 +54,7 @@ public class DataLogicSuppliers extends BeanFactoryDataSingle implements Supplie
     @Override
     public void init(Session s) {
         this.s = s;
-        tsuppliers = new TableDefinition(s,
+        tsuppliers = new TableDefinition<>(s,
                 "suppliers",
                 new String[]{
                     "ID",
@@ -116,7 +116,11 @@ public class DataLogicSuppliers extends BeanFactoryDataSingle implements Supplie
                     Formats.STRING, Formats.STRING, Formats.STRING, Formats.STRING,
                     Formats.STRING, Formats.STRING, Formats.BOOLEAN, Formats.TIMESTAMP,
                     Formats.CURRENCY, Formats.STRING},
-                new int[]{0}
+                new int[]{0},
+                SupplierInfo.getSerializerRead(),
+                SupplierInfo.getSerializerInsert(),
+                SupplierInfo.getSerializerUpdate(),
+                SupplierInfo.getSerializerDelete()
         );
     }
 
@@ -212,27 +216,28 @@ public class DataLogicSuppliers extends BeanFactoryDataSingle implements Supplie
                         dr.getString(3)));
     }
 
-    /**
-     *
-     * @param supplier
-     * @return
-     * @throws BasicException
-     */
-    public int updateSupplierExt(final SupplierInfoExt supplier) throws BasicException {
-
+    @Override
+    public int updateSupplierNotes(final UpdateSupplierNotesCommand command) throws BasicException {
         return new PreparedSentence(s,
                 "UPDATE suppliers SET NOTES = ? WHERE ID = ?",
                 SerializerWriteParams.INSTANCE)
                 .exec(new DataParams() {
                     @Override
                     public void writeValues() throws BasicException {
-                        setString(1, supplier.getNotes());
-                        setString(2, supplier.getId());
+                        setString(1, command.notes());
+                        setString(2, command.supplierId());
                     }
                 });
     }
 
-    public final TableDefinition getTableSuppliers() {
+    @Override
+    @Deprecated
+    public int updateSupplierExt(final SupplierInfoExt supplier) throws BasicException {
+        return SupplierService.super.updateSupplierExt(supplier);
+    }
+
+    @Override
+    public final TableDefinition<SupplierInfo> getTableSuppliers() {
         return tsuppliers;
     }
 

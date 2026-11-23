@@ -16,6 +16,7 @@
 
 package com.openbravo.pos.inventory;
 
+import com.openbravo.basic.BasicException;
 import com.openbravo.data.gui.ListCellRendererBasic;
 import com.openbravo.data.loader.ComparatorCreator;
 import com.openbravo.data.loader.TableDefinition;
@@ -23,6 +24,7 @@ import com.openbravo.data.loader.Vectorer;
 import com.openbravo.data.user.EditorRecord;
 import com.openbravo.data.user.ListProvider;
 import com.openbravo.data.user.ListProviderCreator;
+import com.openbravo.data.user.SaveProvider;
 import com.openbravo.data.user.DefaultSaveProvider;
 import com.openbravo.basic.AppLocal;
 import com.openbravo.pos.panels.JPanelTable;
@@ -31,10 +33,11 @@ import javax.swing.ListCellRenderer;
 /**
  *
  * @author adrianromero
+ * @author KriolOS
  */
 public class LocationsPanel extends JPanelTable {
     
-    private TableDefinition tlocations;
+    private TableDefinition<LocationInfo> tlocations;
     private LocationsView jeditor;
     
     /** Creates a new instance of LocationsPanel */
@@ -56,8 +59,8 @@ public class LocationsPanel extends JPanelTable {
      * @return
      */
     @Override
-    public ListProvider getListProvider() {
-        return new ListProviderCreator(tlocations);
+    public ListProvider<LocationInfo> getListProvider() {
+        return new ListProviderCreator<>(tlocations);
     }
     
     /**
@@ -65,8 +68,8 @@ public class LocationsPanel extends JPanelTable {
      * @return
      */
     @Override
-    public DefaultSaveProvider getSaveProvider() {
-        return new DefaultSaveProvider(tlocations);        
+    public SaveProvider<LocationInfo> getSaveProvider() {
+        return new DefaultSaveProvider<>(tlocations);        
     }
     
     /**
@@ -74,8 +77,24 @@ public class LocationsPanel extends JPanelTable {
      * @return
      */
     @Override
-    public Vectorer getVectorer() {
-        return tlocations.getVectorerBasic(new int[]{1, 2});
+    public Vectorer<LocationInfo> getVectorer() {
+        return new Vectorer<>() {
+            @Override
+            public String[] getHeaders() throws BasicException {
+                return new String[]{
+                    AppLocal.getIntString("label.locationname"),
+                    AppLocal.getIntString("label.locationaddress")
+                };
+            }
+
+            @Override
+            public String[] getValues(LocationInfo loc) throws BasicException {
+                return new String[]{
+                    loc != null && loc.getName() != null ? loc.getName() : "",
+                    loc != null && loc.getAddress() != null ? loc.getAddress() : ""
+                };
+            }
+        };
     }
     
     /**
@@ -92,8 +111,8 @@ public class LocationsPanel extends JPanelTable {
      * @return
      */
     @Override
-    public ListCellRenderer getListCellRenderer() {
-        return new ListCellRendererBasic(tlocations.getRenderStringBasic(new int[]{1}));
+    public ListCellRenderer<?> getListCellRenderer() {
+        return new ListCellRendererBasic(v -> v instanceof LocationInfo loc ? loc.getName() : (v != null ? v.toString() : ""));
     }
     
     /**
@@ -101,7 +120,7 @@ public class LocationsPanel extends JPanelTable {
      * @return
      */
     @Override
-    public EditorRecord getEditor() {
+    public EditorRecord<LocationInfo> getEditor() {
         return jeditor;
     }
     

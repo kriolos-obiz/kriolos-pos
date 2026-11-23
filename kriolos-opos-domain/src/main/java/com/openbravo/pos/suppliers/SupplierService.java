@@ -40,9 +40,30 @@ public interface SupplierService {
     @Deprecated
     void createSupplier(Object[] supplier) throws BasicException;
 
-    int updateSupplierExt(SupplierInfoExt supplier) throws BasicException;
+    /**
+     * Updates supplier notes from a typed command.
+     *
+     * @param command update notes command
+     * @return number of affected rows
+     * @throws BasicException on persistence error
+     */
+    int updateSupplierNotes(UpdateSupplierNotesCommand command) throws BasicException;
 
-    TableDefinition getTableSuppliers();
+    /**
+     * Updates supplier notes using the legacy entity representation.
+     *
+     * @param supplier supplier entity containing ID and notes
+     * @return number of affected rows
+     * @throws BasicException on persistence error
+     * @deprecated Use {@link #updateSupplierNotes(UpdateSupplierNotesCommand)}.
+     */
+    @Deprecated
+    default int updateSupplierExt(SupplierInfoExt supplier) throws BasicException {
+        java.util.Objects.requireNonNull(supplier, "supplier must not be null");
+        return updateSupplierNotes(new UpdateSupplierNotesCommand(supplier.getId(), supplier.getNotes()));
+    }
+
+    TableDefinition<SupplierInfo> getTableSuppliers();
 
     List<SupplierTransaction> getSuppliersTransactionList(String sId) throws BasicException;
 }

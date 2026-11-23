@@ -19,14 +19,19 @@
 
 package com.openbravo.pos.ticket;
 
+import com.openbravo.basic.BasicException;
+import com.openbravo.data.loader.DataRead;
+import com.openbravo.data.loader.DataWrite;
 import com.openbravo.data.loader.IKeyed;
+import com.openbravo.data.loader.SerializerRead;
+import com.openbravo.data.loader.SerializerWrite;
 import java.io.Serializable;
 
 /**
  *
  * @author adrianromero
  */
-public class TaxInfo implements Serializable, IKeyed {
+public class TaxInfo implements Serializable, IKeyed<String> {
     
     private static final long serialVersionUID = -2705212098856473043L;
     private String id;
@@ -39,6 +44,12 @@ public class TaxInfo implements Serializable, IKeyed {
     private boolean isCascade;
     private Integer order;
     
+    /**
+     * Default no-arg constructor.
+     */
+    public TaxInfo() {
+    }
+
     /** 
      * Creates new TaxInfo
      * 
@@ -212,9 +223,110 @@ public class TaxInfo implements Serializable, IKeyed {
     public void setOrder(Integer value) {
         order = value;
     }
-    
+
+    public String getTaxCategoryId() {
+        return taxCategoryId;
+    }
+
+    public void setTaxCategoryId(String taxCategoryId) {
+        this.taxCategoryId = taxCategoryId;
+    }
+
+    public String getTaxCustCategoryId() {
+        return taxCustCategoryId;
+    }
+
+    public void setTaxCustCategoryId(String taxCustCategoryId) {
+        this.taxCustCategoryId = taxCustCategoryId;
+    }
+
+    public String getParentId() {
+        return parentid;
+    }
+
+    public void setParentId(String parentId) {
+        this.parentid = parentId;
+    }
+
+    public boolean getIsCascade() {
+        return isCascade;
+    }
+
+    public void setIsCascade(boolean isCascade) {
+        this.isCascade = isCascade;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
     @Override
     public String toString(){
         return name;
-    }  
+    }
+
+    /**
+     * Row mapper deserializing a {@link TaxInfo} instance from a JDBC result set.
+     *
+     * @return deserializer for {@link TaxInfo}
+     */
+    public static SerializerRead<TaxInfo> getSerializerRead() {
+        return (DataRead dr) -> new TaxInfo(
+                dr.getString(1),
+                dr.getString(2),
+                dr.getString(3),
+                dr.getString(4),
+                dr.getString(5),
+                dr.getDouble(6) != null ? dr.getDouble(6) : 0.0,
+                dr.getBoolean(7) != null && dr.getBoolean(7),
+                dr.getInt(8));
+    }
+
+    /**
+     * Parameter serializer for inserting a new {@link TaxInfo} record.
+     *
+     * @return serializer for INSERT statements
+     */
+    public static SerializerWrite<TaxInfo> getSerializerInsert() {
+        return (DataWrite dp, TaxInfo info) -> {
+            dp.setString(1, info.getId());
+            dp.setString(2, info.getName());
+            dp.setString(3, info.getTaxCategoryID());
+            dp.setString(4, info.getTaxCustCategoryID());
+            dp.setString(5, info.getParentID());
+            dp.setDouble(6, info.getRate());
+            dp.setBoolean(7, info.isCascade());
+            dp.setInt(8, info.getOrder());
+        };
+    }
+
+    /**
+     * Parameter serializer for updating an existing {@link TaxInfo} record.
+     *
+     * @return serializer for UPDATE statements
+     */
+    public static SerializerWrite<TaxInfo> getSerializerUpdate() {
+        return (DataWrite dp, TaxInfo info) -> {
+            dp.setString(1, info.getId());
+            dp.setString(2, info.getName());
+            dp.setString(3, info.getTaxCategoryID());
+            dp.setString(4, info.getTaxCustCategoryID());
+            dp.setString(5, info.getParentID());
+            dp.setDouble(6, info.getRate());
+            dp.setBoolean(7, info.isCascade());
+            dp.setInt(8, info.getOrder());
+            dp.setString(9, info.getId());
+        };
+    }
+
+    /**
+     * Parameter serializer for deleting an existing {@link TaxInfo} record.
+     *
+     * @return serializer for DELETE statements
+     */
+    public static SerializerWrite<TaxInfo> getSerializerDelete() {
+        return (DataWrite dp, TaxInfo info) -> {
+            dp.setString(1, info.getId());
+        };
+    }
 }

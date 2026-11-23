@@ -20,8 +20,11 @@ import com.openbravo.pos.container.BeanFactoryException;
 import com.openbravo.pos.admin.AppUser;
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.loader.*;
+import com.openbravo.data.user.DefaultSaveProvider;
+import com.openbravo.data.user.SaveProvider;
 import com.openbravo.format.Formats;
 import com.openbravo.pos.admin.ResourceInfo;
+import com.openbravo.pos.resources.SetResourceCommand;
 import com.openbravo.basic.AppLocal;
 import com.openbravo.util.ThumbNailBuilder;
 import com.openbravo.pos.voucher.VoucherInfo;
@@ -55,7 +58,7 @@ public class DataLogicSystem extends BeanFactoryDataSingle implements SystemServ
         this.session = session;
         this.m_dbVersion = (this.session != null && this.session.DB != null) ? this.session.DB.getName() : null;
 
-        m_tresources = new TableDefinition(session,
+        m_tresources = new TableDefinition<>(session,
                 "resources",
                 new String[]{
                     "ID", "NAME", "RESTYPE", "CONTENT"},
@@ -68,7 +71,11 @@ public class DataLogicSystem extends BeanFactoryDataSingle implements SystemServ
                     Datas.STRING, Datas.STRING, Datas.INT, Datas.BYTES},
                 new Formats[]{
                     Formats.STRING, Formats.STRING, Formats.INT, Formats.NULL},
-                new int[]{0}
+                new int[]{0},
+                ResourceInfo.getSerializerRead(),
+                ResourceInfo.getSerializerInsert(),
+                ResourceInfo.getSerializerUpdate(),
+                ResourceInfo.getSerializerDelete()
         );
 
     }
@@ -76,6 +83,11 @@ public class DataLogicSystem extends BeanFactoryDataSingle implements SystemServ
 
     public final TableDefinition<ResourceInfo> getTableResources() {
         return m_tresources;
+    }
+
+    @Override
+    public SaveProvider<ResourceInfo> getResourceSaveProvider() {
+        return new DefaultSaveProvider<>(m_tresources);
     }
 
     public String getDBVersion() {
@@ -172,11 +184,15 @@ public class DataLogicSystem extends BeanFactoryDataSingle implements SystemServ
     @Override
     public final void execChangePassword(ChangePasswordCommand command) throws BasicException {
         Objects.requireNonNull(command, "command must not be null");
-        final SentenceExec m_changepassword = new StaticSentence(this.session,
-                "UPDATE people SET APPPASSWORD = ? WHERE ID = ?",
-                new SerializerWriteBasic(new Datas[]{Datas.STRING, Datas.STRING}));
-
-        m_changepassword.exec(new Object[]{command.newPassword(), command.userId()});
+        new Transaction<Integer>(this.session) {
+            @Override
+            public Integer transact() throws BasicException {
+                final SentenceExec m_changepassword = new StaticSentence(session,
+                        "UPDATE people SET APPPASSWORD = ? WHERE ID = ?",
+                        new SerializerWriteBasic(new Datas[]{Datas.STRING, Datas.STRING}));
+                return m_changepassword.exec(new Object[]{command.newPassword(), command.userId()});
+            }
+        }.execute();
     }
 
     @Override
@@ -230,12 +246,20 @@ public class DataLogicSystem extends BeanFactoryDataSingle implements SystemServ
         return resource;
     }
 
+    @Override
+    public void setResource(SetResourceCommand command) {
+        Objects.requireNonNull(command, "command must not be null");
+        setResource(command.name(), command.type(), command.data());
+    }
+
     /**
      *
      * @param name
      * @param type
      * @param data
      */
+    @Override
+    @Deprecated
     public final void setResource(String name, int type, byte[] data) {
 
         Datas[] resourcedata = new Datas[]{Datas.STRING, Datas.STRING, Datas.INT, Datas.BYTES};

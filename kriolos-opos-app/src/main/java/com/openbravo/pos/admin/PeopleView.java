@@ -23,6 +23,8 @@ import com.openbravo.data.loader.SentenceList;
 import com.openbravo.data.user.*;
 import com.openbravo.format.Formats;
 import com.openbravo.basic.AppLocal;
+import com.openbravo.pos.panels.AppView;
+import com.openbravo.ui.data.binding.SwingBinder;
 import com.openbravo.util.Hashcypher;
 import com.openbravo.util.StringUtils;
 import java.awt.Component;
@@ -37,19 +39,40 @@ import javax.swing.*;
  *
  * @author adrianromero
  */
-public class PeopleView extends JPanel implements EditorRecord<Object> {
+public class PeopleView extends JPanel implements EditorRecord<PeopleInfo> {
 
     private static final long serialVersionUID = 1L;
+    private static final System.Logger LOGGER = System.getLogger(PeopleView.class.getName());
     
     private String m_oId;
     private String m_sPassword;
     
     private final DirtyManager m_Dirty;
+    private SwingBinder<PeopleInfo> binder;
     
     private final SentenceList<RoleInfo> m_sentrole;
     private ComboBoxValModel<RoleInfo> m_RoleModel;  
     
     private final ComboBoxValModel<String> m_ReasonModel;        
+
+    /**
+     * Headless constructor for testing without active AppView or PeopleService.
+     *
+     * @param dirty Dirty manager
+     */
+    public PeopleView(DirtyManager dirty) {
+        this((PeopleService) null, dirty);
+    }
+
+    /**
+     * Creates new form PeopleEditor using application view context.
+     *
+     * @param app Application view context
+     * @param dirty Dirty manager
+     */
+    public PeopleView(AppView app, DirtyManager dirty) {
+        this(app != null ? app.getBean(PeopleService.class) : null, dirty);
+    }
     
     /**
      * Creates new form PeopleEditor using domain service port.
@@ -62,15 +85,18 @@ public class PeopleView extends JPanel implements EditorRecord<Object> {
         initComponents();
                 
         // El modelo de roles
-        m_sentrole = peopleService.getRolesList();
+        m_sentrole = peopleService != null ? peopleService.getRolesList() : null;
         m_RoleModel = new ComboBoxValModel<>();
+        m_jRole.setModel(m_RoleModel);
         
         m_Dirty = dirty;
-        m_jName.getDocument().addDocumentListener(dirty);
-        m_jRole.addActionListener(dirty);
-        m_jVisible.addActionListener(dirty);
-        m_jImage.addPropertyChangeListener("image", dirty);
-        m_jcard.getDocument().addDocumentListener(dirty);
+        if (dirty != null) {
+            m_jName.getDocument().addDocumentListener(dirty);
+            m_jRole.addActionListener(dirty);
+            m_jVisible.addActionListener(dirty);
+            m_jImage.addPropertyChangeListener("image", dirty);
+            m_jcard.getDocument().addDocumentListener(dirty);
+        }
 
         m_ReasonModel = new ComboBoxValModel<>();
         m_ReasonModel.add(AppLocal.getIntString("cboption.generate"));
@@ -81,8 +107,60 @@ public class PeopleView extends JPanel implements EditorRecord<Object> {
         
         webCBSecurity.setModel(m_ReasonModel);
         
+        initValidator();
         cleanFields();
         disableFields();
+    }
+
+    private void initValidator() {
+        binder = new SwingBinder<>(new PeopleInfo(null, null));
+
+        // Mandatory User Name
+        binder.forField(m_jName)
+                .asRequired(AppLocal.getIntString("validation.required", AppLocal.getIntString("label.peoplenamem")))
+                .bind(PeopleInfo::getName, PeopleInfo::setName);
+
+        // Active / Visible CheckBox
+        binder.forField(m_jVisible)
+                .bind(PeopleInfo::isVisible, PeopleInfo::setVisible);
+
+        // Card ID
+        binder.forField(m_jcard)
+                .bind(p -> p != null && p.getCard() != null ? p.getCard() : "", PeopleInfo::setCard);
+
+        binder.addStatusChangeListener(() -> {
+            if (m_Dirty != null) {
+                m_Dirty.setDirty(true);
+            }
+        });
+    }
+
+    public boolean isValid() {
+        return binder == null || binder.validate();
+    }
+
+    public boolean isDataValid() {
+        return isValid();
+    }
+
+    public SwingBinder<PeopleInfo> getBinder() {
+        return binder;
+    }
+
+    JTextField getNameField() {
+        return m_jName;
+    }
+
+    JTextField getCardField() {
+        return m_jcard;
+    }
+
+    JCheckBox getVisibleCheckBox() {
+        return m_jVisible;
+    }
+
+    JComboBox getRoleComboBox() {
+        return m_jRole;
     }
 
     /**
@@ -96,10 +174,14 @@ public class PeopleView extends JPanel implements EditorRecord<Object> {
     private void cleanFields(){
         m_oId = null;
         m_sPassword = null;
-        m_jName.setText(null);
+        if (binder != null) {
+            binder.clear();
+        } else {
+            m_jName.setText(null);
+            m_jVisible.setSelected(false);
+            m_jcard.setText(null);
+        }
         m_RoleModel.setSelectedKey(null);
-        m_jVisible.setSelected(false);
-        m_jcard.setText(null);
         m_jImage.setImage(null);
     }
     private void disableFields(){
@@ -136,6 +218,7 @@ public class PeopleView extends JPanel implements EditorRecord<Object> {
     public void writeValueInsert() {
         cleanFields();
         m_oId = UUID.randomUUID().toString();
+        m_jVisible.setSelected(true);
         enableFields();        
     }
     
@@ -144,35 +227,49 @@ public class PeopleView extends JPanel implements EditorRecord<Object> {
      * @param value
      */
     @Override
-    public void writeValueDelete(Object value) {
-        Object[] people = (Object[]) value;
-        m_oId = (String)people[0];
-        m_jName.setText(Formats.STRING.formatValue((String)people[1]));
-        m_sPassword = Formats.STRING.formatValue((String)people[2]);
-        m_RoleModel.setSelectedKey(people[3]);
-        m_jVisible.setSelected(((Boolean) people[4]));
-        m_jcard.setText(Formats.STRING.formatValue((String)people[5]));
-        m_jImage.setImage((BufferedImage) people[6]);
+    public void writeValueDelete(PeopleInfo people) {
+        if (people == null) {
+            writeValueEOF();
+            return;
+        }
+        m_oId = people.getId();
+        m_sPassword = people.getPassword();
+        if (binder != null) {
+            binder.readBean(people);
+        } else {
+            m_jName.setText(people.getName());
+            m_jVisible.setSelected(people.isVisible());
+            m_jcard.setText(people.getCard());
+        }
+        m_RoleModel.setSelectedKey(people.getRole());
+        m_jImage.setImage(people.getImage());
         
         disableFields();
     }
 
     /**
      *
-     * @param value
+     * @param people
      */
     @Override
-    public void writeValueEdit(Object value) {
-        Object[] people = (Object[]) value;
-        m_oId = (String)people[0];
-        m_jName.setText(Formats.STRING.formatValue((String)people[1]));
-        m_sPassword = Formats.STRING.formatValue((String)people[2]);
-        m_RoleModel.setSelectedKey(people[3]);
-        m_jVisible.setSelected(((Boolean) people[4]));
-        m_jcard.setText(Formats.STRING.formatValue((String)people[5]));
-        m_jImage.setImage((BufferedImage) people[6]);
+    public void writeValueEdit(PeopleInfo people) {
+        if (people == null) {
+            writeValueEOF();
+            return;
+        }
+        m_oId = people.getId();
+        m_sPassword = people.getPassword();
+        if (binder != null) {
+            binder.readBean(people);
+        } else {
+            m_jName.setText(people.getName());
+            m_jVisible.setSelected(people.isVisible());
+            m_jcard.setText(people.getCard());
+        }
+        m_RoleModel.setSelectedKey(people.getRole());
+        m_jImage.setImage(people.getImage());
         
-        if (m_jcard.getText().length() == 16) {
+        if (m_jcard.getText() != null && m_jcard.getText().length() == 16) {
             jLblCardID.setText(AppLocal.getIntString("label.ibutton"));
         } else {
             jLblCardID.setText(AppLocal.getIntString("label.card"));            
@@ -187,15 +284,29 @@ public class PeopleView extends JPanel implements EditorRecord<Object> {
      * @throws BasicException
      */
     @Override
-    public Object createValue() throws BasicException {
-        Object[] people = new Object[7];
-        people[0] = m_oId == null ? UUID.randomUUID().toString() : m_oId;
-        people[1] = Formats.STRING.parseValue(m_jName.getText());
-        people[2] = Formats.STRING.parseValue(m_sPassword);
-        people[3] = m_RoleModel.getSelectedKey();
-        people[4] = m_jVisible.isSelected();
-        people[5] = Formats.STRING.parseValue(m_jcard.getText());
-        people[6] = m_jImage.getImage();
+    public PeopleInfo createValue() throws BasicException {
+        PeopleInfo people = new PeopleInfo(
+            m_oId == null ? UUID.randomUUID().toString() : m_oId,
+            m_jName.getText() != null ? m_jName.getText() : "",
+            m_sPassword,
+            (String) m_RoleModel.getSelectedKey(),
+            m_jVisible.isSelected(),
+            m_jcard.getText() != null ? m_jcard.getText() : "",
+            m_jImage.getImage()
+        );
+        if (binder != null) {
+            try {
+                binder.writeBean(people);
+            } catch (SwingBinder.ValidationException ex) {
+                LOGGER.log(System.Logger.Level.WARNING, "Validation in createValue: " + ex.getMessage());
+            }
+        }
+        if (people.getName() == null) {
+            people.setName(m_jName.getText() != null ? m_jName.getText() : "");
+        }
+        if (people.getCard() == null) {
+            people.setCard(m_jcard.getText() != null ? m_jcard.getText() : "");
+        }
         return people;
     }
 
@@ -213,9 +324,10 @@ public class PeopleView extends JPanel implements EditorRecord<Object> {
      * @throws BasicException
      */
     public void activate() throws BasicException {
-        
-        m_RoleModel = new ComboBoxValModel<>(m_sentrole.list());
-        m_jRole.setModel(m_RoleModel);
+        if (m_sentrole != null) {
+            m_RoleModel = new ComboBoxValModel<>(m_sentrole.list());
+            m_jRole.setModel(m_RoleModel);
+        }
     }
     
    

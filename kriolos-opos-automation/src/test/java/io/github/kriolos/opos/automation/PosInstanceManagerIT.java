@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Automated Integration Test for InstanceManager and Singleton Duplicate Instance handling.
@@ -82,15 +82,14 @@ public class PosInstanceManagerIT {
         resetAppConfigSingleton();
 
         AppConfig config = AppConfig.getInstance();
-        assertThat(config.getConfigFile().getAbsolutePath())
-                .isEqualTo(tempConfig.getAbsolutePath());
+        assertEquals(tempConfig.getAbsolutePath(), config.getConfigFile().getAbsolutePath());
 
         // 3. Test individual system property override
         System.setProperty("machine.uniqueinstance", "false");
-        assertThat(config.getProperty("machine.uniqueinstance")).isEqualTo("false");
+        assertEquals("false", config.getProperty("machine.uniqueinstance"));
 
         System.setProperty("machine.uniqueinstance", "true");
-        assertThat(config.getProperty("machine.uniqueinstance")).isEqualTo("true");
+        assertEquals("true", config.getProperty("machine.uniqueinstance"));
 
         LOGGER.log(Level.INFO, "AppConfig system property override verified successfully.");
     }
@@ -115,9 +114,9 @@ public class PosInstanceManagerIT {
         // When machine.uniqueinstance is false, checkSingletonInstance must return true immediately
         boolean allowed = invokeCheckSingletonInstance(dummyFrame, config);
 
-        assertThat(allowed).isTrue();
-        assertThat(exitInvoked.get()).isFalse();
-        assertThat(instanceManagerAction.isDuplicateInstanceDialogPresent(500)).isFalse();
+        assertTrue(allowed);
+        assertFalse(exitInvoked.get());
+        assertFalse(instanceManagerAction.isDuplicateInstanceDialogPresent(500));
 
         LOGGER.log(Level.INFO, "Multi-instance execution permitted cleanly without singleton blocking.");
     }
@@ -165,15 +164,15 @@ public class PosInstanceManagerIT {
 
         // Assert that the duplicate instance dialog appears
         DialogFixture dialog = instanceManagerAction.assertDuplicateInstanceDialog(8000);
-        assertThat(dialog).isNotNull();
-        assertThat(dialog.target().isShowing()).isTrue();
+        assertNotNull(dialog);
+        assertTrue(dialog.target().isShowing());
 
         // Dismiss the dialog autonomously using the action driver
         instanceManagerAction.dismissDuplicateInstanceDialog();
 
         // Wait for thread to finish and verify exit action was triggered
         checkThread.join(4000);
-        assertThat(exitInvoked.get()).isTrue();
+        assertTrue(exitInvoked.get());
 
         LOGGER.log(Level.INFO, "Duplicate instance action test completed successfully.");
     }

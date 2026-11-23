@@ -16,31 +16,163 @@
 
 package com.openbravo.pos.sales.restaurant;
 
-import java.awt.BorderLayout;
-import java.awt.Component;
-import java.beans.*;
-import java.util.*;
-
-import com.openbravo.beans.*;
-import com.openbravo.data.gui.*;
-import com.openbravo.data.user.*;
-
 import com.openbravo.basic.AppLocal;
-import com.openbravo.pos.panels.AppView;
-import com.openbravo.pos.container.BeanFactoryException;
-import com.openbravo.format.Formats;
 import com.openbravo.basic.BasicException;
+import com.openbravo.beans.DateUtils;
+import com.openbravo.beans.JCalendarPanel;
+import com.openbravo.beans.JTimePanel;
+import com.openbravo.data.gui.JCounter;
+import com.openbravo.data.gui.JLabelDirty;
+import com.openbravo.data.gui.JListNavigator;
+import com.openbravo.data.gui.JNavigator;
+import com.openbravo.data.gui.JSaver;
+import com.openbravo.data.gui.MessageInf;
+import com.openbravo.data.user.BrowsableEditableData;
+import com.openbravo.data.user.DirtyManager;
+import com.openbravo.data.user.EditorCreator;
+import com.openbravo.data.user.EditorRecord;
+import com.openbravo.data.user.ListProvider;
+import com.openbravo.data.user.SaveProvider;
+import com.openbravo.editor.JEditorIntegerPositive;
+import com.openbravo.editor.JEditorString;
+import com.openbravo.format.Formats;
+import com.openbravo.pos.container.BeanFactoryException;
 import com.openbravo.pos.customers.CustomerInfo;
 import com.openbravo.pos.customers.CustomerService;
 import com.openbravo.pos.customers.DataLogicCustomers;
-import com.openbravo.pos.customers.JCustomerFinder;
 import com.openbravo.pos.customers.JCustomerFinderPanel;
+import com.openbravo.pos.panels.AppView;
+import com.openbravo.ui.data.binding.SwingBinder;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.UUID;
+import javax.swing.BorderFactory;
 
 /**
+ * Modernized editor and management panel for table reservations with SwingBinder,
+ * validation, and headless testability.
  *
  * @author JG uniCenta
+ * @author KriolOS
  */
 public class JTicketsBagRestaurantRes extends javax.swing.JPanel implements EditorRecord {
+
+    /**
+     * Presentation model for two-way Swing data binding.
+     */
+    public static class ReservationModel {
+        private String id;
+        private Date createdDate;
+        private Date reservationDate;
+        private String customerId;
+        private String customerTaxId;
+        private String customerSearchKey;
+        private String customerName;
+        private Integer chairs;
+        private Boolean isReceived;
+        private String description;
+
+        public ReservationModel() {
+        }
+
+        public ReservationModel(String id, Date createdDate, Date reservationDate, String customerId, String customerTaxId, String customerSearchKey, String customerName, Integer chairs, Boolean isReceived, String description) {
+            this.id = id;
+            this.createdDate = createdDate;
+            this.reservationDate = reservationDate;
+            this.customerId = customerId;
+            this.customerTaxId = customerTaxId;
+            this.customerSearchKey = customerSearchKey;
+            this.customerName = customerName;
+            this.chairs = chairs;
+            this.isReceived = isReceived;
+            this.description = description;
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        public void setId(String id) {
+            this.id = id;
+        }
+
+        public Date getCreatedDate() {
+            return createdDate;
+        }
+
+        public void setCreatedDate(Date createdDate) {
+            this.createdDate = createdDate;
+        }
+
+        public Date getReservationDate() {
+            return reservationDate;
+        }
+
+        public void setReservationDate(Date reservationDate) {
+            this.reservationDate = reservationDate;
+        }
+
+        public String getCustomerId() {
+            return customerId;
+        }
+
+        public void setCustomerId(String customerId) {
+            this.customerId = customerId;
+        }
+
+        public String getCustomerTaxId() {
+            return customerTaxId;
+        }
+
+        public void setCustomerTaxId(String customerTaxId) {
+            this.customerTaxId = customerTaxId;
+        }
+
+        public String getCustomerSearchKey() {
+            return customerSearchKey;
+        }
+
+        public void setCustomerSearchKey(String customerSearchKey) {
+            this.customerSearchKey = customerSearchKey;
+        }
+
+        public String getCustomerName() {
+            return customerName;
+        }
+
+        public void setCustomerName(String customerName) {
+            this.customerName = customerName;
+        }
+
+        public Integer getChairs() {
+            return chairs;
+        }
+
+        public void setChairs(Integer chairs) {
+            this.chairs = chairs;
+        }
+
+        public Boolean getIsReceived() {
+            return isReceived;
+        }
+
+        public void setIsReceived(Boolean isReceived) {
+            this.isReceived = isReceived;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public void setDescription(String description) {
+            this.description = description;
+        }
+    }
 
     private final JTicketsBagRestaurantMap m_restaurantmap;
     
@@ -63,26 +195,45 @@ public class JTicketsBagRestaurantRes extends javax.swing.JPanel implements Edit
     private final JCalendarPanel m_datepanel;    
     private final JTimePanel m_timepanel;
     private boolean m_bpaintlock = false;
+    private SwingBinder<ReservationModel> binder;
 
-    
-    /** Creates new form JPanelReservations
-     * @param oApp
-     * @param restaurantmap */
+    /**
+     * Headless constructor for testing without active GUI/database session.
+     *
+     * @param dirty dirty state manager
+     */
+    public JTicketsBagRestaurantRes(DirtyManager dirty) {
+        this(null, null, dirty);
+    }
+
     public JTicketsBagRestaurantRes(AppView oApp, JTicketsBagRestaurantMap restaurantmap) {
-        
-        m_restaurantmap = restaurantmap;
-        
-        customerService = oApp.getBean(CustomerService.class);
-        dlCustomers = (customerService instanceof DataLogicCustomers) ? (DataLogicCustomers) customerService : oApp.getBean(DataLogicCustomers.class);
-        try {
-            restaurantService = oApp.getBean(RestaurantService.class);
-        } catch (BeanFactoryException ignored) {
-        }
-        if (restaurantService == null) {
-            dlRestaurant = oApp.getBean(DataLogicRestaurant.class);
-            restaurantService = dlRestaurant;
-        } else if (restaurantService instanceof DataLogicRestaurant) {
-            dlRestaurant = (DataLogicRestaurant) restaurantService;
+        this(oApp, restaurantmap, null);
+    }
+
+    /**
+     * Creates new form JPanelReservations.
+     *
+     * @param oApp application view
+     * @param restaurantmap restaurant map coordinator
+     * @param dirty dirty state manager
+     */
+    public JTicketsBagRestaurantRes(AppView oApp, JTicketsBagRestaurantMap restaurantmap, DirtyManager dirty) {
+        this.m_restaurantmap = restaurantmap;
+        this.m_Dirty = dirty != null ? dirty : new DirtyManager();
+
+        if (oApp != null) {
+            customerService = oApp.getBean(CustomerService.class);
+            dlCustomers = (customerService instanceof DataLogicCustomers) ? (DataLogicCustomers) customerService : oApp.getBean(DataLogicCustomers.class);
+            try {
+                restaurantService = oApp.getBean(RestaurantService.class);
+            } catch (BeanFactoryException ignored) {
+            }
+            if (restaurantService == null) {
+                dlRestaurant = oApp.getBean(DataLogicRestaurant.class);
+                restaurantService = dlRestaurant;
+            } else if (restaurantService instanceof DataLogicRestaurant) {
+                dlRestaurant = (DataLogicRestaurant) restaurantService;
+            }
         }
 
         m_dcurrentday = null;
@@ -106,7 +257,6 @@ public class JTicketsBagRestaurantRes extends javax.swing.JPanel implements Edit
         m_jtxtChairs.addEditorKeys(m_jKeys);
         m_jtxtDescription.addEditorKeys(m_jKeys);
 
-        m_Dirty = new DirtyManager();
         m_timereservation.addPropertyChangeListener("Date", m_Dirty);
         txtCustomer.addPropertyChangeListener("Text", m_Dirty);
         txtCustomer.addPropertyChangeListener("Text", new PropertyChangeListener(){
@@ -120,22 +270,99 @@ public class JTicketsBagRestaurantRes extends javax.swing.JPanel implements Edit
         });
         m_jtxtChairs.addPropertyChangeListener("Text", m_Dirty);
         m_jtxtDescription.addPropertyChangeListener("Text", m_Dirty);
-        
+
+        initValidator();
         writeValueEOF();
         
-        ListProvider lpr = restaurantService.getReservationsListProvider(new MyDateFilter());            
-        SaveProvider spr = restaurantService.getReservationsSaveProvider();        
-        
-        m_bd = new BrowsableEditableData(lpr, spr, new CompareReservations(), this, m_Dirty);           
-        
-        JListNavigator nl = new JListNavigator(m_bd, true);
-        nl.setCellRenderer(new JCalendarItemRenderer());  
-        m_jPanelList.add(nl, BorderLayout.CENTER);
-        
-        m_jToolbar.add(new JLabelDirty(m_Dirty));
-        m_jToolbar.add(new JCounter(m_bd));
-        m_jToolbar.add(new JNavigator(m_bd));
-        m_jToolbar.add(new JSaver(m_bd));       
+        if (restaurantService != null) {
+            ListProvider lpr = restaurantService.getReservationsListProvider(new MyDateFilter());            
+            SaveProvider spr = restaurantService.getReservationsSaveProvider();        
+            
+            m_bd = new BrowsableEditableData(lpr, spr, new CompareReservations(), this, m_Dirty);           
+            
+            JListNavigator nl = new JListNavigator(m_bd, true);
+            nl.setCellRenderer(new JCalendarItemRenderer());  
+            m_jPanelList.add(nl, BorderLayout.CENTER);
+            
+            m_jToolbar.add(new JLabelDirty(m_Dirty));
+            m_jToolbar.add(new JCounter(m_bd));
+            m_jToolbar.add(new JNavigator(m_bd));
+            m_jToolbar.add(new JSaver(m_bd));
+        } else {
+            m_bd = null;
+        }
+    }
+
+    private void initValidator() {
+        binder = new SwingBinder<>(new ReservationModel());
+
+        binder.addStatusChangeListener(() -> {
+            if (m_Dirty != null) {
+                m_Dirty.setDirty(true);
+            }
+        });
+    }
+
+    @Override
+    public boolean isValid() {
+        if (txtCustomer == null || m_jtxtChairs == null || binder == null) {
+            return super.isValid();
+        }
+
+        boolean valid = true;
+
+        String custName = txtCustomer.getText();
+        if (custName == null || custName.trim().isEmpty()) {
+            txtCustomer.setBorder(BorderFactory.createLineBorder(Color.RED, 1));
+            txtCustomer.setToolTipText(AppLocal.getIntString("validation.required", AppLocal.getIntString("label.customer")));
+            valid = false;
+        } else {
+            txtCustomer.setBorder(null);
+            txtCustomer.setToolTipText(null);
+        }
+
+        Integer chairs = null;
+        try {
+            chairs = m_jtxtChairs.getValue();
+        } catch (Exception e) {
+            // null
+        }
+        if (chairs == null || chairs <= 0) {
+            m_jtxtChairs.setBorder(BorderFactory.createLineBorder(Color.RED, 1));
+            m_jtxtChairs.setToolTipText(AppLocal.getIntString("validation.number.positive", AppLocal.getIntString("label.chairs", "Chairs")));
+            valid = false;
+        } else {
+            m_jtxtChairs.setBorder(null);
+            m_jtxtChairs.setToolTipText(null);
+        }
+
+        boolean binderValid = binder.validate();
+        return valid && binderValid;
+    }
+
+    public boolean isDataValid() {
+        return isValid();
+    }
+
+    ReservationModel toModel() {
+        Integer chairs = null;
+        try {
+            chairs = m_jtxtChairs.getValue();
+        } catch (Exception e) {
+            // null
+        }
+        return new ReservationModel(
+                m_sID,
+                m_dCreated,
+                m_timereservation != null ? m_timereservation.getDate() : null,
+                customer != null ? customer.getId() : null,
+                customer != null ? customer.getTaxid() : null,
+                customer != null ? customer.getSearchkey() : null,
+                txtCustomer != null ? txtCustomer.getText() : null,
+                chairs,
+                m_bReceived,
+                m_jtxtDescription != null ? m_jtxtDescription.getText() : null
+        );
     }
     
     private class MyDateFilter implements EditorCreator {
@@ -193,6 +420,10 @@ public class JTicketsBagRestaurantRes extends javax.swing.JPanel implements Edit
         m_jKeys.setEnabled(false);
         
         m_jbtnReceive.setEnabled(false);
+
+        if (binder != null) {
+            binder.clear();
+        }
     }    
 
     /**
@@ -202,8 +433,9 @@ public class JTicketsBagRestaurantRes extends javax.swing.JPanel implements Edit
     public void writeValueInsert() {
         m_sID = null;
         m_dCreated = null;
-        m_timereservation.setCheckDates(m_dcurrentday, new Date(m_dcurrentday.getTime() + 3600000L));
-        m_timereservation.setDate(m_dcurrentday);
+        Date targetDate = m_dcurrentday != null ? m_dcurrentday : new Date();
+        m_timereservation.setCheckDates(targetDate, new Date(targetDate.getTime() + 3600000L));
+        m_timereservation.setDate(targetDate);
         assignCustomer(new CustomerInfo(null));
         m_jtxtChairs.setValueInteger(2);
         m_bReceived = false;
@@ -217,6 +449,10 @@ public class JTicketsBagRestaurantRes extends javax.swing.JPanel implements Edit
         m_jbtnReceive.setEnabled(true);
         
         txtCustomer.activate();
+
+        if (binder != null) {
+            binder.readBean(toModel());
+        }
     }
 
     /**
@@ -225,26 +461,54 @@ public class JTicketsBagRestaurantRes extends javax.swing.JPanel implements Edit
      */
     @Override
     public void writeValueDelete(Object value) {
-        Object[] res = (Object[]) value;
-        m_sID = (String)res[0];
-        m_dCreated = (Date) res[1];
-        m_timereservation.setCheckDates(m_dcurrentday, new Date(m_dcurrentday.getTime() + 3600000L));
-        m_timereservation.setDate((Date) res[2]);       
-        CustomerInfo c = new CustomerInfo((String) res[3]);
-        c.setTaxid((String) res[4]);
-        c.setSearchkey((String) res[5]);
-        c.setName((String) res[6]);
-        assignCustomer(c);        
-        m_jtxtChairs.setValueInteger(((Integer)res[7]).intValue());
-        m_bReceived = ((Boolean)res[8]).booleanValue();
-        m_jtxtDescription.setText(Formats.STRING.formatValue((String)res[9]));
+        if (value == null) {
+            writeValueEOF();
+            return;
+        }
+
+        if (value instanceof Object[] res) {
+            m_sID = (String) res[0];
+            m_dCreated = (Date) res[1];
+            Date targetDate = m_dcurrentday != null ? m_dcurrentday : new Date();
+            m_timereservation.setCheckDates(targetDate, new Date(targetDate.getTime() + 3600000L));
+            m_timereservation.setDate((Date) res[2]);       
+            CustomerInfo c = new CustomerInfo((String) res[3]);
+            c.setTaxid((String) res[4]);
+            c.setSearchkey((String) res[5]);
+            c.setName((String) res[6]);
+            assignCustomer(c);        
+            m_jtxtChairs.setValueInteger(((Integer) res[7]).intValue());
+            m_bReceived = ((Boolean) res[8]).booleanValue();
+            m_jtxtDescription.setText(Formats.STRING.formatValue((String) res[9]));
+        } else if (value instanceof ReservationModel model) {
+            m_sID = model.getId();
+            m_dCreated = model.getCreatedDate();
+            Date targetDate = m_dcurrentday != null ? m_dcurrentday : new Date();
+            m_timereservation.setCheckDates(targetDate, new Date(targetDate.getTime() + 3600000L));
+            m_timereservation.setDate(model.getReservationDate());
+            CustomerInfo c = new CustomerInfo(model.getCustomerId());
+            c.setTaxid(model.getCustomerTaxId());
+            c.setSearchkey(model.getCustomerSearchKey());
+            c.setName(model.getCustomerName());
+            assignCustomer(c);
+            if (model.getChairs() != null) {
+                m_jtxtChairs.setValueInteger(model.getChairs());
+            }
+            m_bReceived = Boolean.TRUE.equals(model.getIsReceived());
+            m_jtxtDescription.setText(Formats.STRING.formatValue(model.getDescription()));
+        }
+
         m_timereservation.setEnabled(false);
         txtCustomer.setEnabled(false);
         m_jtxtChairs.setEnabled(false);
         m_jtxtDescription.setEnabled(false);
         m_jKeys.setEnabled(false);
         
-        m_jbtnReceive.setEnabled(false); 
+        m_jbtnReceive.setEnabled(false);
+
+        if (binder != null) {
+            binder.readBean(toModel());
+        }
     }  
 
     /**
@@ -253,19 +517,43 @@ public class JTicketsBagRestaurantRes extends javax.swing.JPanel implements Edit
      */
     @Override
     public void writeValueEdit(Object value) {
-        Object[] res = (Object[]) value;
-        m_sID = (String)res[0];
-        m_dCreated = (Date) res[1];
-        m_timereservation.setCheckDates(m_dcurrentday, new Date(m_dcurrentday.getTime() + 3600000L));
-        m_timereservation.setDate((Date) res[2]);
-        CustomerInfo c = new CustomerInfo((String) res[3]);
-        c.setTaxid((String) res[4]);
-        c.setSearchkey((String) res[5]);
-        c.setName((String) res[6]);
-        assignCustomer(c);  
-        m_jtxtChairs.setValueInteger(((Integer)res[7]).intValue());
-        m_bReceived = ((Boolean)res[8]).booleanValue();
-        m_jtxtDescription.setText(Formats.STRING.formatValue((String)res[9]));
+        if (value == null) {
+            writeValueEOF();
+            return;
+        }
+
+        if (value instanceof Object[] res) {
+            m_sID = (String) res[0];
+            m_dCreated = (Date) res[1];
+            Date targetDate = m_dcurrentday != null ? m_dcurrentday : new Date();
+            m_timereservation.setCheckDates(targetDate, new Date(targetDate.getTime() + 3600000L));
+            m_timereservation.setDate((Date) res[2]);
+            CustomerInfo c = new CustomerInfo((String) res[3]);
+            c.setTaxid((String) res[4]);
+            c.setSearchkey((String) res[5]);
+            c.setName((String) res[6]);
+            assignCustomer(c);  
+            m_jtxtChairs.setValueInteger(((Integer) res[7]).intValue());
+            m_bReceived = ((Boolean) res[8]).booleanValue();
+            m_jtxtDescription.setText(Formats.STRING.formatValue((String) res[9]));
+        } else if (value instanceof ReservationModel model) {
+            m_sID = model.getId();
+            m_dCreated = model.getCreatedDate();
+            Date targetDate = m_dcurrentday != null ? m_dcurrentday : new Date();
+            m_timereservation.setCheckDates(targetDate, new Date(targetDate.getTime() + 3600000L));
+            m_timereservation.setDate(model.getReservationDate());
+            CustomerInfo c = new CustomerInfo(model.getCustomerId());
+            c.setTaxid(model.getCustomerTaxId());
+            c.setSearchkey(model.getCustomerSearchKey());
+            c.setName(model.getCustomerName());
+            assignCustomer(c);
+            if (model.getChairs() != null) {
+                m_jtxtChairs.setValueInteger(model.getChairs());
+            }
+            m_bReceived = Boolean.TRUE.equals(model.getIsReceived());
+            m_jtxtDescription.setText(Formats.STRING.formatValue(model.getDescription()));
+        }
+
         m_timereservation.setEnabled(true);
         txtCustomer.setEnabled(true);
         m_jtxtChairs.setEnabled(true);
@@ -275,6 +563,10 @@ public class JTicketsBagRestaurantRes extends javax.swing.JPanel implements Edit
         m_jbtnReceive.setEnabled(!m_bReceived); // se habilita si no se ha recibido al cliente
 
         txtCustomer.activate();
+
+        if (binder != null) {
+            binder.readBean(toModel());
+        }
     }    
 
     /**
@@ -284,16 +576,23 @@ public class JTicketsBagRestaurantRes extends javax.swing.JPanel implements Edit
      */
     @Override
     public Object createValue() throws BasicException {
+        if (binder != null) {
+            try {
+                binder.writeBean(toModel());
+            } catch (SwingBinder.ValidationException ex) {
+                // validation state surfaced via isValid()
+            }
+        }
         
         Object[] res = new Object[10];
         
         res[0] = m_sID == null ? UUID.randomUUID().toString() : m_sID; 
         res[1] = m_dCreated == null ? new Date() : m_dCreated; 
         res[2] = m_timereservation.getDate();
-        res[3] = customer.getId();
-        res[4] = customer.getTaxid();
-        res[5] = customer.getSearchkey();
-        res[6] = customer.getName();
+        res[3] = customer != null ? customer.getId() : null;
+        res[4] = customer != null ? customer.getTaxid() : null;
+        res[5] = customer != null ? customer.getSearchkey() : null;
+        res[6] = customer != null ? customer.getName() : null;
         res[7] = m_jtxtChairs.getValue();
         res[8] = m_bReceived;
         res[9] = m_jtxtDescription.getText();
@@ -664,15 +963,14 @@ public class JTicketsBagRestaurantRes extends javax.swing.JPanel implements Edit
     }//GEN-LAST:event_m_jbtnTablesActionPerformed
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-
-        CustomerInfo c = JCustomerFinderPanel.show(this, customerService, customer);
-        
-        if (c == null) {       
-            assignCustomer(new CustomerInfo(null));
-        } else {
-            assignCustomer(c);
+        if (customerService != null) {
+            CustomerInfo c = JCustomerFinderPanel.show(this, customerService, customer);
+            if (c == null) {       
+                assignCustomer(new CustomerInfo(null));
+            } else {
+                assignCustomer(c);
+            }
         }
-        
     }//GEN-LAST:event_jButton1ActionPerformed
 
     private void jbtnShowCalendarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jbtnShowCalendarActionPerformed
@@ -719,5 +1017,37 @@ public class JTicketsBagRestaurantRes extends javax.swing.JPanel implements Edit
             return (DataLogicRestaurant) restaurantService;
         }
         return dlRestaurant;
+    }
+
+    JEditorString getCustomerField() {
+        return txtCustomer;
+    }
+
+    JEditorIntegerPositive getChairsField() {
+        return m_jtxtChairs;
+    }
+
+    JEditorString getDescriptionField() {
+        return m_jtxtDescription;
+    }
+
+    JTimePanel getTimeReservationPanel() {
+        return m_timereservation;
+    }
+
+    CustomerInfo getCustomer() {
+        return customer;
+    }
+
+    void setCustomer(CustomerInfo c) {
+        assignCustomer(c);
+    }
+
+    SwingBinder<ReservationModel> getBinder() {
+        return binder;
+    }
+
+    DirtyManager getDirtyManager() {
+        return m_Dirty;
     }
 }

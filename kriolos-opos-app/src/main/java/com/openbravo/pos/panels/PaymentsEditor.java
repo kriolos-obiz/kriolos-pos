@@ -16,59 +16,189 @@
 
 package com.openbravo.pos.panels;
 
+import com.openbravo.basic.AppLocal;
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.gui.ComboBoxValModel;
 import com.openbravo.data.loader.IKeyed;
 import com.openbravo.data.user.DirtyManager;
 import com.openbravo.data.user.EditorRecord;
-import com.openbravo.basic.AppLocal;
+import com.openbravo.editor.JEditorCurrency;
+import com.openbravo.editor.JEditorString;
+import com.openbravo.pos.payment.PaymentMovement;
+import com.openbravo.ui.data.binding.SwingBinder;
+import java.awt.Color;
 import java.awt.Component;
 import java.util.Date;
 import java.util.UUID;
-
+import javax.swing.BorderFactory;
+import javax.swing.JComboBox;
 
 /**
+ * Strongly typed editor panel for cash drawer movements (Cash In / Cash Out),
+ * supporting two-way Swing data binding and real-time validation.
  *
  * @author adrianromero
+ * @author KriolOS
  */
-public final class PaymentsEditor extends javax.swing.JPanel implements EditorRecord {
-    
+public final class PaymentsEditor extends javax.swing.JPanel implements EditorRecord<PaymentMovement> {
+
+    private static final long serialVersionUID = 1L;
+    private static final System.Logger LOGGER = System.getLogger(PaymentsEditor.class.getName());
+
     private final ComboBoxValModel m_ReasonModel;
-    
+
     private String m_sId;
     private String m_sPaymentId;
     private Date datenew;
-   
+
     private final AppView m_App;
     private String m_sNotes;
-    
-    /** Creates new form JPanelPayments
-     * @param oApp
-     * @param dirty */
+    private DirtyManager dirty;
+    private SwingBinder<PaymentModel> binder;
+
+    /**
+     * Mutable model adapting the immutable PaymentMovement domain record for data binding.
+     */
+    public static final class PaymentModel {
+        private String reason;
+        private Double total;
+        private String notes;
+
+        public PaymentModel() {
+            this("cashin", null, "");
+        }
+
+        public PaymentModel(String reason, Double total, String notes) {
+            this.reason = reason;
+            this.total = total;
+            this.notes = notes;
+        }
+
+        public String getReason() {
+            return reason;
+        }
+
+        public void setReason(String reason) {
+            this.reason = reason;
+        }
+
+        public Double getTotal() {
+            return total;
+        }
+
+        public void setTotal(Double total) {
+            this.total = total;
+        }
+
+        public String getNotes() {
+            return notes;
+        }
+
+        public void setNotes(String notes) {
+            this.notes = notes;
+        }
+    }
+
+    /**
+     * Creates new form PaymentsEditor without AppView for headless testing.
+     *
+     * @param dirty DirtyManager listener
+     */
+    public PaymentsEditor(DirtyManager dirty) {
+        this(null, dirty);
+    }
+
+    /**
+     * Creates new form PaymentsEditor
+     *
+     * @param oApp  active AppView
+     * @param dirty DirtyManager listener
+     */
     public PaymentsEditor(AppView oApp, DirtyManager dirty) {
-        
-        m_App = oApp;
-        
+        this.m_App = oApp;
+        this.dirty = dirty;
+
         initComponents();
-       
+
         m_ReasonModel = new ComboBoxValModel();
         m_ReasonModel.add(new PaymentReasonPositive("cashin", AppLocal.getIntString("transpayment.cashin")));
-        m_ReasonModel.add(new PaymentReasonNegative("cashout", AppLocal.getIntString("transpayment.cashout")));              
+        m_ReasonModel.add(new PaymentReasonNegative("cashout", AppLocal.getIntString("transpayment.cashout")));
         m_jreason.setModel(m_ReasonModel);
-        
+
         jTotal.addEditorKeys(m_jKeys);
-        
-        m_jreason.addActionListener(dirty);
-        jTotal.addPropertyChangeListener("Text", dirty);
-        m_jNotes.addPropertyChangeListener("Text", dirty);
-        m_jNotes.addEditorKeys(m_jKeys);        
-        
+
+        if (dirty != null) {
+            m_jreason.addActionListener(dirty);
+            jTotal.addPropertyChangeListener("Text", dirty);
+            m_jNotes.addPropertyChangeListener("Text", dirty);
+        }
+        m_jNotes.addEditorKeys(m_jKeys);
+
+        initValidator();
         writeValueEOF();
     }
-    
-    /**
-     *
-     */
+
+    private void initValidator() {
+        binder = new SwingBinder<>(new PaymentModel());
+
+        @SuppressWarnings("unchecked")
+        JComboBox<Object> reasonCombo = (JComboBox<Object>) m_jreason;
+        binder.forField(reasonCombo)
+                .bind(
+                        model -> {
+                            Object selected = m_ReasonModel.getSelectedItem();
+                            return selected instanceof PaymentReason pr ? pr : null;
+                        },
+                        (model, selected) -> {
+                            if (selected instanceof PaymentReason pr) {
+                                model.setReason(pr.getKey());
+                            } else if (selected != null) {
+                                model.setReason(selected.toString());
+                            }
+                        }
+                );
+
+        binder.addStatusChangeListener(() -> {
+            if (dirty != null) {
+                dirty.setDirty(true);
+            }
+        });
+    }
+
+    public boolean isValid() {
+        Double val = jTotal != null ? jTotal.getValue() : null;
+        boolean totalValid = val != null && Math.abs(val) > 0.0001;
+        if (!totalValid && jTotal != null) {
+            jTotal.setBorder(BorderFactory.createLineBorder(Color.RED, 1));
+            jTotal.setToolTipText(AppLocal.getIntString("validation.required", AppLocal.getIntString("label.paymenttotal")));
+        } else if (jTotal != null) {
+            jTotal.setBorder(null);
+            jTotal.setToolTipText(null);
+        }
+        boolean binderValid = binder == null || binder.validate();
+        return totalValid && binderValid;
+    }
+
+    public boolean isDataValid() {
+        return isValid();
+    }
+
+    public SwingBinder<PaymentModel> getBinder() {
+        return binder;
+    }
+
+    public JEditorCurrency getTotalEditor() {
+        return jTotal;
+    }
+
+    public JEditorString getNotesEditor() {
+        return m_jNotes;
+    }
+
+    public JComboBox getReasonComboBox() {
+        return m_jreason;
+    }
+
     @Override
     public void writeValueEOF() {
         m_sId = null;
@@ -77,141 +207,164 @@ public final class PaymentsEditor extends javax.swing.JPanel implements EditorRe
         setReasonTotal(null, null);
         m_jreason.setEnabled(false);
         jTotal.setEnabled(false);
-// JG Added July 2011
+        jTotal.setBorder(null);
+        jTotal.setToolTipText(null);
         m_sNotes = null;
+        m_jNotes.setText(null);
         m_jNotes.setEnabled(false);
-
+        if (binder != null) {
+            binder.clear();
+        }
     }
 
-    /**
-     *
-     */
     @Override
     public void writeValueInsert() {
-
         m_sId = null;
         m_sPaymentId = null;
         datenew = null;
         setReasonTotal("cashin", null);
         m_jreason.setEnabled(true);
-        jTotal.setEnabled(true);   
+        jTotal.setEnabled(true);
+        jTotal.setBorder(null);
+        jTotal.setToolTipText(null);
         jTotal.activate();
-// JG Added July 2011
         m_sNotes = null;
         m_jNotes.setEnabled(true);
+        m_jNotes.setText(null);
+        if (binder != null) {
+            binder.clear();
+        }
+    }
+
+    @Override
+    public void writeValueDelete(PaymentMovement payment) {
+        if (payment == null) {
+            writeValueEOF();
+            return;
+        }
+        m_sId = payment.receiptId();
+        datenew = payment.date();
+        m_sPaymentId = payment.paymentId();
+        setReasonTotal(payment.reason(), payment.total());
+        m_jreason.setEnabled(false);
+        jTotal.setEnabled(false);
+        jTotal.setBorder(null);
+        jTotal.setToolTipText(null);
+        m_sNotes = payment.notes();
         m_jNotes.setText(m_sNotes);
-    }
-    
-    /**
-     *
-     * @param value
-     */
-    @Override
-    public void writeValueDelete(Object value) {
-        Object[] payment = (Object[]) value;
-        m_sId = (String) payment[0];
-        datenew = (Date) payment[2];
-        m_sPaymentId = (String) payment[3];
-        setReasonTotal(payment[4], payment[5]);
-        m_jreason.setEnabled(false);
-        jTotal.setEnabled(false);
-// JG Added July 2011
-        m_sNotes = (String) payment[6];
         m_jNotes.setEnabled(false);
+        if (binder != null) {
+            binder.readBean(new PaymentModel(payment.reason(), payment.total(), payment.notes()));
+        }
     }
-    
-    /**
-     *
-     * @param value
-     */
+
     @Override
-    public void writeValueEdit(Object value) {
-        Object[] payment = (Object[]) value;
-        m_sId = (String) payment[0];
-        datenew = (Date) payment[2];
-        m_sPaymentId = (String) payment[3];
-        setReasonTotal(payment[4], payment[5]);
+    public void writeValueEdit(PaymentMovement payment) {
+        if (payment == null) {
+            writeValueEOF();
+            return;
+        }
+        m_sId = payment.receiptId();
+        datenew = payment.date();
+        m_sPaymentId = payment.paymentId();
+        setReasonTotal(payment.reason(), payment.total());
         m_jreason.setEnabled(false);
         jTotal.setEnabled(false);
+        jTotal.setBorder(null);
+        jTotal.setToolTipText(null);
         jTotal.activate();
-// JG Added July 2011
-        m_sNotes = (String) payment[6];
+        m_sNotes = payment.notes();
+        m_jNotes.setText(m_sNotes);
         m_jNotes.setEnabled(false);
+        if (binder != null) {
+            binder.readBean(new PaymentModel(payment.reason(), payment.total(), payment.notes()));
+        }
     }
-    
-    /**
-     *
-     * @return
-     * @throws BasicException
-     */
+
     @Override
-    public Object createValue() throws BasicException {
-//JG Modified Array + 1 - July 2011
-        Object[] payment = new Object[7];
-        payment[0] = m_sId == null ? UUID.randomUUID().toString() : m_sId;
-        payment[1] = m_App.getActiveCashIndex();
-        payment[2] = datenew == null ? new Date() : datenew;
-        payment[3] = m_sPaymentId == null ? UUID.randomUUID().toString() : m_sPaymentId;
-        payment[4] = m_ReasonModel.getSelectedKey();
+    public PaymentMovement createValue() throws BasicException {
+        String receiptId = m_sId == null ? UUID.randomUUID().toString() : m_sId;
+        String activeCashIndex = m_App != null ? m_App.getActiveCashIndex() : "1";
+        Date date = datenew == null ? new Date() : datenew;
+        String paymentId = m_sPaymentId == null ? UUID.randomUUID().toString() : m_sPaymentId;
+        String reasonKey = (String) m_ReasonModel.getSelectedKey();
         PaymentReason reason = (PaymentReason) m_ReasonModel.getSelectedItem();
         Double dtotal = jTotal.getValue();
-        payment[5] = reason == null ? dtotal : reason.addSignum(dtotal);
-// JG Added July 2011
-        String snotes = "";
+        double total = 0.0;
+        if (dtotal != null) {
+            Double signed = reason == null ? dtotal : reason.addSignum(dtotal);
+            total = signed != null ? signed : 0.0;
+        }
         m_sNotes = m_jNotes.getText();
-        payment[6] = m_sNotes == null ? snotes : m_sNotes;
-        return payment;
+        String notes = m_sNotes == null ? "" : m_sNotes;
+
+        PaymentModel model = new PaymentModel(
+                reasonKey != null ? reasonKey : "cashin",
+                dtotal,
+                notes
+        );
+        if (binder != null) {
+            try {
+                binder.writeBean(model);
+            } catch (SwingBinder.ValidationException ex) {
+                LOGGER.log(System.Logger.Level.WARNING, "Validation in createValue: " + ex.getMessage());
+            }
+        }
+
+        return new PaymentMovement(
+                receiptId,
+                activeCashIndex,
+                date,
+                paymentId,
+                model.getReason() != null ? model.getReason() : (reasonKey != null ? reasonKey : "cashin"),
+                total,
+                notes
+        );
     }
-    
-    /**
-     *
-     * @return
-     */
+
     @Override
     public Component getComponent() {
         return this;
     }
-    
-    /**
-     *
-     */
+
     @Override
     public void refresh() {
-    }  
-    
-    private void setReasonTotal(Object reasonfield, Object totalfield) {
-        
-        m_ReasonModel.setSelectedKey(reasonfield);
-             
-        PaymentReason reason = (PaymentReason) m_ReasonModel.getSelectedItem();     
-        
-        if (reason == null) {
-            jTotal.setDoubleValue((Double) totalfield);
-        } else {
-            jTotal.setDoubleValue(reason.positivize((Double) totalfield));
-        }  
     }
-    
-    private static abstract class PaymentReason implements IKeyed {
+
+    private void setReasonTotal(String reasonfield, Double totalfield) {
+        m_ReasonModel.setSelectedKey(reasonfield);
+        PaymentReason reason = (PaymentReason) m_ReasonModel.getSelectedItem();
+        if (totalfield == null) {
+            jTotal.setDoubleValue(null);
+        } else if (reason == null) {
+            jTotal.setDoubleValue(totalfield);
+        } else {
+            jTotal.setDoubleValue(reason.positivize(totalfield));
+        }
+    }
+
+    private static abstract class PaymentReason implements IKeyed<String> {
         private String m_sKey;
         private String m_sText;
-        
+
         public PaymentReason(String key, String text) {
             m_sKey = key;
             m_sText = text;
         }
+
         @Override
-        public Object getKey() {
+        public String getKey() {
             return m_sKey;
         }
         public abstract Double positivize(Double d);
         public abstract Double addSignum(Double d);
-        
+
         @Override
         public String toString() {
             return m_sText;
         }
     }
+
     private static class PaymentReasonPositive extends PaymentReason {
         public PaymentReasonPositive(String key, String text) {
             super(key, text);
@@ -231,6 +384,7 @@ public final class PaymentsEditor extends javax.swing.JPanel implements EditorRe
             }
         }
     }
+
     private static class PaymentReasonNegative extends PaymentReason {
         public PaymentReasonNegative(String key, String text) {
             super(key, text);
@@ -250,8 +404,9 @@ public final class PaymentsEditor extends javax.swing.JPanel implements EditorRe
             }
         }
     }
-    
-    /** This method is called from within the constructor to
+
+    /**
+     * This method is called from within the constructor to
      * initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is
      * always regenerated by the Form Editor.
@@ -339,8 +494,7 @@ public final class PaymentsEditor extends javax.swing.JPanel implements EditorRe
     private void m_jKeysPropertyChange(java.beans.PropertyChangeEvent evt) {//GEN-FIRST:event_m_jKeysPropertyChange
 
     }//GEN-LAST:event_m_jKeysPropertyChange
-    
-    
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel5;
@@ -351,5 +505,5 @@ public final class PaymentsEditor extends javax.swing.JPanel implements EditorRe
     private com.openbravo.editor.JEditorString m_jNotes;
     private javax.swing.JComboBox m_jreason;
     // End of variables declaration//GEN-END:variables
-    
+
 }

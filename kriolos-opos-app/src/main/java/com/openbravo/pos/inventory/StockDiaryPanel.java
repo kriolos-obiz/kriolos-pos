@@ -50,7 +50,7 @@ public class StockDiaryPanel extends JPanelTable {
      * @return
      */
     @Override
-    public ListProvider getListProvider() {
+    public ListProvider<StockDiaryInfo> getListProvider() {
         return null;
     }
     
@@ -59,8 +59,8 @@ public class StockDiaryPanel extends JPanelTable {
      * @return
      */
     @Override
-    public SaveProvider getSaveProvider() {
-        return stockService.getStockDiarySaveProvider();
+    public SaveProvider<StockDiaryInfo> getSaveProvider() {
+        return stockService != null ? stockService.getStockDiarySaveProvider() : null;
     }
     
     /**
@@ -68,7 +68,7 @@ public class StockDiaryPanel extends JPanelTable {
      * @return
      */
     @Override
-    public EditorRecord getEditor() {
+    public EditorRecord<StockDiaryInfo> getEditor() {
         return jeditor;
     }
     

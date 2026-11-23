@@ -1,51 +1,131 @@
-/*
- * Copyright (C) 2022 KiolOS<https://github.com/kriolos>
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+//    KriolOS POS
+//    Copyright (c) 2019-2023 KriolOS
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package com.openbravo.pos.voucher;
 
+import com.openbravo.basic.AppLocal;
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.user.DirtyManager;
 import com.openbravo.data.user.EditorRecord;
 import com.openbravo.format.Formats;
+import com.openbravo.pos.admin.DataLogicSystem;
 import com.openbravo.pos.customers.CustomerInfo;
 import com.openbravo.pos.customers.CustomerService;
 import com.openbravo.pos.customers.DataLogicCustomers;
 import com.openbravo.pos.customers.JCustomerFinder;
 import com.openbravo.pos.customers.JCustomerFinderPanel;
 import com.openbravo.pos.customers.JDialogNewCustomer;
-import com.openbravo.basic.AppLocal;
 import com.openbravo.pos.panels.AppView;
-import com.openbravo.pos.admin.DataLogicSystem;
 import com.openbravo.pos.resources.ResourceService;
-import com.openbravo.util.ValidateBuilder;
+import com.openbravo.pos.util.FormatsDoubleConverter;
+import com.openbravo.ui.data.binding.SwingBinder;
 import java.awt.Component;
 import java.awt.image.BufferedImage;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.JButton;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
+import javax.swing.JTextField;
 
+/**
+ * Modernized editor for Vouchers with SwingBinder two-way binding,
+ * real-time validation, and headless testability.
+ *
+ * @author KiolOS
+ * @author KriolOS
+ */
 public final class VoucherEditor extends javax.swing.JPanel implements EditorRecord {
 
     private static final Logger LOGGER = Logger.getLogger(VoucherEditor.class.getName());
-
     private static final long serialVersionUID = 1L;
+
+    /**
+     * Presentation model for two-way Swing data binding.
+     */
+    public static class VoucherModel {
+        private String id;
+        private String voucherNumber;
+        private String customerId;
+        private String customerName;
+        private Double amount;
+        private String status;
+
+        public VoucherModel() {
+        }
+
+        public VoucherModel(String id, String voucherNumber, String customerId, String customerName, Double amount, String status) {
+            this.id = id;
+            this.voucherNumber = voucherNumber;
+            this.customerId = customerId;
+            this.customerName = customerName;
+            this.amount = amount;
+            this.status = status;
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        public void setId(String id) {
+            this.id = id;
+        }
+
+        public String getVoucherNumber() {
+            return voucherNumber;
+        }
+
+        public void setVoucherNumber(String voucherNumber) {
+            this.voucherNumber = voucherNumber;
+        }
+
+        public String getCustomerId() {
+            return customerId;
+        }
+
+        public void setCustomerId(String customerId) {
+            this.customerId = customerId;
+        }
+
+        public String getCustomerName() {
+            return customerName;
+        }
+
+        public void setCustomerName(String customerName) {
+            this.customerName = customerName;
+        }
+
+        public Double getAmount() {
+            return amount;
+        }
+
+        public void setAmount(Double amount) {
+            this.amount = amount;
+        }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
+        }
+    }
+
     private String voucherId;
     private final CustomerService customerService;
     @Deprecated
@@ -56,35 +136,135 @@ public final class VoucherEditor extends javax.swing.JPanel implements EditorRec
     private final VoucherService voucherService;
     private CustomerInfo customerInfo;
     private final AppView m_app;
+    private DirtyManager dirty;
+    private SwingBinder<VoucherModel> binder;
+
+    /**
+     * Headless constructor for testing without active GUI/database session.
+     *
+     * @param dirty dirty state manager
+     */
+    public VoucherEditor(DirtyManager dirty) {
+        this(dirty, null, null, null, null);
+    }
 
     public VoucherEditor(DirtyManager dirty, AppView app) {
-        this(dirty, app, null, null);
+        this(dirty, app, null, null, null);
     }
 
     public VoucherEditor(DirtyManager dirty, AppView app, VoucherService voucherService) {
-        this(dirty, app, voucherService, null);
+        this(dirty, app, voucherService, null, null);
     }
 
     public VoucherEditor(DirtyManager dirty, AppView app, VoucherService voucherService, CustomerService customerService) {
-        m_app = app;
+        this(dirty, app, voucherService, customerService, null);
+    }
+
+    public VoucherEditor(DirtyManager dirty, AppView app, VoucherService voucherService, CustomerService customerService, ResourceService resourceService) {
+        this.m_app = app;
+        this.dirty = dirty;
 
         initComponents();
 
-        this.customerService = customerService != null ? customerService : app.getBean(CustomerService.class);
-        this.dlCustomers = (this.customerService instanceof DataLogicCustomers) ? (DataLogicCustomers) this.customerService : app.getBean(DataLogicCustomers.class);
-        this.resourceService = app.getBean(ResourceService.class);
+        this.customerService = customerService != null ? customerService : (app != null ? app.getBean(CustomerService.class) : null);
+        this.dlCustomers = (this.customerService instanceof DataLogicCustomers) ? (DataLogicCustomers) this.customerService : (app != null ? app.getBean(DataLogicCustomers.class) : null);
+        this.resourceService = resourceService != null ? resourceService : (app != null ? app.getBean(ResourceService.class) : null);
         this.dlSystem = (this.resourceService instanceof DataLogicSystem) ? (DataLogicSystem) this.resourceService : null;
-        this.voucherService = voucherService != null ? voucherService : app.getBean(VoucherService.class);
-        voucherNumberTField.getDocument().addDocumentListener(dirty);
-        voucherCustomerTField.getDocument().addDocumentListener(dirty);
-        voucherAmountTField.getDocument().addDocumentListener(dirty);
-        voucherStatusTField.getDocument().addDocumentListener(dirty);
+        this.voucherService = voucherService != null ? voucherService : (app != null ? app.getBean(VoucherService.class) : null);
+
+        if (dirty != null) {
+            voucherNumberTField.getDocument().addDocumentListener(dirty);
+            voucherCustomerTField.getDocument().addDocumentListener(dirty);
+            voucherAmountTField.getDocument().addDocumentListener(dirty);
+            voucherStatusTField.getDocument().addDocumentListener(dirty);
+        }
 
         printBtn.setVisible(true);
-        
         jLblStatus.setIcon(null);
+        statusIcon.setIcon(null);
 
+        initValidator();
         writeValueEOF();
+    }
+
+    private void initValidator() {
+        binder = new SwingBinder<>(new VoucherModel());
+
+        // Mandatory Voucher Number
+        binder.forField(voucherNumberTField)
+                .asRequired(AppLocal.getIntString("validation.required", AppLocal.getIntString("label.Number")))
+                .bind(VoucherModel::getVoucherNumber, VoucherModel::setVoucherNumber);
+
+        // Mandatory Customer Name
+        binder.forField(voucherCustomerTField)
+                .asRequired(AppLocal.getIntString("validation.required", AppLocal.getIntString("label.customer")))
+                .bind(VoucherModel::getCustomerName, VoucherModel::setCustomerName);
+
+        // Mandatory Positive Amount
+        binder.forField(voucherAmountTField)
+                .withConverter(new FormatsDoubleConverter())
+                .withValidator(v -> v != null && v > 0.0, AppLocal.getIntString("validation.number.positive", AppLocal.getIntString("label.paymenttotal")))
+                .bind(VoucherModel::getAmount, VoucherModel::setAmount);
+
+        // Mandatory Status
+        binder.forField(voucherStatusTField)
+                .asRequired(AppLocal.getIntString("validation.required", AppLocal.getIntString("label.Status")))
+                .bind(VoucherModel::getStatus, VoucherModel::setStatus);
+
+        binder.addStatusChangeListener(() -> {
+            if (dirty != null) {
+                dirty.setDirty(true);
+            }
+        });
+    }
+
+    public boolean isValid() {
+        return binder == null || binder.validate();
+    }
+
+    VoucherModel toModel() {
+        Double amt = null;
+        try {
+            amt = (Double) Formats.DOUBLE.parseValue(voucherAmountTField.getText());
+        } catch (BasicException e) {
+            // keep null
+        }
+        return new VoucherModel(
+                voucherId,
+                voucherNumberTField.getText(),
+                customerInfo != null ? customerInfo.getId() : null,
+                voucherCustomerTField.getText(),
+                amt,
+                voucherStatusTField.getText()
+        );
+    }
+
+    private void updateStatusIcon(String status) {
+        if (status == null) {
+            jLblStatus.setIcon(null);
+            statusIcon.setIcon(null);
+            return;
+        }
+        switch (status) {
+            case VoucherInfo.VOUCHER_STATUS_AVAILABLE -> {
+                var url = getClass().getResource("/com/openbravo/images/ok.png");
+                if (url != null) {
+                    statusIcon.setIcon(new javax.swing.ImageIcon(url));
+                }
+                statusIcon.setToolTipText("Available");
+            }
+            case VoucherInfo.VOUCHER_STATUS_REDEEMED -> {
+                var url = getClass().getResource("/com/openbravo/images/refundit.png");
+                if (url != null) {
+                    statusIcon.setIcon(new javax.swing.ImageIcon(url));
+                }
+                statusIcon.setToolTipText("Redeemed");
+            }
+            default -> {
+                jLblStatus.setIcon(null);
+                statusIcon.setIcon(null);
+            }
+        }
     }
 
     @Deprecated
@@ -95,123 +275,189 @@ public final class VoucherEditor extends javax.swing.JPanel implements EditorRec
     @Override
     public void writeValueEOF() {
         voucherId = null;
-        voucherNumberTField.setText(null);
+        customerInfo = null;
+        if (binder != null) {
+            binder.clear();
+        } else {
+            voucherNumberTField.setText(null);
+            voucherCustomerTField.setText(null);
+            voucherAmountTField.setText(null);
+            voucherStatusTField.setText(null);
+        }
         voucherNumberTField.setEnabled(false);
-        voucherCustomerTField.setText(null);
         voucherCustomerTField.setEnabled(false);
-        voucherAmountTField.setText(null);
         voucherAmountTField.setEnabled(false);
-        voucherStatusTField.setText(null);
         voucherStatusTField.setEnabled(false);
         customerSelectorBtn.setEnabled(false);
         printBtn.setEnabled(false);
+        jLblStatus.setIcon(null);
+        statusIcon.setIcon(null);
     }
 
     @Override
     public void writeValueInsert() {
         voucherId = UUID.randomUUID().toString();
+        customerInfo = null;
         voucherNumberTField.setText(generateVoucherNumber());
         voucherNumberTField.setEnabled(true);
         voucherCustomerTField.setText(null);
         voucherCustomerTField.setEnabled(true);
         voucherAmountTField.setText(null);
         voucherAmountTField.setEnabled(true);
-        voucherStatusTField.setText(null);
-        voucherStatusTField.setText("A");
+        voucherStatusTField.setText(VoucherInfo.VOUCHER_STATUS_AVAILABLE);
+        voucherStatusTField.setEnabled(false);
         customerSelectorBtn.setEnabled(true);
         printBtn.setEnabled(true);
+        updateStatusIcon(VoucherInfo.VOUCHER_STATUS_AVAILABLE);
+
+        if (binder != null) {
+            binder.readBean(toModel());
+        }
     }
 
     @Override
     public void writeValueDelete(Object value) {
-        if ("A".equals(voucherStatusTField.getText())) {
-            try {
-                Object[] attr = (Object[]) value;
-                voucherId = (String) attr[0];
-                voucherNumberTField.setText(Formats.STRING.formatValue((String) attr[1]));
-                voucherNumberTField.setEnabled(false);
-                customerInfo = customerService.getCustomerInfo(attr[2].toString());
-                voucherCustomerTField.setText(customerInfo.getName());
-                voucherCustomerTField.setEnabled(false);
-                voucherAmountTField.setText(Formats.DOUBLE.formatValue((Double) attr[3]));
-                voucherAmountTField.setEnabled(false);
-                voucherStatusTField.setText(Formats.STRING.formatValue((String) attr[4]));
-                voucherStatusTField.setEnabled(false);
+        if (value == null) {
+            writeValueEOF();
+            return;
+        }
 
-                printBtn.setEnabled(false);
-            } catch (BasicException ex) {
-                LOGGER.log(Level.SEVERE, "Exception delete voucher object", ex);
+        String status = null;
+        if (value instanceof Object[] attr) {
+            voucherId = (String) attr[0];
+            voucherNumberTField.setText(Formats.STRING.formatValue((String) attr[1]));
+            String custId = attr[2] != null ? attr[2].toString() : null;
+            if (customerService != null && custId != null) {
+                try {
+                    customerInfo = customerService.getCustomerInfo(custId);
+                } catch (BasicException ex) {
+                    LOGGER.log(Level.WARNING, "Exception fetching customer info", ex);
+                }
             }
+            voucherCustomerTField.setText(customerInfo != null ? customerInfo.getName() : (custId != null ? custId : ""));
+            voucherAmountTField.setText(Formats.DOUBLE.formatValue((Double) attr[3]));
+            status = Formats.STRING.formatValue((String) attr[4]);
+            voucherStatusTField.setText(status);
+        } else if (value instanceof VoucherInfo vi) {
+            voucherId = vi.getId();
+            voucherNumberTField.setText(Formats.STRING.formatValue(vi.getVoucherNumber()));
+            voucherCustomerTField.setText(Formats.STRING.formatValue(vi.getCustomerName()));
+            voucherAmountTField.setText(Formats.DOUBLE.formatValue(vi.getAmount()));
+            status = Formats.STRING.formatValue(vi.getStatus());
+            voucherStatusTField.setText(status);
+        } else if (value instanceof VoucherModel vm) {
+            voucherId = vm.getId();
+            voucherNumberTField.setText(Formats.STRING.formatValue(vm.getVoucherNumber()));
+            voucherCustomerTField.setText(Formats.STRING.formatValue(vm.getCustomerName()));
+            voucherAmountTField.setText(Formats.DOUBLE.formatValue(vm.getAmount()));
+            status = Formats.STRING.formatValue(vm.getStatus());
+            voucherStatusTField.setText(status);
+        }
+
+        if (VoucherInfo.VOUCHER_STATUS_AVAILABLE.equals(status)) {
+            voucherNumberTField.setEnabled(false);
+            voucherCustomerTField.setEnabled(false);
+            voucherAmountTField.setEnabled(false);
+            voucherStatusTField.setEnabled(false);
+            customerSelectorBtn.setEnabled(false);
+            printBtn.setEnabled(false);
+            updateStatusIcon(status);
         } else {
             JOptionPane.showMessageDialog(this,
                     AppLocal.getIntString("message.voucherdelete"),
                     AppLocal.getIntString("Check"),
                     JOptionPane.WARNING_MESSAGE);
         }
+
+        if (binder != null) {
+            binder.readBean(toModel());
+        }
     }
 
     @Override
     public void writeValueEdit(Object value) {
+        if (value == null) {
+            writeValueEOF();
+            return;
+        }
 
-        try {
-            Object[] attr = (Object[]) value;
+        String status = null;
+        if (value instanceof Object[] attr) {
             voucherId = (String) attr[0];
             voucherNumberTField.setText(Formats.STRING.formatValue((String) attr[1]));
-            voucherNumberTField.setEnabled(true);
-            customerInfo = customerService.getCustomerInfo(attr[2].toString());
-            voucherCustomerTField.setText(customerInfo.getName());
-            voucherCustomerTField.setEnabled(true);
-            voucherAmountTField.setText(Formats.DOUBLE.formatValue((Double) attr[3]));
-            voucherAmountTField.setEnabled(true);
-            voucherStatusTField.setText(Formats.STRING.formatValue((String) attr[4]));
-
-            printBtn.setEnabled(true);
-
-            if (null == voucherStatusTField.getText()) {
-                jLblStatus.setIcon(null);
-                statusIcon.setIcon(null);
-            } else {
-                switch (voucherStatusTField.getText()) {
-                    case VoucherInfo.VOUCHER_STATUS_AVAILABLE:
-                        statusIcon.setIcon(new javax.swing.ImageIcon(getClass()
-                                .getResource("/com/openbravo/images/ok.png")));
-                        statusIcon.setToolTipText("Available");
-                        voucherNumberTField.setEnabled(true);
-                        voucherAmountTField.setEnabled(true);
-                        customerSelectorBtn.setEnabled(true);
-                        voucherStatusTField.setText("A");
-                        break;
-                    case VoucherInfo.VOUCHER_STATUS_REDEEMED:
-                        statusIcon.setIcon(new javax.swing.ImageIcon(getClass()
-                                .getResource("/com/openbravo/images/refundit.png")));
-                        statusIcon.setToolTipText("Redeemed");
-                        voucherNumberTField.setEnabled(false);
-                        voucherAmountTField.setEnabled(false);
-                        customerSelectorBtn.setEnabled(false);
-                        voucherStatusTField.setText("D");
-
-                        break;
-                    default:
-                        jLblStatus.setIcon(null);
-                        statusIcon.setIcon(null);
-                        break;
+            String custId = attr[2] != null ? attr[2].toString() : null;
+            if (customerService != null && custId != null) {
+                try {
+                    customerInfo = customerService.getCustomerInfo(custId);
+                } catch (BasicException ex) {
+                    LOGGER.log(Level.WARNING, "Exception fetching customer info", ex);
                 }
             }
+            voucherCustomerTField.setText(customerInfo != null ? customerInfo.getName() : (custId != null ? custId : ""));
+            voucherAmountTField.setText(Formats.DOUBLE.formatValue((Double) attr[3]));
+            status = Formats.STRING.formatValue((String) attr[4]);
+            voucherStatusTField.setText(status);
+        } else if (value instanceof VoucherInfo vi) {
+            voucherId = vi.getId();
+            voucherNumberTField.setText(Formats.STRING.formatValue(vi.getVoucherNumber()));
+            voucherCustomerTField.setText(Formats.STRING.formatValue(vi.getCustomerName()));
+            voucherAmountTField.setText(Formats.DOUBLE.formatValue(vi.getAmount()));
+            status = Formats.STRING.formatValue(vi.getStatus());
+            voucherStatusTField.setText(status);
+        } else if (value instanceof VoucherModel vm) {
+            voucherId = vm.getId();
+            voucherNumberTField.setText(Formats.STRING.formatValue(vm.getVoucherNumber()));
+            voucherCustomerTField.setText(Formats.STRING.formatValue(vm.getCustomerName()));
+            voucherAmountTField.setText(Formats.DOUBLE.formatValue(vm.getAmount()));
+            status = Formats.STRING.formatValue(vm.getStatus());
+            voucherStatusTField.setText(status);
+        }
 
-        } catch (BasicException ex) {
-            LOGGER.log(Level.SEVERE, "Exception edit voucher object", ex);
+        printBtn.setEnabled(true);
+
+        if (VoucherInfo.VOUCHER_STATUS_REDEEMED.equals(status)) {
+            voucherNumberTField.setEnabled(false);
+            voucherCustomerTField.setEnabled(false);
+            voucherAmountTField.setEnabled(false);
+            voucherStatusTField.setEnabled(false);
+            customerSelectorBtn.setEnabled(false);
+        } else {
+            voucherNumberTField.setEnabled(true);
+            voucherCustomerTField.setEnabled(true);
+            voucherAmountTField.setEnabled(true);
+            voucherStatusTField.setEnabled(false);
+            customerSelectorBtn.setEnabled(true);
+        }
+
+        updateStatusIcon(status);
+
+        if (binder != null) {
+            binder.readBean(toModel());
         }
     }
 
     @Override
     public Object createValue() throws BasicException {
+        if (binder != null) {
+            try {
+                binder.writeBean(toModel());
+            } catch (SwingBinder.ValidationException ex) {
+                // validation status surfaced via isValid()
+            }
+        }
+
+        Double amount = null;
+        try {
+            amount = (Double) Formats.DOUBLE.parseValue(voucherAmountTField.getText());
+        } catch (BasicException ex) {
+            // fallback
+        }
 
         Object[] attr = new Object[5];
-
         attr[0] = voucherId;
         attr[1] = voucherNumberTField.getText();
-        attr[2] = customerInfo.getId();
-        attr[3] = Formats.DOUBLE.parseValue(voucherAmountTField.getText());
+        attr[2] = customerInfo != null ? customerInfo.getId() : null;
+        attr[3] = amount;
         attr[4] = voucherStatusTField.getText();
 
         return attr;
@@ -225,9 +471,48 @@ public final class VoucherEditor extends javax.swing.JPanel implements EditorRec
     @Override
     public void refresh() {
     }
-    
-    private static Double readCurrency(String sValue) throws BasicException {
-        return Formats.CURRENCY.parseValue(sValue);
+
+    JTextField getVoucherNumberField() {
+        return voucherNumberTField;
+    }
+
+    JTextField getCustomerField() {
+        return voucherCustomerTField;
+    }
+
+    JTextField getAmountField() {
+        return voucherAmountTField;
+    }
+
+    JTextField getStatusField() {
+        return voucherStatusTField;
+    }
+
+    JButton getPrintButton() {
+        return printBtn;
+    }
+
+    JButton getCustomerSelectorButton() {
+        return customerSelectorBtn;
+    }
+
+    JLabel getStatusIcon() {
+        return statusIcon;
+    }
+
+    SwingBinder<VoucherModel> getBinder() {
+        return binder;
+    }
+
+    void setCustomerInfo(CustomerInfo customerInfo) {
+        this.customerInfo = customerInfo;
+        if (customerInfo != null) {
+            voucherCustomerTField.setText(customerInfo.getName());
+        }
+    }
+
+    CustomerInfo getCustomerInfo() {
+        return customerInfo;
     }
 
     /**
@@ -392,24 +677,16 @@ private void printBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRS
 }//GEN-LAST:event_printBtnActionPerformed
 
     private void customerSelectorBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_customerSelectorBtnActionPerformed
-
-        CustomerInfo selected = JCustomerFinderPanel.show(this, customerService);
-
-        if (selected != null) {
-            customerInfo = selected;
-            voucherCustomerTField.setText(customerInfo.getName());
-        }
-
-        if (false) {
-            JDialogNewCustomer dialog = JDialogNewCustomer.getDialog(this, m_app);
-            dialog.setVisible(true);
-
-            customerInfo = dialog.getSelectedCustomer();
-            if (dialog.getSelectedCustomer() != null) {
+        if (customerService != null) {
+            CustomerInfo selected = JCustomerFinderPanel.show(this, customerService);
+            if (selected != null) {
+                customerInfo = selected;
                 voucherCustomerTField.setText(customerInfo.getName());
+                if (binder != null) {
+                    binder.readBean(toModel());
+                }
             }
         }
-
     }//GEN-LAST:event_customerSelectorBtnActionPerformed
 
 
@@ -428,16 +705,7 @@ private void printBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRS
     // End of variables declaration//GEN-END:variables
 
     public boolean isDataValid() {
-        ValidateBuilder validate = new ValidateBuilder(this);
-        validate.setValidate(voucherNumberTField.getText(), ValidateBuilder.IS_NOT_EMPTY,
-                AppLocal.getIntString("message.message.emptynumber"));
-        validate.setValidate(voucherCustomerTField.getText(), ValidateBuilder.IS_NOT_EMPTY,
-                AppLocal.getIntString("message.emptycustomer"));
-        validate.setValidate(voucherAmountTField.getText(), ValidateBuilder.IS_DOUBLE,
-                AppLocal.getIntString("message.numericamount"));
-        validate.setValidate(voucherStatusTField.getText(), ValidateBuilder.IS_NOT_EMPTY,
-                AppLocal.getIntString("message.emptystatus"));
-        return validate.getValid();
+        return isValid();
     }
 
     /** 
@@ -446,11 +714,14 @@ private void printBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRS
      * @return voucher number ("VO-{MM-yy}-{SEQ}" e.g. "VO-10-26-00001")
      */
     public String generateVoucherNumber() {
+        if (voucherService == null) {
+            return "VO-AUTO-00001";
+        }
         try {
             return voucherService.generateNextVoucherNumber();
         } catch (BasicException ex) {
             LOGGER.log(Level.WARNING, "Exception generate voucher number", ex);
-            return "";
+            return "VO-AUTO-00001";
         }
     }
 

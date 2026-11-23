@@ -1,34 +1,87 @@
 package com.openbravo.pos.inventory;
 
+import com.openbravo.basic.AppLocal;
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.user.DirtyManager;
 import com.openbravo.data.user.EditorRecord;
 import com.openbravo.format.Formats;
-import com.openbravo.basic.AppLocal;
 import com.openbravo.pos.panels.AppView;
+import com.openbravo.pos.pim.UomInfo;
+import com.openbravo.ui.data.binding.SwingBinder;
 import java.awt.Component;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.util.UUID;
 import javax.swing.JOptionPane;
+import javax.swing.JTextField;
 
-public final class UomEditor extends javax.swing.JPanel implements EditorRecord {
+/**
+ * Strongly typed editor component for Unit of Measure (UOM) records.
+ *
+ * @author JG uniCenta
+ * @author KriolOS
+ */
+public final class UomEditor extends javax.swing.JPanel implements EditorRecord<UomInfo> {
+
+    private static final long serialVersionUID = 1L;
+    private static final System.Logger LOGGER = System.getLogger(UomEditor.class.getName());
+
     private String m_id;
+    private DirtyManager dirty;
+    private SwingBinder<UomInfo> binder;
     
-    /** Creates new form JPanelUnits Of Measure
-     * @param app
-     * @param dirty */
-    public UomEditor(AppView app, DirtyManager dirty) {     
+    /**
+     * Headless constructor for testing without active AppView session.
+     *
+     * @param dirty dirty state manager
+     */
+    public UomEditor(DirtyManager dirty) {
+        this((AppView) null, dirty);
+    }
 
+    /**
+     * Creates new form UomEditor.
+     *
+     * @param app application view context
+     * @param dirty dirty state manager
+     */
+    public UomEditor(AppView app, DirtyManager dirty) {     
         initComponents();
-        
-        m_jName.getDocument().addDocumentListener(dirty);
-        
+        this.dirty = dirty;
+        if (dirty != null) {
+            m_jName.getDocument().addDocumentListener(dirty);
+        }
+        initValidator();
         writeValueEOF();
     }
-    
-    
+
+    private void initValidator() {
+        binder = new SwingBinder<>(new UomInfo(null, null));
+
+        // Mandatory UOM Name
+        binder.forField(m_jName)
+                .asRequired(AppLocal.getIntString("validation.required", AppLocal.getIntString("label.name")))
+                .bind(UomInfo::getName, UomInfo::setName);
+
+        binder.addStatusChangeListener(() -> {
+            if (dirty != null) {
+                dirty.setDirty(true);
+            }
+        });
+    }
+
+    public boolean isValid() {
+        return binder == null || binder.validate();
+    }
+
+    public SwingBinder<UomInfo> getBinder() {
+        return binder;
+    }
+
+    JTextField getNameField() {
+        return m_jName;
+    }
 
     /** This method is called from within the constructor to
      * initialize the form.
@@ -80,9 +133,8 @@ public final class UomEditor extends javax.swing.JPanel implements EditorRecord 
     }// </editor-fold>//GEN-END:initComponents
 
     private void jLabel2MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jLabel2MouseClicked
-
-        if (evt.getClickCount() == 2) {
-            String uuidString = m_id.toString();
+        if (evt.getClickCount() == 2 && m_id != null) {
+            String uuidString = m_id;
             StringSelection stringSelection = new StringSelection(uuidString);
             Clipboard clpbrd = Toolkit.getDefaultToolkit().getSystemClipboard();
             clpbrd.setContents(stringSelection, null);
@@ -100,37 +152,53 @@ public final class UomEditor extends javax.swing.JPanel implements EditorRecord 
     @Override
     public void writeValueEOF() {
         m_id = null;
-        m_jName.setText(null);
+        if (binder != null) {
+            binder.clear();
+        } else {
+            m_jName.setText(null);
+        }
         m_jName.setEnabled(false);
     }
 
     @Override
     public void writeValueInsert() {
-
         m_id = UUID.randomUUID().toString();
-        m_jName.setText(null);
+        if (binder != null) {
+            binder.clear();
+        } else {
+            m_jName.setText(null);
+        }
         m_jName.setEnabled(true);
-        
     }
 
     @Override
-    public void writeValueEdit(Object value) {
-        Object[] obj = (Object[]) value;
-        
-        m_id = (String)obj[0];
-        m_jName.setText(Formats.STRING.formatValue((String)obj[1]));
+    public void writeValueEdit(UomInfo value) {
+        if (value == null) {
+            writeValueEOF();
+            return;
+        }
+        m_id = value.getId();
+        if (binder != null) {
+            binder.readBean(value);
+        } else {
+            m_jName.setText(Formats.STRING.formatValue(value.getName()));
+        }
         m_jName.setEnabled(true);
-        
     }
 
     @Override
-    public void writeValueDelete(Object value) {
-        Object[] obj = (Object[]) value;
-        
-        m_id = (String)obj[0];
-        m_jName.setText(Formats.STRING.formatValue((String)obj[1]));
+    public void writeValueDelete(UomInfo value) {
+        if (value == null) {
+            writeValueEOF();
+            return;
+        }
+        m_id = value.getId();
+        if (binder != null) {
+            binder.readBean(value);
+        } else {
+            m_jName.setText(Formats.STRING.formatValue(value.getName()));
+        }
         m_jName.setEnabled(false);
-        
     }
 
     @Override
@@ -139,20 +207,26 @@ public final class UomEditor extends javax.swing.JPanel implements EditorRecord 
 
     @Override
     public Component getComponent() {
-         return this;
+        return this;
     }
 
     @Override
-    public Object createValue() throws BasicException {
-        Object[] obj = new Object[2];
-        obj[0] = m_id;
-        obj[1] = m_jName.getText();        
-        
-        return obj;
-        
+    public UomInfo createValue() throws BasicException {
+        UomInfo uom = new UomInfo(m_id, m_jName.getText());
+        if (binder != null) {
+            try {
+                binder.writeBean(uom);
+            } catch (SwingBinder.ValidationException ex) {
+                LOGGER.log(System.Logger.Level.WARNING, "Validation in createValue: " + ex.getMessage());
+            }
+        }
+        if (uom.getName() == null) {
+            uom.setName(m_jName.getText() != null ? m_jName.getText() : "");
+        }
+        return uom;
     }
 
     public boolean isDataValid() {
-        return true;
+        return isValid();
     }
 }

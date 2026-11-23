@@ -29,25 +29,24 @@ import com.openbravo.pos.panels.JPanelTable;
 import javax.swing.ListCellRenderer;
 
 /**
+ * Type-safe JPanelTable implementation for Customer master management.
  *
  * @author adrianromero
+ * @author KriolOS
  */
 public class CustomersPanel extends JPanelTable {
 
     private static final long serialVersionUID = 1L;
     
     private CustomerService customerService;
-    @Deprecated
-    private DataLogicCustomers dlCustomers;
     private CustomersView jeditor;
     
     public CustomersPanel() {}
 
     @Override
     protected void init() {
-        this.jeditor = new CustomersView(app, dirty);
         this.customerService = app.getBean(CustomerService.class);
-        this.dlCustomers = (customerService instanceof DataLogicCustomers) ? (DataLogicCustomers) customerService : app.getBean(DataLogicCustomers.class);
+        this.jeditor = new CustomersView(app, dirty);
     }
 
     @Override
@@ -57,36 +56,50 @@ public class CustomersPanel extends JPanelTable {
     }
 
     @Override
-    public ListProvider getListProvider() {
-        return new ListProviderCreator(customerService.getTableCustomers());
+    public ListProvider<CustomerInfoExt> getListProvider() {
+        return new ListProviderCreator<>(customerService.getTableCustomers());
     }
 
     @Override
-    public SaveProvider getSaveProvider() {
+    public SaveProvider<CustomerInfoExt> getSaveProvider() {
         return customerService.getCustomerSaveProvider();
-        /*return new DefaultSaveProvider(customerService.getTableCustomers(), new int[] {
-            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14,            
-            15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26});  
-       */
     }
 
     @Override
-    public Vectorer getVectorer() {
-        return customerService.getTableCustomers().getVectorerBasic(new int[]{1, 2, 3, 4});
+    public Vectorer<CustomerInfoExt> getVectorer() {
+        return new Vectorer<>() {
+            @Override
+            public String[] getHeaders() throws BasicException {
+                return new String[]{
+                    AppLocal.getIntString("label.searchkey"),
+                    AppLocal.getIntString("label.taxid"),
+                    AppLocal.getIntString("label.name")
+                };
+            }
+
+            @Override
+            public String[] getValues(CustomerInfoExt c) throws BasicException {
+                return new String[]{
+                    c != null && c.getSearchkey() != null ? c.getSearchkey() : "",
+                    c != null && c.getTaxid() != null ? c.getTaxid() : "",
+                    c != null && c.getName() != null ? c.getName() : ""
+                };
+            }
+        };
     }
 
     @Override
     public ComparatorCreator getComparatorCreator() {
-        return customerService.getTableCustomers().getComparatorCreator(new int[] {1, 2, 3, 4});
+        return customerService.getTableCustomers().getComparatorCreator(new int[] {1, 2, 3});
     }
 
     @Override
-    public ListCellRenderer getListCellRenderer() {
-        return new ListCellRendererBasic(customerService.getTableCustomers().getRenderStringBasic(new int[]{3}));
+    public ListCellRenderer<?> getListCellRenderer() {
+        return new ListCellRendererBasic(v -> v instanceof CustomerInfoExt c ? c.getName() : (v != null ? v.toString() : ""));
     }
 
     @Override
-    public EditorRecord getEditor() {
+    public EditorRecord<CustomerInfoExt> getEditor() {
         return jeditor;
     }
 

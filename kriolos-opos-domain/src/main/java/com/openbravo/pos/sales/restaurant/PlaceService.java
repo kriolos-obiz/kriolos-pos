@@ -12,7 +12,24 @@ public interface PlaceService {
 
     List<Place> getPlaces() throws BasicException;
 
-    void moveCustomer(String newTable, String ticketID);
+    /**
+     * Moves a customer and their ticket session to a new dining table using an immutable command.
+     *
+     * @param command move customer command
+     */
+    void moveCustomer(MoveCustomerCommand command);
+
+    /**
+     * Moves a customer and their ticket session to a new dining table.
+     *
+     * @param newTable new table name
+     * @param ticketID ticket identifier
+     * @deprecated Use {@link #moveCustomer(MoveCustomerCommand)} instead.
+     */
+    @Deprecated
+    default void moveCustomer(String newTable, String ticketID) {
+        moveCustomer(new MoveCustomerCommand(newTable, ticketID));
+    }
 
     void setCustomerNameInTable(String custName, String tableName);
 

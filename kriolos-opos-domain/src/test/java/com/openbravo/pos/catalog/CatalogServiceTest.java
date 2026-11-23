@@ -93,6 +93,23 @@ class CatalogServiceTest {
     }
 
     @Test
+    @DisplayName("CreateCategoryCommand should validate invariants and trim strings")
+    void shouldValidateCreateCategoryCommandInvariants() {
+        CreateCategoryCommand cmd1 = CreateCategoryCommand.of("  cat-1  ", "  Bakery  ", false);
+        assertEquals("cat-1", cmd1.id());
+        assertEquals("Bakery", cmd1.name());
+        assertFalse(cmd1.showName());
+
+        CreateCategoryCommand cmd2 = CreateCategoryCommand.of("cat-2", "Drinks");
+        assertTrue(cmd2.showName());
+
+        assertThrows(NullPointerException.class, () -> new CreateCategoryCommand(null, "Name", true));
+        assertThrows(IllegalArgumentException.class, () -> new CreateCategoryCommand("   ", "Name", true));
+        assertThrows(NullPointerException.class, () -> new CreateCategoryCommand("id", null, true));
+        assertThrows(IllegalArgumentException.class, () -> new CreateCategoryCommand("id", "   ", true));
+    }
+
+    @Test
     @DisplayName("Typed category creation persists the supplied fields without positional mapping")
     void testTypedCategoryCreationPersistsFields() throws Exception {
         String databaseName = "catalog_category_" + UUID.randomUUID().toString().replace("-", "");
@@ -105,9 +122,24 @@ class CatalogServiceTest {
                         + "CATSHOWNAME BOOLEAN NOT NULL)");
             }
 
-                CatalogServiceImpl service = new CatalogServiceImpl(
+            CatalogServiceImpl service = new CatalogServiceImpl(
                     new DataLogicProducts(), new DataLogicCategories(), new DataLogicUom());
             service.init(session);
+
+            // 1. Test creation via CreateCategoryCommand
+            service.createCategory(CreateCategoryCommand.of("cmd-cat-1", "Pastries", false));
+            try (PreparedStatement query = session.getConnection().prepareStatement(
+                    "SELECT ID, NAME, CATSHOWNAME FROM categories WHERE ID = ?")) {
+                query.setString(1, "cmd-cat-1");
+                try (ResultSet result = query.executeQuery()) {
+                    assertTrue(result.next());
+                    assertEquals("cmd-cat-1", result.getString("ID"));
+                    assertEquals("Pastries", result.getString("NAME"));
+                    assertFalse(result.getBoolean("CATSHOWNAME"));
+                }
+            }
+
+            // 2. Test legacy adapter method
             service.createCategory("category-1", "Beverages", true);
 
             try (PreparedStatement query = session.getConnection().prepareStatement(

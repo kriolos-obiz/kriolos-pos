@@ -242,8 +242,10 @@ public class RestaurantMapControllerTest {
         }
 
         @Override
-        public void moveCustomer(String newTable, String ticketID) {
-            movedCustomers.put(newTable, ticketID);
+        public void moveCustomer(MoveCustomerCommand command) {
+            if (command != null) {
+                movedCustomers.put(command.newTable(), command.ticketId());
+            }
         }
 
         @Override
