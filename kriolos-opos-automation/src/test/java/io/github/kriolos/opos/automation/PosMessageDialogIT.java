@@ -26,7 +26,7 @@ import java.io.File;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Automated UI Robot Integration Test for verifying JMessageDialog rendering
@@ -65,16 +65,17 @@ public class PosMessageDialogIT {
         dialogThread.start();
 
         DialogFixture dialog = findMessageDialog(8000);
-        assertThat(dialog).isNotNull();
-        assertThat(dialog.target().isShowing()).isTrue();
+        assertNotNull(dialog);
+        assertTrue(dialog.target().isShowing());
 
         // Capture milestone screenshot
         File captureFile = screenshotHelper.captureComponent(dialog.target(), "01_warning_dialog_rendered");
-        assertThat(captureFile).isNotNull().exists();
+        assertNotNull(captureFile);
+        assertTrue(captureFile.exists());
         BufferedImage capture = ImageIO.read(captureFile);
 
         // Verify that the dialog is NOT black (contains non-black painted pixels)
-        assertThat(capture).isNotNull();
+        assertNotNull(capture);
         assertImageNotBlack(capture);
 
         // Verify message label contains expected text
@@ -84,10 +85,10 @@ public class PosMessageDialogIT {
                 return comp.isShowing() && comp.getText() != null && comp.getText().contains(testMsg);
             }
         });
-        assertThat(messageLabel).isNotNull();
-        assertThat(messageLabel.isShowing()).isTrue();
-        assertThat(messageLabel.getWidth()).isGreaterThan(0);
-        assertThat(messageLabel.getHeight()).isGreaterThan(0);
+        assertNotNull(messageLabel);
+        assertTrue(messageLabel.isShowing());
+        assertTrue(messageLabel.getWidth() > 0);
+        assertTrue(messageLabel.getHeight() > 0);
 
         // Autonomous dismissal: click OK button
         clickButton(dialog, "OK", "Sim", "Yes");
@@ -112,7 +113,7 @@ public class PosMessageDialogIT {
         dialogThread.start();
 
         DialogFixture dialog = findMessageDialog(8000);
-        assertThat(dialog).isNotNull();
+        assertNotNull(dialog);
 
         // 1. Initial screenshot
         screenshotHelper.captureComponent(dialog.target(), "02_exception_dialog_initial");
@@ -123,15 +124,16 @@ public class PosMessageDialogIT {
 
         // 3. Capture expanded screenshot
         File expandedCaptureFile = screenshotHelper.captureComponent(dialog.target(), "03_exception_dialog_expanded");
-        assertThat(expandedCaptureFile).isNotNull().exists();
+        assertNotNull(expandedCaptureFile);
+        assertTrue(expandedCaptureFile.exists());
         BufferedImage expandedCapture = ImageIO.read(expandedCaptureFile);
         assertImageNotBlack(expandedCapture);
 
         // Verify stack trace text area is showing and contains root cause message
         JTextArea textArea = robot.finder().findByName(dialog.target(), "kriolos:message:txt-exception", JTextArea.class);
-        assertThat(textArea).isNotNull();
-        assertThat(textArea.isShowing()).isTrue();
-        assertThat(textArea.getText()).contains(rootCauseMsg);
+        assertNotNull(textArea);
+        assertTrue(textArea.isShowing());
+        assertTrue(textArea.getText().contains(rootCauseMsg));
 
         // Autonomous dismissal: click OK button
         clickButton(dialog, "OK", "Sim", "Yes");
@@ -203,8 +205,8 @@ public class PosMessageDialogIT {
     private void assertImageNotBlack(BufferedImage image) {
         int width = image.getWidth();
         int height = image.getHeight();
-        assertThat(width).isGreaterThan(50);
-        assertThat(height).isGreaterThan(50);
+        assertTrue(width > 50);
+        assertTrue(height > 50);
 
         long nonBlackPixels = 0;
         long totalPixels = (long) width * height;
@@ -227,8 +229,6 @@ public class PosMessageDialogIT {
                 new Object[]{String.format("%.2f", nonBlackRatio * 100), nonBlackPixels, totalPixels});
 
         // A black dialog would have close to 0% non-black pixels; a rendered dialog has > 50%
-        assertThat(nonBlackRatio)
-                .as("Dialog content should not be black; non-black pixels must exceed 50%")
-                .isGreaterThan(0.50);
+        assertTrue(nonBlackRatio > 0.50, "Dialog content should not be black; non-black pixels must exceed 50%");
     }
 }

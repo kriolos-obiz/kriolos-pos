@@ -29,6 +29,15 @@
     "available": [],
     "completed": [
       {
+        "id": "TASK-065",
+        "ticket": "KP-176",
+        "agent": "antigravity",
+        "branch": "feature/KP-176-automation-junit5-assertions",
+        "title": "Decouple Automation Suite from assertj-core and Standardize on JUnit 5",
+        "description": "Remove explicit assertj-core dependency and migrate PosMessageDialogIT, PosInstanceManagerIT, PosDialogPreScreenBaselineIT, and PosDatabaseLockIT to native JUnit 5 assertions and modern AssertJ-Swing 4.0.3.",
+        "completed_at": "2026-11-23T15:55:00Z"
+      },
+      {
         "id": "TASK-064",
         "ticket": "KP-175",
         "agent": "antigravity",

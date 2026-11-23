@@ -43,7 +43,7 @@ import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Pre-Verification & Acceptance Test Suite: Pre-Screen Baseline.
@@ -361,7 +361,7 @@ public class PosDialogPreScreenBaselineIT {
                 .using(robot);
 
         JDialog dialog = (JDialog) dialogFixture.target();
-        assertThat(dialog.isShowing()).as("Dialog must be showing and visible").isTrue();
+        assertTrue(dialog.isShowing(), "Dialog must be showing and visible");
 
         // Brief stabilization pause for compositor layout
         Thread.sleep(300);
@@ -378,7 +378,7 @@ public class PosDialogPreScreenBaselineIT {
 
         // 5. Ensure launcher thread terminates cleanly
         dialogThread.join(4000);
-        assertThat(dialog.isShowing()).as("Dialog must be closed after dismiss").isFalse();
+        assertFalse(dialog.isShowing(), "Dialog must be closed after dismiss");
         LOGGER.log(Level.INFO, "Completed pre-screen capture for: {0}", milestoneName);
     }
 
@@ -402,7 +402,7 @@ public class PosDialogPreScreenBaselineIT {
                 .using(robot);
 
         JDialog dialog = (JDialog) dialogFixture.target();
-        assertThat(dialog.isShowing()).isTrue();
+        assertTrue(dialog.isShowing());
 
         // Find and click the Details/More button to expand exception stack trace
         JButton moreButton = robot.finder().find(dialog, new GenericTypeMatcher<JButton>(JButton.class) {
@@ -426,7 +426,7 @@ public class PosDialogPreScreenBaselineIT {
 
         dismissDialog(dialogFixture, dialog);
         dialogThread.join(4000);
-        assertThat(dialog.isShowing()).isFalse();
+        assertFalse(dialog.isShowing());
     }
 
     /**
@@ -463,7 +463,7 @@ public class PosDialogPreScreenBaselineIT {
      */
     private void verifyNonBlackPixels(File file) throws Exception {
         BufferedImage image = ImageIO.read(file);
-        assertThat(image).as("Screenshot image must be readable").isNotNull();
+        assertNotNull(image, "Screenshot image must be readable");
 
         int width = image.getWidth();
         int height = image.getHeight();
@@ -485,7 +485,7 @@ public class PosDialogPreScreenBaselineIT {
         double ratio = (double) nonBlackPixels / totalPixels;
         LOGGER.log(Level.INFO, "Image {0} pixel check: {1}% non-black ({2}/{3})",
                 new Object[]{file.getName(), String.format("%.2f", ratio * 100), nonBlackPixels, totalPixels});
-        assertThat(ratio).as("Dialog image must contain rendered content and not be a black box").isGreaterThan(0.50);
+        assertTrue(ratio > 0.50, "Dialog image must contain rendered content and not be a black box");
     }
 
     /**

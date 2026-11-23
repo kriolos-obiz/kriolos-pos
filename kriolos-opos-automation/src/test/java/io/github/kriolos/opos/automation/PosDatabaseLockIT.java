@@ -31,7 +31,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Automated UI Robot Integration Test for verifying the isolated database connection test:
@@ -76,9 +76,7 @@ public class PosDatabaseLockIT {
         // Verify that NO dialog is visible/opened (silent execution)
         for (Window w : Window.getWindows()) {
             if (w instanceof Dialog && w.isShowing()) {
-                assertThat(w.isShowing())
-                        .as("Connection test succeeded and must remain silent without showing any modal dialog")
-                        .isFalse();
+                assertFalse(w.isShowing(), "Connection test succeeded and must remain silent without showing any modal dialog");
             }
         }
         LOGGER.log(Level.INFO, "Silent connection test verified successfully.");
@@ -105,16 +103,17 @@ public class PosDatabaseLockIT {
         dialogThread.start();
 
         DialogFixture dialog = findMessageDialog(8000);
-        assertThat(dialog).isNotNull();
-        assertThat(dialog.target().isShowing()).isTrue();
+        assertNotNull(dialog);
+        assertTrue(dialog.target().isShowing());
 
         // 1. Milestone screenshot of connection failure dialog
         File captureFile = screenshotHelper.captureComponent(dialog.target(), "01_db_lock_dialog_rendered");
-        assertThat(captureFile).isNotNull().exists();
+        assertNotNull(captureFile);
+        assertTrue(captureFile.exists());
         BufferedImage capture = ImageIO.read(captureFile);
 
         // 2. Assert dialog content is visibly rendered and NOT black (BUG-001)
-        assertThat(capture).isNotNull();
+        assertNotNull(capture);
         assertImageNotBlack(capture);
 
         // 3. Click Information / Detalhes button to expand technical exception details
@@ -123,15 +122,16 @@ public class PosDatabaseLockIT {
 
         // 4. Milestone screenshot of expanded details
         File expandedCaptureFile = screenshotHelper.captureComponent(dialog.target(), "02_db_lock_dialog_expanded");
-        assertThat(expandedCaptureFile).isNotNull().exists();
+        assertNotNull(expandedCaptureFile);
+        assertTrue(expandedCaptureFile.exists());
         BufferedImage expandedCapture = ImageIO.read(expandedCaptureFile);
         assertImageNotBlack(expandedCapture);
 
         // 5. Verify exception details text area contains connection failure information
         JTextArea textArea = robot.finder().findByName(dialog.target(), "kriolos:message:txt-exception", JTextArea.class);
-        assertThat(textArea).isNotNull();
-        assertThat(textArea.isShowing()).isTrue();
-        assertThat(textArea.getText().length()).isGreaterThan(10);
+        assertNotNull(textArea);
+        assertTrue(textArea.isShowing());
+        assertTrue(textArea.getText().length() > 10);
 
         // 6. Autonomously dismiss dialog with OK button
         clickButton(dialog, "OK", "Ok", "Sim", "Yes");
@@ -203,8 +203,8 @@ public class PosDatabaseLockIT {
     private void assertImageNotBlack(BufferedImage image) {
         int width = image.getWidth();
         int height = image.getHeight();
-        assertThat(width).isGreaterThan(50);
-        assertThat(height).isGreaterThan(50);
+        assertTrue(width > 50);
+        assertTrue(height > 50);
 
         long nonBlackPixels = 0;
         long totalPixels = (long) width * height;
@@ -227,9 +227,7 @@ public class PosDatabaseLockIT {
                 new Object[]{String.format("%.2f", nonBlackRatio * 100), nonBlackPixels, totalPixels});
 
         // A black dialog would have close to 0% non-black pixels; a rendered dialog has > 50%
-        assertThat(nonBlackRatio)
-                .as("Dialog content should not be black; non-black pixels must exceed 50%")
-                .isGreaterThan(0.50);
+        assertTrue(nonBlackRatio > 0.50, "Dialog content should not be black; non-black pixels must exceed 50%");
     }
 
     /**
